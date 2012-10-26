@@ -177,8 +177,6 @@ void StackRestorer::save(char* file_path)
 
 		//saving procedure
 		std::ofstream file(file_path, std::ios::out | std::ios::binary);
-		//int ID = STK_ORG->getID();
-		//file.write((char*)&ID, sizeof(int));
 		file.write((char*)&N_ROWS, sizeof(int));
 		file.write((char*)&N_COLS, sizeof(int));
 		for(int i=0; i<N_ROWS; i++)
@@ -222,12 +220,11 @@ void StackRestorer::load(char* file_path)
 		sprintf(err_msg, "in StackRestorer::load(file_path[%s]): unable to load given file.\n", file_path);
 		throw err_msg;
 	}
-	int new_ID=-1, new_N_ROWS=-1, new_N_COLS=-1;
-	file.read((char*)&new_ID, sizeof(int));
+	int new_N_ROWS=-1, new_N_COLS=-1;
 	file.read((char*)&new_N_ROWS, sizeof(int));
 	file.read((char*)&new_N_COLS, sizeof(int));
 
-	if(/*new_ID != STK_ORG->getID() || */new_N_ROWS != N_ROWS || new_N_COLS != new_N_COLS)
+	if(new_N_ROWS != N_ROWS || new_N_COLS != new_N_COLS)
 	{
 		file.close();
 		char err_msg[1000];
