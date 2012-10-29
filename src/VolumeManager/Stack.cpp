@@ -288,7 +288,7 @@ Displacement* Stack::getDisplacement(Stack* neighbour) throw (MyException)
 		if(EAST.size() == 1) return EAST[0];
 		else throw MyException("...in Stack::getDisplacement(Stack* neighbour): stack MUST contain one displacement only at EAST");
 	else
-		throw("...in Stack::getDisplacement(Stack* neighbour): neighbour is not a neighbour!!!");
+		throw MyException("...in Stack::getDisplacement(Stack* neighbour): neighbour is not a neighbour!!!");
 }
 int Stack::getABS(int direction) throw (MyException)
 {
