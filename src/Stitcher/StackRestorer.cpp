@@ -111,7 +111,7 @@ void StackRestorer::computeSubvolDescriptors(real_t* data, Stack* stk_p, int sub
 	SUBSTKS_DESCRIPTORS[i][j][subvol_idx].computeSubvolDescriptors(data);
 }
 
-void StackRestorer::computeStackDescriptors(Stack* stk_p)
+void StackRestorer::computeStackDescriptors(Stack* stk_p) throw (MyException)
 {
 	int i = stk_p->getROW_INDEX();
 	int j = stk_p->getCOL_INDEX();	
@@ -120,7 +120,7 @@ void StackRestorer::computeStackDescriptors(Stack* stk_p)
 	{
 		char err_msg[1000];
 		sprintf(err_msg, "in StackRestorer::computeStackDescriptors(Stack[%d,%d]): no computed subvol descriptors found.\n", i, j);
-		throw err_msg;
+		throw MyException(err_msg);
 	}
 
 	int D_dim_acc = 0;
@@ -131,7 +131,7 @@ void StackRestorer::computeStackDescriptors(Stack* stk_p)
 		{
 			char err_msg[1000];
 			sprintf(err_msg, "in StackRestorer::computeStackDescriptors(Stack[%d,%d]): no computed subvol descriptors found.\n", i, j);
-			throw err_msg;
+			throw MyException(err_msg);
 		}
 
 	STKS_DESCRIPTORS[i][j].init(SUBSTKS_DESCRIPTORS[i][j][0].stk_p, false, SUBSTKS_DESCRIPTORS[i][j][0].V_dim, SUBSTKS_DESCRIPTORS[i][j][0].H_dim, D_dim_acc);
@@ -159,7 +159,7 @@ void StackRestorer::printVolDescriptors(Stack* stk_p)
 	STKS_DESCRIPTORS[i][j].print();
 }
 
-void StackRestorer::save(char* file_path)
+void StackRestorer::save(char* file_path)  throw (MyException)
 {
 	if(STKS_DESCRIPTORS)
 	{
@@ -172,11 +172,13 @@ void StackRestorer::save(char* file_path)
 		{
 			char err_msg[1000];
 			sprintf(err_msg, "in StackRestorer::save(file_path[%s]): Stack descriptors not found.\n", file_path);
-			throw err_msg;
+			throw MyException(err_msg);
 		}
 
 		//saving procedure
 		std::ofstream file(file_path, std::ios::out | std::ios::binary);
+		//int ID = STK_ORG->getID();
+		//file.write((char*)&ID, sizeof(int));
 		file.write((char*)&N_ROWS, sizeof(int));
 		file.write((char*)&N_COLS, sizeof(int));
 		for(int i=0; i<N_ROWS; i++)
@@ -207,18 +209,18 @@ void StackRestorer::save(char* file_path)
 	{
 		char err_msg[1000];
 		sprintf(err_msg, "in StackRestorer::save(file_path[%s]): Stack descriptors not found.\n", file_path);
-		throw err_msg;
+		throw MyException(err_msg);
 	}
 }
 
-void StackRestorer::load(char* file_path)
+void StackRestorer::load(char* file_path)  throw (MyException)
 {
 	std::ifstream file (file_path, std::ios::in | std::ios::binary);
 	if(!file)
 	{
 		char err_msg[1000];
 		sprintf(err_msg, "in StackRestorer::load(file_path[%s]): unable to load given file.\n", file_path);
-		throw err_msg;
+		throw MyException(err_msg);
 	}
 	int new_N_ROWS=-1, new_N_COLS=-1;
 	file.read((char*)&new_N_ROWS, sizeof(int));
@@ -229,7 +231,7 @@ void StackRestorer::load(char* file_path)
 		file.close();
 		char err_msg[1000];
 		sprintf(err_msg, "in StackRestorer::load(file_path[%s]): the description file refers to a different acquisition.\n", file_path);
-		throw err_msg;
+		throw MyException(err_msg);
 	}
 
 	for(int i=0; i<N_ROWS; i++)
@@ -267,7 +269,7 @@ void StackRestorer::load(char* file_path)
 	file.close();
 }
 
-void StackRestorer::repairSlice(real_t* data, int slice_idx, Stack* stk_p, int direction)
+void StackRestorer::repairSlice(real_t* data, int slice_idx, Stack* stk_p, int direction)  throw (MyException)
 {
 	//some checks
 	bool ready_to_repair = true;
@@ -278,13 +280,13 @@ void StackRestorer::repairSlice(real_t* data, int slice_idx, Stack* stk_p, int d
 	{
 		char err_msg[1000];
 		sprintf(err_msg, "in repairSlice::repairSlice(...): Stack descriptors not found.\n");
-		throw err_msg;
+		throw MyException(err_msg);
 	}
 	if(direction != S_RESTORE_V_DIRECTION && direction != S_RESTORE_H_DIRECTION)
 	{
 		char err_msg[1000];
 		sprintf(err_msg, "in repairSlice::repairSlice(...): selected restoring direction (%d) is not supported.\n", direction);
-		throw err_msg;
+		throw MyException(err_msg);
 	}
 
 	int i, j;
@@ -347,7 +349,7 @@ void StackRestorer::repairSlice(real_t* data, int slice_idx, Stack* stk_p, int d
 	#endif
 }
 
-void StackRestorer::repairStack(real_t* data, Stack* stk_p, int direction)
+void StackRestorer::repairStack(real_t* data, Stack* stk_p, int direction)  throw (MyException)
 {
 	//some checks
 	bool ready_to_repair = true;
@@ -358,13 +360,13 @@ void StackRestorer::repairStack(real_t* data, Stack* stk_p, int direction)
 	{
 		char err_msg[1000];
 		sprintf(err_msg, "in repairSlice::repairStack(...): Stack descriptors not found.\n");
-		throw err_msg;
+		throw MyException(err_msg);
 	}	
 	if(direction != S_RESTORE_V_DIRECTION && direction != S_RESTORE_H_DIRECTION)
 	{
 		char err_msg[1000];
 		sprintf(err_msg, "in repairSlice::repairSlice(...): selected restoring direction (%d) is not supported.\n", direction);
-		throw err_msg;
+		throw MyException(err_msg);
 	}
 
 	int i, j, k;
@@ -485,7 +487,7 @@ StackRestorer::vol_descr_t::~vol_descr_t()
 		delete[] D_MIP;
 }
 
-void StackRestorer::vol_descr_t::computeSubvolDescriptors(real_t *subvol)
+void StackRestorer::vol_descr_t::computeSubvolDescriptors(real_t *subvol)  throw (MyException)
 {
 	//initialization of MIPs and profiles
 	for(int i=0; i<V_dim; i++)
@@ -533,7 +535,7 @@ void StackRestorer::vol_descr_t::computeSubvolDescriptors(real_t *subvol)
 }
 
 
-void StackRestorer::vol_descr_t::computeStackDescriptors(vol_descr_t *subvol_desc, int D_subvols)
+void StackRestorer::vol_descr_t::computeStackDescriptors(vol_descr_t *subvol_desc, int D_subvols)  throw (MyException)
 {
 	//initialization of MIPs and profiles (that are mean intensity projections)
 	for(int i=0; i<V_dim; i++)

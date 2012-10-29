@@ -50,8 +50,8 @@ class StackRestorer
 			~vol_descr_t();
 
 			void init(Stack *new_stk_p, bool is_subvol_desc, int new_V_dim, int new_H_dim, int new_D_dim);
-			void computeSubvolDescriptors(real_t *subvol);
-			void computeStackDescriptors(vol_descr_t *subvol_desc, int D_subvols);
+			void computeSubvolDescriptors(real_t *subvol)  throw (MyException);
+			void computeStackDescriptors(vol_descr_t *subvol_desc, int D_subvols)  throw (MyException);
 			bool isFinalized() {return is_finalized;}
 			bool isSubvolDescriptor() {return is_subvol_descriptor;}
 			void print();
@@ -74,17 +74,17 @@ class StackRestorer
 		StackRestorer(StackedVolume* stk_org, char* file_path);
 		~StackRestorer(void);
 
-		void computeSubvolDescriptors(real_t* data, Stack* stk_p, int subvol_idx, int subvol_D_dim);
-		void computeStackDescriptors(Stack* stk_p);
+		void computeSubvolDescriptors(real_t* data, Stack* stk_p, int subvol_idx, int subvol_D_dim)  throw (MyException);
+		void computeStackDescriptors(Stack* stk_p)  throw (MyException);
 		void finalizeAllDescriptors();
 
-		void repairSlice(real_t* data, int slice_idx, Stack* stk_p, int direction);
-		void repairStack(real_t* data, Stack* stk_p, int direction);
+		void repairSlice(real_t* data, int slice_idx, Stack* stk_p, int direction)  throw (MyException);
+		void repairStack(real_t* data, Stack* stk_p, int direction)  throw (MyException);
 
 		void printSubvolDescriptors(Stack* stk_p, int subvol_idx);
 		void printVolDescriptors(Stack* stk_p);
-		void save(char* file_path);
-		void load(char* file_path);
+		void save(char* file_path) throw (MyException);
+		void load(char* file_path)  throw (MyException);
 };
 
 #endif
