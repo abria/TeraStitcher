@@ -55,17 +55,25 @@
 #include <direct.h>
 static bool make_dir(const char* arg)
 {
+	printf("Creating directory \"%s\" ...", arg);
 	bool done = _mkdir(arg) == 0;
-	return done || errno != ENOENT;
+	bool result = done || errno != ENOENT;
+	printf("%s\n", result? "DONE!" : "ERROR!");
+	return result;
 }
 #else
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <stdio.h>
 static bool make_dir(const char* arg)
 {
-	bool done = mkdir(arg,S_IRWXU | S_IRWXG | S_IROTH | S_IWOTH | S_IXOTH) == 0;
-	return done || errno = EEXIST;
+	printf("Creating directory \"%s\" ...", arg);
+	bool done = mkdir(arg,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == 0;
+	bool result = done || errno == EEXIST;
+	printf("%s\n", result? "DONE!" : "ERROR!");
+	return result;
 }
 #endif
 
