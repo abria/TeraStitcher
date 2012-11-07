@@ -40,9 +40,6 @@
 #endif
 #include <limits>
 #include <list>
-#include <cxcore.h>
-#include <cv.h>
-#include <highgui.h>
 #include "Stack.h"
 #include "Displacement.h"
 
@@ -980,10 +977,10 @@ void StackedVolume::countDisplacements(int& total, float& per_stack_pair)
     for(int i=0; i<N_ROWS; i++)
         for(int j=0; j<N_COLS; j++)
         {
-            total+= STACKS[i][j]->getEAST().size();
-            total+= STACKS[i][j]->getSOUTH().size();
-            per_stack_pair += STACKS[i][j]->getEAST().size();
-            per_stack_pair += STACKS[i][j]->getSOUTH().size();
+            total+= static_cast<int>(STACKS[i][j]->getEAST().size());
+            total+= static_cast<int>(STACKS[i][j]->getSOUTH().size());
+            per_stack_pair += static_cast<int>(STACKS[i][j]->getEAST().size());
+            per_stack_pair += static_cast<int>(STACKS[i][j]->getSOUTH().size());
         }
     per_stack_pair /= 2*(N_ROWS*N_COLS) - N_ROWS - N_COLS;
 }

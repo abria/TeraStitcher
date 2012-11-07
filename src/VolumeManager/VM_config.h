@@ -53,12 +53,20 @@
 //directory creation
 #ifdef _WIN32
 #include <direct.h>
-#define make_dir(V) _mkdir(V)
+static bool make_dir(const char* arg)
+{
+	bool done = _mkdir(arg) == 0;
+	return done || errno != ENOENT;
+}
 #else
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <stdlib.h>
-#define make_dir(V) mkdir(V,S_IRWXU | S_IRWXG | S_IROTH | S_IWOTH | S_IXOTH)
+static bool make_dir(const char* arg)
+{
+	bool done = mkdir(arg,S_IRWXU | S_IRWXG | S_IROTH | S_IWOTH | S_IXOTH) == 0;
+	return done || errno = EEXIST;
+}
 #endif
 
 //file deleting
