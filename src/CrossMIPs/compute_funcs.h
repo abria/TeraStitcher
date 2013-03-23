@@ -61,7 +61,7 @@ real_t compute_NCC ( real_t *im1, real_t *im2, int dimi, int dimj, int stride );
 int compute_MAX_ind ( real_t *vect, int len );
 
 void compute_Neighborhood ( NCC_parms_t *NCC_params, real_t *NCC, int delayu, int delayv, int ind, 
-						    real_t *MIP_1, real_t *MIP_2, int dimu, int dimv, real_t *NCCnew, int &du, int &dv, bool &failed);
+						    real_t *MIP_1, real_t *MIP_2, int dimu, int dimv, real_t *NCCnew, int &du, int &dv, bool &failed)  throw (MyException);
 /* given an NCC map with dimensions delayu x delayv around the initial alignment, the index ind of its maximum
  * and an empty NCC map NCCnew with dimensions NCC_params->wRangeThr x NCC_params->wRangeThr,
  * returns in NCCnew the NCC map with center in the NCC maximum of MIPs MIP_1 and MIP_2, with dimensions dimu x dimv;
