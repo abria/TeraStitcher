@@ -59,13 +59,21 @@ Displacement* PDAlgoMIPNCC::execute(real_t *stk_A, uint32 A_dim_V, uint32 A_dim_
 	if(overlap_direction != dir_horizontal && overlap_direction != dir_vertical)
 		throw MyException("in PDAlgoMIPNCC::execute(...): unsupported overlapping direction");
 
+    // Alessandro & Giulio - 21/08/2013 - to handle 2D stitching
+    // (the more general case of thinner stacks is not managed since the CrossMIPs library has not been tested when the delay parameters are different)
+    //
+    // Alessandro - 21/08/2013 at 20:24: setting displ_max_D to 0 causes also wRangeThr to be set to 0 (otherwise another check in CrossMIPs will throw an exception)
+    // then it is better to handle this special case inside CrossMIPs, at the moment.
+    //if(A_dim_D == 1 && B_dim_D == 1)
+        //displ_max_D = 0;
+
 	// Alessandro - 31/05/2013 - parameters MUST be passed (and controlled) by the caller
 	NCC_parms_t params;
 	params.enhance      = false;
 	params.maxIter		= 2;
 	params.maxThr       = 0.10f;
 	params.UNR_NCC      = S_NCC_PEAK_MIN;
-	params.wRangeThr    = MIN(std::min(std::min(displ_max_V, displ_max_H), displ_max_D), S_NCC_WIDTH_MAX);
+    params.wRangeThr    = MIN(std::min(std::min(displ_max_V, displ_max_H), displ_max_D), S_NCC_WIDTH_MAX-1);
 	params.INF_W        = params.wRangeThr + 1;
 	params.widthThr     = 0.75f;
 	params.INV_COORD    = 0;
@@ -78,8 +86,12 @@ Displacement* PDAlgoMIPNCC::execute(real_t *stk_A, uint32 A_dim_V, uint32 A_dim_
 	displ->delays[0]  = displ_max_V;
 	displ->delays[1]  = displ_max_H;
 	displ->delays[2]  = displ_max_D;
-	displ->wRangeThr = params.wRangeThr;
-	displ->invWidth  = params.INF_W;
+    displ->wRangeThrs[0] = params.wRangeThr;
+    displ->wRangeThrs[1] = params.wRangeThr;
+    displ->wRangeThrs[2] = params.wRangeThr;
+    displ->invWidths[0]  = params.INF_W;
+    displ->invWidths[1]  = params.INF_W;
+    displ->invWidths[2]  = params.INF_W;
 
 	delete descr;
 
