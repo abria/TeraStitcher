@@ -58,7 +58,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (MyException)
 	TCLAP::ValueArg<std::string> p_volume_load_path("","volin","Directory path where the volume is stored.",false,"null","string");
 	TCLAP::ValueArg<std::string> p_volume_save_path("","volout","Directory path where to save the stitched volume.",false,"null","string");
 	TCLAP::ValueArg<std::string> p_project_load_path("","projin","File path of the XML project file to be loaded.",false,"null","string");
-	TCLAP::ValueArg<std::string> p_project_save_path("","projout","File path of the XML project file to be saved.",false,"null","string");
+	TCLAP::ValueArg<std::string> p_project_save_path("","projout","File path of the XML project file to be saved.",false,"","string");
 	TCLAP::ValueArg<int> p_refsys_1("","ref1","First axis of the used reference system.                              1  = Vertical,      2 = Horizontal,      3 = Depth,                              -1 = inv_Vertical, -2 = inv_Horizontal, -3 = inv_Depth.",false,CLI_DEF_REF1,"integer");
 	TCLAP::ValueArg<int> p_refsys_2("","ref2","Second axis of the used reference system.                              1  = Vertical,      2 = Horizontal,      3 = Depth,                              -1 = inv_Vertical, -2 = inv_Horizontal, -3 = inv_Depth.",false,CLI_DEF_REF2,"integer");
 	TCLAP::ValueArg<int> p_refsys_3("","ref3","Third axis of the used reference system.                              1  = Vertical,      2 = Horizontal,      3 = Depth,                              -1 = inv_Vertical, -2 = inv_Horizontal, -3 = inv_Depth.",false,CLI_DEF_REF3,"integer");
@@ -448,7 +448,7 @@ void TeraStitcherCLI::checkParams() throw (MyException)
 string TeraStitcherCLI::getHelpText()
 {
 	stringstream helptext;
-	helptext << "TeraStitcher v0.9\n";
+	helptext << "TeraStitcher v1.1.0\n";
 	helptext << "  developed at University Campus Bio-Medico of Rome by:\n";
 	helptext << "  -\tAlessandro Bria (email: a.bria@unicas.it)                            ";
 	helptext << "   \tPhD student at Departement of Electrical and Information Engineering";

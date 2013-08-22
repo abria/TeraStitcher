@@ -40,6 +40,12 @@
 #else
 	#include <dirent.h>
 #endif
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
 #include <list>
 #include <string>
 #include <cv.h>
@@ -124,6 +130,9 @@ void Stack::init()
 	}
 	entries_lev3.sort();
 	DEPTH = (int)entries_lev3.size();
+
+	//closing dir
+	closedir(cur_dir_lev3);
 
 	//checking if current stack is not empty
 	if(DEPTH == 0)
