@@ -57,7 +57,7 @@ class StackedVolume
 		Stack ***STACKS;					//2-D array of <Stack*>	
 
 		//***OBJECT PRIVATE METHODS****
-                StackedVolume(void){}
+        StackedVolume(void){}
 
 		//initialization methods
 		void init() throw (MyException);
@@ -79,7 +79,7 @@ class StackedVolume
 	public:
 
 		//CONSTRUCTORS-DECONSTRUCTOR
-                StackedVolume(const char* _stacks_dir, ref_sys reference_system, float VXL_1=0, float VXL_2=0, float VXL_3=0, bool overwrite_mdata=false) throw (MyException);
+        StackedVolume(const char* _stacks_dir, ref_sys reference_system, float VXL_1=0, float VXL_2=0, float VXL_3=0, bool overwrite_mdata=false) throw (MyException);
 		StackedVolume(const char *xml_filepath) throw (MyException);
 		~StackedVolume();
 
@@ -113,29 +113,30 @@ class StackedVolume
 
 		//loads/saves metadata from/in the given xml filename
 		void loadXML(const char *xml_filename);
-                void saveXML(const char *xml_filename=0, const char *xml_filepath=0) throw (MyException);
+		void initFromXML(const char *xml_filename);
+        void saveXML(const char *xml_filename=0, const char *xml_filepath=0) throw (MyException);
 
 		//inserts the given displacement in the given stacks
 		void insertDisplacement(Stack *stk_A, Stack *stk_B, Displacement *displacement) throw (MyException);
 
-                /**********************************************************************************
-                * UTILITY methods
-                ***********************************************************************************/
+        /**********************************************************************************
+        * UTILITY methods
+        ***********************************************************************************/
 
-                //counts the total number of displacements and the number of displacements per pair of adjacent stacks
-                void countDisplacements(int& total, float& per_stack_pair);
+        //counts the total number of displacements and the number of displacements per pair of adjacent stacks
+        void countDisplacements(int& total, float& per_stack_pair);
 
-                //counts the number of single-direction displacements having a reliability measure above the given threshold
-                void countReliableSingleDirectionDisplacements(float threshold, int& total, int& reliable);
+        //counts the number of single-direction displacements having a reliability measure above the given threshold
+        void countReliableSingleDirectionDisplacements(float threshold, int& total, int& reliable);
 
-                //counts the number of stitchable stacks given the reliability threshold
-                int countStitchableStacks(float threshold);
+        //counts the number of stitchable stacks given the reliability threshold
+        int countStitchableStacks(float threshold);
 
 		//extract absolute path from file path(i.e. "C:/Users/Alex/Desktop/" from "C:/Users/Alex/Desktop/text.xml")
 		static std::string extractPathFromFilePath(const char* file_path);
 
 		//returns true if file exists at the given filepath
-                static bool fileExists(const char *filepath)  throw (MyException);
+		static bool fileExists(const char *filepath)  throw (MyException);
 };
 
 //******* ABSTRACT TYPES DEFINITIONS *******
