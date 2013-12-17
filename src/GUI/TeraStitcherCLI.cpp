@@ -43,7 +43,7 @@ TeraStitcherCLI::TeraStitcherCLI(void)
 void TeraStitcherCLI::readParams(int argc, char** argv) throw (MyException)
 {
 	//command line object definition
-	TCLAP::CmdLine cmd(getHelpText(), '=', "0.9");
+	TCLAP::CmdLine cmd(getHelpText(), '=', "1.3.0");
 
 	//argument objects definitions
 	TCLAP::SwitchArg p_stitch("S","stitch","Stitches a volume by executing the entire pipeline (steps 1-6).",false);
@@ -150,9 +150,9 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (MyException)
 	if(p_test.isSet() && !(
 		p_volume_load_path.isSet() && 
 		p_refsys_1.isSet() && p_refsys_2.isSet() && p_refsys_3.isSet() &&
-		p_vxl_1.isSet() && p_vxl_2.isSet() && p_vxl_3.isSet() ))
+		p_vxl_1.isSet() && p_vxl_2.isSet() && p_vxl_3.isSet() ) && !p_project_load_path.isSet())
 	{
-		sprintf(errMsg, "One or more required arguments missing for --%s!\nUSAGE is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s>", 
+		sprintf(errMsg, "One or more required arguments missing for --%s!\nUSAGE is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s>\n\nor\n\n--%s\n\t--%s%c<%s>", 
 			p_test.getName().c_str(), p_test.getName().c_str(),
 			p_volume_load_path.getName().c_str(), cmd.getDelimiter(), "string",
 			p_refsys_1.getName().c_str(), cmd.getDelimiter(), "integer",
@@ -160,7 +160,9 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (MyException)
 			p_refsys_3.getName().c_str(), cmd.getDelimiter(), "integer",
 			p_vxl_1.getName().c_str(), cmd.getDelimiter(), "real",
 			p_vxl_2.getName().c_str(), cmd.getDelimiter(), "real",
-			p_vxl_3.getName().c_str(), cmd.getDelimiter(), "real");
+			p_vxl_3.getName().c_str(), cmd.getDelimiter(), "real",
+			p_test.getName().c_str(),
+			p_project_load_path.getName().c_str(), cmd.getDelimiter(), "string");
 		throw MyException(errMsg);
 	}
 
@@ -447,7 +449,7 @@ void TeraStitcherCLI::checkParams() throw (MyException)
 string TeraStitcherCLI::getHelpText()
 {
 	stringstream helptext;
-	helptext << "TeraStitcher v1.1.0\n";
+	helptext << "TeraStitcher v1.3.0\n";
 	helptext << "  developed at University Campus Bio-Medico of Rome by:\n";
 	helptext << "  -\tAlessandro Bria (email: a.bria@unicas.it)                            ";
 	helptext << "   \tPhD student at Departement of Electrical and Information Engineering";

@@ -69,7 +69,7 @@ class Stack
 	public:
 
 		//CONSTRUCTORS
-		Stack(StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, char* _DIR_NAME);
+		Stack(StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char* _DIR_NAME);
 		Stack(StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file);
 		~Stack(void);
 

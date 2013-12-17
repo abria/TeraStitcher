@@ -53,7 +53,7 @@
 using namespace std;
 
 //CONSTRUCTOR WITH ARGUMENTS
-Stack::Stack(StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, char* _DIR_NAME)
+Stack::Stack(StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char* _DIR_NAME)
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin Stack::Stack(StackedVolume* _CONTAINER, int _ROW_INDEX=%d, int _COL_INDEX=%d, char* _DIR_NAME=%s)\n",
