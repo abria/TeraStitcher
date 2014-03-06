@@ -43,7 +43,7 @@ TeraStitcherCLI::TeraStitcherCLI(void)
 void TeraStitcherCLI::readParams(int argc, char** argv) throw (MyException)
 {
 	//command line object definition
-	TCLAP::CmdLine cmd(getHelpText(), '=', "1.3.0");
+	TCLAP::CmdLine cmd(getHelpText(), '=', "1.3.1");
 
 	//argument objects definitions
 	TCLAP::SwitchArg p_stitch("S","stitch","Stitches a volume by executing the entire pipeline (steps 1-6).",false);
@@ -54,6 +54,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (MyException)
 	TCLAP::SwitchArg p_placetiles("5","placetiles","Step 5: places tiles in the image space using a globally optimal tiles placement algorithm.", false);
 	TCLAP::SwitchArg p_merge("6","merge","Step 6: merges tiles at different resolutions.", false);
 	TCLAP::SwitchArg p_test("t","test","Stitches the middle slice of the whole volume and saves it locally. Stage coordinates will be used, so this can be used to test their precision as well as the selected reference system.",false);
+	TCLAP::SwitchArg p_dump("d","dump","Print the entire content of metadata file mdata.bin",false);
 	TCLAP::ValueArg<std::string> p_volume_load_path("","volin","Directory path where the volume is stored.",false,"null","string");
 	TCLAP::ValueArg<std::string> p_volume_save_path("","volout","Directory path where to save the stitched volume.",false,"null","string");
 	TCLAP::ValueArg<std::string> p_project_load_path("","projin","File path of the XML project file to be loaded.",false,"null","string");
@@ -126,6 +127,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (MyException)
 	cmd.add(p_project_load_path);
 	cmd.add(p_volume_save_path);
 	cmd.add(p_volume_load_path);
+	cmd.add(p_dump);
 	cmd.add(p_stitch);
 	cmd.add(p_merge);
 	cmd.add(p_placetiles);
@@ -333,6 +335,15 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (MyException)
 			p_saved_img_format.getName().c_str(), cmd.getDelimiter(), "string");
 		throw MyException(errMsg);
 	}
+
+	//dump
+	if(p_dump.isSet() &&!(p_volume_load_path.isSet()))
+	{
+		sprintf(errMsg, "One or more required arguments missing for --%s!\n\nUSAGE is:\n--%s\n\t--%s%c<%s>",
+			p_dump.getName().c_str(), p_dump.getName().c_str(),
+			p_volume_load_path.getName().c_str(), cmd.getDelimiter(), "string");
+		throw MyException(errMsg);
+	}
 		
 	//restoring parameters
 	if(p_enable_restore.isSet() && !p_restoring_direction.isSet())
@@ -354,11 +365,12 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (MyException)
 
 	//checking that at least one operation has been selected
 	if(!(p_test.isSet() || p_import.isSet() || p_computedisplacements.isSet() || p_projdisplacements.isSet() || 
-		 p_thresholdisplacements.isSet() || p_placetiles.isSet() || p_merge.isSet() || p_stitch.isSet()))
+		 p_thresholdisplacements.isSet() || p_placetiles.isSet() || p_merge.isSet() || p_stitch.isSet() || p_dump.isSet()))
 		throw MyException("No operation selected. See --help for usage.");
 
 
 	//importing parameters
+	this->dumpMData = p_dump.getValue();
 	this->test = p_test.getValue();
 	this->stitch = p_stitch.getValue();
 	this->import = p_import.getValue();
@@ -449,7 +461,7 @@ void TeraStitcherCLI::checkParams() throw (MyException)
 string TeraStitcherCLI::getHelpText()
 {
 	stringstream helptext;
-	helptext << "TeraStitcher v1.3.0\n";
+	helptext << "TeraStitcher v1.3.1\n";
 	helptext << "  developed at University Campus Bio-Medico of Rome by:\n";
 	helptext << "  -\tAlessandro Bria (email: a.bria@unicas.it)                            ";
 	helptext << "   \tPhD student at Departement of Electrical and Information Engineering";
