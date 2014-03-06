@@ -200,11 +200,16 @@ int main(int argc, char** argv)
 			                     false, false, S_NO_BLENDING, true, false, cli.img_format.c_str(), cli.img_depth);
 			defaultOutputFileName = "xml_test";
 		}
+		if(cli.dumpMData)
+		{
+			StackedVolume::dumpMData(cli.volume_load_path.c_str());
+		}
 		total_time += TIME(0);
 
 		//saving project file and computation times
-		volume->saveXML(0, fillPath(cli.projfile_save_path, volume->getSTACKS_DIR(), defaultOutputFileName, "xml").c_str());
-		if(cli.save_execution_times)
+		if(volume)
+			volume->saveXML(0, fillPath(cli.projfile_save_path, volume->getSTACKS_DIR(), defaultOutputFileName, "xml").c_str());
+		if(stitcher && cli.save_execution_times)
 			stitcher->saveComputationTimes(cli.execution_times_filename.c_str(), *volume, total_time);
 
 		//releasing objects
