@@ -49,6 +49,7 @@ class TeraStitcherCLI
 		bool placetiles;						//globally optimal tiles placement step
 		bool mergetiles;						//tiles merging step
 		bool dumpMData;							//dump mdata.bin
+		bool ignoreUnequalStacksDepth;			//ignore unequal stacks depth (i.e., number of slices).
 
 		//STITCHING pipeline parameters
 		string volume_load_path;				//directory path where the volume is stored used during the volume import step

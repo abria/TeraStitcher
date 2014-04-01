@@ -43,7 +43,7 @@ TeraStitcherCLI::TeraStitcherCLI(void)
 void TeraStitcherCLI::readParams(int argc, char** argv) throw (MyException)
 {
 	//command line object definition
-	TCLAP::CmdLine cmd(getHelpText(), '=', "1.3.1");
+	TCLAP::CmdLine cmd(getHelpText(), '=', "1.3.2");
 
 	//argument objects definitions
 	TCLAP::SwitchArg p_stitch("S","stitch","Stitches a volume by executing the entire pipeline (steps 1-6).",false);
@@ -90,8 +90,10 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (MyException)
 	TCLAP::SwitchArg p_hide_progress_bar("","noprogressbar","Disables progress bar and estimated time remaining", false);
 	TCLAP::ValueArg<std::string> p_saved_img_format("","imformat","Format of saved images (\"tif\" is default). ",false,"tif","string");
 	TCLAP::ValueArg<int> p_saved_img_depth("","imdepth","Bitdepth of saved images (\"8\" is default). ",false,8,"integer");
+	TCLAP::SwitchArg p_ignoreUnequalStacksDepth("","ignore_unequal_stacks_depth","If enabled, differences among stacks in terms of number of slices are ignored. The number of slices of the smallest stack will be assumed as the dimension along D for all the stacks",false);
 
 	//argument objects must be inserted using LIFO policy (last inserted, first shown)
+	cmd.add(p_ignoreUnequalStacksDepth);
 	cmd.add(p_hide_progress_bar);
 	cmd.add(p_execution_times_file);
 	cmd.add(p_save_execution_times);
@@ -443,6 +445,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (MyException)
 			sprintf(errMsg, "Invalid argument \"%s\" for parameter --%s! Allowed values are:\n-\"%s\"\n-\"%s\"\n-\"%s\"\n-\"%s\"\n-\"%s\"\n-\"%s\"\n",	algorithms[i].c_str(), p_algo.getName().c_str(), S_NCC_NAME, S_FATPM_SP_TREE_NAME,S_FATPM_SCAN_V_NAME,S_FATPM_SCAN_H_NAME, S_NO_BLENDING_NAME, S_SINUSOIDAL_BLENDING_NAME);
 			throw MyException(errMsg);
 		}
+	this->ignoreUnequalStacksDepth = p_ignoreUnequalStacksDepth.getValue();
 }
 
 //checks parameters correctness
@@ -461,7 +464,7 @@ void TeraStitcherCLI::checkParams() throw (MyException)
 string TeraStitcherCLI::getHelpText()
 {
 	stringstream helptext;
-	helptext << "TeraStitcher v1.3.1\n";
+	helptext << "TeraStitcher v1.3.2\n";
 	helptext << "  developed at University Campus Bio-Medico of Rome by:\n";
 	helptext << "  -\tAlessandro Bria (email: a.bria@unicas.it)                            ";
 	helptext << "   \tPhD student at Departement of Electrical and Information Engineering";

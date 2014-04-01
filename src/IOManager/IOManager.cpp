@@ -157,7 +157,7 @@ real_t* IOManager::loadImageStack(char **image_filenames,	     int image_filepat
 												 int first_file, int last_file)			   throw (MyException)
 {
 	#if IO_M_VERBOSE > 4
-	printf("\t\t\t\tin IOManager::loadImageStack(..., first_file=%d, last_file=%d)\n",first_file, last_file);
+	printf("\t\t\t\tin IOManager::loadImageStack(..., image_filepaths_size = %d, base_path = %s, first_file=%d, last_file=%d)\n", image_filepaths_size, base_path ? base_path : "null", first_file, last_file);
 	#endif
 
 	//LOCAL VARIABLES
@@ -175,6 +175,9 @@ real_t* IOManager::loadImageStack(char **image_filenames,	     int image_filepat
 	//initializations
 	first_file = (first_file == -1 ? 0						  : first_file);
 	last_file  = (last_file  == -1 ? image_filepaths_size - 1 : last_file );
+	first_file = std::min(first_file, image_filepaths_size-1);
+	last_file = std::min(last_file, image_filepaths_size-1);
+	//printf("[%d, %d]\n", first_file, last_file);
 	scale_factor_16b = 65535.0F;
 	scale_factor_8b  = 255.0F;
 	

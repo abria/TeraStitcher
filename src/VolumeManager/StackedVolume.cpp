@@ -56,7 +56,7 @@ const char* axis_to_str(axis ax)
     else                         return "unknown";
 }
 
-StackedVolume::StackedVolume(const char* _stacks_dir, ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3, bool overwrite_mdata) throw (MyException)
+StackedVolume::StackedVolume(const char* _stacks_dir, ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3, bool overwrite_mdata, bool make_n_slices_equal /*= false*/) throw (MyException)
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin StackedVolume::StackedVolume(_stacks_dir=%s, reference_system = {%d,%d,%d}, VXL_1 = %.2f, VXL_2 = %.2f, VXL_3 = %.2f)\n", 
@@ -80,9 +80,23 @@ StackedVolume::StackedVolume(const char* _stacks_dir, ref_sys reference_system, 
 		applyReferenceSystem(reference_system, VXL_1, VXL_2, VXL_3);
 		saveBinaryMetadata(mdata_filepath);
 	}
+
+	// check all stacks have the same number of slices (@ADDED by Alessandro on 2014-03-06)
+	for(int i=0; i<N_ROWS; i++)
+		for(int j=0; j<N_COLS; j++)
+		{
+			if(STACKS[i][j]->getDEPTH() != N_SLICES)
+			{
+				if(make_n_slices_equal)
+					N_SLICES = min(N_SLICES, STACKS[i][j]->getDEPTH());
+				else
+					throw MyException(strprintf("in StackedVolume::StackedVolume(): unequal number of slices detected. Stack \"%s\" has %d, stack \"%s\" has %d",
+				                      STACKS[0][0]->getDIR_NAME(), STACKS[0][0]->getDEPTH(), STACKS[i][j]->getDIR_NAME(), STACKS[i][j]->getDEPTH()).c_str());
+			}
+		}
 }
 
-StackedVolume::StackedVolume(const char *xml_filepath) throw (MyException)
+StackedVolume::StackedVolume(const char *xml_filepath, bool make_n_slices_equal /*= false*/) throw (MyException)
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin StackedVolume::StackedVolume(xml_filepath=%s)\n", xml_filepath);
@@ -116,6 +130,20 @@ StackedVolume::StackedVolume(const char *xml_filepath) throw (MyException)
 		initFromXML(xml_filepath);
 		saveBinaryMetadata(mdata_filepath);
 	}
+
+	// check all stacks have the same number of slices (@ADDED by Alessandro on 2014-03-06)
+	for(int i=0; i<N_ROWS; i++)
+		for(int j=0; j<N_COLS; j++)
+		{
+			if(STACKS[i][j]->getDEPTH() != N_SLICES)
+			{
+				if(make_n_slices_equal)
+					N_SLICES = min(N_SLICES, STACKS[i][j]->getDEPTH());
+				else
+					throw MyException(strprintf("in StackedVolume::StackedVolume(): unequal number of slices detected. Stack \"%s\" has %d, stack \"%s\" has %d",
+				                      STACKS[0][0]->getDIR_NAME(), STACKS[0][0]->getDEPTH(), STACKS[i][j]->getDIR_NAME(), STACKS[i][j]->getDEPTH()).c_str());
+			}
+		}
 }
 
 StackedVolume::~StackedVolume()

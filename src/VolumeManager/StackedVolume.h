@@ -84,8 +84,8 @@ class StackedVolume
 	public:
 
 		//CONSTRUCTORS-DECONSTRUCTOR
-        StackedVolume(const char* _stacks_dir, ref_sys reference_system, float VXL_1=0, float VXL_2=0, float VXL_3=0, bool overwrite_mdata=false) throw (MyException);
-		StackedVolume(const char *xml_filepath) throw (MyException);
+        StackedVolume(const char* _stacks_dir, ref_sys reference_system, float VXL_1=0, float VXL_2=0, float VXL_3=0, bool overwrite_mdata=false, bool make_n_slices_equal = false) throw (MyException);
+		StackedVolume(const char *xml_filepath, bool make_n_slices_equal = false) throw (MyException);
 		~StackedVolume();
 
 		// ******GET METHODS******
