@@ -155,11 +155,11 @@ int main(int argc, char** argv)
 		//importing volume from directory or XML file
 		StackedVolume* volume = 0;
 		if(cli.test && cli.projfile_load_path.compare("null")!=0)
-			volume = new StackedVolume(cli.projfile_load_path.c_str());
+			volume = new StackedVolume(cli.projfile_load_path.c_str(), cli.ignoreUnequalStacksDepth);
 		else if(cli.import || (cli.computedisplacements && cli.projfile_load_path.compare("null")==0) || cli.stitch || cli.test)
-			volume = new StackedVolume(cli.volume_load_path.c_str(), cli.reference_system, cli.VXL_1, cli.VXL_2, cli.VXL_3);
+			volume = new StackedVolume(cli.volume_load_path.c_str(), cli.reference_system, cli.VXL_1, cli.VXL_2, cli.VXL_3, false, cli.ignoreUnequalStacksDepth);
 		else if( (cli.computedisplacements && cli.volume_load_path.compare("null")==0) || cli.projdisplacements || cli.thresholddisplacements || cli.placetiles || cli.mergetiles)
-			volume = new StackedVolume(cli.projfile_load_path.c_str());
+			volume = new StackedVolume(cli.projfile_load_path.c_str(), cli.ignoreUnequalStacksDepth);
 
 		//processing volume		
 		double total_time = -TIME(0);
