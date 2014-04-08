@@ -4,6 +4,7 @@
 include_directories (${TeraStitcher_SOURCE_DIR}/IOManager)
 include_directories (${TeraStitcher_SOURCE_DIR}/Stitcher)
 include_directories (${TeraStitcher_SOURCE_DIR}/TinyXML)
+include_directories (${TeraStitcher_SOURCE_DIR}/../include)
 
 # Adds a library called volumemanager (volumemanager.a under Linux, volumemanager.lib under Windows) from the all .h and .cpp files
 file(GLOB volumemanager_headers *.h)

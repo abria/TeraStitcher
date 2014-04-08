@@ -26,6 +26,7 @@
 ********************************************************************************************************************************************************************************************/
 
 #include "TeraStitcherCLI.h"
+#include "VM_config.h"
 #include "S_config.h"
 #include "GUI_config.h"
 #include <CmdLine.h>
@@ -43,7 +44,7 @@ TeraStitcherCLI::TeraStitcherCLI(void)
 void TeraStitcherCLI::readParams(int argc, char** argv) throw (MyException)
 {
 	//command line object definition
-	TCLAP::CmdLine cmd(getHelpText(), '=', "1.3.2");
+	TCLAP::CmdLine cmd(getHelpText(), '=', "1.4.0");
 
 	//argument objects definitions
 	TCLAP::SwitchArg p_stitch("S","stitch","Stitches a volume by executing the entire pipeline (steps 1-6).",false);
@@ -91,8 +92,12 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (MyException)
 	TCLAP::ValueArg<std::string> p_saved_img_format("","imformat","Format of saved images (\"tif\" is default). ",false,"tif","string");
 	TCLAP::ValueArg<int> p_saved_img_depth("","imdepth","Bitdepth of saved images (\"8\" is default). ",false,8,"integer");
 	TCLAP::SwitchArg p_ignoreUnequalStacksDepth("","ignore_unequal_stacks_depth","If enabled, differences among stacks in terms of number of slices are ignored. The number of slices of the smallest stack will be assumed as the dimension along D for all the stacks",false);
+	TCLAP::ValueArg<std::string> p_img_regex("","imregex","A regular expression to be used to match image filenames when the volume is imported (by default, all the images with supported file extension are found)",false,"","string");
+	TCLAP::ValueArg<std::string> p_img_channel_select("","imchannel","The channel(s) to be selected when the images are loaded. Allowed values are {\"all\",\"R\",\"G\",\"B\"}. Default is \"all\" (color images will be converted to grayscale).",false,"all","string");
 
 	//argument objects must be inserted using LIFO policy (last inserted, first shown)
+	cmd.add(p_img_channel_select);
+	cmd.add(p_img_regex);
 	cmd.add(p_ignoreUnequalStacksDepth);
 	cmd.add(p_hide_progress_bar);
 	cmd.add(p_execution_times_file);
@@ -420,6 +425,17 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (MyException)
 	this->show_progress_bar = !p_hide_progress_bar.getValue();
 	this->img_format = p_saved_img_format.getValue();
 	this->img_depth = p_saved_img_depth.getValue();
+	volumemanager::IMG_FILTER_REGEX = p_img_regex.getValue();
+	if(p_img_channel_select.getValue().compare("all") == 0)
+		iomanager::CHANNEL_SELECTION = iomanager::ALL;
+	else if(p_img_channel_select.getValue().compare("R") == 0)
+		iomanager::CHANNEL_SELECTION = iomanager::R;
+	else if(p_img_channel_select.getValue().compare("G") == 0)
+		iomanager::CHANNEL_SELECTION = iomanager::G;
+	else if(p_img_channel_select.getValue().compare("B") == 0)
+		iomanager::CHANNEL_SELECTION = iomanager::B;
+	else
+		throw MyException(iomanager::strprintf("Invalid argument \"%s\" for parameter --%s! Allowed values are {\"all\",\"R\",\"G\",\"B\"}", p_img_channel_select.getValue().c_str(), p_img_channel_select.getName().c_str()).c_str());
 
 	//the [algorithm] parameter is multi-arguments
 	vector<string> algorithms = p_algo.getValue();
@@ -464,7 +480,7 @@ void TeraStitcherCLI::checkParams() throw (MyException)
 string TeraStitcherCLI::getHelpText()
 {
 	stringstream helptext;
-	helptext << "TeraStitcher v1.3.2\n";
+	helptext << "TeraStitcher v1.4.0\n";
 	helptext << "  developed at University Campus Bio-Medico of Rome by:\n";
 	helptext << "  -\tAlessandro Bria (email: a.bria@unicas.it)                            ";
 	helptext << "   \tPhD student at Departement of Electrical and Information Engineering";
