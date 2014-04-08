@@ -34,7 +34,7 @@
 using namespace std;
 
 #ifdef _VAA3D_PLUGIN_MODE
-#include "presentation/PMain.h"
+#include "../../presentation/PMain.h"
 #endif
 
 

@@ -42,6 +42,14 @@
 #include "Stack.h"
 #include "Displacement.h"
 
+#ifdef min
+#undef min
+#endif
+
+#ifdef max
+#undef max
+#endif
+
 using namespace std;
 
 const char* axis_to_str(axis ax)
@@ -88,7 +96,7 @@ StackedVolume::StackedVolume(const char* _stacks_dir, ref_sys reference_system, 
 			if(STACKS[i][j]->getDEPTH() != N_SLICES)
 			{
 				if(make_n_slices_equal)
-					N_SLICES = min(N_SLICES, STACKS[i][j]->getDEPTH());
+                    N_SLICES = std::min(N_SLICES, static_cast<uint16>(STACKS[i][j]->getDEPTH()));
 				else
 					throw MyException(strprintf("in StackedVolume::StackedVolume(): unequal number of slices detected. Stack \"%s\" has %d, stack \"%s\" has %d",
 				                      STACKS[0][0]->getDIR_NAME(), STACKS[0][0]->getDEPTH(), STACKS[i][j]->getDIR_NAME(), STACKS[i][j]->getDEPTH()).c_str());
@@ -138,7 +146,7 @@ StackedVolume::StackedVolume(const char *xml_filepath, bool make_n_slices_equal 
 			if(STACKS[i][j]->getDEPTH() != N_SLICES)
 			{
 				if(make_n_slices_equal)
-					N_SLICES = min(N_SLICES, STACKS[i][j]->getDEPTH());
+                    N_SLICES = std::min(N_SLICES, static_cast<uint16>(STACKS[i][j]->getDEPTH()));
 				else
 					throw MyException(strprintf("in StackedVolume::StackedVolume(): unequal number of slices detected. Stack \"%s\" has %d, stack \"%s\" has %d",
 				                      STACKS[0][0]->getDIR_NAME(), STACKS[0][0]->getDEPTH(), STACKS[i][j]->getDIR_NAME(), STACKS[i][j]->getDEPTH()).c_str());
@@ -489,8 +497,8 @@ void StackedVolume::loadXML(const char *xml_filepath)
 void StackedVolume::initFromXML(const char *xml_filepath)
 {
 	#if VM_VERBOSE > 3
-	printf("\t\t\t\tin StackedVolume::initFromXML(char *xml_filename = %s)\n", xml_filename);
-		#endif
+    printf("\t\t\t\tin StackedVolume::initFromXML(char *xml_filename = %s)\n", xml_filepath);
+    #endif
 
 	TiXmlDocument xml;
 	if(!xml.LoadFile(xml_filepath))
@@ -568,7 +576,7 @@ void StackedVolume::saveXML(const char *xml_filename, const char *xml_filepath) 
 	//loading previously initialized XML file 
         if(!xml.LoadFile(xml_abs_path))
 	{
-		char errMsg[IO_STATIC_STRINGS_SIZE];
+        char errMsg[5000];
                 sprintf(errMsg, "in StackedVolume::saveToXML(...) : unable to load xml file at \"%s\"", xml_abs_path);
 		throw MyException(errMsg);
 	}
@@ -1356,9 +1364,9 @@ void StackedVolume::dumpMData(const char* volumePath) throw (MyException)
 				printf("\t<DIR_NAME> = %s\n\n", buffer);
 
 
-			for(int i = 0; i < depth; i++)
+			for(int k = 0; k < depth; k++)
 			{
-				printf("\t\tSlice %d/%d\n", i+1, depth);
+				printf("\t\tSlice %d/%d\n", k+1, depth);
 
 				// <str_size> field
 				if(fread(&str_size, sizeof(uint16), 1, f) != 1)
