@@ -438,11 +438,7 @@ void StackedVolume::loadXML(const char *xml_filepath)
 	//reading fields and checking coherence with metadata previously read from VM_BIN_METADATA_FILE_NAME
 	TiXmlElement * pelem = hRoot.FirstChildElement("stacks_dir").Element();
 	if(strcmp(pelem->Attribute("value"), stacks_dir) != 0)
-	{
-		char errMsg[2000];
-		sprintf(errMsg, "in StackedVolume::loadXML(...): Mismatch in <stacks_dir> field between xml file (=\"%s\") and %s (=\"%s\").", pelem->Attribute("value"), VM_BIN_METADATA_FILE_NAME, stacks_dir);
-		throw MyException(errMsg);
-	}
+		throw MyException(strprintf("in StackedVolume::loadXML(...): Mismatch in <stacks_dir> field between xml file (=\"%s\") and %s (=\"%s\").", pelem->Attribute("value"), VM_BIN_METADATA_FILE_NAME, stacks_dir).c_str());
 	pelem = hRoot.FirstChildElement("voxel_dims").Element();
 	float VXL_V_read=0.0f, VXL_H_read=0.0f, VXL_D_read=0.0f;
 	pelem->QueryFloatAttribute("V", &VXL_V_read);
