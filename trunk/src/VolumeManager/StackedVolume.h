@@ -76,10 +76,10 @@ class StackedVolume
 		void rotate(int theta);
 
 		//mirrors stacks matrix along mrr_axis (accepted values are mrr_axis=1,2,3)
-		void mirror(axis mrr_axis);
+		void mirror(axis mrr_axis) throw (MyException);
 
 		//extract spatial coordinates (in millimeters) of given Stack object reading directory and filenames as spatial coordinates
-		void extractCoordinates(Stack* stk, int z, int* crd_1, int* crd_2, int* crd_3);
+		void extractCoordinates(Stack* stk, int z, int* crd_1, int* crd_2, int* crd_3) throw (MyException);
 
 	public:
 
@@ -117,8 +117,8 @@ class StackedVolume
 		void print();
 
 		//loads/saves metadata from/in the given xml filename
-		void loadXML(const char *xml_filename);
-		void initFromXML(const char *xml_filename);
+		void loadXML(const char *xml_filename) throw (MyException);
+		void initFromXML(const char *xml_filename) throw (MyException);
         void saveXML(const char *xml_filename=0, const char *xml_filepath=0) throw (MyException);
 
 		//inserts the given displacement in the given stacks

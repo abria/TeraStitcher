@@ -44,7 +44,7 @@ TeraStitcherCLI::TeraStitcherCLI(void)
 void TeraStitcherCLI::readParams(int argc, char** argv) throw (MyException)
 {
 	//command line object definition
-	TCLAP::CmdLine cmd(getHelpText(), '=', "1.4.0");
+	TCLAP::CmdLine cmd(getHelpText(), '=', "1.4.2");
 
 	//argument objects definitions
 	TCLAP::SwitchArg p_stitch("S","stitch","Stitches a volume by executing the entire pipeline (steps 1-6).",false);
@@ -480,7 +480,7 @@ void TeraStitcherCLI::checkParams() throw (MyException)
 string TeraStitcherCLI::getHelpText()
 {
 	stringstream helptext;
-	helptext << "TeraStitcher v1.4.0\n";
+	helptext << "TeraStitcher v1.4.2\n";
 	helptext << "  developed at University Campus Bio-Medico of Rome by:\n";
 	helptext << "  -\tAlessandro Bria (email: a.bria@unicas.it)                            ";
 	helptext << "   \tPhD student at Departement of Electrical and Information Engineering";

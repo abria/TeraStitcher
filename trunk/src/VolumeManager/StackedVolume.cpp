@@ -122,6 +122,7 @@ StackedVolume::StackedVolume(const char *xml_filepath, bool make_n_slices_equal 
     TiXmlElement * pelem = hRoot.FirstChildElement("stacks_dir").Element();
     this->stacks_dir = new char[strlen(pelem->Attribute("value"))+1];
     strcpy(this->stacks_dir, pelem->Attribute("value"));
+	xml.Clear();
 
 	//trying to unserialize an already existing metadata file, if it doesn't exist the full initialization procedure is performed and metadata is saved
 	char mdata_filepath[2000];
@@ -148,8 +149,8 @@ StackedVolume::StackedVolume(const char *xml_filepath, bool make_n_slices_equal 
 				if(make_n_slices_equal)
                     N_SLICES = std::min(N_SLICES, static_cast<uint16>(STACKS[i][j]->getDEPTH()));
 				else
-					throw MyException(strprintf("in StackedVolume::StackedVolume(): unequal number of slices detected. Stack \"%s\" has %d, stack \"%s\" has %d",
-				                      STACKS[0][0]->getDIR_NAME(), STACKS[0][0]->getDEPTH(), STACKS[i][j]->getDIR_NAME(), STACKS[i][j]->getDEPTH()).c_str());
+					throw MyException(strprintf("in StackedVolume::StackedVolume(): unequal number of slices detected. N_SLICES = %d, but stack \"%s\" has %d",
+				                      N_SLICES, STACKS[i][j]->getDIR_NAME(), STACKS[i][j]->getDEPTH()).c_str());
 			}
 		}
 }
@@ -418,11 +419,12 @@ void StackedVolume::applyReferenceSystem(ref_sys reference_system, float VXL_1, 
 		}
 }
 
-void StackedVolume::loadXML(const char *xml_filepath)
+void StackedVolume::loadXML(const char *xml_filepath) throw (MyException)
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin StackedVolume::loadXML(char *xml_filepath = %s)\n", xml_filepath);
 	#endif
+
 
 	TiXmlDocument xml;
 	if(!xml.LoadFile(xml_filepath))
@@ -431,6 +433,7 @@ void StackedVolume::loadXML(const char *xml_filepath)
 		sprintf(errMsg,"in StackedVolume::loadXML(xml_filepath = \"%s\") : unable to load xml", xml_filepath);
 		throw MyException(errMsg);
 	}
+
 
 	//setting ROOT element (that is the first child, i.e. <TeraStitcher> node)
 	TiXmlHandle hRoot(xml.FirstChildElement("TeraStitcher"));
@@ -479,7 +482,7 @@ void StackedVolume::loadXML(const char *xml_filepath)
 	if(N_ROWS_read != N_ROWS || N_COLS_read != N_COLS || N_SLICES_read != N_SLICES)
 	{
 		char errMsg[2000];
-		sprintf(errMsg, "in StackedVolume::loadXML(...): Mismatch between in <dimensions> field xml file (= %d x %d ) and %s (= %d x %d ).", N_ROWS_read, N_COLS_read, VM_BIN_METADATA_FILE_NAME, N_ROWS, N_COLS);
+		sprintf(errMsg, "in StackedVolume::loadXML(...): Mismatch between in <dimensions> field xml file (= %d x %d x %d), %s (= %d x %d x %d).", N_ROWS_read, N_COLS_read, N_SLICES_read, VM_BIN_METADATA_FILE_NAME, N_ROWS, N_COLS, N_SLICES);
 		throw MyException(errMsg);
 	}
 
@@ -490,7 +493,7 @@ void StackedVolume::loadXML(const char *xml_filepath)
 			STACKS[i][j]->loadXML(pelem);
 }
 
-void StackedVolume::initFromXML(const char *xml_filepath)
+void StackedVolume::initFromXML(const char *xml_filepath) throw (MyException)
 {
 	#if VM_VERBOSE > 3
     printf("\t\t\t\tin StackedVolume::initFromXML(char *xml_filename = %s)\n", xml_filepath);
@@ -798,7 +801,7 @@ void StackedVolume::rotate(int theta)
 }
 
 //mirror stacks matrix along mrr_axis (accepted values are mrr_axis=1,2,3)
-void StackedVolume::mirror(axis mrr_axis)
+void StackedVolume::mirror(axis mrr_axis) throw (MyException)
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin StackedVolume::mirror(mrr_axis = %d)\n", mrr_axis);
@@ -859,7 +862,7 @@ void StackedVolume::mirror(axis mrr_axis)
 }
 
 //extract spatial coordinates (in millimeters) of given Stack object
-void StackedVolume::extractCoordinates(Stack* stk, int z, int* crd_1, int* crd_2, int* crd_3)
+void StackedVolume::extractCoordinates(Stack* stk, int z, int* crd_1, int* crd_2, int* crd_3) throw (MyException)
 {
     #if VM_VERBOSE > 3
     printf("\t\t\t\tin StackedVolume::extractCoordinates(stk=\"%s\", z = %d)\n", stk->getDIR_NAME(), z);

@@ -165,15 +165,14 @@ namespace iomanager
     inline void warning(const char* message, const char* source = 0)
     {
         if(source)
-           printf("\n**** WARNING (source: \"%s\") ****\n"
-           "    |=> \"%s\"\n\n", source, message);
+           printf("\n**** WARNING (source: \"%s\") ****\n    |=> \"%s\"\n\n", source, message);
         else
            printf("\n**** WARNING ****: %s\n", message);
     }
 
     inline void debug(debug_level dbg_level, const char* message=0, const char* source=0)
     {
-        if(iomanager::DEBUG >= dbg_level)
+        if(DEBUG >= dbg_level)
         {
            if(message && source)
                printf("\n----------------------- iomanager module: DEBUG (level %d) ----: in \"%s\") ----\n"
