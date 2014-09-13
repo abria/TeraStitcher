@@ -11,7 +11,7 @@ Developed by:
 - Alessandro Bria (email: a.bria@unicas.it)
   Post-doctoral Fellow at University of Cassino
 
-- Giulio Iannello (email: g.iannello@unicampus.it
+- Giulio Iannello (email: g.iannello@unicampus.it)
   Full Professor at University Campus Bio-Medico of Rome
   
 ===========================================================
