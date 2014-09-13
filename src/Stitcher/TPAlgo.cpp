@@ -30,17 +30,19 @@
 #include "TPAlgoMST.h"
 #include "S_config.h"
 
-TPAlgo::TPAlgo(int _TYPE, StackedVolume * _volume)
+using namespace volumemanager;
+
+TPAlgo::TPAlgo(int _TYPE, VirtualVolume * _volume)
 {
 	TYPE = _TYPE;
 	volume = _volume;
 }
 
 //static method which is responsible to instance and return the algorithm of the given type
-TPAlgo* TPAlgo::instanceAlgorithm(int _type, StackedVolume * _volume)
+TPAlgo* TPAlgo::instanceAlgorithm(int _type, VirtualVolume * _volume)
 {
 	#if S_VERBOSE>4
-	printf("........in TPAlgo::instanceAlgorithm(int _type, StackedVolume * _volume)\n",_type);
+	printf("........in TPAlgo::instanceAlgorithm(int _type, VirtualVolume * _volume)\n",_type);
 	#endif
 
 	if     (_type == S_FATPM_SP_TREE)
@@ -49,6 +51,6 @@ TPAlgo* TPAlgo::instanceAlgorithm(int _type, StackedVolume * _volume)
 	{
                 char err_msg[S_STATIC_STRINGS_SIZE];
 		sprintf(err_msg, "in TPAlgo::instanceAlgorithm(....): unsupported algorithm type (\"%d\")", _type);
-		throw MyException(err_msg);
+		throw iom::exception(err_msg);
 	}
 }

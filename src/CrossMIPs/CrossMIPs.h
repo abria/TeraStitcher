@@ -45,7 +45,7 @@
 # define WEST_EAST     1
 
 # include "my_defs.h"
-# include "MyException.h"	//Alessandro - 23/03/2013 - needed to throw exceptions
+#include "../IOManager/iomanager.config.h"
 
 /***************************************** RESULT STRUCTURE ********************************************/
 typedef struct {
@@ -75,7 +75,7 @@ typedef struct {
 /***************************************** MAIN FUNCTION ***********************************************/
 NCC_descr_t *norm_cross_corr_mips ( real_t *A, real_t *B, 
 						    int dimk, int dimi, int dimj, int nk, int ni, int nj, 
-							int delayk, int delayi, int delayj, int side, NCC_parms_t *NCC_params = 0 ) throw (MyException); //Alessandro - 23/03/2013 - exceptions are thrown if preconditions do not hold
+							int delayk, int delayi, int delayj, int side, NCC_parms_t *NCC_params = 0 ) throw (iom::exception); //Alessandro - 23/03/2013 - exceptions are thrown if preconditions do not hold
 /*
  * returns an alignment between volume A and B; the two volumes are assumed to have the same dimensions
  * INPUT PARAMETERS:

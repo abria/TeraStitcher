@@ -29,7 +29,7 @@
 #define PAIRWISE_DISPLACEMENT_ALGORITHM_H
 
 #include "Displacement.h"
-#include "IOManager_defs.h"
+#include "iomanager.config.h"
 
 class PDAlgo
 {
@@ -39,8 +39,8 @@ class PDAlgo
 
 	public:
 
-        PDAlgo(void){}
-        ~PDAlgo(void){}
+		PDAlgo(void){}
+		~PDAlgo(void){}
 
 		/*************************************************************************************************************
 		* Abstract method that all derived classes must implement.
@@ -58,7 +58,7 @@ class PDAlgo
 		virtual Displacement* execute(real_t *stk_A, uint32 A_dim_V, uint32 A_dim_H, uint32 A_dim_D,
 									  real_t *stk_B, uint32 B_dim_V, uint32 B_dim_H, uint32 B_dim_D,
 									  uint32 displ_max_V, uint32 displ_max_H, uint32 displ_max_D,
-									  direction overlap_direction, uint32 overlap) throw (MyException) = 0;
+									  direction overlap_direction, uint32 overlap) throw (iom::exception) = 0;
 
 		//static method which is responsible to instance and return the algorithm of the given type
 		static PDAlgo* instanceAlgorithm(int _type);
