@@ -20,11 +20,11 @@ September 13th, 2014
 - New: added IO plugin selection (--imin_plugin and --imout_plugin).
 - New: added IO plugin architecture to easily include at compilation time your own I/O plug-
        in w/o the need of modifying any portion of code within  TeraStitcher. Just copy your
-	   folder with headers and sources and it will be automatically  discovered and included
+       folder with headers and sources and it will be automatically  discovered and included
        in the cmake build process.
 - New: added  sparse data support  to deal with  empty and/or incomplete tiles. Depending on
        the amount of sparseness, both aligning and merging steps are speeded up considerably
-	   up to 2x if 50% of the tiles are empty or incomplete.
+       up to 2x if 50% of the tiles are empty or incomplete.
 - Fix: minor bug fixes and improvements.
 --------------------------------------------------------------------------------------------
 
@@ -117,8 +117,8 @@ August 22st, 2013
 --------------------------------------------------------------------------------------------
 - New: added automatic completion of the "projout" command line parameter. Whatever the user
        input (missing prefix, name or extension),  the tool is able to auto-complete it with
-	   default values (volume's path  for missing path, the operation name for missing name,
-	   and "xml" extension for missing extension).
+       default values (volume's path  for missing path, the operation name for missing name,
+       and "xml" extension for missing extension).
 - Fix: fixed a bug which caused the  "Place tiles"  step to crash when  no stitchable stacks
        are found.
 - Fix: fixed bug which caused TeraStitcher to crash  when importing volumes with a huge num-
