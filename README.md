@@ -1,4 +1,4 @@
-terastitcher
+TeraStitcher
 ===========================================================
 
 A tool for fast automatic 3D-stitching of teravoxel-sized 
