@@ -63,7 +63,7 @@ bool write_3D_stack ( char *fname, real_t *stck, int dimi, int dimj, int dimk );
 
 NCC_descr_t *norm_cross_corr_mips ( real_t *A, real_t *B,
 						    int dimk, int dimi, int dimj, int nk, int ni, int nj,
-							int delayk, int delayi, int delayj, int side, NCC_parms_t *NCC_params ) throw (MyException){
+							int delayk, int delayi, int delayj, int side, NCC_parms_t *NCC_params ) throw (iom::exception){
 #if CM_VERBOSE > 1
 	printf("\nin libcrossmips::norm_cross_corr_mips(A[%.6f-%.6f], B[%.6f-%.6f], dimk[%d], dimi[%d], dimj[%d], nk[%d], ni[%d], nj[%d], delayk[%d], delayi[%d], delayj[%d], side[%d]\n",
 		A[0], A[(dimk-1)*dimj*dimi + (dimi-1)*dimj + dimj -1], B[0], B[(dimk-1)*dimj*dimi + (dimi-1)*dimj + dimj -1], dimk, dimi, dimj, nk, ni, nj, delayk, delayi, delayj, side );
@@ -91,7 +91,7 @@ NCC_descr_t *norm_cross_corr_mips ( real_t *A, real_t *B,
 	if ( !NCC_params ) {
 
 		// Alessandro - 31/05/2013 - parameter MUST be passed (and controlled) by the caller
-        throw MyException("CrossMIPs: missing configuration parameters");
+        throw iom::exception("CrossMIPs: missing configuration parameters");
 
 		//// ************************** SET DEFAULT PARAMETERS ****************
 		//NCC_params = new NCC_parms_t;
@@ -162,7 +162,7 @@ NCC_descr_t *norm_cross_corr_mips ( real_t *A, real_t *B,
 		// Alessandro - 31/05/2013 - throwing an exception instead of automatically correcting parameters
 		char err_msg[1000];
 		sprintf(err_msg, "CrossMIPs: parameter wRangeThr[=%d] is too large with respect to MIN(delayi, delayj, delayik)[=%d]", NCC_params->wRangeThr, MIN(delayi,MIN(delayj,delayk)));
-		throw MyException(err_msg);
+		throw iom::exception(err_msg);
 		
 		// Alessandro - 23/03/2013 - parameters are automatically corrected
 		// Alessandro - 31/05/2013 - throwing an exception instead of automatically correcting parameters
@@ -176,12 +176,12 @@ NCC_descr_t *norm_cross_corr_mips ( real_t *A, real_t *B,
     {
         // Alessandro - 23/03/2013 - added check to verify precondition written into CrossMIPs.h that says:
         // "in practice the dimensions of the MIPS (depending on dimi, dimj, dimk, ni, nj, nk) have to be large enough with respect to delayi, delayj, delayk"
-        if(side == NORTH_SOUTH && (dimi - ni < 2*delayi+1) || (dimj - nj < 2*delayj+1) || (dimk - nk < 2*delayk+1))
-            throw MyException("CrossMIPs: the search region is too big with respect to the overlapping region. "
+        if(side == NORTH_SOUTH && ((dimi - ni < 2*delayi+1) || (dimj - nj < 2*delayj+1) || (dimk - nk < 2*delayk+1)))
+            throw iom::exception("CrossMIPs: the search region is too big with respect to the overlapping region. "
                               "Overlapping extent should be > 2*delay+1 for each direction where delay is the "
                               "search region extent along that direction.");
-        if(side == WEST_EAST   && (dimj - nj < 2*delayi+1) || (dimi - ni < 2*delayj+1) || (dimk - nk < 2*delayk+1))
-            throw MyException("CrossMIPs: the search region is too big with respect to the overlapping region. "
+        if(side == WEST_EAST   && ((dimj - nj < 2*delayi+1) || (dimi - ni < 2*delayj+1) || (dimk - nk < 2*delayk+1)))
+            throw iom::exception("CrossMIPs: the search region is too big with respect to the overlapping region. "
                               "Overlapping extent should be > 2*delay+1 for each direction where delay is the "
                               "search region extent along that direction.");
     }
@@ -221,7 +221,7 @@ NCC_descr_t *norm_cross_corr_mips ( real_t *A, real_t *B,
 		A1 = A + stridei; // a partial row of pixels of volume A have to be skipped
 	}
 	else
-		throw MyException("CrossMIPs: unexpected alignment configuration");
+		throw iom::exception("CrossMIPs: unexpected alignment configuration");
 
 	// alloca le 6 immagini per i MIP
 	MIP_xy1 = new real_t[dimi_v*dimj_v];
@@ -354,7 +354,7 @@ NCC_descr_t *norm_cross_corr_mips ( real_t *A, real_t *B,
 	else if ( side == WEST_EAST ) 
 		result->coord[1] += nj;
 	else
-		throw MyException("CrossMIPs: unexpected alignment configuration");
+		throw iom::exception("CrossMIPs: unexpected alignment configuration");
 
 	if ( allocated ) {
 		delete NCC_params->percents;

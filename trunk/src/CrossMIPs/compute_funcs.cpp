@@ -554,7 +554,7 @@ int compute_MAX_ind ( real_t *vect, int len ) {
 
 
 void compute_Neighborhood ( NCC_parms_t *NCC_params, real_t *NCC, int delayu, int delayv, int ind_max, 
-						   real_t *MIP_1, real_t *MIP_2, int dimu, int dimv, real_t *NCCnew, int &du, int &dv, bool &failed) throw (MyException){
+						   real_t *MIP_1, real_t *MIP_2, int dimu, int dimv, real_t *NCCnew, int &du, int &dv, bool &failed) throw (iom::exception){
 
 	// suffixes u and v denote the vertical and the horizontal dimensions, respectively
 	// suffix i denotes linear indices
@@ -597,7 +597,7 @@ void compute_Neighborhood ( NCC_parms_t *NCC_params, real_t *NCC, int delayu, in
 	initv = MIN(MAX(0,ind_max%(2*delayv+1) - newv),2*(delayv - newv));
 	initi = initu * (2*delayv+1) + initv;
 	if(initi < 0)
-		throw MyException("CrossMIPs: negative index detected (initi)"); // Alessandro - 23/03/2013 - throw exception if initi is negative
+		throw iom::exception("CrossMIPs: negative index detected (initi)"); // Alessandro - 23/03/2013 - throw exception if initi is negative
 	for ( u=0, i=0, d=0; u<(2*newu+1); u++, d+=2*(delayv-newv) ) // when row changes 2*(delayv-newv) values have to be skipped
 		for ( v=0; v<(2*newv+1); v++ , i++)
 			NCCnew[i] = NCC[i + initi + d];
@@ -669,7 +669,7 @@ void compute_Neighborhood ( NCC_parms_t *NCC_params, real_t *NCC, int delayu, in
 		}
 		// CHECK, MUST BE: n_miss == ((2*newu+1)*(2*newv+1) - ((2*newu+1)-abs(deltau))*((2*newv+1)-abs(deltav)))
 		if ( n_miss != ((2*newu+1)*(2*newv+1) - ((2*newu+1)-abs(deltau))*((2*newv+1)-abs(deltav))) )
-			throw MyException("CrossMIPs: incomplete NCC map in compute_Neighborhood");
+			throw iom::exception("CrossMIPs: incomplete NCC map in compute_Neighborhood");
 
 		// compute missing NCCs
 		for ( i=0; i<n_miss; i++ ) {

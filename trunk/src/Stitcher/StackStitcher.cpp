@@ -25,6 +25,15 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2014-09-09. Alessandro. @FIXED missing buffer initialization and reset in 'mergeTiles()' method.
+* 2014-09-09. Alessandro. @FIXED missing buffer initialization in 'getStripe()' method.
+* 2014-09-09. Alessandro. @FIXED 'mergeTiles()' method: propagate iim::IOException from the imagemanager module (otherwise it will crash...) and disable iim::DEBUG
+*/
+
+
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -32,17 +41,22 @@
 #include <limits>
 #include <list>
 #include <ctime>
-#include "StackedVolume.h"
-#include "Stack.h"
-#include "ProgressBar.h"
+
+#include "../IOManager/ProgressBar.h"
 #include "S_config.h"
 #include "PDAlgo.h"
 #include "TPAlgo.h"
 #include "StackRestorer.h"
-#include "VM_config.h"
+#include "volumemanager.config.h"
 #include "DisplacementMIPNCC.h"
 
+#include "../ImageManager/IM_config.h"
+#include "../ImageManager/VirtualVolume.h"
+#include "../ImageManager/StackedVolume.h"
+#include "../IOManager/IOPluginAPI.h"
+
 using namespace iomanager;
+using namespace volumemanager;
 
 //initialization of class members
 double StackStitcher::time_displ_comp=0;
@@ -61,47 +75,40 @@ struct stripe_2Dcorners{std::list<stripe_corner> ups, bottoms, merged;};
 bool compareCorners (stripe_corner first, stripe_corner second)
 { return ( first.H < second.H ); }
 
-StackStitcher::StackStitcher(StackedVolume* _volume)
+StackStitcher::StackStitcher(volumemanager::VirtualVolume* _volume)
 {
-    #if S_VERBOSE > 2
-    printf("\t\t\t......in StackStitcher::StackStitcher(StackedVolume* _volume)\n");
+	#if S_VERBOSE > 2
+	printf("\t\t\t\t......in StackStitcher::StackStitcher(VirtualVolume* _volume)\n");
 	#endif
 	volume = _volume;
 	V0 = V1 = H0 = H1 = D0 = D1 = ROW_START = ROW_END = COL_START = COL_END = -1;
 }
 
 
-/*************************************************************************************************************
-* Method to be called for displacement computation. <> parameters are mandatory, while [] are optional.
-* <algorithm_type>		: ID of the pairwise displacement algorithm to be used.
-* [start/end_...]		: rows/columns intervals that possible identify the portion of volume to be processed.
-*						  If not given, all stacks will be processed.
-* [overlap_...]			: expected overlaps between the given stacks along V and H directions.These values can
-*   					  be used to determine the region of interest where the overlapping occurs. 
-*						  If not given, default values are assigned by computing the  expected  overlaps using 
-*						  the <MEC_...> members of the <StackedVolume> object.
-* [displ_max_...]		: maximum displacements along VHD between two  adjacent stacks  taking the given over-
-*						  lap as reference. These parameters, together with <overlap_...>,can be used to iden-
-*						  tify the region of interest where the correspondence between the given stacks has to
-*						  be found. When used, these parameters have to be tuned with respect to the precision 
-*						  of the motorized stages. 
-*						  If not given, value S_DISPL_MAX_VHD is assigned.
-* [subvol_DIM_D]		: desired subvolumes dimension  along D axis.  Each pair  of stacks is split into sub-
-*						  volumes along D axis in order to use memory efficiently.   Hence, multiple displace-
-*						  ments for each pair of adjacent stacks are computed. 
-*						  If not given, value S_SUBVOL_DIM_D_DEFAULT is assigned;
-* [restoreSPIM]			: enables SPIM artifacts removal (zebrated patterns) along the given direction.
-* [restore_direction]	: direction of SPIM zebrated patterns to be removed.
-* [show_progress_bar]	: enables/disables progress bar with estimated time remaining.
-**************************************************************************************************************/
-void StackStitcher::computeDisplacements(int algorithm_type, int start_row, int start_col, int end_row, 
-										 int end_col, int overlap_V, int overlap_H, int displ_max_V, 
-										 int displ_max_H, int displ_max_D, int subvol_DIM_D, bool restoreSPIM, 
-										 int restore_direction, bool show_progress_bar)		throw (MyException)
+// compute pairwise displacements
+// 2014-09-12. Alessandro. @ADDED [z0, z1] subdata selection along Z in the 'computeDisplacements()' method.
+void StackStitcher::computeDisplacements(
+	int algorithm_type,								// ID of the pairwise displacement algorithm to be used.
+	int row0 /*= -1*/,								// subdata selection along X: [row0, row1] rows will be processed only
+	int col0 /*= -1*/,								// subdata selection along Y: [col0, col1] cols will be processed only
+	int row1 /*= -1*/,								// subdata selection along X: [row0, row1] rows will be processed only
+	int col1 /*= -1*/,								// subdata selection along Y: [col0, col1] cols will be processed only
+	int overlap_V /*= -1*/,							// overlaps along V and H directions. If not given, default values are ...
+	int overlap_H /*=-1*/,							// ... computed using the <MEC_...> members of the <StackedVolume> object.			
+	int displ_max_V/*=S_DISPL_SEARCH_RADIUS_DEF*/,  // maximum displacements along VHD between two  adjacent stacks. ...
+	int displ_max_H/*=S_DISPL_SEARCH_RADIUS_DEF*/,  // ... If not given, value S_DISPL_SEARCH_RADIUS_DEF is assigned.
+	int displ_max_D/*=S_DISPL_SEARCH_RADIUS_DEF*/, 
+	int subvol_DIM_D /*= S_SUBVOL_DIM_D_DEFAULT*/,	// dimension of layers obtained by dividing the volume along D.
+	bool restoreSPIM/*=false*/,						// enable SPIM artifacts removal (zebrated patterns) ...
+	int restore_direction/*=-1*/,					// ... along the given direction.
+	bool show_progress_bar/*=true*/,				// enable/disable progress bar with estimated time remaining
+	int z0/*=-1*/,									// subdata selection along Z: [z0, z1] slices will be processed only
+	int z1/*=-1*/)									// subdata selection along Z: [z0, z1] slices will be processed only
+throw (iom::exception)
 {
 	#if S_VERBOSE>2
 	printf("\t\t\t....in StackStitcher::computeDisplacements(..., overlap_V = %d, overlap_H = %d, displ_max_V = %d, displ_max_H = %d, displ_max_D = %d, start_row = %d, start_col = %d, end_row = %d, end_col = %d, subvol_DIM_D = %d, restoreSPIM=%s, restore_dir=%d)\n",
-		overlap_V, overlap_H, displ_max_V, displ_max_H, displ_max_D, start_row, start_col, end_row, end_col, subvol_DIM_D, (restoreSPIM ? "ENABLED" : "disabled"), restore_direction);
+		overlap_V, overlap_H, displ_max_V, displ_max_H, displ_max_D, row0, col0, row1, col1, subvol_DIM_D, (restoreSPIM ? "ENABLED" : "disabled"), restore_direction);
 	#endif
 
 	//LOCAL VARIABLES
@@ -114,44 +121,54 @@ void StackStitcher::computeDisplacements(int algorithm_type, int start_row, int 
 	int displ_computations_idx;					//counter for displacements computations
 	int i,j,k;									//loop variables
 	PDAlgo *algorithm;							//stores the reference to the algorithm to be used for pairwise displacement computation
-	Stack *stk_A, *stk_B;						//store references of each pair of adjacent stacks where <stk_B> follows <stk_A> along V or H
+	VirtualStack *stk_A, *stk_B;						//store references of each pair of adjacent stacks where <stk_B> follows <stk_A> along V or H
 
 	//checks of parameters
 	overlap_V	 = overlap_V	== -1 ? volume->getOVERLAP_V() : overlap_V;
 	overlap_H	 = overlap_H	== -1 ? volume->getOVERLAP_H() : overlap_H;
-	start_row	 = start_row	== -1 ? 0 : start_row;
-	start_col	 = start_col	== -1 ? 0 : start_col;
-	end_row		 = end_row		== -1 ? volume->getN_ROWS() -1 : end_row;
-	end_col		 = end_col		== -1 ? volume->getN_COLS() -1 : end_col;
-	if(start_row < 0 || start_row > end_row || end_row >= volume->getN_ROWS() ||start_col < 0 || start_col > end_col || end_col >= volume->getN_COLS())
+	row0	 = row0	== -1 ? 0 : row0;
+	col0	 = col0	== -1 ? 0 : col0;
+	row1		 = row1		== -1 ? volume->getN_ROWS() -1 : row1;
+	col1		 = col1		== -1 ? volume->getN_COLS() -1 : col1;
+	if(row0 < 0 || row0 > row1 || row1 >= volume->getN_ROWS() ||col0 < 0 || col0 > col1 || col1 >= volume->getN_COLS())
 	{
 		sprintf(buffer, "in StackStitcher::computeDisplacements(...): selected portion of volume stacks ROWS[%d,%d] COLS[%d,%d] must be in ROWS[0,%d] COLS[0,%d]",
-				start_row, end_row, start_col, end_col, volume->getN_ROWS() -1, volume->getN_COLS() -1);
-		throw MyException(buffer);
+				row0, row1, col0, col1, volume->getN_ROWS() -1, volume->getN_COLS() -1);
+		throw iom::exception(buffer);
 	}
 	if((overlap_V < S_OVERLAP_MIN || overlap_V > volume->getStacksHeight()) && volume->getN_ROWS() > 1)
 	{
 		sprintf(buffer, "in StackStitcher::computeDisplacements(...): overlap_V(=%d) must be in [%d,%d]", overlap_V, S_OVERLAP_MIN, volume->getStacksHeight());
-		throw MyException(buffer);
+		throw iom::exception(buffer);
 	}
 	if((overlap_H < S_OVERLAP_MIN || overlap_H > volume->getStacksWidth()) && volume->getN_COLS() > 1)
 	{
 		sprintf(buffer, "in StackStitcher::computeDisplacements(...): overlap_H(=%d) must be in [%d,%d]", overlap_H,S_OVERLAP_MIN, volume->getStacksWidth());
-		throw MyException(buffer);
+		throw iom::exception(buffer);
 	}
     /*if(subvol_DIM_D < S_SUBVOL_DIM_D_MIN || subvol_DIM_D > volume->getN_SLICES())
 	{
 		sprintf(buffer, "in StackStitcher::computeDisplacements(...): subvol_DIM_D(=%d) must be in [%d,%d]", subvol_DIM_D, S_SUBVOL_DIM_D_MIN, volume->getN_SLICES());
-		throw MyException(buffer);
+		throw iom::MyException(buffer);
     }*/
+
+	// 2014-09-12. Alessandro. @ADDED [z0, z1] subdata selection along Z in the 'computeDisplacements()' method.
+	z0 = z0 == -1 ? 0 : z0;
+	z1 = z1 == -1 ? volume->getN_SLICES()-1 : z1;
+	if(z0 < 0 || z0 > z1)
+		throw iom::exception(iom::strprintf("in StackStitcher::computeDisplacements(): incorrect subdata selection [%d,%d] along Z", z0, z1).c_str());
+	if(z1 >= volume->getN_SLICES())
+		throw iom::exception(iom::strprintf("in StackStitcher::computeDisplacements(): incorrect subdata selection [%d,%d] along Z", z0, z1).c_str());
+	int z_size = z1 - z0 + 1;
 
 	//Pairwise Displacement Algorithm initialization
 	algorithm = PDAlgo::instanceAlgorithm(algorithm_type);
 
 	//computing subvolumes partitioning parameters
-	n_subvols = (int) ceil( ( (float) volume->getN_SLICES() )/ ( (float) subvol_DIM_D));
-	subvol_DIM_D_actual = (int) floor( ( (float) volume->getN_SLICES() ) / ( (float) n_subvols));
-	int z_start=0;											//necessary due to to 'z_start' parameter of 'alignStacks' method
+	// 2014-09-12. Alessandro. @ADDED [z0, z1] subdata selection along Z in the 'computeDisplacements()' method.
+	n_subvols = (int) ceil( ( (float) z_size )/ ( (float) subvol_DIM_D));
+	subvol_DIM_D_actual = (int) floor( ( (float) z_size ) / ( (float) n_subvols));
+	int z_start=z0;											//necessary due to to 'z_start' parameter of 'alignStacks' method
 
 	//initializing Restorer module
 	StackRestorer *stk_rst = NULL;
@@ -159,94 +176,109 @@ void StackStitcher::computeDisplacements(int algorithm_type, int start_row, int 
 		stk_rst = new StackRestorer(volume, n_subvols);
 
 	//initializing the progress bar
-        ProgressBar::instance();
+    ProgressBar::instance();
 	if(show_progress_bar)
 	{
-                ProgressBar::getInstance()->start("Pairwise displacement computation");
-                ProgressBar::getInstance()->update(0,"Initializing...");
-                ProgressBar::getInstance()->show();
-		displ_computations = n_subvols*(2*(end_row-start_row+1)*(end_col-start_col+1)-((end_row-start_row+1)+(end_col-start_col+1)));
+		ProgressBar::instance()->start("Pairwise displacement computation");
+		ProgressBar::instance()->update(0,"Initializing...");
+		ProgressBar::instance()->show();
+		displ_computations = n_subvols*(2*(row1-row0+1)*(col1-col0+1)-((row1-row0+1)+(col1-col0+1)));
 		displ_computations_idx = 1;
 	}
 
-	//processing first N\95mod(n_subvols) LAYERS that are 'subvol_DIM_D_actual +1' long
-	row_wise = end_row-start_row>=end_col-start_col;
+	//processing first N%mod(n_subvols) LAYERS that are 'subvol_DIM_D_actual +1' long
+	row_wise = row1-row0>=col1-col0;
 	for(k = 1; k <= n_subvols; k++)
 	{
-		subvol_DIM_D_k = k <= volume->getN_SLICES()%n_subvols ? subvol_DIM_D_actual + 1 : subvol_DIM_D_actual;
+		subvol_DIM_D_k = k <= z_size%n_subvols ? subvol_DIM_D_actual + 1 : subvol_DIM_D_actual;
 
-		//loading [start_row][_j_start]Stack in memory
-		volume->getSTACKS()[start_row][start_col]->loadImageStack(z_start,z_start+subvol_DIM_D_k-1);
+		// load first substack in the range
+		// 2014-09-09. @ADDED sparse tile support: incomplete or empty substacks are not processed.
+		stk_A = volume->getSTACKS()[row0][col0];
+		if(stk_A->isComplete(z_start,z_start+subvol_DIM_D_k-1))
+			stk_A->loadImageStack(z_start,z_start+subvol_DIM_D_k-1);
 
 		//scanning LAYER through columns OR through rows depending on row_wise value 
-		for(i=(row_wise ? start_row : start_col); i<=(row_wise ? end_row : end_col); i++)
+		for(i=(row_wise ? row0 : col0); i<=(row_wise ? row1 : col1); i++)
 		{
-			for(j=(row_wise ? start_col : start_row); j<=(row_wise ? end_col : end_row); j++)
+			for(j=(row_wise ? col0 : row0); j<=(row_wise ? col1 : row1); j++)
 			{
 				stk_A = volume->getSTACKS()[(row_wise? i : j  )][(row_wise ? j:   i)];
 
-				//if #rows>=#columns, checking if eastern Stack exists, otherwise checking if southern Stack exists
-				if(j!=(row_wise ? end_col : end_row))
+				//if #rows>=#columns, checking if eastern VirtualStack exists, otherwise checking if southern VirtualStack exists
+				if(j!=(row_wise ? col1 : row1))
 				{
 					stk_B = volume->getSTACKS()[(row_wise? i : j+1)][(row_wise ? j+1: i)];
 
-					//if #rows>=#columns, checking if we are at first row. If so, allocating eastern Stack
-					//if #rows<#columns, checking if we are at first column. If so, allocating southern Stack
-					if(i== (row_wise ? start_row : start_col ))
+					//if #rows>=#columns, checking if we are at first row. If so, allocating eastern VirtualStack
+					//if #rows<#columns, checking if we are at first column. If so, allocating southern VirtualStack
+					// 2014-09-09. @ADDED sparse tile support: incomplete or empty substacks are not processed.
+					if(i== (row_wise ? row0 : col0 ) && stk_B->isComplete(z_start,z_start+subvol_DIM_D_k-1))
 						stk_B->loadImageStack(z_start, z_start+subvol_DIM_D_k-1);
 
 					if(show_progress_bar)
 					{
 						sprintf(buffer, "Displacement computation %d of %d", displ_computations_idx, displ_computations);
-                                                ProgressBar::getInstance()->update((100.0f/displ_computations)*displ_computations_idx, buffer);
-                                                ProgressBar::getInstance()->show();
+						ProgressBar::instance()->update((100.0f/displ_computations)*displ_computations_idx, buffer);
+						ProgressBar::instance()->show();
 					}
 
-					#ifdef S_TIME_CALC
-					double proc_time = -TIME(0);
-					#endif
-					volume->insertDisplacement(stk_A, stk_B, 
-											  algorithm->execute(stk_A->getSTACKED_IMAGE(), stk_A->getHEIGHT(), stk_A->getWIDTH(), subvol_DIM_D_k,
-											  stk_B->getSTACKED_IMAGE(), stk_B->getHEIGHT(), stk_B->getWIDTH(), subvol_DIM_D_k, displ_max_V, 
-											  displ_max_H, displ_max_D, row_wise ? dir_horizontal : dir_vertical, row_wise ? overlap_H : overlap_V ));
-					displ_computations_idx++;
-					#ifdef S_TIME_CALC
-					proc_time += TIME(0);
-					StackStitcher::time_displ_comp+=proc_time;
-					proc_time = -TIME(0);
-					#endif
+					// 2014-09-09. @ADDED sparse tile support: incomplete or empty substacks are not processed.
+					if(stk_A->isComplete(z_start, z_start+subvol_DIM_D_k-1) && stk_B->isComplete(z_start, z_start+subvol_DIM_D_k-1) )
+					{
+						#ifdef S_TIME_CALC
+						double proc_time = -TIME(0);
+						#endif
+						volume->insertDisplacement(stk_A, stk_B, 
+												  algorithm->execute(stk_A->getSTACKED_IMAGE(), stk_A->getHEIGHT(), stk_A->getWIDTH(), subvol_DIM_D_k,
+												  stk_B->getSTACKED_IMAGE(), stk_B->getHEIGHT(), stk_B->getWIDTH(), subvol_DIM_D_k, displ_max_V, 
+												  displ_max_H, displ_max_D, row_wise ? dir_horizontal : dir_vertical, row_wise ? overlap_H : overlap_V ));
+						displ_computations_idx++;
+						#ifdef S_TIME_CALC
+						proc_time += TIME(0);
+						StackStitcher::time_displ_comp+=proc_time;
+						proc_time = -TIME(0);
+						#endif
+					}
 				}
-				//if #rows>=#columns, checking if southern Stack exists, otherwise checking if eastern Stack exists
-				if(i!=(row_wise ? end_row : end_col))
+				//if #rows>=#columns, checking if southern VirtualStack exists, otherwise checking if eastern VirtualStack exists
+				if(i!=(row_wise ? row1 : col1))
 				{
 					stk_B = volume->getSTACKS()[(row_wise? i+1 : j)][(row_wise ? j: i+1)];
 
-					//allocating southern/eastern Stack
-					stk_B->loadImageStack(z_start, z_start+subvol_DIM_D_k-1);
+					//allocating southern/eastern VirtualStack
+					// 2014-09-09. @ADDED sparse tile support: incomplete or empty substacks are not processed.
+					if(stk_B->isComplete(z_start, z_start+subvol_DIM_D_k-1))
+						stk_B->loadImageStack(z_start, z_start+subvol_DIM_D_k-1);
 						
 					if(show_progress_bar)
 					{
 						sprintf(buffer, "Displacement computation %d of %d", displ_computations_idx, displ_computations);
-                                                ProgressBar::getInstance()->update((100.0f/displ_computations)*displ_computations_idx, buffer);
-                                                ProgressBar::getInstance()->show();
+						ProgressBar::instance()->update((100.0f/displ_computations)*displ_computations_idx, buffer);
+						ProgressBar::instance()->show();
 					}
 
-					#ifdef S_TIME_CALC
-					double proc_time = -TIME(0);
-					#endif
-					volume->insertDisplacement(stk_A, stk_B, 
-											  algorithm->execute(stk_A->getSTACKED_IMAGE(), stk_A->getHEIGHT(), stk_A->getWIDTH(), subvol_DIM_D_k,
-											  stk_B->getSTACKED_IMAGE(), stk_B->getHEIGHT(), stk_B->getWIDTH(), subvol_DIM_D_k, displ_max_V, 
-											  displ_max_H, displ_max_D, row_wise ? dir_vertical : dir_horizontal, row_wise ? overlap_V : overlap_H ));
-                                        displ_computations_idx++;
-                                        #ifdef S_TIME_CALC
-					proc_time += TIME(0);
+					// 2014-09-09. @ADDED sparse tile support: incomplete or empty substacks are not processed.
+					if(stk_A->isComplete(z_start, z_start+subvol_DIM_D_k-1) && stk_B->isComplete(z_start, z_start+subvol_DIM_D_k-1) )
+					{
+						#ifdef S_TIME_CALC
+						double proc_time = -TIME(0);
+						#endif
+						volume->insertDisplacement(stk_A, stk_B, 
+												  algorithm->execute(stk_A->getSTACKED_IMAGE(), stk_A->getHEIGHT(), stk_A->getWIDTH(), subvol_DIM_D_k,
+												  stk_B->getSTACKED_IMAGE(), stk_B->getHEIGHT(), stk_B->getWIDTH(), subvol_DIM_D_k, displ_max_V, 
+												  displ_max_H, displ_max_D, row_wise ? dir_vertical : dir_horizontal, row_wise ? overlap_V : overlap_H ));
+											displ_computations_idx++;
+											#ifdef S_TIME_CALC
+						proc_time += TIME(0);
 						StackStitcher::time_displ_comp+=proc_time;
-					proc_time = -TIME(0);
-					#endif
+						proc_time = -TIME(0);
+						#endif
+					}
 				}
 
-				if(restoreSPIM)
+				// 2014-09-09. @ADDED sparse tile support: incomplete or empty substacks are not processed.
+				if(restoreSPIM && stk_A->isComplete(z_start, z_start+subvol_DIM_D_k-1))
 				{
 					#ifdef S_TIME_CALC
 					double proc_time = -TIME(0);
@@ -258,7 +290,7 @@ void StackStitcher::computeDisplacements(int algorithm_type, int start_row, int 
 					#endif
 				}
 
-				//deallocating current Stack
+				//deallocating current VirtualStack
 				stk_A->releaseImageStack();
 			}
 		}
@@ -273,7 +305,7 @@ void StackStitcher::computeDisplacements(int algorithm_type, int start_row, int 
 		double proc_time = -TIME(0);
 		#endif
 		stk_rst->finalizeAllDescriptors();
-        char desc_file_path[5000];
+		char desc_file_path[5000];
 		sprintf(desc_file_path, "%s/%s", volume->getSTACKS_DIR(), S_DESC_FILE_NAME);
 		stk_rst->save(desc_file_path);
 		delete stk_rst;
@@ -285,75 +317,133 @@ void StackStitcher::computeDisplacements(int algorithm_type, int start_row, int 
 
 	if(show_progress_bar)
 	{
-                ProgressBar::getInstance()->update(100, "Ended!");
-                ProgressBar::getInstance()->show();
+		ProgressBar::instance()->update(100, "Ended!");
+		ProgressBar::instance()->show();
 	}
 }
 
 /*************************************************************************************************************
-* Computes final stitched volume dimensions assuming that current <StackedVolume> object contains  the correct 
+* Computes final stitched volume dimensions assuming that current <VirtualVolume> object contains  the correct 
 * stack coordinates. The given parameters identify the possible VOI (Volume Of Interest). If these are not us-
 * ed, the whole volume is  considered and the parameter <exclude_nonstitchable_stacks> is used to discard rows
 * or columns with no stitchable stacks 
 **************************************************************************************************************/
 void StackStitcher::computeVolumeDims(bool exclude_nonstitchable_stacks, int _ROW_START, int _ROW_END, 
-									  int _COL_START, int _COL_END, int _D0, int _D1) throw (MyException)
+									  int _COL_START, int _COL_END, int _D0, int _D1) throw (iom::exception)
 {
     #if S_VERBOSE >2
 	printf("\t\t\t....in StackStitcher::computeVolumeDims(exclude_nonstitchable_stacks = %s, _ROW_START=%d, _ROW_END=%d, _COL_START=%d, _COL_END=%d, _D0=%d, _D1=%d)\n",
 										   exclude_nonstitchable_stacks ? "true" : "false", _ROW_START,    _ROW_END,	_COL_START,	   _COL_END,	_D0,	_D1);
-	#endif
+    #endif
 
 	char errMsg[2000];
-	bool stitchable_sequence;
 
-	//*** First DETERMINING the range of stacks to be stitched ***
-        if(_ROW_START == -1 || exclude_nonstitchable_stacks)
-            for(ROW_START=0, stitchable_sequence=false; ROW_START < volume->getN_ROWS() && !stitchable_sequence && exclude_nonstitchable_stacks; ROW_START++)
-                for(int column_index=0; column_index < volume->getN_COLS() && !stitchable_sequence; column_index++)
-                    stitchable_sequence = volume->getSTACKS()[ROW_START][column_index]->isStitchable();
-	else if(_ROW_START >= 0 && _ROW_START < volume->getN_ROWS())
-            ROW_START = _ROW_START;
-	else
-	{
-            sprintf(errMsg, "in StackStitcher::computeVolumeDims(...): _ROW_START (=%d) out of range [%d,%d]", _ROW_START, 0, volume->getN_ROWS()-1);
-            throw MyException(errMsg);
-	}
-        if(_COL_START == -1 || exclude_nonstitchable_stacks)
-            for(COL_START=0, stitchable_sequence = false; COL_START < volume->getN_COLS() && !stitchable_sequence && exclude_nonstitchable_stacks; COL_START++)
-                for(int row_index=0; row_index < volume->getN_ROWS() && !stitchable_sequence; row_index++)
-                    stitchable_sequence = volume->getSTACKS()[row_index][COL_START]->isStitchable();
-	else if(_COL_START >= 0 && _COL_START < volume->getN_COLS())
-            COL_START = _COL_START;
-	else
-	{
-            sprintf(errMsg, "in StackStitcher::computeVolumeDims(...): _COL_START (=%d) out of range [%d,%d]", _COL_START, 0, volume->getN_COLS()-1);
-            throw MyException(errMsg);
-	}
-        if(_ROW_END == -1 || exclude_nonstitchable_stacks)
-            for(ROW_END=volume->getN_ROWS()-1, stitchable_sequence = false; ROW_END>=0 && !stitchable_sequence && exclude_nonstitchable_stacks; ROW_END--)
-                for(int column_index=0; column_index < volume->getN_COLS() && !stitchable_sequence; column_index++)
-                    stitchable_sequence = volume->getSTACKS()[ROW_END][column_index]->isStitchable();
-	else if(_ROW_END >= ROW_START && _ROW_END < volume->getN_ROWS())
-            ROW_END = _ROW_END;
-	else
-	{
-            sprintf(errMsg, "in StackStitcher::computeVolumeDims(...): no stitchable stacks found in the selected interval or _ROW_END (=%d) out of range [%d,%d]", _ROW_END, ROW_START, volume->getN_ROWS()-1);
-            throw MyException(errMsg);
-	}
-        if(_COL_END == -1 || exclude_nonstitchable_stacks)
-            for(COL_END=volume->getN_COLS()-1, stitchable_sequence = false; COL_END>=0 && !stitchable_sequence && exclude_nonstitchable_stacks; COL_END--)
-                for(int row_index=0; row_index < volume->getN_ROWS() && !stitchable_sequence; row_index++)
-                        stitchable_sequence = volume->getSTACKS()[row_index][COL_END]->isStitchable();
-	else if(_COL_END >= COL_START && _COL_END < volume->getN_COLS())
-            COL_END = _COL_END;
-	else
-	{
-            sprintf(errMsg, "in StackStitcher::computeVolumeDims(...): no stitchable stacks found in the selected interval  or _COL_END (=%d) out of range [%d,%d]", _COL_END, COL_START, volume->getN_COLS()-1);
-            throw MyException(errMsg);
-	}
+    // @FIXED by Alessandro on 2014-06-26: throw an expcetion if no stitchable stacks are found in the selected stacks range
+    // @FIXED by Alessandro on 2014-06-26: added ROW_START, ROW_END, COL_START, COL_END initialization
+    // @FIXED by Alessandro on 2014-06-25: removed additional increment of ROW_START/ROW_END/COL_START/COL_END when <exclude_nonstitchable_stacks> = true
 
-	//*** COMPUTING volume dimensions using the computed range of stacks ***
+    // check for valid stack range selection
+    if(_ROW_START == -1)
+        ROW_START = 0;
+    else if(_ROW_START >= 0 && _ROW_START < volume->getN_ROWS())
+        ROW_START = _ROW_START;
+    else
+    {
+        sprintf(errMsg, "in StackStitcher::computeVolumeDims(...): _ROW_START (=%d) out of range [%d,%d]", _ROW_START, 0, volume->getN_ROWS()-1);
+        throw iom::exception(errMsg);
+    }
+    /**/
+    if(_COL_START == -1)
+        COL_START = 0;
+    else if(_COL_START >= 0 && _COL_START < volume->getN_COLS())
+        COL_START = _COL_START;
+    else
+    {
+        sprintf(errMsg, "in StackStitcher::computeVolumeDims(...): _COL_START (=%d) out of range [%d,%d]", _COL_START, 0, volume->getN_COLS()-1);
+        throw iom::exception(errMsg);
+    }
+    /**/
+    if(_ROW_END == -1)
+        ROW_END = volume->getN_ROWS() -1;
+    else if(_ROW_END >= ROW_START && _ROW_END < volume->getN_ROWS())
+        ROW_END = _ROW_END;
+    else
+    {
+        sprintf(errMsg, "in StackStitcher::computeVolumeDims(...): _ROW_END (=%d) out of range [%d,%d]", _ROW_END, ROW_START, volume->getN_ROWS()-1);
+        throw iom::exception(errMsg);
+    }
+    /**/
+    if(_COL_END == -1)
+        COL_END = volume->getN_COLS() -1;
+    else if(_COL_END >= COL_START && _COL_END < volume->getN_COLS())
+        COL_END = _COL_END;
+    else
+    {
+        sprintf(errMsg, "in StackStitcher::computeVolumeDims(...): _COL_END (=%d) out of range [%d,%d]", _COL_END, COL_START, volume->getN_COLS()-1);
+        throw iom::exception(errMsg);
+    }
+    //printf("\nAfter check, range is rows=[%d,%d] and cols=[%d,%d]\n", ROW_START, ROW_END, COL_START, COL_END);
+
+    // if requested, exclude rows and columns that contain nonstitchable stacks only
+    if(exclude_nonstitchable_stacks)
+    {
+        int i=0, j=0;
+        bool stitchable_sequence = false;
+
+        for(i=ROW_START, stitchable_sequence = false; i <= ROW_END && !stitchable_sequence; i++)
+        {
+            ROW_START = i;
+            for(j=COL_START; j <= COL_END && !stitchable_sequence; j++)
+                stitchable_sequence = volume->getSTACKS()[i][j]->isStitchable();
+        }
+        if(!stitchable_sequence)
+        {
+            sprintf(errMsg, "in StackStitcher::computeVolumeDims(...): no stitchable stacks found in the selected stack range");
+            throw iom::exception(errMsg);
+        }
+
+
+        for(j=COL_START, stitchable_sequence = false; j <= COL_END && !stitchable_sequence; j++)
+        {
+            COL_START = j;
+            for(i=ROW_START; i <= ROW_END && !stitchable_sequence; i++)
+                stitchable_sequence = volume->getSTACKS()[i][j]->isStitchable();
+        }
+        if(!stitchable_sequence)
+        {
+            sprintf(errMsg, "in StackStitcher::computeVolumeDims(...): no stitchable stacks found in the selected stack range");
+            throw iom::exception(errMsg);
+        }
+
+
+        for(i=ROW_END, stitchable_sequence = false; i>=ROW_START && !stitchable_sequence; i--)
+        {
+            ROW_END = i;
+            for(j=COL_START; j <= COL_END && !stitchable_sequence; j++)
+                stitchable_sequence = volume->getSTACKS()[i][j]->isStitchable();
+        }
+        if(!stitchable_sequence)
+        {
+            sprintf(errMsg, "in StackStitcher::computeVolumeDims(...): no stitchable stacks found in the selected stack range");
+            throw iom::exception(errMsg);
+        }
+
+
+        for(j=COL_END, stitchable_sequence = false; j>=COL_START && !stitchable_sequence; j--)
+        {
+            COL_END = j;
+            for(int i=ROW_START; i <= ROW_END && !stitchable_sequence; i++)
+                stitchable_sequence = volume->getSTACKS()[i][j]->isStitchable();
+        }
+        if(!stitchable_sequence)
+        {
+            sprintf(errMsg, "in StackStitcher::computeVolumeDims(...): no stitchable stacks found in the selected stack range");
+            throw iom::exception(errMsg);
+        }
+    }
+    //printf("The range of stacks to be stitched is rows[%d,%d] and cols[%d,%d]\n", ROW_START, ROW_END, COL_START, COL_END);
+
+    // compute volume dimensions using the range of stacks computed so far
 	V0=std::numeric_limits<int>::max();
 	V1=std::numeric_limits<int>::min();
 	H0=std::numeric_limits<int>::max();
@@ -381,31 +471,32 @@ void StackStitcher::computeVolumeDims(bool exclude_nonstitchable_stacks, int _RO
 		for(int j=COL_START; j<=COL_END; j++)
 		{
             if(volume->getSTACKS()[i][j]->getABS_D()>D0)
-                D0 = volume->getSTACKS()[i][j]->getABS_D();
+				D0 = volume->getSTACKS()[i][j]->getABS_D();
 
             if(volume->getSTACKS()[i][j]->getABS_D()<D1)
-                D1 = volume->getSTACKS()[i][j]->getABS_D();
+				D1 = volume->getSTACKS()[i][j]->getABS_D();
 		}
 	}
 	H1+=volume->getStacksWidth();
 	V1+=volume->getStacksHeight();
     D1+=volume->getN_SLICES();
+    //printf("\t\t\t....in StackStitcher::computeVolumeDims(): volume range (before selection) is V[%d,%d], H[%d,%d], D[%d,%d]\n", V0, V1, H0, H1, D0, D1);
 
-	//*** SELECTING a subvolume along D axis, if optional parameters _D0 and _D1 have been used ***
+    // set a subvolume along D axis, if optional parameters _D0 and _D1 have been used
     if(_D0 != -1 && _D0 >= D0)
         D0 = _D0;
     if(_D1 != -1 && _D1 <= D1)
         D1 = _D1;
 
     #if S_VERBOSE >2
-    printf("\t\t\t....in StackStitcher::computeVolumeDims(): volume range is V[%d,%d], H[%d,%d], D[%d,%d]\n", V0, V1, H0, H1, D0, D1);
+    printf("\t\t\t....in StackStitcher::computeVolumeDims(): volume range (AFTER selection) is V[%d,%d], H[%d,%d], D[%d,%d]\n", V0, V1, H0, H1, D0, D1);
     #endif
 
 	//*** FINAL CHECK ***
 	if(V0 > V1 || H0 > H1 || D0 > D1)
 	{
 		sprintf(errMsg, "in StackStitcher::computeVolumeDims(...): invalid volume ranges V[%d,%d], H[%d,%d], D[%d,%d]", V0, V1, H0, H1, D0, D1);
-		throw MyException(errMsg);
+		throw iom::exception(errMsg);
 	}
 }
 
@@ -449,16 +540,16 @@ int StackStitcher::getStripeABS_V(int row_index, bool up)
 * selected by the [blending_algo] parameter. If a  <StackRestorer>  object has been passed,  each slice is re-
 * stored before it is combined into the final stripe.
 **************************************************************************************************************/
-real_t* StackStitcher::getStripe(short row_index, short d_index, int restore_direction, StackRestorer* stk_rst,
-								 int blending_algo)									        throw (MyException)
+real_t* StackStitcher::getStripe(int row_index, int d_index, int restore_direction, StackRestorer* stk_rst,
+								 int blending_algo)									        throw (iom::exception)
 {
-    #if S_VERBOSE >2
+        #if S_VERBOSE >2
 	printf("........in StackStitcher::getStripe(short row_index=%d, short d_index=%d, restore_direction=%d, blending_algo=%d)\n",
 		row_index, d_index, restore_direction, blending_algo);
 	#endif
 
 	//LOCAL VARIABLES
-	real_t* stripe = NULL;							//stripe, the result of merging all Stack's of a row
+	real_t* stripe = NULL;							//stripe, the result of merging all VirtualStack's of a row
 	int width=0;									//width of stripe
 	int height=0;									//height of stripe
 	int stripe_V_top;								//top    V(ertical)   coordinate of current stripe
@@ -471,11 +562,11 @@ real_t* StackStitcher::getStripe(short row_index, short d_index, int restore_dir
 	int r_stk_left_displ, l_stk_left_displ;			//displacements of right and left stack from <stripe_H_left> respectively
 	int stack_width  = volume->getStacksWidth();	//stacks H dimension
 	int stack_height = volume->getStacksHeight();	//stacks V dimension
-	Stack  *l_stk    = NULL, *r_stk, *rr_stk;		//pointers to left stack, right stack and right-right stack respectively
+	VirtualStack  *l_stk    = NULL, *r_stk, *rr_stk;		//pointers to left stack, right stack and right-right stack respectively
 	real_t *slice_left = NULL, *slice_right;		//"iterating" images, because current method merges images 2-by-2
 	double angle=0;									//angle between 0 and PI
 	double delta_angle;								//angle step used to sample the overlapping zone in [0,PI]
-    char errMsg[5000];                              //buffer where to store error messages
+	char errMsg[5000];								//buffer where to store error messages
 	real_t *stripe_ptr;								//buffer where to store the resulting stripe
 	real_t *rslice_ptr, *lslice_ptr;				//buffers where to store each loaded pair of right and left slices
 	sint64 i,j;										//pixel indexes
@@ -489,20 +580,20 @@ real_t* StackStitcher::getStripe(short row_index, short d_index, int restore_dir
 	else if(blending_algo == S_SHOW_STACK_MARGIN)
 		blending = stack_margin;
 	else
-		throw MyException("in StackStitcher::getStripe(...): unrecognized blending function");
+		throw iom::exception("in StackStitcher::getStripe(...): unrecognized blending function");
 
 	//checking that <row_index> is not out of bounds
 	if(row_index>=volume->getN_ROWS() || row_index < 0)
 	{
 		sprintf(errMsg, "in StackStitcher::getStripe(...): row %d to be merged is out of bounds [%d,%d]", row_index, 0, volume->getN_ROWS()-1);
-		throw MyException(errMsg);
+		throw iom::exception(errMsg);
 	}
 
 	//checking that <d_index> is not out of bounds
 	if(!(d_index>=D0 && d_index<D1))
 	{
 		sprintf(errMsg, "in StackStitcher::getStripe(...): d_index (= %d) is out of bounds [%d,%d]", d_index, D0, D1-1);
-		throw MyException(errMsg);
+		throw iom::exception(errMsg);
 	}
 
 	//computing current stripe VH coordinates and size
@@ -524,6 +615,10 @@ real_t* StackStitcher::getStripe(short row_index, short d_index, int restore_dir
 
 	//ALLOCATING once for all the MEMORY SPACE for current stripe
 	stripe = new real_t[height*width];
+
+	// 2014-09-09. Alessandro. @FIXED missing buffer initialization in 'getStripe()' method.
+	for(int i=0; i<height*width; i++)
+		stripe[i]=0;
 
 	//looping on all slices with row='row_index'
 	stripe_ptr = stripe;
@@ -571,7 +666,7 @@ real_t* StackStitcher::getStripe(short row_index, short d_index, int restore_dir
 				rslice_ptr = &slice_right[-r_stk_top_displ*stack_width+j-r_stk_left_displ];
 				for(i=0; i<height; i++, stripe_ptr+=width, lslice_ptr+=stack_width, rslice_ptr+=stack_width)
 					if(i - r_stk_top_displ >= 0 && i - r_stk_top_displ < stack_height && i - l_stk_top_displ >= 0 && i - l_stk_top_displ < stack_height)
-                                                *stripe_ptr = blending(angle,*lslice_ptr,*rslice_ptr);
+                        *stripe_ptr = blending(angle,*lslice_ptr,*rslice_ptr);
 					else if (i - r_stk_top_displ >= 0 && i - r_stk_top_displ < stack_height)
 						*stripe_ptr=*rslice_ptr;
 					else if (i - l_stk_top_displ >= 0 && i - l_stk_top_displ < stack_height)
@@ -595,7 +690,7 @@ real_t* StackStitcher::getStripe(short row_index, short d_index, int restore_dir
 		StackStitcher::time_merging+=proc_time;
 		#endif
 
-		//releasing memory allocated for last left Stack
+		//releasing memory allocated for last left VirtualStack
 		slice_left = NULL;
 		if(l_stk)
 			l_stk->releaseImageStack();
@@ -604,9 +699,12 @@ real_t* StackStitcher::getStripe(short row_index, short d_index, int restore_dir
 		slice_left=slice_right;
 	}
 
-	//releasing memory allocated for last right Stack
+	//releasing memory allocated for last right VirtualStack
 	slice_right = NULL;
 	volume->getSTACKS()[row_index][COL_END]->releaseImageStack();
+
+	//iomanager::IOManager::saveImage(vm::strprintf("C:/debug/stripe_Z%04d_R%02d.tif", d_index, row_index), stripe, height, width);
+	//system("pause");
 
 	return stripe;
 }
@@ -641,17 +739,17 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 							   bool exclude_nonstitchable_stacks, int _ROW_START, int _ROW_END, int _COL_START,
 							   int _COL_END, int _D0, int _D1, bool restoreSPIM, int restore_direction,
 							   int blending_algo, bool test_mode, bool show_progress_bar, 
-							   const char* saved_img_format, int saved_img_depth)			throw (MyException)
+							   const char* saved_img_format, int saved_img_depth)			throw (iom::exception)
 {
-    #if S_VERBOSE > 2
-    printf("......in StackStitcher::mergeTiles(output_path=\"%s\", slice_height=%d, slice_width=%d, exclude_nonstitchable_stacks = %s, "
-           "_ROW_START=%d, _ROW_END=%d, _COL_START=%d, _COL_END=%d, _D0=%d, _D1=%d, restoreSPIM = %s, restore_direction = %d, test_mode = %s, resolutions = { ",
-            output_path.c_str(), slice_height, slice_width, (exclude_nonstitchable_stacks ? "true" : "false"), _ROW_START, _ROW_END,
-            _COL_START, _COL_END, _D0, _D1, (restoreSPIM ? "ENABLED" : "disabled"), restore_direction, (test_mode ? "ENABLED" : "disabled"));
-    for(int i=0; i<S_MAX_MULTIRES && resolutions; i++)
-        printf("%d ", resolutions[i]);
-    printf("}\n");
-    #endif
+        #if S_VERBOSE > 2
+        printf("......in StackStitcher::mergeTiles(output_path=\"%s\", slice_height=%d, slice_width=%d, exclude_nonstitchable_stacks = %s, "
+               "_ROW_START=%d, _ROW_END=%d, _COL_START=%d, _COL_END=%d, _D0=%d, _D1=%d, restoreSPIM = %s, restore_direction = %d, test_mode = %s, resolutions = { ",
+                output_path.c_str(), slice_height, slice_width, (exclude_nonstitchable_stacks ? "true" : "false"), _ROW_START, _ROW_END,
+                _COL_START, _COL_END, _D0, _D1, (restoreSPIM ? "ENABLED" : "disabled"), restore_direction, (test_mode ? "ENABLED" : "disabled"));
+		for(int i=0; i<S_MAX_MULTIRES && resolutions; i++)
+            printf("%d ", resolutions[i]);
+        printf("}\n");
+        #endif
 
 	//LOCAL VARIABLES
     sint64 height, width, depth;                                            //height, width and depth of the whole volume that covers all stacks
@@ -678,6 +776,7 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 	StackRestorer *stk_rst = NULL;
 	real_t *buffer_ptr, *ustripe_ptr, *dstripe_ptr;	
 	real_t (*blending)(double& angle, real_t& pixel1, real_t& pixel2);
+	std::stringstream file_path[S_MAX_MULTIRES];
 
 	//retrieving blending function
 	if(blending_algo == S_SINUSOIDAL_BLENDING)
@@ -687,27 +786,27 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 	else if(blending_algo == S_SHOW_STACK_MARGIN)
         blending = stack_margin;
 	else
-        throw MyException("in StackStitcher::getStripe(...): unrecognized blending function");
+        throw iom::exception("in StackStitcher::getStripe(...): unrecognized blending function");
 
 	//initializing the progress bar
 	char progressBarMsg[200];
         ProgressBar::instance();
 	if(show_progress_bar)
 	{
-        ProgressBar::getInstance()->start("Multiresolution tile merging");
-        ProgressBar::getInstance()->update(0,"Initializing...");
-        ProgressBar::getInstance()->show();
+		ProgressBar::instance()->start("Multiresolution tile merging");
+		ProgressBar::instance()->update(0,"Initializing...");
+		ProgressBar::instance()->show();
 	}
 
 	//initializing <StackRestorer> object if restoring is enabled
 	if(restoreSPIM)
 	{
-        char desc_file_path[S_STATIC_STRINGS_SIZE];
-        sprintf(desc_file_path, "%s/%s", volume->getSTACKS_DIR(), S_DESC_FILE_NAME);
-        if(StackedVolume::fileExists(desc_file_path) && restore_direction != axis_invalid)
-            stk_rst = new StackRestorer(this->volume, desc_file_path);
-        else if (!(StackedVolume::fileExists(desc_file_path)) && restore_direction != axis_invalid)
-            printf("\n\nWARNING! Restoring is enabled but can't find %s file at %s.\n\t--> Restoring has been DISABLED.\n\n", S_DESC_FILE_NAME, desc_file_path);
+            char desc_file_path[S_STATIC_STRINGS_SIZE];
+            sprintf(desc_file_path, "%s/%s", volume->getSTACKS_DIR(), S_DESC_FILE_NAME);
+            if(volumemanager::VirtualVolume::fileExists(desc_file_path) && restore_direction != axis_invalid)
+                stk_rst = new StackRestorer(this->volume, desc_file_path);
+            else if (!(volumemanager::VirtualVolume::fileExists(desc_file_path)) && restore_direction != axis_invalid)
+                printf("\n\nWARNING! Restoring is enabled but can't find %s file at %s.\n\t--> Restoring has been DISABLED.\n\n", S_DESC_FILE_NAME, desc_file_path);
 	}
 
 	//computing dimensions of volume to be stitched
@@ -717,13 +816,13 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 	depth = this->D1-this->D0;
 
 	//activating resolutions
-    slice_height = (slice_height == -1 ? height : slice_height);
-    slice_width  = (slice_width  == -1 ? width  : slice_width);
+    slice_height = (int)(slice_height == -1 ? height : slice_height);
+    slice_width  = (int)(slice_width  == -1 ? width  : slice_width);
     if(slice_height < S_MIN_SLICE_DIM || slice_width < S_MIN_SLICE_DIM)
     {
         char err_msg[5000];
         sprintf(err_msg,"The minimum dimension for both slice width and height is %d", S_MIN_SLICE_DIM);
-        throw MyException(err_msg);
+        throw iom::exception(err_msg);
     }
 	if(resolutions == NULL)
 	{
@@ -737,10 +836,10 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
                 resolutions_size = ISR_MAX(resolutions_size, i+1);
 
 	//computing tiles dimensions at each resolution and initializing volume directories
-    for(int res_i=0; res_i< resolutions_size; res_i++)
+	for(int res_i=0; res_i< resolutions_size; res_i++)
 	{
-        n_stacks_V[res_i] = ceil ( (height/POW_INT(2,res_i)) / (float) slice_height );
-        n_stacks_H[res_i] = ceil ( (width/POW_INT(2,res_i))  / (float) slice_width  );
+        n_stacks_V[res_i] = (int) ceil ( (height/POW_INT(2,res_i)) / (float) slice_height );
+        n_stacks_H[res_i] = (int) ceil ( (width/POW_INT(2,res_i))  / (float) slice_width  );
         stacks_height[res_i] = new int *[n_stacks_V[res_i]];
         stacks_width[res_i]  = new int *[n_stacks_V[res_i]];
         for(int stack_row = 0; stack_row < n_stacks_V[res_i]; stack_row++)
@@ -749,27 +848,26 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
             stacks_width [res_i][stack_row] = new int[n_stacks_H[res_i]];
             for(int stack_col = 0; stack_col < n_stacks_H[res_i]; stack_col++)
             {
-                stacks_height[res_i][stack_row][stack_col] = (height/POW_INT(2,res_i)) / n_stacks_V[res_i] + (stack_row < ((int)(height/POW_INT(2,res_i))) % n_stacks_V[res_i] ? 1:0);
-                stacks_width [res_i][stack_row][stack_col] = (width/POW_INT(2,res_i))  / n_stacks_H[res_i] + (stack_col < ((int)(width/POW_INT(2,res_i)))  % n_stacks_H[res_i] ? 1:0);
+                stacks_height[res_i][stack_row][stack_col] = (int) ((height/POW_INT(2,res_i)) / n_stacks_V[res_i] + (stack_row < ((int)(height/POW_INT(2,res_i))) % n_stacks_V[res_i] ? 1:0));
+                stacks_width [res_i][stack_row][stack_col] = (int) ((width/POW_INT(2,res_i))  / n_stacks_H[res_i] + (stack_col < ((int)(width/POW_INT(2,res_i)))  % n_stacks_H[res_i] ? 1:0));
             }
         }
         //creating volume directory iff current resolution is selected and test mode is disabled
         if(resolutions[res_i] == true && !test_mode)
         {
             //creating directory that will contain image data at current resolution
-            std::stringstream file_path;
-            file_path<<output_path<<"/RES("<<height/POW_INT(2,res_i)<<"x"<<width/POW_INT(2,res_i)<<"x"<<depth/POW_INT(2,res_i)<<")";
-            if(!make_dir(file_path.str().c_str()))
+            file_path[res_i]<<output_path<<"/RES("<<height/POW_INT(2,res_i)<<"x"<<width/POW_INT(2,res_i)<<"x"<<depth/POW_INT(2,res_i)<<")";
+            if(!make_dir(file_path[res_i].str().c_str()))
             {
                 char err_msg[S_STATIC_STRINGS_SIZE];
-                sprintf(err_msg, "in mergeTiles(...): unable to create DIR = \"%s\"\n", file_path.str().c_str());
-                throw MyException(err_msg);
+                sprintf(err_msg, "in mergeTiles(...): unable to create DIR = \"%s\"\n", file_path[res_i].str().c_str());
+                throw iom::exception(err_msg);
             }
 
-            //Alessandro - 23/03/2013: saving original volume XML descriptor into each folder
-            char xmlPath[S_STATIC_STRINGS_SIZE];
-            sprintf(xmlPath, "%s/original_volume_desc.xml", file_path.str().c_str());
-            volume->saveXML(0, xmlPath);
+			//Alessandro - 23/03/2013: saving original volume XML descriptor into each folder
+			char xmlPath[S_STATIC_STRINGS_SIZE];
+			sprintf(xmlPath, "%s/original_volume_desc.xml", file_path[res_i].str().c_str());
+			volume->saveXML(0, xmlPath);
         }
 	}
 
@@ -777,10 +875,10 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 	stripesCoords = new stripe_2Dcoords[volume->getN_ROWS()];
 	for(int row_index=ROW_START; row_index<=ROW_END; row_index++)
 	{
-            stripesCoords[row_index].up_left.V		= getStripeABS_V(row_index,true);
-            stripesCoords[row_index].up_left.H      = volume->getSTACKS()[row_index][COL_START]->getABS_H();
-            stripesCoords[row_index].bottom_right.V = getStripeABS_V(row_index,false);
-            stripesCoords[row_index].bottom_right.H = volume->getSTACKS()[row_index][COL_END]->getABS_H()+volume->getStacksWidth();
+        stripesCoords[row_index].up_left.V		= getStripeABS_V(row_index,true);
+        stripesCoords[row_index].up_left.H      = volume->getSTACKS()[row_index][COL_START]->getABS_H();
+        stripesCoords[row_index].bottom_right.V = getStripeABS_V(row_index,false);
+        stripesCoords[row_index].bottom_right.H = volume->getSTACKS()[row_index][COL_END]->getABS_H()+volume->getStacksWidth();
 	}
 
 	//computing stripes corners, i.e. corners that result from the overlap between each pair of adjacent stripes
@@ -789,7 +887,7 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 	{
 		stripe_corner tmp;
 
-		//for first Stack of every stripe
+		//for first VirtualStack of every stripe
 		tmp.H = volume->getSTACKS()[row_index][COL_START]->getABS_H();
 		tmp.h = volume->getSTACKS()[row_index][COL_START]->getABS_V()-stripesCoords[row_index].up_left.V;
 		tmp.up = true;
@@ -827,7 +925,7 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 			}
 		}
 
-		//for last Stack of every stripe (h is not set because it doesn't matter)
+		//for last VirtualStack of every stripe (h is not set because it doesn't matter)
 		tmp.H = volume->getSTACKS()[row_index][COL_END]->getABS_H() + volume->getStacksWidth();
 		tmp.up = true;
 		stripesCorners[row_index].ups.push_back(tmp);
@@ -845,7 +943,7 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 
 	//ALLOCATING  the MEMORY SPACE for image buffer
 	z_max_res = POW_INT(2,resolutions_size-1);
-	z_ratio=depth/z_max_res;
+	z_ratio= (int) depth/z_max_res;
 	buffer = new real_t[height*width*z_max_res];
 
 	#ifdef S_TIME_CALC
@@ -854,14 +952,18 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 
 	for(sint64 z = this->D0, z_parts = 1; z < this->D1; z += z_max_res, z_parts++)
 	{
+		// 2014-09-09. Alessandro. @FIXED missing buffer initialization and reset in 'mergeTiles()' method.
+		for(int i=0; i<height*width*z_max_res; i++)
+			buffer[i]=0;
+
 		for(sint64 k = 0; k < ( z_parts <= z_ratio ? z_max_res : depth%z_max_res ); k++)
 		{
 			//updating the progress bar
 			if(show_progress_bar)
 			{	
 				sprintf(progressBarMsg, "Merging slice %d of %d",((uint32)(z-D0+k+1)),(uint32)depth);
-                                ProgressBar::getInstance()->update(((float)(z-D0+k+1)*100/(float)depth), progressBarMsg);
-                                ProgressBar::getInstance()->show();
+                                ProgressBar::instance()->update(((float)(z-D0+k+1)*100/(float)depth), progressBarMsg);
+                                ProgressBar::instance()->show();
 			}
 
 			//looping on all stripes
@@ -869,7 +971,7 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 			{
 				//loading down stripe
 				if(row_index==ROW_START) stripe_up = NULL;
-                    stripe_down = this->getStripe(row_index,z+k, restore_direction, stk_rst, blending_algo);
+				stripe_down = this->getStripe(row_index,(int)(z+k), restore_direction, stk_rst, blending_algo);
 
 				#ifdef S_TIME_CALC
 				proc_time = -TIME(0);
@@ -975,8 +1077,8 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 			if(show_progress_bar)
 			{
 				sprintf(progressBarMsg, "Generating resolution %d of %d",i+1,ISR_MAX(resolutions_size, resolutions_size));
-                                ProgressBar::getInstance()->updateInfo(progressBarMsg);
-                                ProgressBar::getInstance()->show();
+                                ProgressBar::instance()->updateInfo(progressBarMsg);
+                                ProgressBar::instance()->show();
 			}
 
 			//buffer size along D is different when the remainder of the subdivision by z_max_res is considered
@@ -984,7 +1086,7 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 
 			//halvesampling resolution if current resolution is not the deepest one
 			if(i!=0)	
-				StackStitcher::halveSample(buffer,height/(POW_INT(2,i-1)),width/(POW_INT(2,i-1)),z_size/(POW_INT(2,i-1)));
+				StackStitcher::halveSample(buffer,(int)(height/(POW_INT(2,i-1))),(int)(width/(POW_INT(2,i-1))),(int)(z_size/(POW_INT(2,i-1))));
 
 			//saving at current resolution if it has been selected and iff buffer is at least 1 voxel (Z) deep
 			if(resolutions[i] && (z_size/(POW_INT(2,i))) > 0)
@@ -992,8 +1094,8 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 				if(show_progress_bar)
 				{
 					sprintf(progressBarMsg, "Saving to disc resolution %d",i+1);
-                                        ProgressBar::getInstance()->updateInfo(progressBarMsg);
-                                        ProgressBar::getInstance()->show();
+                                        ProgressBar::instance()->updateInfo(progressBarMsg);
+                                        ProgressBar::instance()->show();
 				}
 
 				//storing in 'base_path' the absolute path of the directory that will contain all stacks
@@ -1013,7 +1115,7 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 					{
 						char err_msg[S_STATIC_STRINGS_SIZE];
 						sprintf(err_msg, "in mergeTiles(...): unable to create V_DIR = \"%s\"\n", V_DIR_path.str().c_str());
-						throw MyException(err_msg);
+						throw iom::exception(err_msg);
 					}
 
 					for(int stack_column = 0, start_width=0, end_width=0; stack_column < n_stacks_H[i]; stack_column++)
@@ -1027,14 +1129,14 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 						{
 							char err_msg[S_STATIC_STRINGS_SIZE];
 							sprintf(err_msg, "in mergeTiles(...): unable to create H_DIR = \"%s\"\n", H_DIR_path.str().c_str());
-							throw MyException(err_msg);
+							throw iom::exception(err_msg);
 						}
 
 						//saving HERE
 						for(int buffer_z=0; buffer_z<z_size/(POW_INT(2,i)); buffer_z++)
 						{
 							std::stringstream img_path;
-							int rel_pos_z = POW_INT(2,i)*buffer_z+z-D0;		// Alessandro, 23/03/2013 - see below. This is the relative Z pixel coordinate in the 
+							int rel_pos_z = POW_INT(2,i)*buffer_z+(int)(z)-D0;		// Alessandro, 23/03/2013 - see below. This is the relative Z pixel coordinate in the 
 																			// highest resolution image space. '-D0' is necessary to make it relative, since
 																			// getMultiresABS_D_string(...) accepts relative coordinates only.
 
@@ -1054,7 +1156,19 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 								img_path.str("");
 								img_path << volume->getSTACKS_DIR() << "/test_middle_slice";
 							}
-							IOManager::saveImage(img_path.str(), buffer + buffer_z*(height/POW_INT(2,i))*(width/POW_INT(2,i)),height/(POW_INT(2,i)),width/(POW_INT(2,i)),start_height,end_height,start_width,end_width, saved_img_format, saved_img_depth);
+
+							// 2014-09-10. Alessandro. @FIXED 'mergeTiles()' method to include plugin support.
+							iomanager::IOPluginFactory::getPlugin2D(iomanager::IMOUT_PLUGIN)->writeData(
+								img_path.str() + "." + saved_img_format, 
+								buffer + buffer_z*(height/POW_INT(2,i))*(width/POW_INT(2,i)),
+								(int)(height/(POW_INT(2,i))),
+								(int)(width/(POW_INT(2,i))),
+								1,
+								start_height,
+								end_height,
+								start_width,
+								end_width, 
+								saved_img_depth);
 						}
 						start_width  += stacks_width [i][stack_row][stack_column];
 					}
@@ -1062,6 +1176,47 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 				}
 			}
 		}
+	}
+
+	if ( !test_mode ) {
+		// reloads created volumes to generate .bin file descriptors at all resolutions
+		ref_sys temp = volume->getREF_SYS();  // required by clang compiler
+		iim::ref_sys reference = *((iim::ref_sys *) &temp); // the cast is needed because there are two ref_sys in different name spaces
+		for(int res_i=0; res_i< resolutions_size; res_i++) {
+			if(resolutions[res_i])
+        	{
+            	//---- Alessandro 2013-04-22 partial fix: wrong voxel size computation. In addition, the predefined reference system {1,2,3} may not be the right
+            	//one when dealing with CLSM data. The right reference system is stored in the <StackedVolume> object. A possible solution to implement
+            	//is to check whether <volume> is a pointer to a <StackedVolume> object, then specialize it to <StackedVolume*> and get its reference
+            	//system.
+				//---- Giulio 2013-08-23 fixed
+				// 2014-09-09. Alessandro. @FIXED: propagate iim::IOException (otherwise it will crash...) and disable iim::DEBUG
+				try
+				{
+					iim::DEBUG = iim::NO_DEBUG;
+					iim::StackedVolume temp_vol(file_path[res_i].str().c_str(),reference,
+						volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,res_i));
+				}
+				catch(iim::IOException & ioex)
+				{
+					throw iom::exception(ioex.what());
+				}
+
+        	}
+        }
+	}
+
+
+	// deallocate memory
+    for(int res_i=0; res_i< resolutions_size; res_i++)
+	{
+		for(int stack_row = 0; stack_row < n_stacks_V[res_i]; stack_row++)
+		{
+			delete []stacks_height[res_i][stack_row];
+			delete []stacks_width [res_i][stack_row];
+		}
+		delete []stacks_height[res_i];
+		delete []stacks_width[res_i]; 
 	}
 
 	//releasing allocated memory
@@ -1116,13 +1271,13 @@ void StackStitcher::halveSample(real_t* img, int height, int width, int depth)
 * ment. Where for a pair of adjacent stacks no displacement is available,  a displacement  is generated using
 * nominal stage coordinates.
 **************************************************************************************************************/
-void StackStitcher::projectDisplacements()												   throw (MyException)
+void StackStitcher::projectDisplacements()												   throw (iom::exception)
 {
     #if S_VERBOSE > 3
     printf("......in StackStitcher::projectDisplacements()\n");
     #endif
 
-    Stack *stk;
+    VirtualStack *stk;
     for(int i=0; i<volume->getN_ROWS(); i++)
     {
         for(int j=0; j<volume->getN_COLS(); j++)
@@ -1179,13 +1334,13 @@ void StackStitcher::projectDisplacements()												   throw (MyException)
 * Moreover, stacks which do not have any reliable single-direction displacements with all 4 neighbors are mar-
 * ked as NON STITCHABLE.
 **************************************************************************************************************/
-void StackStitcher::thresholdDisplacements(float reliability_threshold)					   throw (MyException)
+void StackStitcher::thresholdDisplacements(float reliability_threshold)					   throw (iom::exception)
 {
 	#if S_VERBOSE > 3
 	printf("......in StackStitcher::thresholdDisplacements(reliability_threshold = %.4f)\n", reliability_threshold);
 	#endif
 
-	Stack *stk;
+	VirtualStack *stk;
 	char errMsg[2000];
 
         //checking precondition: one and only one displacement must exist for each pair of adjacent stacks
@@ -1195,16 +1350,16 @@ void StackStitcher::thresholdDisplacements(float reliability_threshold)					   t
                 stk = volume->getSTACKS()[i][j];
 
                 if(i != 0 && stk->getNORTH().size() != 1)
-                    throw MyException("in StackStitcher::thresholdDisplacements(...): one and only displacement must exist for each pair of adjacent stacks.");
+                    throw iom::exception("in StackStitcher::thresholdDisplacements(...): one and only displacement must exist for each pair of adjacent stacks.");
 
                 if(j != 0 && stk->getWEST().size() != 1)
-                    throw MyException("in StackStitcher::thresholdDisplacements(...): one and only displacement must exist for each pair of adjacent stacks.");
+                    throw iom::exception("in StackStitcher::thresholdDisplacements(...): one and only displacement must exist for each pair of adjacent stacks.");
 
                 if(i != (volume->getN_ROWS()-1)  && stk->getSOUTH().size() != 1)
-                    throw MyException("in StackStitcher::thresholdDisplacements(...): one and only displacement must exist for each pair of adjacent stacks.");
+                    throw iom::exception("in StackStitcher::thresholdDisplacements(...): one and only displacement must exist for each pair of adjacent stacks.");
 
                 if(j != (volume->getN_COLS()-1) && stk->getEAST().size() != 1)
-                    throw MyException("in StackStitcher::thresholdDisplacements(...): one and only displacement must exist for each pair of adjacent stacks.");
+                    throw iom::exception("in StackStitcher::thresholdDisplacements(...): one and only displacement must exist for each pair of adjacent stacks.");
             }
 
 	//thresholding displacements
@@ -1212,38 +1367,42 @@ void StackStitcher::thresholdDisplacements(float reliability_threshold)					   t
 		for(int j=0; j<volume->getN_COLS(); j++)
 		{
 			stk = volume->getSTACKS()[i][j];
-			if(i!= 0)
+			if(i!= 0) {
 				if(stk->getNORTH().size() == 1)
 					stk->getNORTH()[0]->threshold(reliability_threshold);
 				else
 				{
 					sprintf(errMsg, "in StackStitcher::thresholdDisplacements(...): stack [%d,%d] must have exactly one displacement at NORTH", i, j);
-					throw MyException(errMsg);
+					throw iom::exception(errMsg);
 				}
-			if(j!= volume->getN_COLS() -1)
+			}
+			if(j!= volume->getN_COLS() -1) {
 				if(stk->getEAST().size() == 1)
 					stk->getEAST()[0]->threshold(reliability_threshold);
 				else
 				{
 					sprintf(errMsg, "in StackStitcher::thresholdDisplacements(...): stack [%d,%d] must have exactly one displacement at EAST", i, j);
-					throw MyException(errMsg);
+					throw iom::exception(errMsg);
 				}
-			if(i!= volume->getN_ROWS() -1)
+			}
+			if(i!= volume->getN_ROWS() -1) {
 				if(stk->getSOUTH().size() == 1)
 					stk->getSOUTH()[0]->threshold(reliability_threshold);
 				else
 				{
 					sprintf(errMsg, "in StackStitcher::thresholdDisplacements(...): stack [%d,%d] must have exactly one displacement at SOUTH", i, j);
-					throw MyException(errMsg);
+					throw iom::exception(errMsg);
 				}
-			if(j!= 0)
+			}
+			if(j!= 0) {
 				if(stk->getWEST().size() == 1)
 					stk->getWEST()[0]->threshold(reliability_threshold);
 				else
 				{
 					sprintf(errMsg, "in StackStitcher::thresholdDisplacements(...): stack [%d,%d] must have exactly one displacement at WEST", i, j);
-					throw MyException(errMsg);
+					throw iom::exception(errMsg);
 				}
+			}
 		}
 
 	//find stitchable stacks, i.e. stacks that have at least one reliable single-direction displacement
@@ -1272,7 +1431,7 @@ void StackStitcher::thresholdDisplacements(float reliability_threshold)					   t
 /*************************************************************************************************************
 * Executes the compute tiles placement algorithm associated to the given ID <algorithm_type>
 **************************************************************************************************************/
-void StackStitcher::computeTilesPlacement(int algorithm_type)								throw (MyException)
+void StackStitcher::computeTilesPlacement(int algorithm_type)								throw (iom::exception)
 {
 	#if S_VERBOSE > 3
 	printf("......in StackStitcher::computeTilesPlacement(algorithm_type = %d)\n", algorithm_type);
@@ -1288,9 +1447,9 @@ void StackStitcher::computeTilesPlacement(int algorithm_type)								throw (MyEx
 int StackStitcher::getMultiresABS_V(int res, int REL_V)
 {
 	if(volume->getVXL_V() > 0)
-		return ROUND(volume->getABS_V( V0 + REL_V*POW_INT(2,res) )*10);
+		return (int)ROUND(volume->getABS_V( V0 + REL_V*POW_INT(2,res) )*10);
 	else
-		return ROUND(volume->getABS_V( V0 - 1 + REL_V*POW_INT(2,res))*10 + volume->getVXL_V()*POW_INT(2,res)*10);
+		return (int)ROUND(volume->getABS_V( V0 - 1 + REL_V*POW_INT(2,res))*10 + volume->getVXL_V()*POW_INT(2,res)*10);
 }
 std::string StackStitcher::getMultiresABS_V_string(int res, int REL_V)	
 {
@@ -1303,9 +1462,9 @@ std::string StackStitcher::getMultiresABS_V_string(int res, int REL_V)
 int StackStitcher::getMultiresABS_H(int res, int REL_H)
 {
 	if(volume->getVXL_H() > 0)
-		return ROUND(volume->getABS_H( H0 + REL_H*POW_INT(2,res) )*10);
+		return (int)ROUND(volume->getABS_H( H0 + REL_H*POW_INT(2,res) )*10);
 	else
-		return ROUND(volume->getABS_H( H0 - 1 + REL_H*POW_INT(2,res))*10  + volume->getVXL_H()*POW_INT(2,res)*10);
+		return (int)ROUND(volume->getABS_H( H0 - 1 + REL_H*POW_INT(2,res))*10  + volume->getVXL_H()*POW_INT(2,res)*10);
 }
 std::string StackStitcher::getMultiresABS_H_string(int res, int REL_H)	
 {
@@ -1318,9 +1477,9 @@ std::string StackStitcher::getMultiresABS_H_string(int res, int REL_H)
 int StackStitcher::getMultiresABS_D(int res, int REL_D)
 {
 	if(volume->getVXL_D() > 0)
-		return ROUND(volume->getABS_D( D0 + REL_D*POW_INT(2,res) )*10);
+		return (int)ROUND(volume->getABS_D( D0 + REL_D*POW_INT(2,res) )*10);
 	else
-		return ROUND(volume->getABS_D( D0 - 1 + REL_D*POW_INT(2,res) )*10 + volume->getVXL_D()*POW_INT(2,res)*10);
+		return (int)ROUND(volume->getABS_D( D0 - 1 + REL_D*POW_INT(2,res) )*10 + volume->getVXL_D()*POW_INT(2,res)*10);
 }
 std::string StackStitcher::getMultiresABS_D_string(int res, int REL_D)	
 {
@@ -1334,7 +1493,7 @@ std::string StackStitcher::getMultiresABS_D_string(int res, int REL_D)
 /*************************************************************************************************************
 * Functions used to save single phase time performances
 **************************************************************************************************************/
-void StackStitcher::saveComputationTimes(const char *filename, StackedVolume &stk_org, double total_time)
+void StackStitcher::saveComputationTimes(const char *filename, volumemanager::VirtualVolume &stk_org, double total_time)
 {
 	//building filename with local time
 	time_t rawtime;
@@ -1379,30 +1538,18 @@ void StackStitcher::saveComputationTimes(const char *filename, StackedVolume &st
 			acc+=StackStitcher::time_multiresolution;
 		}
 
-		if(IOManager::time_IO > 0)
-			fprintf(file, "\nTIME I/O\t\t\t\t%.0f minutes,\t%.1f seconds\n", (IOManager::time_IO/60), IOManager::time_IO);
-		if(IOManager::time_IO_conversions > 0)
-			fprintf(file, "TIME I/O conversions\t%.0f minutes,\t%.1f seconds\n", (IOManager::time_IO_conversions/60), IOManager::time_IO_conversions);
+		if(iomanager::IOPluginFactory::getTimeIO() > 0)
+			fprintf(file, "\nTIME I/O\t\t\t\t%.0f minutes,\t%.1f seconds\n", (iomanager::IOPluginFactory::getTimeIO()/60), iomanager::IOPluginFactory::getTimeIO());
+		if(iomanager::IOPluginFactory::getTimeConversions() > 0)
+			fprintf(file, "TIME I/O conversions\t%.0f minutes,\t%.1f seconds\n", (iomanager::IOPluginFactory::getTimeConversions()/60), iomanager::IOPluginFactory::getTimeConversions());
 
 		if(total_time > 0)
 		{
-			fprintf(file, "Non-measured TIME\t\t%.0f minutes,\t%.1f seconds\n", ((total_time-IOManager::time_IO-IOManager::time_IO_conversions-acc)/60), (total_time-IOManager::time_IO-IOManager::time_IO_conversions-acc));
+			fprintf(file, "Non-measured TIME\t\t%.0f minutes,\t%.1f seconds\n", ((total_time-iomanager::IOPluginFactory::getTimeIO()-iomanager::IOPluginFactory::getTimeConversions()-acc)/60), (total_time-iomanager::IOPluginFactory::getTimeIO()-iomanager::IOPluginFactory::getTimeConversions()-acc));
 			fprintf(file, "TOTAL TIME\t\t\t\t%.0f minutes,\t%.1f seconds\n", (total_time/60), total_time);
 		}
 
 		fclose(file);
 	}
 
-}
-
-
-void StackStitcher::resetComputationTimes()
-{
-	StackStitcher::time_displ_comp=0;
-	StackStitcher::time_merging=0;
-	StackStitcher::time_stack_desc=0;
-	StackStitcher::time_stack_restore=0;
-	StackStitcher::time_multiresolution=0;
-	IOManager::time_IO = 0;
-	IOManager::time_IO_conversions = 0;
 }

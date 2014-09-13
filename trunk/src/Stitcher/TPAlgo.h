@@ -28,29 +28,29 @@
 #ifndef _TILE_PLACEMENT_ALGORITHM_H
 #define _TILE_PLACEMENT_ALGORITHM_H
 
-#include "StackedVolume.h"
+#include "vmStackedVolume.h"
 
 class TPAlgo
 {
 	protected:
 
 		int TYPE;				//type of algorithm
-		StackedVolume* volume;	//pointer to the object on which the current algorithm has to be executed
+		volumemanager::VirtualVolume* volume;	//pointer to the object on which the current algorithm has to be executed
 
 	public:
 
 		TPAlgo(void){};
-		TPAlgo(int _TYPE, StackedVolume * _volume);
+		TPAlgo(int _TYPE, volumemanager::VirtualVolume * _volume);
 		virtual ~TPAlgo(void){};
 
 		/*************************************************************************************************************
 		* Abstract method that all derived classes must implement.
 		* Finds the optimal tile placement on the <volume> object member
 		**************************************************************************************************************/
-		virtual void execute()																   throw (MyException) = 0;
+		virtual void execute()																   throw (iom::exception) = 0;
 
 		//static method which is responsible to instance and return the algorithm of the given type
-		static TPAlgo* instanceAlgorithm(int _type, StackedVolume * _volume);											
+		static TPAlgo* instanceAlgorithm(int _type, volumemanager::VirtualVolume * _volume);											
 };
 
 #endif /* _TILE_PLACEMENT_ALGORITHM_H */
