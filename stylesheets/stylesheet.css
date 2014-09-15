@@ -159,6 +159,19 @@ p img {
   border: none;
 }
 
+.imgreset{
+  display: inline;
+  position: absolute;
+  margin: 0;
+  max-width: 739px;
+  padding: 0px;
+  margin: 0px 0 0px 0;
+  border: 0;
+  vertical-align: baseline;
+  box-shadow: none;
+}
+
+
 pre, code {
   width: 100%;
   color: #222;
