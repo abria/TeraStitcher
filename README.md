@@ -7,17 +7,17 @@ microscopy images (BMC Bioinformatics 2012, 13:316)
 ===========================================================
 Contributors
 
-- Alessandro Bria (email: a.bria@unicas.it)
-  Post-doctoral Fellow at University of Cassino (Italy)
-  Main developer
+- Alessandro Bria (email: a.bria@unicas.it).
+  Post-doctoral Fellow at University of Cassino (Italy).
+  Main developer.
 
-- Giulio Iannello (email: g.iannello@unicampus.it)
-  Full Professor at University Campus Bio-Medico of Rome (italy)
-  Supervisor and co-developer
+- Giulio Iannello (email: g.iannello@unicampus.it).
+  Full Professor at University Campus Bio-Medico of Rome (italy).
+  Supervisor and co-developer.
 
-- Leonardo Onofri (email: leonardonofri@gmail.com)
-  Post-doctoral Fellow at University Campus Bio-Medico of Rome (Italy)
-  Co-developer
+- Leonardo Onofri (email: leonardonofri@gmail.com).
+  Post-doctoral Fellow at University Campus Bio-Medico of Rome (Italy).
+  Co-developer.
   
 ===========================================================
 Main features
