@@ -3,7 +3,6 @@ TeraStitcher
 
 A tool for fast automatic 3D-stitching of teravoxel-sized 
 microscopy images (BMC Bioinformatics 2012, 13:316)
-
 ===========================================================
 
 Contributors
