@@ -3,8 +3,8 @@ TeraStitcher
 
 A tool for fast automatic 3D-stitching of teravoxel-sized 
 microscopy images (BMC Bioinformatics 2012, 13:316)
-===========================================================
 
+===========================================================
 Contributors
 
 - Alessandro Bria (email: a.bria@unicas.it)
@@ -20,7 +20,6 @@ Contributors
   Co-developer
   
 ===========================================================
-
 Main features
 
 - designed for very large images (TeraByte-sized or more)
