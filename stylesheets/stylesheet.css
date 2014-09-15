@@ -25,7 +25,7 @@ time, mark, audio, video {
   margin: 0;
   padding: 0;
   border: 0;
-  /*font: inherit;*/
+  font: inherit;
   vertical-align: baseline;
 }
 
@@ -256,89 +256,6 @@ form {
   padding: 20px;
 }
 
-header ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  position: absolute;
-  z-index: 1;
-  right: 10px;
-  top: 20px;
-  height: 38px;
-  padding: 0px 0;
-  background: #5198DF;
-  background: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #77b9fb), color-stop(100%, #3782cd));
-  background: -webkit-linear-gradient(#77b9fb, #3782cd);
-  background: -moz-linear-gradient(#77b9fb, #3782cd);
-  background: -o-linear-gradient(#77b9fb, #3782cd);
-  background: -ms-linear-gradient(#77b9fb, #3782cd);
-  background: linear-gradient(#77b9fb, #3782cd);
-  border-radius: 5px;
-  -webkit-box-shadow: inset rgba(255, 255, 255, 0.45) 0 1px 0, inset rgba(0, 0, 0, 0.2) 0 -1px 0;
-  -moz-box-shadow: inset rgba(255, 255, 255, 0.45) 0 1px 0, inset rgba(0, 0, 0, 0.2) 0 -1px 0;
-  box-shadow: inset rgba(255, 255, 255, 0.45) 0 1px 0, inset rgba(0, 0, 0, 0.2) 0 -1px 0;
-  width: auto;
-}
-header ul:before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  left: -5px;
-  top: -4px;
-  right: -5px;
-  bottom: -6px;
-  background: rgba(0, 0, 0, 0.1);
-  -webkit-border-radius: 8px;
-  -moz-border-radius: 8px;
-  -ms-border-radius: 8px;
-  -o-border-radius: 8px;
-  border-radius: 8px;
-  -webkit-box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 0, inset rgba(255, 255, 255, 0.7) 0 -1px 0;
-  -moz-box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 0, inset rgba(255, 255, 255, 0.7) 0 -1px 0;
-  box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 0, inset rgba(255, 255, 255, 0.7) 0 -1px 0;
-}
-header ul li {
-  width: 79px;
-  float: left;
-  border-right: 1px solid #3A7CBE;
-  height: 38px;
-}
-header ul li:hover {
- background: rgba(0, 0, 0, 0.3);
-}
-header ul li.single {
-  border: none;
-}
-header ul li + li {
-  width: 78px;
-  border-left: 1px solid #8BBEF3;
-}
-header ul li + li + li {
-  border-right: none;
-  width: 79px;
-}
-header ul a {
-  line-height: 1;
-  font-size: 11px;
-  color: #fff;
-  color: rgba(255, 255, 255, 0.8);
-  display: block;
-  text-align: center;
-  font-weight: 400;
-  padding-top: 6px;
-  height: 40px;
-  text-shadow: rgba(0, 0, 0, 0.4) 0 -1px 0;
-}
-header ul a:hover{
-  text-decoration: none;
-}
-header ul a strong {
-  font-size: 14px;
-  display: block;
-  color: #fff;
-  -webkit-font-smoothing: antialiased;
-}
-
 /*******************************************************************************
 Full-Width Styles
 *******************************************************************************/
@@ -400,11 +317,12 @@ Full-Width Styles
 
 #downloads {
   position: absolute;
-  width: 360px;
+  width: 210px;
   z-index: 10;
-  bottom: -30px;
-  right: 0px;
+  bottom: -40px;
+  right: 0;
   height: 70px;
+  background: url('../images/icon_download.png') no-repeat 0% 90%;
 }
 
 .zip_download_link {
