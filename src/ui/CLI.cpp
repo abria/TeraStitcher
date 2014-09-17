@@ -65,9 +65,9 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::ValueArg<std::string> p_proj_in_path("","projin","File path of the XML project file to be loaded.",false,"null","string");
 	TCLAP::ValueArg<std::string> p_proj_out_path("","projout","File path of the XML project file to be saved.",false,"","string");
 	TCLAP::ValueArg<std::string> p_refsys_1("","ref1",	"First axis of the used reference system.                              "
-														"'Y' or '1' = Vertical                                                 "
-														"'X' or '2' = Horizontal                                               "
-														"'Z' or '3' = Depth                                                    "
+														"'Y' or 'V' or '1' = Vertical                                          "
+														"'X' or 'H' or '2' = Horizontal                                        "
+														"'Z' or 'D' or '3' = Depth                                             "
 														"use '-' prefix for inverted axis (e.g. '-X')",false,vm::num2str<int>(CLI_DEF_REF1),"string");
 	TCLAP::ValueArg<std::string> p_refsys_2("","ref2","Second axis of the used reference system (see --ref1)",false,vm::num2str<int>(CLI_DEF_REF2),"string");
 	TCLAP::ValueArg<std::string> p_refsys_3("","ref3","Third axis of the used reference system (see --ref1)",false,vm::num2str<int>(CLI_DEF_REF3),"string");
@@ -518,12 +518,14 @@ string TeraStitcherCLI::getHelpText()
 	stringstream helptext;
 	helptext << "TeraStitcher " TERASTITCHER_VERSION "\n";
 	helptext << "  developed at University Campus Bio-Medico of Rome by:\n";
-	helptext << "  -\tAlessandro Bria (email: a.bria@unicas.it)                            ";
-	helptext << "   \tPhD student at Departement of Electrical and Information Engineering";
-	helptext << "   \tFaculty of Engineering of University of Cassino\n";
-	helptext << "  -\tGiulio Iannello, Ph.D. (email: g.iannello@unicampus.it)              ";
-	helptext << "   \tFull Professor of Computer Science and Computer Engineering          ";
-	helptext << "   \tFaculty of Engineering of University Campus Bio-Medico of Rome";
+	helptext << "   -\tAlessandro Bria (email: a.bria@unicas.it)                            ";
+	helptext << "    \tPhD student at Departement of Electrical and Information Engineering";
+	helptext << "    \tFaculty of Engineering of University of Cassino\n";
+	helptext << "   -\tGiulio Iannello, Ph.D. (email: g.iannello@unicampus.it)              ";
+	helptext << "    \tFull Professor of Computer Science and Computer Engineering          ";
+	helptext << "    \tFaculty of Engineering of University Campus Bio-Medico of Rome\n";
+	helptext << "  Official website/repo: http://abria.github.io/TeraStitcher";
+	
 	return helptext.str();
 }
 

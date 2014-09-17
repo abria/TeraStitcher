@@ -126,17 +126,17 @@ namespace volumemanager
 	}
 	inline axis str2axis(const std::string & str)
 	{
-		if(str.compare("vertical") == 0 || str.compare("1") == 0 || str.compare("Y")== 0  || str.compare("y")== 0)
+		if(str.compare("vertical") == 0				|| str.compare("1") == 0	|| str.compare("v") == 0	|| str.compare("V") == 0	|| str.compare("Y")== 0		|| str.compare("y")== 0)
 			return vertical;
-		else if(str.compare("inv_vertical") == 0 || str.compare("-1") == 0 || str.compare("-Y")== 0  || str.compare("-y")== 0)
+		else if(str.compare("inv_vertical") == 0	|| str.compare("-1") == 0	|| str.compare("-v") == 0	|| str.compare("-V") == 0	|| str.compare("-Y")== 0		|| str.compare("-y")== 0)
 			return inv_vertical;
-		else if(str.compare("horizontal") == 0 || str.compare("2") == 0 || str.compare("X")== 0  || str.compare("x")== 0)
+		else if(str.compare("horizontal") == 0		|| str.compare("2") == 0	|| str.compare("h") == 0	|| str.compare("H") == 0	|| str.compare("X")== 0		|| str.compare("x")== 0)
 			return horizontal;
-		else if(str.compare("inv_horizontal") == 0 || str.compare("-2") == 0 || str.compare("-X")== 0  || str.compare("-x")== 0)
+		else if(str.compare("inv_horizontal") == 0	|| str.compare("-2") == 0	|| str.compare("-h") == 0	|| str.compare("-H") == 0	|| str.compare("-X")== 0		|| str.compare("-x")== 0)
 			return inv_horizontal;
-		else if(str.compare("depth") == 0 || str.compare("3") == 0 || str.compare("Z")== 0  || str.compare("z")== 0)
+		else if(str.compare("depth") == 0			|| str.compare("3") == 0	|| str.compare("d") == 0	|| str.compare("D") == 0	|| str.compare("Z")== 0		|| str.compare("z")== 0)
 			return depth;
-		else if(str.compare("inv_depth") == 0 || str.compare("-3") == 0 || str.compare("-Z")== 0 || str.compare("-z")== 0)
+		else if(str.compare("inv_depth") == 0		|| str.compare("-3") == 0	|| str.compare("-d") == 0	|| str.compare("-D") == 0	|| str.compare("-Z")== 0		|| str.compare("-z")== 0)
 			return inv_depth;
 		else
 			return axis_invalid;
