@@ -83,7 +83,7 @@ throw (iom::exception)
 
 
 // read 3D image data from a stack of (2D) image files
-real_t*								// (OUTPUT) a [0.0,1.0]-valued array storing the 3D image in channel->slice->row order
+iom::real_t*						// (OUTPUT) a [0.0,1.0]-valued array storing the 3D image in channel->slice->row order
 	iomanager::opencv2D::readData(
 	char **files,					// (INPUT)	array of C-strings storing image filenames
 	int files_size,					// (INPUT)	size of 'files'
@@ -98,7 +98,7 @@ throw (iom::exception)
 	/**/iom::debug(iom::LEV3, iom::strprintf("files_size = %d, path = %s, first = %d, last = %d, is_sparse = %s, chan = %d, params = \"%s\"",
 		files_size, path ? path : "null", first, last, is_sparse ? "true" : "false", chan, params.c_str()).c_str(), __iom__current__function__);
 
-	real_t *image_stack = 0;
+	iom::real_t *image_stack = 0;
 	uint64 image_stack_width=0, image_stack_height=0, z=0;
 
 	// check for valid file list
@@ -157,7 +157,7 @@ throw (iom::exception)
 			image_stack_height = (uint64) image.rows;
 			image_stack_width  = (uint64) image.cols;
 			uint64 image_stack_size = image_stack_width * image_stack_height * (last-first+1);
-			image_stack = new real_t[image_stack_size];
+			image_stack = new iom::real_t[image_stack_size];
 			for(uint64 j=0; j < image_stack_size; j++)
 				image_stack[j] = 0;		// default is 0 (black)
 		}
@@ -165,7 +165,7 @@ throw (iom::exception)
 			throw iom::exception("images in stack have not the same dimensions", __iom__current__function__);
 
 		// convert image to [0.0,1.0]-valued array
-		real_t *raw_data = &image_stack[z*image.rows*image.cols];
+		iom::real_t *raw_data = &image_stack[z*image.rows*image.cols];
 		if(image.depth() == CV_8U)
 		{
 			for(int i=0; i<image.rows; i++)
@@ -207,7 +207,7 @@ throw (iom::exception)
 void 
 	iomanager::opencv2D::writeData(
 	std::string img_path,		// (INPUT)	image filepath (it includes the file extension)
-	real_t* raw_img,			// (INPUT)	a [0.0,1.0]-valued array storing the 2D image in channel->row order
+	iom::real_t* raw_img,			// (INPUT)	a [0.0,1.0]-valued array storing the 2D image in channel->row order
 	int img_height,				// (INPUT)	image height
 	int img_width,				// (INPUT)	image width
 	int img_chans,				// (INPUT)	number of channels

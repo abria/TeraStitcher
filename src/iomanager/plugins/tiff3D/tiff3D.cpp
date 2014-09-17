@@ -1,3 +1,4 @@
+#include <cstddef>			// 2014-09-18. Alessandro. @FIXED compilation issue on gcc compilers.
 #include <tiffio.h>
 #include "tiff3D.h"
 #include "Tiff3DMngr.h"

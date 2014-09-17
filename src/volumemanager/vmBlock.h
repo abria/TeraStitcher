@@ -89,7 +89,7 @@ class Block : public VirtualStack
         void *getCONTAINER()    {return CONTAINER;}
 
 		//LOAD and RELEASE methods
-        real_t* loadImageStack(int first_file=-1, int last_file=-1) throw (iom::exception);
+        iom::real_t* loadImageStack(int first_file=-1, int last_file=-1) throw (iom::exception);
 		void releaseImageStack();
 
 		//XML methods

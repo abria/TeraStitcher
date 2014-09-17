@@ -70,6 +70,7 @@
 #endif
 
 using namespace std;
+using namespace iom;
 
 // 2014-09-10. Alessandro. @ADDED plugin creation/registration functions to make 'StackedVolume' a volume format plugin.
 const std::string StackedVolume::id = "TiledXY|2Dseries";
@@ -109,7 +110,7 @@ StackedVolume::StackedVolume(const char* _stacks_dir, vm::ref_sys _reference_sys
 			{
 				if(STACKS[i][j]->getDEPTH() != N_SLICES)
 				{
-					throw iom::exception(strprintf("in StackedVolume::StackedVolume(): unequal number of slices detected. Stack \"%s\" has %d, stack \"%s\" has %d. "
+					throw iom::exception(iom::strprintf("in StackedVolume::StackedVolume(): unequal number of slices detected. Stack \"%s\" has %d, stack \"%s\" has %d. "
 						"Please activate the sparse data option if stacks are not complete",
 						STACKS[0][0]->getDIR_NAME(), STACKS[0][0]->getDEPTH(), STACKS[i][j]->getDIR_NAME(), STACKS[i][j]->getDEPTH()).c_str());
 				}
@@ -163,7 +164,7 @@ StackedVolume::StackedVolume(const char *xml_filepath) throw (iom::exception)
 			{
 				if(STACKS[i][j]->getDEPTH() != N_SLICES)
 				{
-					throw iom::exception(strprintf("in StackedVolume::StackedVolume(): unequal number of slices detected. N_SLICES = %d, but stack \"%s\" has %d"
+					throw iom::exception(iom::strprintf("in StackedVolume::StackedVolume(): unequal number of slices detected. N_SLICES = %d, but stack \"%s\" has %d"
 						"Please activate the sparse data option if stacks are not complete",
 						N_SLICES, STACKS[i][j]->getDIR_NAME(), STACKS[i][j]->getDEPTH()).c_str());
 				}
@@ -492,7 +493,7 @@ void StackedVolume::loadXML(const char *xml_filepath) throw (iom::exception)
 	//reading fields and checking coherence with metadata previously read from VM_BIN_METADATA_FILE_NAME
 	TiXmlElement * pelem = hRoot.FirstChildElement("stacks_dir").Element();
 	if(strcmp(pelem->Attribute("value"), stacks_dir) != 0)
-		throw iom::exception(strprintf("in StackedVolume::loadXML(...): Mismatch in <stacks_dir> field between xml file (=\"%s\") and %s (=\"%s\").", pelem->Attribute("value"), vm::BINARY_METADATA_FILENAME.c_str(), stacks_dir).c_str());
+		throw iom::exception(iom::strprintf("in StackedVolume::loadXML(...): Mismatch in <stacks_dir> field between xml file (=\"%s\") and %s (=\"%s\").", pelem->Attribute("value"), vm::BINARY_METADATA_FILENAME.c_str(), stacks_dir).c_str());
 	pelem = hRoot.FirstChildElement("voxel_dims").Element();
 	float VXL_V_read=0.0f, VXL_H_read=0.0f, VXL_D_read=0.0f;
 	pelem->QueryFloatAttribute("V", &VXL_V_read);
@@ -1160,7 +1161,7 @@ void StackedVolume::dumpMData(const char* volumePath) throw (iom::exception)
 	// file open
 	FILE* f = fopen(mdata_filepath, "rb");
 	if(!f)
-		throw iom::exception(strprintf("in StackedVolume::dumpMData(): cannot open metadata binary file at \"%s\"", mdata_filepath).c_str());
+		throw iom::exception(iom::strprintf("in StackedVolume::dumpMData(): cannot open metadata binary file at \"%s\"", mdata_filepath).c_str());
 
 	// <str_size> field
 	if( fread(&str_size, sizeof(uint16), 1, f) != 1)

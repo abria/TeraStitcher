@@ -540,7 +540,7 @@ int StackStitcher::getStripeABS_V(int row_index, bool up)
 * selected by the [blending_algo] parameter. If a  <StackRestorer>  object has been passed,  each slice is re-
 * stored before it is combined into the final stripe.
 **************************************************************************************************************/
-real_t* StackStitcher::getStripe(int row_index, int d_index, int restore_direction, StackRestorer* stk_rst,
+iom::real_t* StackStitcher::getStripe(int row_index, int d_index, int restore_direction, StackRestorer* stk_rst,
 								 int blending_algo)									        throw (iom::exception)
 {
         #if S_VERBOSE >2
@@ -549,7 +549,7 @@ real_t* StackStitcher::getStripe(int row_index, int d_index, int restore_directi
 	#endif
 
 	//LOCAL VARIABLES
-	real_t* stripe = NULL;							//stripe, the result of merging all VirtualStack's of a row
+	iom::real_t* stripe = NULL;							//stripe, the result of merging all VirtualStack's of a row
 	int width=0;									//width of stripe
 	int height=0;									//height of stripe
 	int stripe_V_top;								//top    V(ertical)   coordinate of current stripe
@@ -563,14 +563,14 @@ real_t* StackStitcher::getStripe(int row_index, int d_index, int restore_directi
 	int stack_width  = volume->getStacksWidth();	//stacks H dimension
 	int stack_height = volume->getStacksHeight();	//stacks V dimension
 	VirtualStack  *l_stk    = NULL, *r_stk, *rr_stk;		//pointers to left stack, right stack and right-right stack respectively
-	real_t *slice_left = NULL, *slice_right;		//"iterating" images, because current method merges images 2-by-2
+	iom::real_t *slice_left = NULL, *slice_right;		//"iterating" images, because current method merges images 2-by-2
 	double angle=0;									//angle between 0 and PI
 	double delta_angle;								//angle step used to sample the overlapping zone in [0,PI]
 	char errMsg[5000];								//buffer where to store error messages
-	real_t *stripe_ptr;								//buffer where to store the resulting stripe
-	real_t *rslice_ptr, *lslice_ptr;				//buffers where to store each loaded pair of right and left slices
+	iom::real_t *stripe_ptr;								//buffer where to store the resulting stripe
+	iom::real_t *rslice_ptr, *lslice_ptr;				//buffers where to store each loaded pair of right and left slices
 	sint64 i,j;										//pixel indexes
-	real_t (*blending)(double& angle, real_t& pixel1, real_t& pixel2); //pointer to blending function
+	iom::real_t (*blending)(double& angle, iom::real_t& pixel1, iom::real_t& pixel2); //pointer to blending function
 
 	//retrieving blending function
 	if(blending_algo == S_SINUSOIDAL_BLENDING)
@@ -614,7 +614,7 @@ real_t* StackStitcher::getStripe(int row_index, int d_index, int restore_directi
 	width=stripe_H_right-stripe_H_left;
 
 	//ALLOCATING once for all the MEMORY SPACE for current stripe
-	stripe = new real_t[height*width];
+	stripe = new iom::real_t[height*width];
 
 	// 2014-09-09. Alessandro. @FIXED missing buffer initialization in 'getStripe()' method.
 	for(int i=0; i<height*width; i++)
@@ -753,8 +753,8 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 
 	//LOCAL VARIABLES
     sint64 height, width, depth;                                            //height, width and depth of the whole volume that covers all stacks
-	real_t* buffer;								//buffer temporary image data are stored
-    real_t* stripe_up=NULL, *stripe_down;                                   //will contain up-stripe and down-stripe computed by calling 'getStripe' method
+	iom::real_t* buffer;								//buffer temporary image data are stored
+    iom::real_t* stripe_up=NULL, *stripe_down;                                   //will contain up-stripe and down-stripe computed by calling 'getStripe' method
 	double angle;								//angle between 0 and PI used to sample overlapping zone in [0,PI]
 	double delta_angle;							//angle step
 	int z_ratio, z_max_res;
@@ -774,8 +774,8 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 	stripe_2Dcorners *stripesCorners;
 	int resolutions_size = 0;
 	StackRestorer *stk_rst = NULL;
-	real_t *buffer_ptr, *ustripe_ptr, *dstripe_ptr;	
-	real_t (*blending)(double& angle, real_t& pixel1, real_t& pixel2);
+	iom::real_t *buffer_ptr, *ustripe_ptr, *dstripe_ptr;	
+	iom::real_t (*blending)(double& angle, iom::real_t& pixel1, iom::real_t& pixel2);
 	std::stringstream file_path[S_MAX_MULTIRES];
 
 	//retrieving blending function
@@ -944,7 +944,7 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 	//ALLOCATING  the MEMORY SPACE for image buffer
 	z_max_res = POW_INT(2,resolutions_size-1);
 	z_ratio= (int) depth/z_max_res;
-	buffer = new real_t[height*width*z_max_res];
+	buffer = new iom::real_t[height*width*z_max_res];
 
 	#ifdef S_TIME_CALC
 	double proc_time;
@@ -1229,7 +1229,7 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 * Performs downsampling at a halved frequency on the given 3D image.  The given image is overwritten in order
 * to store its halvesampled version without allocating any additional resources.
 **************************************************************************************************************/
-void StackStitcher::halveSample(real_t* img, int height, int width, int depth)
+void StackStitcher::halveSample(iom::real_t* img, int height, int width, int depth)
 {
 	#ifdef S_TIME_CALC
 	double proc_time = -TIME(0);

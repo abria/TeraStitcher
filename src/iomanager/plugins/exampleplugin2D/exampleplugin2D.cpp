@@ -64,7 +64,7 @@ throw (iom::exception)
 
 
 // read 3D image data from a stack of (2D) image files
-real_t*								// (OUTPUT) a [0.0,1.0]-valued array storing the 3D image in channel->slice->row order
+iom::real_t*						// (OUTPUT) a [0.0,1.0]-valued array storing the 3D image in channel->slice->row order
 	iomanager::exampleplugin2D::readData(
 	char **files,					// (INPUT)	array of C-strings storing image filenames
 	int files_size,					// (INPUT)	size of 'files'
@@ -88,7 +88,7 @@ throw (iom::exception)
 void 
 	iomanager::exampleplugin2D::writeData(
 	std::string img_path,		// (INPUT)	image filepath (it includes the file extension)
-	real_t* raw_img,			// (INPUT)	a [0.0,1.0]-valued array storing the 2D image in channel->row order
+	iom::real_t* raw_img,			// (INPUT)	a [0.0,1.0]-valued array storing the 2D image in channel->row order
 	int img_height,				// (INPUT)	image height
 	int img_width,				// (INPUT)	image width
 	int img_chans,				// (INPUT)	number of channels

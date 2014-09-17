@@ -59,7 +59,7 @@ class VirtualStack
         char*  DIR_NAME;							//string containing current stack directory
         bool   stitchable;							//true if current Stack is stitchable with adjacent ones
         int    ABS_V, ABS_H, ABS_D;					//absolute VHD voxel coordinates of current stack
-        real_t* STACKED_IMAGE;						//pointer to 1-D array of REAL_T that stores Stack image data
+        iom::real_t* STACKED_IMAGE;					//pointer to 1-D array of REAL_T that stores Stack image data
         std::vector<Displacement*> NORTH;			//vector of displacements along D direction between this and northern Stack
         std::vector<Displacement*> EAST;			//vector of displacements along D direction between this and eastern  Stack
         std::vector<Displacement*> SOUTH;			//vector of displacements along D direction between this and southern Stack
@@ -102,7 +102,7 @@ class VirtualStack
 				throw iom::exception("in Stack::setABS(int _ABS, int direction): wrong direction inserted");
 		}
 
-		real_t* getSTACKED_IMAGE()	{return STACKED_IMAGE;}
+		iom::real_t* getSTACKED_IMAGE()	{return STACKED_IMAGE;}
 		virtual void *getCONTAINER() =0;
 
 		std::vector<Displacement*>& getNORTH(){return NORTH;}
@@ -164,7 +164,7 @@ class VirtualStack
 		void setStitchable(bool _stitchable){this->stitchable = _stitchable;}
 
 		//LOAD and RELEASE methods
-        virtual real_t* loadImageStack(int first_file=-1, int last_file=-1) throw (iom::exception) = 0;
+        virtual iom::real_t* loadImageStack(int first_file=-1, int last_file=-1) throw (iom::exception) = 0;
 		virtual void releaseImageStack()= 0;
 
         // return true if the given range [z0,z1] does not contain missing slices/blocks

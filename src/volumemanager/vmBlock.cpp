@@ -60,6 +60,7 @@
 
 
 using namespace std;
+using namespace iom;
 
 //CONSTRUCTOR WITH ARGUMENTS
 Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char* _DIR_NAME)
@@ -371,7 +372,7 @@ void Block::unBinarizeFrom(FILE* file) throw (iom::exception)
 
 
 //loads image stack from <first_file> to <last_file> extremes included, if not specified loads entire Stack
-real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::exception)
+iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::exception)
 {
 	#if VM_VERBOSE > 3
     printf("\t\t\t\tin Block[%d,%d]::loadImageStack(first_file = %d, last_file = %d)\n",ROW_INDEX, COL_INDEX, first_file, last_file);
@@ -393,7 +394,7 @@ real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::excepti
 	{
 		// allocate and initialize a black stack
 		uint64 image_size = static_cast<uint64>(WIDTH) * static_cast<uint64>(HEIGHT) * static_cast<uint64>(last_file-first_file+1);
-		STACKED_IMAGE = new real_t[image_size];
+		STACKED_IMAGE = new iom::real_t[image_size];
 		for(uint64 k=0; k<image_size; k++)
 			STACKED_IMAGE[k] = 0;
 
@@ -416,7 +417,7 @@ real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::excepti
 		temp +=  HEIGHT * WIDTH * (last-first+1) * N_BYTESxCHAN * N_CHANS;
 	}
 
-	//conversion from unsigned char to real_t
+	//conversion from unsigned char to iom::real_t
 	if (N_CHANS == 2 || N_CHANS > 3) // only monocromatic or RGB images are supported
 	{
 		char errMsg[2000];
@@ -435,13 +436,13 @@ real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::excepti
 		throw iom::exception(errMsg);
 	}
 
-	STACKED_IMAGE = new real_t[HEIGHT * WIDTH * (last_file-first_file+1)]; // this image is an intensity image (only one channel)
+	STACKED_IMAGE = new iom::real_t[HEIGHT * WIDTH * (last_file-first_file+1)]; // this image is an intensity image (only one channel)
 
 	int offset;
 
 	if ( N_CHANS == 1 ) {
 		for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
-			STACKED_IMAGE[i] = (real_t) data[i]/scale_factor;
+			STACKED_IMAGE[i] = (iom::real_t) data[i]/scale_factor;
 	}
 	else { // conversion to an intensity image
 		if ( iom::CHANS == iom::ALL ) {
@@ -464,7 +465,7 @@ real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::excepti
 			throw iom::exception(errMsg);
 		}
 		for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
-			STACKED_IMAGE[i] = (real_t) data[3*i + offset]/scale_factor;
+			STACKED_IMAGE[i] = (iom::real_t) data[3*i + offset]/scale_factor;
 	}
 
 	delete [] data;

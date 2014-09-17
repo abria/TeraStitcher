@@ -11,6 +11,17 @@ ties names are:
 - Rem: a feature no longer available
 
 ============================================================================================
+TeraStitcher version 1.6.3
+September 17th, 2014
+--------------------------------------------------------------------------------------------
+- Fix: fixed compilation issue on gcc compilers: "conflicting declaration ‘typedef long long
+       unsigned int uint64’".
+- Fix: fixed compilation issue on gcc compilers related to libtiff library.
+- Fix: fixed compilation issue on gcc compilers related  to iomanager::exception class defi-
+       nition.
+--------------------------------------------------------------------------------------------
+
+
 TeraStitcher version 1.6.2
 September 17th, 2014
 --------------------------------------------------------------------------------------------

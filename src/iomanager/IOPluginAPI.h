@@ -39,7 +39,7 @@ class iomanager::IOPlugin2D : public iomanager::IOPlugin
 
 
 		// read 3D image data from a stack of (2D) image files
-		virtual real_t*					// (OUTPUT) a [0.0,1.0]-valued array storing the 3D image in channel->slice->row order
+		virtual iom::real_t*					// (OUTPUT) a [0.0,1.0]-valued array storing the 3D image in channel->slice->row order
 			readData(
 			char **files,				// (INPUT)	array of C-strings storing image filenames
 			int files_size,				// (INPUT)	size of 'files'
@@ -56,7 +56,7 @@ class iomanager::IOPlugin2D : public iomanager::IOPlugin
         virtual void 
 			writeData(
 			std::string img_path,		// (INPUT)	image filepath (it includes the file extension)
-			real_t* raw_img,			// (INPUT)	a [0.0,1.0]-valued array storing the 2D image in channel->row order
+			iom::real_t* raw_img,			// (INPUT)	a [0.0,1.0]-valued array storing the 2D image in channel->row order
 			int img_height,				// (INPUT)	image height
 			int img_width,				// (INPUT)	image width
 			int img_chans,				// (INPUT)	number of channels
@@ -240,7 +240,7 @@ namespace iomanager														\
 				const std::string & params = iom::IMIN_PLUGIN_PARAMS)	\
 			throw (iom::exception);										\
 																		\
-			real_t*														\
+			iom::real_t*														\
 				readData(												\
 				char **files,											\
 				int files_size,											\
@@ -255,7 +255,7 @@ namespace iomanager														\
 			virtual void												\
 				writeData(												\
 				std::string img_path,									\
-				real_t* raw_img,										\
+				iom::real_t* raw_img,										\
 				int img_height,											\
 				int img_width,											\
 				int img_chans,											\

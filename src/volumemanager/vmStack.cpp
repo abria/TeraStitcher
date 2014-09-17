@@ -54,6 +54,7 @@
 
 using namespace std;
 using namespace volumemanager;
+using namespace iom;
 
 //CONSTRUCTOR WITH ARGUMENTS
 Stack::Stack(StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char* _DIR_NAME) throw (iom::exception)
@@ -490,7 +491,7 @@ void Stack::loadXML(
 
 
 //loads image stack from <first_file> to <last_file> extremes included, if not specified loads entire Stack
-real_t* Stack::loadImageStack(int first_file, int last_file) throw (iom::exception)
+iom::real_t* Stack::loadImageStack(int first_file, int last_file) throw (iom::exception)
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin Stack[%d,%d](%s, empty = %s)::loadImageStack(first_file = %d, last_file = %d)\n",ROW_INDEX, COL_INDEX, DIR_NAME, isEmpty() ? "true": "false", first_file, last_file);
@@ -507,7 +508,7 @@ real_t* Stack::loadImageStack(int first_file, int last_file) throw (iom::excepti
 
 		// allocate and initialize a black stack
 		uint64 image_size = static_cast<uint64>(WIDTH) * static_cast<uint64>(HEIGHT) * static_cast<uint64>(last_file-first_file+1);
-		STACKED_IMAGE = new real_t[image_size];
+		STACKED_IMAGE = new iom::real_t[image_size];
 		for(uint64 k=0; k<image_size; k++)
 			STACKED_IMAGE[k] = 0;
 	}

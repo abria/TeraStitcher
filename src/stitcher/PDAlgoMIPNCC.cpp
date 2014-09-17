@@ -29,6 +29,8 @@
 #include "CrossMIPs.h"
 #include "DisplacementMIPNCC.h"
 
+using namespace iom;
+
 /*************************************************************************************************************
 * Implements abstract method declared in superclass
 * <stk_[]>				: image stacks stored in row-wise in a monodimensional array
@@ -42,8 +44,8 @@
 * <overlap>				: expected overlap between the given stacks along the given direction.  This value can
 *						  be used to determine the region of interest where the overlapping occurs.
 **************************************************************************************************************/
-Displacement* PDAlgoMIPNCC::execute(real_t *stk_A, uint32 A_dim_V, uint32 A_dim_H, uint32 A_dim_D,
-	real_t *stk_B, uint32 B_dim_V, uint32 B_dim_H, uint32 B_dim_D,
+Displacement* PDAlgoMIPNCC::execute(iom::real_t *stk_A, uint32 A_dim_V, uint32 A_dim_H, uint32 A_dim_D,
+	iom::real_t *stk_B, uint32 B_dim_V, uint32 B_dim_H, uint32 B_dim_D,
 	uint32 displ_max_V, uint32 displ_max_H, uint32 displ_max_D,
 	direction overlap_direction, uint32 overlap) throw (iom::exception)
 {

@@ -43,25 +43,25 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-/*******************
-*    TYPES         *
-********************
----------------------------------------------------------------------------------------------------------------------------*/
-typedef float				real_t;			// real type definition (float for single precision, double for double precision)
-typedef unsigned char		uint8;			// 8-bit  unsigned integer data type
-typedef unsigned short		uint16;			// 16-bit unsigned integer data type
-typedef unsigned int		uint32;			// 32-bit unsigned integer data type
-typedef int					sint32;			// 32-bit signed integer data type
-typedef long long			sint64;			// 64-bit signed integer data type
-typedef unsigned long long	uint64;			// 64-bit unsigned integer data type
-/*-------------------------------------------------------------------------------------------------------------------------*/
-
-
 /******************************************************************************************************************************
  *   Interfaces, constants, enums, parameters, and cross-platform utility functions	                                          *
  ******************************************************************************************************************************/
 namespace iomanager
 {
+	/*******************
+	*    TYPES         *
+	********************
+	---------------------------------------------------------------------------------------------------------------------------*/
+	typedef float				real_t;			// real type definition (float for single precision, double for double precision)
+	typedef unsigned char		uint8;			// 8-bit  unsigned integer data type
+	typedef unsigned short		uint16;			// 16-bit unsigned integer data type
+	typedef unsigned int		uint32;			// 32-bit unsigned integer data type
+	typedef int					sint32;			// 32-bit signed integer data type
+	typedef long long			sint64;			// 64-bit signed integer data type
+	typedef unsigned long long	uint64;			// 64-bit unsigned integer data type
+	/*-------------------------------------------------------------------------------------------------------------------------*/
+
+
     /*******************
     *    INTERFACES    *
     ********************
@@ -246,8 +246,8 @@ namespace iomanager
 				else
 					message = std::string("in ") + source + ": " + new_message;
 			}
-
-			virtual const char* what() const {return message.c_str();}
+			virtual ~exception() throw (){}
+			virtual const char* what() const throw (){return message.c_str();}
 	};
 
 

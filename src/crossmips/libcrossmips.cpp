@@ -58,10 +58,10 @@
 # include "compute_funcs.h"
 
 
-bool write_3D_stack ( char *fname, real_t *stck, int dimi, int dimj, int dimk );
+bool write_3D_stack ( char *fname, iom::real_t *stck, int dimi, int dimj, int dimk );
 
 
-NCC_descr_t *norm_cross_corr_mips ( real_t *A, real_t *B,
+NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B,
 						    int dimk, int dimi, int dimj, int nk, int ni, int nj,
 							int delayk, int delayi, int delayj, int side, NCC_parms_t *NCC_params ) throw (iom::exception){
 #if CM_VERBOSE > 1
@@ -72,15 +72,15 @@ NCC_descr_t *norm_cross_corr_mips ( real_t *A, real_t *B,
 	NCC_descr_t *result = new NCC_descr_t;
 	int dimk_v, dimi_v, dimj_v;
 	int stridei, stridek; // arrays are stored along j dimension, hence it does not need a stride
-	real_t *A1; // starting pixels of volume A to be scanned
+	iom::real_t *A1; // starting pixels of volume A to be scanned
 
-	real_t *MIP_xy1, *MIP_xz1, *MIP_yz1;
-	real_t *MIP_xy2, *MIP_xz2, *MIP_yz2;
+	iom::real_t *MIP_xy1, *MIP_xz1, *MIP_yz1;
+	iom::real_t *MIP_xy2, *MIP_xz2, *MIP_yz2;
 	int i;
 
-	real_t *NCC_xy, *NCC_xz, *NCC_yz;
+	iom::real_t *NCC_xy, *NCC_xz, *NCC_yz;
 
-	real_t *temp;
+	iom::real_t *temp;
 
 	int ind_xy, ind_xz, ind_yz;
 	int dx1, dx2, dy1, dy2, dz1, dz2;
@@ -129,17 +129,17 @@ NCC_descr_t *norm_cross_corr_mips ( real_t *A, real_t *B,
 
 		//	// three transformations defined by pairs (percentiles,value): {(0.0,0.0),(0.1,0.0),(0.95,1.0),(1.0,1.0)}
 		//	NCC_params->n_transforms = 3;
-		//	NCC_params->percents     = new real_t[NCC_params->n_transforms];
-		//	NCC_params->c            = new real_t[NCC_params->n_transforms+1];
+		//	NCC_params->percents     = new iom::real_t[NCC_params->n_transforms];
+		//	NCC_params->c            = new iom::real_t[NCC_params->n_transforms+1];
 		//	// percents must have n_transforms elements and percents[n_transforms-1] must be 1.00
-		//	NCC_params->percents[0]  = (real_t) 0.10;
-		//	NCC_params->percents[1]  = (real_t) 0.99;
-		//	NCC_params->percents[2]  = (real_t) 1.00;
+		//	NCC_params->percents[0]  = (iom::real_t) 0.10;
+		//	NCC_params->percents[1]  = (iom::real_t) 0.99;
+		//	NCC_params->percents[2]  = (iom::real_t) 1.00;
 		//	// c must have (n_transforms+1) elements, c[0] must be 0.00 and c[n_transforms] must be 1.00
-		//	NCC_params->c[0]         = (real_t) 0.00;
-		//	NCC_params->c[1]         = (real_t) 0.00;
-		//	NCC_params->c[2]         = (real_t) 1.00;
-		//	NCC_params->c[3]         = (real_t) 1.00;
+		//	NCC_params->c[0]         = (iom::real_t) 0.00;
+		//	NCC_params->c[1]         = (iom::real_t) 0.00;
+		//	NCC_params->c[2]         = (iom::real_t) 1.00;
+		//	NCC_params->c[3]         = (iom::real_t) 1.00;
 		//}
 	}
 
@@ -224,23 +224,23 @@ NCC_descr_t *norm_cross_corr_mips ( real_t *A, real_t *B,
 		throw iom::exception("CrossMIPs: unexpected alignment configuration");
 
 	// alloca le 6 immagini per i MIP
-	MIP_xy1 = new real_t[dimi_v*dimj_v];
+	MIP_xy1 = new iom::real_t[dimi_v*dimj_v];
 	for ( i=0; i<(dimi_v*dimj_v); i++ )
 		MIP_xy1[i] = 0;
-	MIP_xz1 = new real_t[dimi_v*dimk_v];
+	MIP_xz1 = new iom::real_t[dimi_v*dimk_v];
 	for ( i=0; i<(dimi_v*dimk_v); i++ )
 		MIP_xz1[i] = 0;
-	MIP_yz1 = new real_t[dimj_v*dimk_v];
+	MIP_yz1 = new iom::real_t[dimj_v*dimk_v];
 	for ( i=0; i<(dimj_v*dimk_v); i++ )
 		MIP_yz1[i] = 0;
 
-	MIP_xy2 = new real_t[dimi_v*dimj_v];
+	MIP_xy2 = new iom::real_t[dimi_v*dimj_v];
 	for ( i=0; i<(dimi_v*dimj_v); i++ )
 		MIP_xy2[i] = 0;
-	MIP_xz2 = new real_t[dimi_v*dimk_v];
+	MIP_xz2 = new iom::real_t[dimi_v*dimk_v];
 	for ( i=0; i<(dimi_v*dimk_v); i++ )
 		MIP_xz2[i] = 0;
-	MIP_yz2 = new real_t[dimj_v*dimk_v];
+	MIP_yz2 = new iom::real_t[dimj_v*dimk_v];
 	for ( i=0; i<(dimj_v*dimk_v); i++ )
 		MIP_yz2[i] = 0;
 
@@ -257,7 +257,7 @@ NCC_descr_t *norm_cross_corr_mips ( real_t *A, real_t *B,
 #endif
 
 	// calcola NCC su xy
-	NCC_xy = new real_t[(2*delayi+1)*(2*delayj+1)];
+	NCC_xy = new iom::real_t[(2*delayi+1)*(2*delayj+1)];
 	for ( i=0; i<((2*delayi+1)*(2*delayj+1)); i++ )
 		NCC_xy[i] = 0;
 
@@ -269,7 +269,7 @@ NCC_descr_t *norm_cross_corr_mips ( real_t *A, real_t *B,
 	compute_NCC_map(NCC_xy,MIP_xy1,MIP_xy2,dimi_v,dimj_v,delayi,delayj);
 
 	// calcola NCC su xz
-	NCC_xz = new real_t[(2*delayi+1)*(2*delayk+1)];
+	NCC_xz = new iom::real_t[(2*delayi+1)*(2*delayk+1)];
 	for ( i=0; i<((2*delayi+1)*(2*delayk+1)); i++ )
 		NCC_xz[i] = 0;
 
@@ -281,7 +281,7 @@ NCC_descr_t *norm_cross_corr_mips ( real_t *A, real_t *B,
 	compute_NCC_map(NCC_xz,MIP_xz1,MIP_xz2,dimi_v,dimk_v,delayi,delayk);
 
 	// calcola NCC su yz
-	NCC_yz = new real_t[(2*delayj+1)*(2*delayk+1)];
+	NCC_yz = new iom::real_t[(2*delayj+1)*(2*delayk+1)];
 	for ( i=0; i<((2*delayj+1)*(2*delayk+1)); i++ )
 		NCC_yz[i] = 0;
 
@@ -315,34 +315,34 @@ NCC_descr_t *norm_cross_corr_mips ( real_t *A, real_t *B,
 	ind_yz = compute_MAX_ind(NCC_yz,((2*delayj+1)*(2*delayk+1)));
 
 	// NCC_xy: check neighborhood of maxima and search for better maxima if any
-	temp = new real_t[(2*NCC_params->wRangeThr+1)*(2*NCC_params->wRangeThr+1)];;
+	temp = new iom::real_t[(2*NCC_params->wRangeThr+1)*(2*NCC_params->wRangeThr+1)];;
 	for ( i=0; i<((2*NCC_params->wRangeThr+1)*(2*NCC_params->wRangeThr+1)); i++ )
 		temp[i] = 0;
 	compute_Neighborhood(NCC_params,NCC_xy,delayi,delayj,ind_xy,MIP_xy1,MIP_xy2,dimi_v,dimj_v,temp,dx1,dy1, failed_xy);
 	// substitute NCC map and delete the old one
 	delete NCC_xy;
 	NCC_xy = temp;
-	temp = (real_t *)0;
+	temp = (iom::real_t *)0;
 
 	// NCC_xz: check neighborhood of maxima and search for better maxima if any
-	temp = new real_t[(2*NCC_params->wRangeThr+1)*(2*NCC_params->wRangeThr+1)];;
+	temp = new iom::real_t[(2*NCC_params->wRangeThr+1)*(2*NCC_params->wRangeThr+1)];;
 	for ( i=0; i<((2*NCC_params->wRangeThr+1)*(2*NCC_params->wRangeThr+1)); i++ )
 		temp[i] = 0;
 	compute_Neighborhood(NCC_params,NCC_xz,delayi,delayk,ind_xz,MIP_xz1,MIP_xz2,dimi_v,dimk_v,temp,dx2,dz1, failed_xz);
 	// substitute NCC map and delete the old one
 	delete NCC_xz;
 	NCC_xz = temp;
-	temp = (real_t *)0;
+	temp = (iom::real_t *)0;
 
 	// NCC_yz: check neighborhood of maxima and search for better maxima if any
-	temp = new real_t[(2*NCC_params->wRangeThr+1)*(2*NCC_params->wRangeThr+1)];;
+	temp = new iom::real_t[(2*NCC_params->wRangeThr+1)*(2*NCC_params->wRangeThr+1)];;
 	for ( i=0; i<((2*NCC_params->wRangeThr+1)*(2*NCC_params->wRangeThr+1)); i++ )
 		temp[i] = 0;
 	compute_Neighborhood(NCC_params,NCC_yz,delayj,delayk,ind_yz,MIP_yz1,MIP_yz2,dimj_v,dimk_v,temp,dy2,dz2, failed_yz);
 	// substitute NCC map and delete the old one
 	delete NCC_yz;
 	NCC_yz = temp;
-	temp = (real_t *)0;
+	temp = (iom::real_t *)0;
 
 	//compute_Alignment(NCC_params,NCC_xy,NCC_xz,NCC_yz,delayi,delayj,delayk,ind_xy,ind_xz,ind_yz,result);
 	
@@ -384,7 +384,7 @@ NCC_descr_t *norm_cross_corr_mips ( real_t *A, real_t *B,
 }
 
 
-bool write_3D_stack ( char *fname, real_t *stck, int dimi, int dimj, int dimk ) {
+bool write_3D_stack ( char *fname, iom::real_t *stck, int dimi, int dimj, int dimk ) {
 	FILE *fout;
 	int i, j, k;
 
@@ -397,7 +397,7 @@ bool write_3D_stack ( char *fname, real_t *stck, int dimi, int dimj, int dimk ) 
 	for ( k=0; k<dimk; k++ )
 		for ( j=0; j<dimj; j++ )
 			for ( i=0; i<dimi; i++ )
-				fwrite((stck+j+i*dimj+k*dimj*dimi),sizeof(real_t),1,fout);
+				fwrite((stck+j+i*dimj+k*dimj*dimi),sizeof(iom::real_t),1,fout);
 
 	fclose(fout);
 

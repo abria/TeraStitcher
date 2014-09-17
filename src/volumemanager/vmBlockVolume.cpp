@@ -53,18 +53,7 @@ const std::string BlockVolume::creator_id1 = volumemanager::VirtualVolumeFactory
 const std::string BlockVolume::creator_id2 = volumemanager::VirtualVolumeFactory::registerPluginCreatorData(&createFromData, BlockVolume::id);
 
 using namespace std;
-
-//const char* axis_to_str(vm::axis ax)
-//{
-//    if(ax==axis_invalid)         return "axis_invalid";
-//    else if(ax==vertical)        return "vertical";
-//    else if(ax==inv_vertical)    return "inv_vertical";
-//    else if(ax==horizontal)      return "horizontal";
-//    else if(ax==inv_horizontal)  return "inv_horizontal";
-//    else if(ax==depth)           return "depth";
-//    else if(ax==inv_depth)       return "inv_depth";
-//    else                         return "unknown";
-//}
+using namespace iom;
 
 BlockVolume::BlockVolume(const char* _stacks_dir, vm::ref_sys _reference_system, float VXL_1, float VXL_2, float VXL_3, bool overwrite_mdata) throw (iom::exception)
 	: VirtualVolume(_stacks_dir, _reference_system, VXL_1, VXL_2, VXL_3)

@@ -87,7 +87,7 @@ class StackStitcher
 		* selected by the [blending_algo] parameter. If a  <StackRestorer>  object has been passed,  each slice is re-
 		* stored before it is combined into the final stripe.
 		**************************************************************************************************************/
-		real_t* getStripe(int row_index, int d_index, int restore_direction=-1, StackRestorer* stk_rst=NULL,
+		iom::real_t* getStripe(int row_index, int d_index, int restore_direction=-1, StackRestorer* stk_rst=NULL,
 						  int blending_algo=S_SINUSOIDAL_BLENDING)    							   throw (iom::exception);
 
 		/*************************************************************************************************************
@@ -105,16 +105,16 @@ class StackStitcher
 		* overlapping zone. IMPORTANT: due to efficiency reasons, it is better to handle  different  types of blending 
 		* functions with function pointers instead of using polymorphism of OOP.
 		**************************************************************************************************************/
-		static inline real_t sinusoidal_blending(double& angle, real_t& pixel1, real_t& pixel2){
+		static inline iom::real_t sinusoidal_blending(double& angle, iom::real_t& pixel1, iom::real_t& pixel2){
 
 			// 2014-09-09. Alessandro. @CHANGED. Black pixels (=0) are ignored in 'sinusoidal_blending()' function.
 			if(!pixel1 || !pixel2)
 				return std::max(pixel1, pixel2);
 
-			return (real_t)(  ((cos(angle)+1.0F)*0.5F)*pixel1 + ( 1.0F - ((cos(angle)+1.0F)*0.5F))*pixel2  );
+			return (iom::real_t)(  ((cos(angle)+1.0F)*0.5F)*pixel1 + ( 1.0F - ((cos(angle)+1.0F)*0.5F))*pixel2  );
 		}
 
-		static inline real_t no_blending(double& angle, real_t& pixel1, real_t& pixel2){
+		static inline iom::real_t no_blending(double& angle, iom::real_t& pixel1, iom::real_t& pixel2){
 			return (angle <= S_PI/2 ? pixel1 : pixel2);		
 		}
 
@@ -125,7 +125,7 @@ class StackStitcher
         **************************************************************************************************************/
         static double stack_marging_old_val;
         static bool blank_line_drawn;
-        static inline real_t stack_margin(double& angle, real_t& pixel1, real_t& pixel2)
+        static inline iom::real_t stack_margin(double& angle, iom::real_t& pixel1, iom::real_t& pixel2)
         {
             if(angle == stack_marging_old_val && blank_line_drawn){
                 stack_marging_old_val = angle;
@@ -147,7 +147,7 @@ class StackStitcher
 		* Performs downsampling at a halved frequency on the given 3D image.  The given image is overwritten in order
 		* to store its halvesampled version without allocating any additional resources.
 		**************************************************************************************************************/
-		static void halveSample(real_t* img, int height, int width, int depth);
+		static void halveSample(iom::real_t* img, int height, int width, int depth);
 
 	public:
 

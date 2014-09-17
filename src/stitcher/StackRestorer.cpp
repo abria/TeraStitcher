@@ -104,7 +104,7 @@ StackRestorer::~StackRestorer(void)
 	}
 }
 
-void StackRestorer::computeSubvolDescriptors(real_t* data, VirtualStack* stk_p, int subvol_idx, int subvol_D_dim) throw (iom::exception)
+void StackRestorer::computeSubvolDescriptors(iom::real_t* data, VirtualStack* stk_p, int subvol_idx, int subvol_D_dim) throw (iom::exception)
 {
 	int i = stk_p->getROW_INDEX();
 	int j = stk_p->getCOL_INDEX();
@@ -185,23 +185,23 @@ void StackRestorer::save(char* file_path)  throw (iom::exception)
 		for(int i=0; i<N_ROWS; i++)
 			for(int j=0; j<N_COLS; j++)
 			{
-				file.write((char*)&(STKS_DESCRIPTORS[i][j].max_val), sizeof(real_t));
-				file.write((char*)&(STKS_DESCRIPTORS[i][j].mean_val), sizeof(real_t));
+				file.write((char*)&(STKS_DESCRIPTORS[i][j].max_val), sizeof(iom::real_t));
+				file.write((char*)&(STKS_DESCRIPTORS[i][j].mean_val), sizeof(iom::real_t));
 				file.write((char*)&(STKS_DESCRIPTORS[i][j].V_dim), sizeof(int));
 				file.write((char*)&(STKS_DESCRIPTORS[i][j].H_dim), sizeof(int));
 				file.write((char*)&(STKS_DESCRIPTORS[i][j].D_dim), sizeof(int));
 				for(int ii=0; ii<STKS_DESCRIPTORS[i][j].V_dim; ii++)
-					file.write((char*)&(STKS_DESCRIPTORS[i][j].V_profile[ii]), sizeof(real_t));
+					file.write((char*)&(STKS_DESCRIPTORS[i][j].V_profile[ii]), sizeof(iom::real_t));
 				for(int ii=0; ii<STKS_DESCRIPTORS[i][j].H_dim; ii++)
-					file.write((char*)&(STKS_DESCRIPTORS[i][j].H_profile[ii]), sizeof(real_t));
+					file.write((char*)&(STKS_DESCRIPTORS[i][j].H_profile[ii]), sizeof(iom::real_t));
 				for(int ii=0; ii<STKS_DESCRIPTORS[i][j].D_dim; ii++)
-					file.write((char*)&(STKS_DESCRIPTORS[i][j].D_profile[ii]), sizeof(real_t));
+					file.write((char*)&(STKS_DESCRIPTORS[i][j].D_profile[ii]), sizeof(iom::real_t));
 				for(int ii=0; ii<STKS_DESCRIPTORS[i][j].V_dim; ii++)
-					file.write((char*)&(STKS_DESCRIPTORS[i][j].V_MIP[ii]), sizeof(real_t));
+					file.write((char*)&(STKS_DESCRIPTORS[i][j].V_MIP[ii]), sizeof(iom::real_t));
 				for(int ii=0; ii<STKS_DESCRIPTORS[i][j].H_dim; ii++)
-					file.write((char*)&(STKS_DESCRIPTORS[i][j].H_MIP[ii]), sizeof(real_t));
+					file.write((char*)&(STKS_DESCRIPTORS[i][j].H_MIP[ii]), sizeof(iom::real_t));
 				for(int ii=0; ii<STKS_DESCRIPTORS[i][j].D_dim; ii++)
-					file.write((char*)&(STKS_DESCRIPTORS[i][j].D_MIP[ii]), sizeof(real_t));
+					file.write((char*)&(STKS_DESCRIPTORS[i][j].D_MIP[ii]), sizeof(iom::real_t));
 			}
 
 		file.close();
@@ -238,39 +238,39 @@ void StackRestorer::load(char* file_path)  throw (iom::exception)
 	for(int i=0; i<N_ROWS; i++)
 		for(int j=0; j<N_COLS; j++)
 		{
-			file.read((char*)&(STKS_DESCRIPTORS[i][j].max_val), sizeof(real_t));
-			file.read((char*)&(STKS_DESCRIPTORS[i][j].mean_val), sizeof(real_t));
+			file.read((char*)&(STKS_DESCRIPTORS[i][j].max_val), sizeof(iom::real_t));
+			file.read((char*)&(STKS_DESCRIPTORS[i][j].mean_val), sizeof(iom::real_t));
 			file.read((char*)&(STKS_DESCRIPTORS[i][j].V_dim), sizeof(int));
 			file.read((char*)&(STKS_DESCRIPTORS[i][j].H_dim), sizeof(int));
 			file.read((char*)&(STKS_DESCRIPTORS[i][j].D_dim), sizeof(int));
 
 			STKS_DESCRIPTORS[i][j].stk_p=STK_ORG->getSTACKS()[i][j];
-			STKS_DESCRIPTORS[i][j].V_profile = new real_t[STKS_DESCRIPTORS[i][j].V_dim];
-			STKS_DESCRIPTORS[i][j].H_profile = new real_t[STKS_DESCRIPTORS[i][j].H_dim];
-			STKS_DESCRIPTORS[i][j].D_profile = new real_t[STKS_DESCRIPTORS[i][j].D_dim];
-			STKS_DESCRIPTORS[i][j].V_MIP	 = new real_t[STKS_DESCRIPTORS[i][j].V_dim];
-			STKS_DESCRIPTORS[i][j].H_MIP	 = new real_t[STKS_DESCRIPTORS[i][j].H_dim];
-			STKS_DESCRIPTORS[i][j].D_MIP	 = new real_t[STKS_DESCRIPTORS[i][j].D_dim];
+			STKS_DESCRIPTORS[i][j].V_profile = new iom::real_t[STKS_DESCRIPTORS[i][j].V_dim];
+			STKS_DESCRIPTORS[i][j].H_profile = new iom::real_t[STKS_DESCRIPTORS[i][j].H_dim];
+			STKS_DESCRIPTORS[i][j].D_profile = new iom::real_t[STKS_DESCRIPTORS[i][j].D_dim];
+			STKS_DESCRIPTORS[i][j].V_MIP	 = new iom::real_t[STKS_DESCRIPTORS[i][j].V_dim];
+			STKS_DESCRIPTORS[i][j].H_MIP	 = new iom::real_t[STKS_DESCRIPTORS[i][j].H_dim];
+			STKS_DESCRIPTORS[i][j].D_MIP	 = new iom::real_t[STKS_DESCRIPTORS[i][j].D_dim];
 
 			for(int ii=0; ii<STKS_DESCRIPTORS[i][j].V_dim; ii++)
-				file.read((char*)&(STKS_DESCRIPTORS[i][j].V_profile[ii]), sizeof(real_t));
+				file.read((char*)&(STKS_DESCRIPTORS[i][j].V_profile[ii]), sizeof(iom::real_t));
 			for(int ii=0; ii<STKS_DESCRIPTORS[i][j].H_dim; ii++)
-				file.read((char*)&(STKS_DESCRIPTORS[i][j].H_profile[ii]), sizeof(real_t));
+				file.read((char*)&(STKS_DESCRIPTORS[i][j].H_profile[ii]), sizeof(iom::real_t));
 			for(int ii=0; ii<STKS_DESCRIPTORS[i][j].D_dim; ii++)
-				file.read((char*)&(STKS_DESCRIPTORS[i][j].D_profile[ii]), sizeof(real_t));
+				file.read((char*)&(STKS_DESCRIPTORS[i][j].D_profile[ii]), sizeof(iom::real_t));
 			for(int ii=0; ii<STKS_DESCRIPTORS[i][j].V_dim; ii++)
-				file.read((char*)&(STKS_DESCRIPTORS[i][j].V_MIP[ii]), sizeof(real_t));
+				file.read((char*)&(STKS_DESCRIPTORS[i][j].V_MIP[ii]), sizeof(iom::real_t));
 			for(int ii=0; ii<STKS_DESCRIPTORS[i][j].H_dim; ii++)
-				file.read((char*)&(STKS_DESCRIPTORS[i][j].H_MIP[ii]), sizeof(real_t));
+				file.read((char*)&(STKS_DESCRIPTORS[i][j].H_MIP[ii]), sizeof(iom::real_t));
 			for(int ii=0; ii<STKS_DESCRIPTORS[i][j].D_dim; ii++)
-				file.read((char*)&(STKS_DESCRIPTORS[i][j].D_MIP[ii]), sizeof(real_t));
+				file.read((char*)&(STKS_DESCRIPTORS[i][j].D_MIP[ii]), sizeof(iom::real_t));
 			STKS_DESCRIPTORS[i][j].is_subvol_descriptor = false;
 			STKS_DESCRIPTORS[i][j].is_finalized = true;
 		}
 	file.close();
 }
 
-void StackRestorer::repairSlice(real_t* data, int slice_idx, VirtualStack* stk_p, int direction)  throw (iom::exception)
+void StackRestorer::repairSlice(iom::real_t* data, int slice_idx, VirtualStack* stk_p, int direction)  throw (iom::exception)
 {
 	//some checks
 	bool ready_to_repair = true;
@@ -291,18 +291,18 @@ void StackRestorer::repairSlice(real_t* data, int slice_idx, VirtualStack* stk_p
 	}
 
 	int i, j;
-	real_t *p_scanpxl = data;
-	real_t max_val = 0;
-	real_t corr_fact;
+	iom::real_t *p_scanpxl = data;
+	iom::real_t max_val = 0;
+	iom::real_t corr_fact;
 	int row   = stk_p->getROW_INDEX();
 	int col	  = stk_p->getCOL_INDEX();
 	int v_dim = stk_p->getHEIGHT();
 	int h_dim = stk_p->getWIDTH();
 	vol_descr_t *vol_desc = &(STKS_DESCRIPTORS[row][col]);
-	real_t *V_profile = vol_desc->V_profile;
-	real_t *H_profile = vol_desc->H_profile;
-	real_t *V_MIP	  = vol_desc->V_MIP;
-	real_t *H_MIP	  = vol_desc->H_MIP;
+	iom::real_t *V_profile = vol_desc->V_profile;
+	iom::real_t *H_profile = vol_desc->H_profile;
+	iom::real_t *V_MIP	  = vol_desc->V_MIP;
+	iom::real_t *H_MIP	  = vol_desc->H_MIP;
 
 	switch ( direction ) 
 	{
@@ -342,7 +342,7 @@ void StackRestorer::repairSlice(real_t* data, int slice_idx, VirtualStack* stk_p
 			(*p_scanpxl) *= corr_fact;
 
 	#ifdef S_RESTORE_VZ
-	real_t *D_profile = vol_desc->D_profile;
+	iom::real_t *D_profile = vol_desc->D_profile;
 	p_scanpxl = data;
 	for ( i=0; i<v_dim; i++ )
 		for ( j=0; j<h_dim; j++, p_scanpxl++ )
@@ -350,7 +350,7 @@ void StackRestorer::repairSlice(real_t* data, int slice_idx, VirtualStack* stk_p
 	#endif
 }
 
-void StackRestorer::repairStack(real_t* data, VirtualStack* stk_p, int direction)  throw (iom::exception)
+void StackRestorer::repairStack(iom::real_t* data, VirtualStack* stk_p, int direction)  throw (iom::exception)
 {
 	//some checks
 	bool ready_to_repair = true;
@@ -371,19 +371,19 @@ void StackRestorer::repairStack(real_t* data, VirtualStack* stk_p, int direction
 	}
 
 	int i, j, k;
-	real_t *p_scanpxl=0;
-	real_t max_val = 0;
-	real_t corr_fact;
+	iom::real_t *p_scanpxl=0;
+	iom::real_t max_val = 0;
+	iom::real_t corr_fact;
 	int row   = stk_p->getROW_INDEX();
 	int col	  = stk_p->getCOL_INDEX();
 	int v_dim = stk_p->getHEIGHT();
 	int h_dim = stk_p->getWIDTH();
 	int d_dim = stk_p->getDEPTH();
 	vol_descr_t *vol_desc = &(STKS_DESCRIPTORS[row][col]);
-	real_t *V_profile = vol_desc->V_profile;
-	real_t *H_profile = vol_desc->H_profile;
-	real_t *V_MIP	  = vol_desc->V_MIP;
-	real_t *H_MIP	  = vol_desc->H_MIP;
+	iom::real_t *V_profile = vol_desc->V_profile;
+	iom::real_t *H_profile = vol_desc->H_profile;
+	iom::real_t *V_MIP	  = vol_desc->V_MIP;
+	iom::real_t *H_MIP	  = vol_desc->H_MIP;
 
 	switch ( direction ) 
 	{
@@ -461,13 +461,13 @@ void StackRestorer::vol_descr_t::init(VirtualStack *new_stk_p, bool is_subvol_de
 	this->H_dim = new_H_dim;
 	this->D_dim = new_D_dim;
 
-	this->V_profile = new real_t[V_dim];
-	this->H_profile = new real_t[H_dim];
-	this->D_profile = new real_t[D_dim];
+	this->V_profile = new iom::real_t[V_dim];
+	this->H_profile = new iom::real_t[H_dim];
+	this->D_profile = new iom::real_t[D_dim];
 
-	this->V_MIP = new real_t[V_dim];
-	this->H_MIP = new real_t[H_dim];
-	this->D_MIP = new real_t[D_dim];
+	this->V_MIP = new iom::real_t[V_dim];
+	this->H_MIP = new iom::real_t[H_dim];
+	this->D_MIP = new iom::real_t[D_dim];
 
 	this->is_subvol_descriptor = is_subvol_desc;
 }
@@ -488,7 +488,7 @@ StackRestorer::vol_descr_t::~vol_descr_t()
 		delete[] D_MIP;
 }
 
-void StackRestorer::vol_descr_t::computeSubvolDescriptors(real_t *subvol)  throw (iom::exception)
+void StackRestorer::vol_descr_t::computeSubvolDescriptors(iom::real_t *subvol)  throw (iom::exception)
 {
 	//initialization of MIPs and profiles
 	for(int i=0; i<V_dim; i++)
@@ -499,8 +499,8 @@ void StackRestorer::vol_descr_t::computeSubvolDescriptors(real_t *subvol)  throw
 		D_MIP[k] = D_profile[k] = 0;
 
 	//one-shot computing of accumulation profiles and MIPs
-	real_t *p_scanpxl = subvol;
-	real_t val;
+	iom::real_t *p_scanpxl = subvol;
+	iom::real_t val;
 	for ( int k=0; k<D_dim; k++ )
 		for ( int i=0; i<V_dim; i++ )
 			for ( int j=0; j<H_dim; j++, p_scanpxl++ ) 

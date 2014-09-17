@@ -85,8 +85,8 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 
 	//LOCAL VARIABLES
         sint64 height, width, depth;                                            //height, width and depth of the whole volume that covers all stacks
-	real_t* buffer;								//buffer temporary image data are stored
-        real_t* stripe_up=NULL, *stripe_down;                                   //will contain up-stripe and down-stripe computed by calling 'getStripe' method
+	iom::real_t* buffer;								//buffer temporary image data are stored
+        iom::real_t* stripe_up=NULL, *stripe_down;                                   //will contain up-stripe and down-stripe computed by calling 'getStripe' method
 	double angle;								//angle between 0 and PI used to sample overlapping zone in [0,PI]
 	double delta_angle;							//angle step
 	int z_ratio, z_max_res;
@@ -106,8 +106,8 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 	stripe_2Dcorners *stripesCorners;
 	int resolutions_size = 0;
 	StackRestorer *stk_rst = NULL;
-	real_t *buffer_ptr, *ustripe_ptr, *dstripe_ptr;	
-	real_t (*blending)(double& angle, real_t& pixel1, real_t& pixel2);
+	iom::real_t *buffer_ptr, *ustripe_ptr, *dstripe_ptr;	
+	iom::real_t (*blending)(double& angle, iom::real_t& pixel1, iom::real_t& pixel2);
 
 	std::stringstream file_path[S_MAX_MULTIRES];
 
@@ -313,7 +313,7 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 
 	z_max_res = POW_INT(2,resolutions_size-1);
 	z_ratio= static_cast<int>(depth/z_max_res);
-	buffer = new real_t[height*width*z_max_res];
+	buffer = new iom::real_t[height*width*z_max_res];
 
 	//slice_start and slice_end of current block depend on the resolution
 	for(int res_i=0; res_i< resolutions_size; res_i++) {
