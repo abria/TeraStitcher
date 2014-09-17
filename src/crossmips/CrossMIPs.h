@@ -45,7 +45,7 @@
 # define WEST_EAST     1
 
 # include "my_defs.h"
-#include "../IOManager/iomanager.config.h"
+#include "../iomanager/iomanager.config.h"
 
 /***************************************** RESULT STRUCTURE ********************************************/
 typedef struct {

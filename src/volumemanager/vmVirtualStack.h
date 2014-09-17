@@ -45,7 +45,7 @@
 #include "iomanager.config.h"
 #include "tinyxml.h"
 #include "volumemanager.config.h"
-#include "../Stitcher/Displacement.h"
+#include "../stitcher/Displacement.h"
 
 //class Displacement;
 
@@ -66,7 +66,7 @@ class VirtualStack
         std::vector<Displacement*> WEST;			//vector of displacements along D direction between this and western  Stack
 
         // 2014-09-01. Alessandro. @ADDED support for sparse data.
-        std::vector<vm::interval<int>> z_ranges;	//vector of Z-ranges containing valid data (each range is of type [start, end) )
+        std::vector< vm::interval<int> > z_ranges;	//vector of Z-ranges containing valid data (each range is of type [start, end) )
 													//*** WARNING ***: if vector is empty, the stack is assumed as empty
 
     public:

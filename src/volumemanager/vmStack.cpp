@@ -348,6 +348,7 @@ void Stack::loadXML(
 	TiXmlElement *stack_node, 
 	int z_end)					// 2014-09-05. Alessandro. @ADDED 'z_end' parameter to support sparse data feature
 	//										   Here 'z_end' identifies the range [0, z_end) that slices can span
+throw (iom::exception)
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin Stack[%d,%d]::loadXML(TiXmlElement *stack_node)\n",ROW_INDEX, COL_INDEX);
@@ -373,7 +374,8 @@ void Stack::loadXML(
 		{
 			// parse 'Z_RANGES' field
 			z_ranges.clear();
-			std::string z_ranges_string = vm::cls(std::string(z_ranges_c));
+			std::string z_ranges_c_str = z_ranges_c;
+			std::string z_ranges_string = vm::cls(z_ranges_c_str);
 			std::vector<std::string> tokens;
 			vm::split(z_ranges_string, ";", tokens);
 			for(int i=0; i<tokens.size(); i++)

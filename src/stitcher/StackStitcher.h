@@ -54,8 +54,8 @@ class StackRestorer;
 // class VirtualStack;
 // #endif
 
-#include "../VolumeManager/vmVirtualStack.h"
-#include "../VolumeManager/vmVirtualVolume.h"
+#include "../volumemanager/vmVirtualStack.h"
+#include "../volumemanager/vmVirtualVolume.h"
 
 class StackStitcher
 {

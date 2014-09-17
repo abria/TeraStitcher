@@ -30,7 +30,7 @@
 #include "IOPluginAPI.h"
 #include "S_config.h"
 #include "GUI_config.h"
-#include <tclap\CmdLine.h>
+#include <tclap/CmdLine.h>
 #include <sstream>
 
 TeraStitcherCLI::TeraStitcherCLI(void)

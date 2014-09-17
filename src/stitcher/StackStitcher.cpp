@@ -42,7 +42,7 @@
 #include <list>
 #include <ctime>
 
-#include "../IOManager/ProgressBar.h"
+#include "../iomanager/ProgressBar.h"
 #include "S_config.h"
 #include "PDAlgo.h"
 #include "TPAlgo.h"
@@ -50,10 +50,10 @@
 #include "volumemanager.config.h"
 #include "DisplacementMIPNCC.h"
 
-#include "../ImageManager/IM_config.h"
-#include "../ImageManager/VirtualVolume.h"
-#include "../ImageManager/StackedVolume.h"
-#include "../IOManager/IOPluginAPI.h"
+#include "../imagemanager/IM_config.h"
+#include "../imagemanager/VirtualVolume.h"
+#include "../imagemanager/StackedVolume.h"
+#include "../iomanager/IOPluginAPI.h"
 
 using namespace iomanager;
 using namespace volumemanager;

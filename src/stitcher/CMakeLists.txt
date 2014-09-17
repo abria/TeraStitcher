@@ -5,11 +5,11 @@ include_directories (${CMAKE_SOURCE_DIR}/3rdparty/zlib)
 include_directories (${CMAKE_BINARY_DIR}/3rdparty/zlib)
 include_directories (${CMAKE_SOURCE_DIR}/3rdparty/libtiff)
 include_directories (${CMAKE_BINARY_DIR}/3rdparty/libtiff) 
-include_directories (${TeraStitcher_SOURCE_DIR}/ImageManager)
-include_directories (${TeraStitcher_SOURCE_DIR}/IOManager)
-include_directories (${TeraStitcher_SOURCE_DIR}/TinyXML)
-include_directories (${TeraStitcher_SOURCE_DIR}/VolumeManager)
-include_directories (${TeraStitcher_SOURCE_DIR}/CrossMIPs)
+include_directories (${TeraStitcher_SOURCE_DIR}/imagemanager)
+include_directories (${TeraStitcher_SOURCE_DIR}/iomanager)
+include_directories (${TeraStitcher_SOURCE_DIR}/tinyxml)
+include_directories (${TeraStitcher_SOURCE_DIR}/volumemanager)
+include_directories (${TeraStitcher_SOURCE_DIR}/crossmips)
 
 #disabling annoying warnings
 warnings_disable(CMAKE_CXX_FLAGS /wd4290) # vs2012: can't properly handle exceptions

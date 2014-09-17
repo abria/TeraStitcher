@@ -48,12 +48,12 @@
 
 #include "RawFmtMngr.h"
 #include "Tiff3DMngr.h"
-#include "../ImageManager/IM_config.h"
-#include "../ImageManager/VirtualVolume.h"
-#include "../ImageManager/TiledVolume.h"
+#include "../imagemanager/IM_config.h"
+#include "../imagemanager/VirtualVolume.h"
+#include "../imagemanager/TiledVolume.h"
 
 
-#include "../IOManager/ProgressBar.h"
+#include "../iomanager/ProgressBar.h"
 
 using namespace iomanager;
 using namespace volumemanager;

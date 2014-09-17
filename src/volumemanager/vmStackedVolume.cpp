@@ -45,6 +45,7 @@
 
 
 #include <iostream>
+#include <typeinfo>
 #include "vmStackedVolume.h"
 #include "S_config.h"
 #include "tinyxml.h"
