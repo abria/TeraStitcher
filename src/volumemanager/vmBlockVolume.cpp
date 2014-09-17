@@ -289,18 +289,18 @@ void BlockVolume::applyReferenceSystem(vm::ref_sys reference_system, float VXL_1
 		VXL_V = VXL_2 ;
 		VXL_H = VXL_1 ; 
 		VXL_D = VXL_3 ;
-		int tmp_coord_1, tmp_coord_2, tmp_coord_3, tmp_coord_4, tmp_coord_5, tmp_coord_6;
-        extractCoordinates(BLOCKS[0][0], 0, &tmp_coord_1, &tmp_coord_2, &tmp_coord_3);
+		int tmp_coord_1, tmp_coord_2, tmp_coord_4, tmp_coord_5;
+        extractCoordinates(BLOCKS[0][0], 0, &tmp_coord_1, &tmp_coord_2);
 		if(N_ROWS > 1)
 		{
-            extractCoordinates(BLOCKS[1][0], 0, &tmp_coord_4, &tmp_coord_5, &tmp_coord_6);
+            extractCoordinates(BLOCKS[1][0], 0, &tmp_coord_4, &tmp_coord_5);
 			this->MEC_V = (tmp_coord_5 - tmp_coord_2)/10.0F;
 		}
 		else
 			this->MEC_V = getStacksHeight()*VXL_V;		
 		if(N_COLS > 1)
 		{
-            extractCoordinates(BLOCKS[0][1], 0, &tmp_coord_4, &tmp_coord_5, &tmp_coord_6);
+            extractCoordinates(BLOCKS[0][1], 0, &tmp_coord_4, &tmp_coord_5);
 			this->MEC_H = (tmp_coord_4 - tmp_coord_1)/10.0F;
 		}
 		else
@@ -323,19 +323,19 @@ void BlockVolume::applyReferenceSystem(vm::ref_sys reference_system, float VXL_1
 		VXL_V = VXL_1;
 		VXL_H = VXL_2;
 		VXL_D = VXL_3;
-		int tmp_coord_1, tmp_coord_2, tmp_coord_3, tmp_coord_4, tmp_coord_5, tmp_coord_6;
-        extractCoordinates(BLOCKS[0][0], 0, &tmp_coord_1, &tmp_coord_2, &tmp_coord_3);
+		int tmp_coord_1, tmp_coord_2, tmp_coord_4, tmp_coord_5;
+        extractCoordinates(BLOCKS[0][0], 0, &tmp_coord_1, &tmp_coord_2);
 		
 		if(N_ROWS > 1)
 		{
-            extractCoordinates(BLOCKS[1][0], 0, &tmp_coord_4, &tmp_coord_5, &tmp_coord_6);
+            extractCoordinates(BLOCKS[1][0], 0, &tmp_coord_4, &tmp_coord_5);
 			this->MEC_V = (tmp_coord_4 - tmp_coord_1)/10.0F;		
 		}
 		else
 			this->MEC_V = getStacksHeight()*VXL_V;		
 		if(N_COLS > 1)
 		{
-            extractCoordinates(BLOCKS[0][1], 0, &tmp_coord_4, &tmp_coord_5, &tmp_coord_6);
+            extractCoordinates(BLOCKS[0][1], 0, &tmp_coord_4, &tmp_coord_5);
 			this->MEC_H = (tmp_coord_5 - tmp_coord_2)/10.0F;
 		}
 		else
