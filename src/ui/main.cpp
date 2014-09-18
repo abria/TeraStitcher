@@ -155,7 +155,7 @@ int main(int argc, char** argv)
 		if(cli.test && cli.projfile_load_path.compare("null")!=0)
 			volume = volumemanager::VirtualVolumeFactory::createFromXML(cli.projfile_load_path.c_str());
 		else if(cli.import || (cli.computedisplacements && cli.projfile_load_path.compare("null")==0) || cli.stitch || cli.test)
-			volume = volumemanager::VirtualVolumeFactory::createFromData(vm::VOLUME_INPUT_FORMAT_PLUGIN, cli.volume_load_path.c_str(), cli.reference_system, cli.VXL_1, cli.VXL_2, cli.VXL_3);
+			volume = volumemanager::VirtualVolumeFactory::createFromData(vm::VOLUME_INPUT_FORMAT_PLUGIN, cli.volume_load_path.c_str(), cli.reference_system, cli.VXL_1, cli.VXL_2, cli.VXL_3, true);
 		else if( (cli.computedisplacements && cli.volume_load_path.compare("null")==0) || cli.projdisplacements || cli.thresholddisplacements || cli.placetiles || cli.mergetiles)
 			volume = volumemanager::VirtualVolumeFactory::createFromXML(cli.projfile_load_path.c_str());
 

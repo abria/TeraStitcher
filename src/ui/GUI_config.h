@@ -29,13 +29,7 @@
 #define GUI_CONFIG_H
 
 //DEFAULT CLI PARAMETERS
-#define CLI_DEF_REF1 1
-#define CLI_DEF_REF2 -2
-#define CLI_DEF_REF3 3
-#define CLI_DEF_VXL1 0.8f
-#define CLI_DEF_VXL2 -0.8f
-#define CLI_DEF_VXL3 1.0f
 #define CLI_DEF_REL_THRESHOLD 0.7f
-#define TERASTITCHER_VERSION "1.6.4"
+#define TERASTITCHER_VERSION "1.6.5"
 
 #endif

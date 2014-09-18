@@ -165,7 +165,7 @@ class volumemanager::VirtualVolume
 
 // define new type: VirtualVolume plugin creator functions
 typedef volumemanager::VirtualVolume* (*VolumeCreatorXML)(const char*);
-typedef volumemanager::VirtualVolume* (*VolumeCreatorData)(const char*, vm::ref_sys, float, float, float);
+typedef volumemanager::VirtualVolume* (*VolumeCreatorData)(const char*, vm::ref_sys, float, float, float, bool);
 
 // Factory for plugins' registration and instantiation
 class volumemanager::VirtualVolumeFactory 
@@ -205,11 +205,11 @@ class volumemanager::VirtualVolumeFactory
 				throw iom::exception(iom::strprintf("Cannot find VirtualVolume(xml) plugin \"%s\": no such plugin", id.c_str()).c_str());
 			return (instance()->creators_xml[id])(xml_path); 
 		}
-		static VirtualVolume* createFromData(std::string id, const char* data_path, vm::ref_sys ref, float vxl1, float vxl2, float vxl3) throw (iom::exception)
+		static VirtualVolume* createFromData(std::string id, const char* data_path, vm::ref_sys ref, float vxl1, float vxl2, float vxl3, bool ow_mdata) throw (iom::exception)
 		{ 
 			if(instance()->creators_data.find(id) == instance()->creators_data.end())
 				throw iom::exception(iom::strprintf("Cannot find VirtualVolume(data) plugin \"%s\": no such plugin", id.c_str()).c_str());
-			return (instance()->creators_data[id])(data_path, ref, vxl1, vxl2, vxl3); 
+			return (instance()->creators_data[id])(data_path, ref, vxl1, vxl2, vxl3, ow_mdata); 
 		}
 
 		// get list of registered plugins

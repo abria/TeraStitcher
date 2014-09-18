@@ -68,12 +68,12 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 														"'Y' or 'V' or '1' = Vertical                                          "
 														"'X' or 'H' or '2' = Horizontal                                        "
 														"'Z' or 'D' or '3' = Depth                                             "
-														"use '-' prefix for inverted axis (e.g. '-X')",false,vm::num2str<int>(CLI_DEF_REF1),"string");
-	TCLAP::ValueArg<std::string> p_refsys_2("","ref2","Second axis of the used reference system (see --ref1)",false,vm::num2str<int>(CLI_DEF_REF2),"string");
-	TCLAP::ValueArg<std::string> p_refsys_3("","ref3","Third axis of the used reference system (see --ref1)",false,vm::num2str<int>(CLI_DEF_REF3),"string");
-	TCLAP::ValueArg<float> p_vxl_1("","vxl1","Voxel dimension along first axis (in microns).",false,CLI_DEF_VXL1,"real");
-	TCLAP::ValueArg<float> p_vxl_2("","vxl2","Voxel dimension along second axis (in microns).",false,CLI_DEF_VXL2,"real");
-	TCLAP::ValueArg<float> p_vxl_3("","vxl3","Voxel dimension along third axis (in microns).",false,CLI_DEF_VXL3,"real");
+														"use '-' prefix for inverted axis (e.g. '-X')",false,"null","string");
+	TCLAP::ValueArg<std::string> p_refsys_2("","ref2","Second axis of the used reference system (see --ref1)",false,"null","string");
+	TCLAP::ValueArg<std::string> p_refsys_3("","ref3","Third axis of the used reference system (see --ref1)",false,"null","string");
+	TCLAP::ValueArg<float> p_vxl_1("","vxl1","Voxel dimension along first axis (in microns).",false,0,"real");
+	TCLAP::ValueArg<float> p_vxl_2("","vxl2","Voxel dimension along second axis (in microns).",false,0,"real");
+	TCLAP::ValueArg<float> p_vxl_3("","vxl3","Voxel dimension along third axis (in microns).",false,0,"real");
 	TCLAP::MultiArg<std::string> p_algo("","algorithm","Forces the use of the given algorithm.",false,"string");
 	TCLAP::ValueArg<int> p_start_stack_row("","R0","First row of stacks to be processed.",false,-1,"integer");
 	TCLAP::ValueArg<int> p_end_stack_row("","R1","Last row of stacks to be processed.",false,-1,"integer");

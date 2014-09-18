@@ -50,8 +50,8 @@ class BlockVolume : public volumemanager::VirtualVolume
 		// 2014-09-10. Alessandro. @ADDED plugin creation/registration functions to make 'StackedVolume' a volume format plugin.
 		static const std::string creator_id1, creator_id2;							
 		static VirtualVolume* createFromXML(const char* xml_path) { return new BlockVolume(xml_path); }
-		static VirtualVolume* createFromData(const char* data_path, vm::ref_sys ref, float vxl1, float vxl2, float vxl3) { 
-			return new BlockVolume(data_path, ref, vxl1, vxl2, vxl3); 
+		static VirtualVolume* createFromData(const char* data_path, vm::ref_sys ref, float vxl1, float vxl2, float vxl3, bool ow_mdata) { 
+			return new BlockVolume(data_path, ref, vxl1, vxl2, vxl3, ow_mdata); 
 		}
 
 		Block ***BLOCKS;			    //2-D array of <Block*>
