@@ -112,7 +112,8 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::ValueArg<std::string> p_im_out_plugin_params("",	"imout_plugin_params","A series of parameters \"param1=val,param2=val,...\" to configure the output image plugin (see --pluginsinfo for the list of accepted parameters)", false, "","string");
 
 	TCLAP::SwitchArg p_sparse_data("","sparse_data","If enabled, this option allows to import sparse data organizations, i.e. with empty or incomplete tiles",false);
-	
+    TCLAP::SwitchArg p_rescan("","rescan","If enabled, TeraStitcher will rescan all acquisition files according to the given import parameters",false);
+
 
 	// argument objects must be inserted using FIFO policy (first inserted, first shown)
 	cmd.add(p_im_out_plugin_params);
@@ -125,6 +126,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_im_in_channel);
 	cmd.add(p_im_in_regex);
 
+    cmd.add(p_rescan);
 	cmd.add(p_sparse_data);
 	cmd.add(p_hide_progress_bar);
 	cmd.add(p_execution_times_file);
@@ -412,6 +414,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	iom::IMOUT_PLUGIN = p_im_out_plugin.getValue();
 	iom::IMOUT_PLUGIN_PARAMS = p_im_out_plugin_params.getValue();
 	vm::SPARSE_DATA = p_sparse_data.getValue();
+    this->rescanFiles = p_rescan.getValue();
 	this->pluginsinfo = p_pluginsinfo.getValue();
 	this->dumpMData = p_dump.getValue();
 	this->test = p_test.getValue();

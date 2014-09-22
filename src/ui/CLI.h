@@ -50,6 +50,7 @@ class TeraStitcherCLI
 		bool mergetiles;						//tiles merging step
 		bool dumpMData;							//dump mdata.bin
 		bool pluginsinfo;						//display plugins information
+        bool rescanFiles;                       //rescan files
 
 		//STITCHING pipeline parameters
 		string volume_load_path;				//directory path where the volume is stored used during the volume import step

@@ -14,6 +14,7 @@ ties names are:
 TeraStitcher version 1.6.7
 September 22nd, 2014
 --------------------------------------------------------------------------------------------
+- New: added --rescan option.
 - Fix: minor bug fixes and improvements and syncronization with GUI repository.
 --------------------------------------------------------------------------------------------
 
