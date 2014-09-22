@@ -472,7 +472,8 @@ throw (iom::exception)
 			"'sparse data' option.", DIR_NAME, DEPTH, z_end).c_str());
 
 		// all checks were successful: assume tile is not sparse
-		z_ranges.push_back(vm::interval<int>(0, DEPTH));
+        z_ranges.clear();
+        z_ranges.push_back(vm::interval<int>(0, DEPTH));
 	}
 	
 
@@ -549,7 +550,7 @@ void
 		char **FILENAMES_sparse = new char*[z_coords->size()];
 		int DEPTH_sparse = 0;
 		int k=0;
-		for(std::set<std::string>::iterator it = z_coords->begin(); it != z_coords->end(); it++)
+        for(std::set<std::string>::const_iterator it = z_coords->begin(); it != z_coords->end(); it++)
 		{
 			if(k<DEPTH && it->compare(VirtualVolume::name2coordZ(FILENAMES[k])) == 0)
 				FILENAMES_sparse[DEPTH_sparse++] = FILENAMES[k++];
@@ -568,6 +569,7 @@ void
 	// compute 'z_range' from 'FILENAMES'
 	bool interval_start = true;
 	bool interval_stop = false;
+    z_ranges.clear();
 	for(int k=0; k<DEPTH; k++)
 	{
 		// valid slice found

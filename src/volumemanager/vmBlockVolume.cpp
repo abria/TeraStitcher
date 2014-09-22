@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2014-09-20. Alessandro. @ADDED overwrite_mdata flag to the XML-based constructor.
 * 2014-09-10. Alessandro. @ADDED 'volume_format' attribute to <TeraStitcher> XML node
 * 2014-09-10. Alessandro. @ADDED plugin creation/registration functions to make 'StackedVolume' a volume format plugin.
 * 2014-09-09. Alessandro. @FIXED. Added default reference system if volume is imported from xml.
@@ -80,7 +81,7 @@ BlockVolume::BlockVolume(const char* _stacks_dir, vm::ref_sys _reference_system,
 	}
 }
 
-BlockVolume::BlockVolume(const char *xml_filepath) throw (iom::exception)
+BlockVolume::BlockVolume(const char *xml_filepath, bool overwrite_mdata) throw (iom::exception)
 	: VirtualVolume(xml_filepath)
 {
 	#if VM_VERBOSE > 3
@@ -103,7 +104,9 @@ BlockVolume::BlockVolume(const char *xml_filepath) throw (iom::exception)
 	//trying to unserialize an already existing metadata file, if it doesn't exist the full initialization procedure is performed and metadata is saved
 	char mdata_filepath[2000];
 	sprintf(mdata_filepath, "%s/%s", stacks_dir, vm::BINARY_METADATA_FILENAME.c_str());
-	if(fileExists(mdata_filepath))
+
+    // 2014-09-20. Alessandro. @ADDED overwrite_mdata flag
+    if(fileExists(mdata_filepath) && !overwrite_mdata)
 	{
 		// load mdata.bin content and xml content, also perform consistency check between mdata.bin and xml content
 		loadBinaryMetadata(mdata_filepath);
@@ -437,7 +440,7 @@ void BlockVolume::loadBinaryMetadata(char *metadata_filepath) throw (iom::except
 		delete []temp;
 		regen = true;
 		//fclose(file);
-		//throw iom::MyException("in BlockVolume::loadBinaryMetadata(...): binary metadata file is out-of-date");
+		//throw iom::iom::exception("in BlockVolume::loadBinaryMetadata(...): binary metadata file is out-of-date");
 		#if VM_VERBOSE > 3
 		printf("\t\t\t\tin BlockVolume::loadBinaryMetadata(...): binary metadata file is out-of-date\n");
 		#endif
@@ -733,7 +736,7 @@ void BlockVolume::loadXML(const char *xml_filepath)
 	{
 		char errMsg[2000];
 		sprintf(errMsg, "in BlockVolume::loadXML(...): Mismatch in <origin> field between xml file (= {%.7f, %.7f, %.7f} ) and %s (= {%.7f, %.7f, %.7f} ).", ORG_V_read, ORG_H_read, ORG_D_read, VM_BIN_METADATA_FILE_NAME, ORG_V, ORG_H, ORG_D);
-		throw iom::MyException(errMsg);
+		throw iom::iom::exception(errMsg);
 	} @TODO: bug with float precision causes often mismatch */ 
 	pelem = hRoot.FirstChildElement("mechanical_displacements").Element();
 	float MEC_V_read=0.0f, MEC_H_read=0.0f;

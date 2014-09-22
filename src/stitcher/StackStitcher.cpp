@@ -149,7 +149,7 @@ throw (iom::exception)
     /*if(subvol_DIM_D < S_SUBVOL_DIM_D_MIN || subvol_DIM_D > volume->getN_SLICES())
 	{
 		sprintf(buffer, "in StackStitcher::computeDisplacements(...): subvol_DIM_D(=%d) must be in [%d,%d]", subvol_DIM_D, S_SUBVOL_DIM_D_MIN, volume->getN_SLICES());
-		throw iom::MyException(buffer);
+		throw iom::iom::exception(buffer);
     }*/
 
 	// 2014-09-12. Alessandro. @ADDED [z0, z1] subdata selection along Z in the 'computeDisplacements()' method.

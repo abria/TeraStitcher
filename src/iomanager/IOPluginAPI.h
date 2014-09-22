@@ -182,6 +182,14 @@ class iomanager::IOPluginFactory
 			plugins = plugins.substr(0, plugins.find_last_of(","));
 			return plugins;
 		}
+        static std::vector< std::string > registeredPluginsList(){
+            std::vector< std::string > plugins;
+            for(std::map<std::string, IOPlugin2D* (*)(void)>::iterator it = instance()->registry2D.begin(); it != instance()->registry2D.end(); it++)
+                plugins.push_back(it->first);
+            for(std::map<std::string, IOPlugin3D* (*)(void)>::iterator it = instance()->registry3D.begin(); it != instance()->registry3D.end(); it++)
+                plugins.push_back(it->first);
+            return plugins;
+        }
 
 		// get plugins info
 		static std::string pluginsInfo(){

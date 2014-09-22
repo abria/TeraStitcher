@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2014-09-20. Alessandro. @ADDED overwrite_mdata flag to the XML-based constructor.
 * 2014-09-10. Alessandro. @ADDED plugin creation/registration functions to make 'StackedVolume' a volume format plugin.
 * 2014-09-05. Alessandro. @ADDED 'normalize_stacks_attributes()' method to normalize stacks attributes (width, height, etc.)
 */
@@ -49,7 +50,7 @@ class BlockVolume : public volumemanager::VirtualVolume
 
 		// 2014-09-10. Alessandro. @ADDED plugin creation/registration functions to make 'StackedVolume' a volume format plugin.
 		static const std::string creator_id1, creator_id2;							
-		static VirtualVolume* createFromXML(const char* xml_path) { return new BlockVolume(xml_path); }
+        static VirtualVolume* createFromXML(const char* xml_path, bool ow_mdata) { return new BlockVolume(xml_path, ow_mdata); }
 		static VirtualVolume* createFromData(const char* data_path, vm::ref_sys ref, float vxl1, float vxl2, float vxl3, bool ow_mdata) { 
 			return new BlockVolume(data_path, ref, vxl1, vxl2, vxl3, ow_mdata); 
 		}
@@ -72,7 +73,7 @@ class BlockVolume : public volumemanager::VirtualVolume
 		void mirror(vm::axis mrr_axis);
 
 		// iannello returns the number of channels of images composing the volume
-		//void initChannels ( ) throw (iom::MyException);
+		//void initChannels ( ) throw (iom::iom::exception);
 
 		// 2014-09-05. Alessandro. @ADDED 'normalize_stacks_attributes()' method to normalize stacks attributes (width, height, etc.)
 		void normalize_stacks_attributes() throw (iom::exception);
@@ -85,7 +86,7 @@ class BlockVolume : public volumemanager::VirtualVolume
 		//CONSTRUCTORS-DECONSTRUCTOR
 		BlockVolume() : VirtualVolume(){}
         BlockVolume(const char* _stacks_dir, vm::ref_sys reference_system, float VXL_1=0, float VXL_2=0, float VXL_3=0, bool overwrite_mdata=false) throw (iom::exception);
-		BlockVolume(const char *xml_filepath) throw (iom::exception);
+        BlockVolume(const char *xml_filepath, bool overwrite_mdata=false) throw (iom::exception);
 		~BlockVolume();
 
 		// ******GET METHODS******

@@ -136,7 +136,7 @@ class volumemanager::VirtualVolume
 
 		// 2014-09-10. Alessandro. @ADDED 'getVolumeFormat' method to be applied on xml file.
 		// return 'volume_format' attribute of <TeraStitcher> node from the given xml. 
-		static std::string getVolumeFormat(const std::string& xml_path) throw (iom::exception);
+        static std::string getVolumeFormat(const std::string& xml_path) throw (iom::exception);
 
 		//inserts the given displacement in the given stacks
 		void insertDisplacement(VirtualStack *stk_A, VirtualStack *stk_B, Displacement *displacement) throw (iom::exception);
@@ -164,7 +164,7 @@ class volumemanager::VirtualVolume
 
 
 // define new type: VirtualVolume plugin creator functions
-typedef volumemanager::VirtualVolume* (*VolumeCreatorXML)(const char*);
+typedef volumemanager::VirtualVolume* (*VolumeCreatorXML)(const char*, bool);
 typedef volumemanager::VirtualVolume* (*VolumeCreatorData)(const char*, vm::ref_sys, float, float, float, bool);
 
 // Factory for plugins' registration and instantiation
@@ -198,13 +198,20 @@ class volumemanager::VirtualVolumeFactory
 		}	
 
 		// plugin instantiation
-		static VirtualVolume* createFromXML(const char* xml_path) throw (iom::exception)
+        static VirtualVolume* createFromXML(const char* xml_path, bool ow_mdata) throw (iom::exception)
 		{ 
 			std::string id = VirtualVolume::getVolumeFormat(xml_path);
 			if(instance()->creators_xml.find(id) == instance()->creators_xml.end())
 				throw iom::exception(iom::strprintf("Cannot find VirtualVolume(xml) plugin \"%s\": no such plugin", id.c_str()).c_str());
-			return (instance()->creators_xml[id])(xml_path); 
+            return (instance()->creators_xml[id])(xml_path, ow_mdata);
 		}
+        static VirtualVolume* createFromXML(std::string id, const char* xml_path, bool ow_mdata) throw (iom::exception)
+        {
+            if(instance()->creators_xml.find(id) == instance()->creators_xml.end())
+                throw iom::exception(iom::strprintf("Cannot find VirtualVolume(xml) plugin \"%s\": no such plugin", id.c_str()).c_str());
+            return (instance()->creators_xml[id])(xml_path, ow_mdata);
+        }
+
 		static VirtualVolume* createFromData(std::string id, const char* data_path, vm::ref_sys ref, float vxl1, float vxl2, float vxl3, bool ow_mdata) throw (iom::exception)
 		{ 
 			if(instance()->creators_data.find(id) == instance()->creators_data.end())
@@ -219,7 +226,13 @@ class volumemanager::VirtualVolumeFactory
 				plugins += "\"" + it->first + "\", ";
 			plugins = plugins.substr(0, plugins.find_last_of(","));
 			return plugins;
-		}		
+        }
+        static std::vector <std::string> registeredPluginsList(){
+            std::vector <std::string> plugins;
+            for(std::map<std::string, VolumeCreatorXML>::iterator it = instance()->creators_xml.begin(); it != instance()->creators_xml.end(); it++)
+                plugins.push_back(it->first);
+            return plugins;
+        }
 };
 
 #endif

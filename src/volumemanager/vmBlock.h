@@ -26,7 +26,7 @@
 *    CHANGELOG    *
 *******************
 * 2014-09-05. Alessandro. @ADDED 'z_end' parameter in 'loadXML()' method to support sparse data feature.
-* 2014-08-25. Alessandro. @ADDED missing 'throw (iom::MyException)' statement in the 'loadImageStack()' method's signature
+* 2014-08-25. Alessandro. @ADDED missing 'throw (iom::iom::exception)' statement in the 'loadImageStack()' method's signature
 */
 
 #ifndef _VM_BLOCK_H

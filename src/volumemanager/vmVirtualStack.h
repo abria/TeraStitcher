@@ -35,7 +35,7 @@
 * 2014-08-30. Alessandro. @REMOVED 'show()' method (obsolete).
 * 2014-08-30. Alessandro. @MOVED 'VirtualStack()' default constructor to .cpp source file.
 * 2014-08-29. Alessandro. @ADDED 'isComplete()' concrete virtual method.
-* 2014-08-25. Alessandro. @ADDED missing 'throw (iom::MyException)' statement in the 'loadImageStack()' method's signature.
+* 2014-08-25. Alessandro. @ADDED missing 'throw (iom::iom::exception)' statement in the 'loadImageStack()' method's signature.
 */
 
 #ifndef _VM_VIRTUAL_STACK_H

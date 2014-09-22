@@ -38,7 +38,7 @@
 * 2014-08-30. Alessandro. @ADDED regular expression based filenames matching in 'init()' method.
 * 2014-08-30. Alessandro. @FIXED all error messages starting with 'Stack...' and corrected to 'Block...'.
 * 2014-08-30. Alessandro. @FIXED error messages in the 'init()' method (see checks of N_BYTESxCHAN and N_CHANS).
-* 2014-08-25. Alessandro. @ADDED missing 'throw (iom::MyException)' statement in the 'loadImageStack()' method's signature.
+* 2014-08-25. Alessandro. @ADDED missing 'throw (iom::iom::exception)' statement in the 'loadImageStack()' method's signature.
 * 2014-08-25. Alessandro. @REMOVED unused 'entry_k' variable declared in 'init()'.
 */
 
