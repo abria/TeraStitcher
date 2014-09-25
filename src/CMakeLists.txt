@@ -31,3 +31,19 @@ add_subdirectory( crossmips )
 add_subdirectory( volumemanager )
 add_subdirectory( stitcher )
 add_subdirectory( ui )
+
+# build user-selectable modules
+# --- find modules ---
+SUBDIRLIST(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR}/utils)
+# --- ask for selection of the modules to be included in the project (default is OFF) ---
+FOREACH(subdir ${SUBDIRS})
+	option (WITH_UTILITY_MODULE_${subdir} "Include this plugin in the project" OFF) 
+ENDFOREACH()
+# --- include selected modules only ---
+FOREACH(subdir ${SUBDIRS})
+	if(WITH_UTILITY_MODULE_${subdir})
+		message(STATUS "Include ./utils/" "${subdir} ...")
+		add_subdirectory(utils/${subdir})
+		message(STATUS "Include ./utils/" "${subdir} ... OK!")
+	endif(WITH_UTILITY_MODULE_${subdir})
+ENDFOREACH()
