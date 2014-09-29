@@ -102,13 +102,13 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	// input image parameters
 	TCLAP::ValueArg<std::string> p_im_in_regex("",			"imin_regex","A regular expression to be used to match image filenames when the volume is imported (by default, all the images whose file extension is supported by the selected I/O plugin are found)",false,"","string");
 	TCLAP::ValueArg<std::string> p_im_in_channel("",		"imin_channel","The channel(s) to be selected when the images are loaded. Allowed values are {\"all\",\"R\",\"G\",\"B\"}. Default is \"all\" (color images will be converted to grayscale).",false,"all","string");
-	TCLAP::ValueArg<std::string> p_im_in_plugin("",			"imin_plugin",vm::strprintf("Plugin that manages the input image format. Available plugins are: {%s}. Default is \"%s\".", iom::IOPluginFactory::registeredPlugins().c_str(), iom::IMIN_PLUGIN.c_str()), false,iom::IMIN_PLUGIN,"string");
+	TCLAP::ValueArg<std::string> p_im_in_plugin("",			"imin_plugin",vm::strprintf("Plugin that manages the input image format. Available plugins are: {%s}. Default is \"auto\".", iom::IOPluginFactory::registeredPlugins().c_str()), false, "auto","string");
 	TCLAP::ValueArg<std::string> p_im_in_plugin_params("",	"imin_plugin_params","A series of parameters \"param1=val,param2=val,...\" to configure the input image plugin (see --pluginsinfo for the list of accepted parameters)", false, "","string");
 	
 	// output image parameters
 	TCLAP::ValueArg<std::string> p_im_out_format("",		"imout_format","Output image format extension (\"tif\" is default, others: see --pluginsinfo). ",false,"tif","string");
 	TCLAP::ValueArg<int> im_out_depth("",					"imout_depth","Output image colordepth/bits per pixel (\"8\" is default). ",false,8,"integer");
-	TCLAP::ValueArg<std::string> p_im_out_plugin("",		"imout_plugin",vm::strprintf("Plugin that manages the output image format. Available plugins are: {%s}. Default is \"%s\".", iom::IOPluginFactory::registeredPlugins().c_str(), iom::IMOUT_PLUGIN.c_str()), false,iom::IMOUT_PLUGIN,"string");
+	TCLAP::ValueArg<std::string> p_im_out_plugin("",		"imout_plugin",vm::strprintf("Plugin that manages the output image format. Available plugins are: {%s}. Default is \"auto\".", iom::IOPluginFactory::registeredPlugins().c_str()), false, "auto","string");
 	TCLAP::ValueArg<std::string> p_im_out_plugin_params("",	"imout_plugin_params","A series of parameters \"param1=val,param2=val,...\" to configure the output image plugin (see --pluginsinfo for the list of accepted parameters)", false, "","string");
 
 	TCLAP::SwitchArg p_sparse_data("","sparse_data","If enabled, this option allows to import sparse data organizations, i.e. with empty or incomplete tiles",false);
@@ -208,7 +208,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	//STEP 1
 	if(p_import.isSet() && !(
-		p_vol_in_path.isSet() && p_proj_out_path.isSet() && 
+		p_vol_in_path.isSet() && 
 		p_refsys_1.isSet() && p_refsys_2.isSet() && p_refsys_3.isSet() &&
 		p_vxl_1.isSet() && p_vxl_2.isSet() && p_vxl_3.isSet() ))
 	{
@@ -227,9 +227,9 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	//STEP 2
 	if(p_computedisplacements.isSet() &&!( 
-		(p_vol_in_path.isSet() && p_refsys_1.isSet() && p_refsys_2.isSet() && p_refsys_3.isSet() && p_vxl_1.isSet() && p_vxl_2.isSet() && p_vxl_3.isSet() && p_proj_out_path.isSet())
+		(p_vol_in_path.isSet() && p_refsys_1.isSet() && p_refsys_2.isSet() && p_refsys_3.isSet() && p_vxl_1.isSet() && p_vxl_2.isSet() && p_vxl_3.isSet())
 		|| 	
-		(p_proj_in_path.isSet() && p_proj_out_path.isSet())))
+		(p_proj_in_path.isSet())))
 	{
 		sprintf(errMsg, "One or more required arguments missing for --%s!\n\nUSAGE 1 is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s --%s%c<%s>]", 
 			p_computedisplacements.getName().c_str(), p_computedisplacements.getName().c_str(),
@@ -276,7 +276,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	}
 
 	//STEP 3
-	if(p_projdisplacements.isSet() &&!(p_proj_in_path.isSet() && p_proj_out_path.isSet()))
+	if(p_projdisplacements.isSet() &&!(p_proj_in_path.isSet()))
 	{
 		sprintf(errMsg, "One or more required arguments missing for --%s!\n\nUSAGE is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s>",
 			    p_projdisplacements.getName().c_str(), p_projdisplacements.getName().c_str(),
@@ -286,7 +286,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	}
 
 	//STEP 4
-	if(p_thresholdisplacements.isSet() &&!(p_proj_in_path.isSet() && p_proj_out_path.isSet() && p_reliability_threshold.isSet()))
+	if(p_thresholdisplacements.isSet() &&!(p_proj_in_path.isSet() && p_reliability_threshold.isSet()))
 	{
 		sprintf(errMsg, "One or more required arguments missing for --%s!\n\nUSAGE is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s>",
 			    p_thresholdisplacements.getName().c_str(), p_thresholdisplacements.getName().c_str(),
@@ -297,7 +297,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	}
 
 	//STEP 5
-	if(p_placetiles.isSet() && !(p_proj_in_path.isSet() && p_proj_out_path.isSet()))
+	if(p_placetiles.isSet() && !(p_proj_in_path.isSet()))
 	{
 		sprintf(errMsg, "One or more required arguments missing for --%s!\n\nUSAGE is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s> \n\t[--%s%c<%s>]",
 			p_placetiles.getName().c_str(), p_placetiles.getName().c_str(),
@@ -409,10 +409,38 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	//importing parameters
 	vm::VOLUME_INPUT_FORMAT_PLUGIN = p_vol_in_plugin.getValue();
 	vm::VOLUME_OUTPUT_FORMAT_PLUGIN = p_vol_out_plugin.getValue();
-	iom::IMIN_PLUGIN = p_im_in_plugin.getValue();
+
+	// 2014-09-29. Alessandro. @ADDED automated selection of IO plugin if not provided.
+	if(p_im_in_plugin.getValue().compare("auto") == 0)
+	{
+		// try to automatically load the volume format from the xml, if it has been provided
+		if(p_proj_in_path.getValue().compare("null") != 0)
+		{
+			try{vm::VOLUME_INPUT_FORMAT_PLUGIN = vm::VirtualVolume::getVolumeFormat(p_proj_in_path.getValue());}
+			catch(...){}
+		}
+
+		if(vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(StackedVolume::id) == 0)
+			iom::IMIN_PLUGIN = "opencv2D";
+		else if(vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(BlockVolume::id) == 0)
+			iom::IMIN_PLUGIN = "tiff3D";
+	}
+	else
+		iom::IMIN_PLUGIN = p_im_in_plugin.getValue();
 	iom::IMIN_PLUGIN_PARAMS = p_im_in_plugin_params.getValue();
-	iom::IMOUT_PLUGIN = p_im_out_plugin.getValue();
+
+	// 2014-09-29. Alessandro. @ADDED automated selection of IO plugin if not provided.
+	if(p_im_out_plugin.getValue().compare("auto") == 0)
+	{
+		if(p_vol_out_plugin.getValue().compare(StackedVolume::id) == 0)
+			iom::IMOUT_PLUGIN = "opencv2D";
+		else if(p_vol_out_plugin.getValue().compare(BlockVolume::id) == 0)
+			iom::IMOUT_PLUGIN = "tiff3D";
+	}
+	else
+		iom::IMOUT_PLUGIN = p_im_in_plugin.getValue();
 	iom::IMOUT_PLUGIN_PARAMS = p_im_out_plugin_params.getValue();
+
 	vm::SPARSE_DATA = p_sparse_data.getValue();
     this->rescanFiles = p_rescan.getValue();
 	this->pluginsinfo = p_pluginsinfo.getValue();
