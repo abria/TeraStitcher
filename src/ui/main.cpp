@@ -199,11 +199,11 @@ int main(int argc, char** argv)
 			else
 				throw iom::exception(vm::strprintf("Unsupported output volume format plugin \"%s\"", vm::VOLUME_OUTPUT_FORMAT_PLUGIN.c_str()).c_str());
 		}
-		if(cli.test)
+		if(cli.test || cli.import)
 		{
 			stitcher->mergeTiles(cli.volume_save_path, -1, -1, NULL, false, -1, -1, -1, -1, volume->getN_SLICES()/2, volume->getN_SLICES()/2 +1, 
-			                     false, false, S_NO_BLENDING, true, false, cli.img_format.c_str(), cli.img_depth);
-			defaultOutputFileName = "xml_test";
+			                     false, false, S_SHOW_STACK_MARGIN, true, false, cli.img_format.c_str(), cli.img_depth);
+			defaultOutputFileName = "xml_import";
 		}
 		total_time += TIME(0);
 

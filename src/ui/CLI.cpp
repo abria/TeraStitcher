@@ -49,13 +49,13 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	//argument objects definitions
 	TCLAP::SwitchArg p_stitch("S","stitch","Stitch a volume by executing the entire pipeline (steps 1-6).",false);
-	TCLAP::SwitchArg p_import("1","import","Step 1: import a volume to a TeraStitcher XML project file.", false);
+	TCLAP::SwitchArg p_import("1","import","Step 1: import a volume into TeraStitcher and prepare it for processing.", false);
 	TCLAP::SwitchArg p_computedisplacements("2","displcompute","Step 2: compute pairwise stacks displacements.", false);
 	TCLAP::SwitchArg p_projdisplacements("3","displproj","Step 3: project existing displacements along Z axis for each stack by selecting the most reliable one.", false);
 	TCLAP::SwitchArg p_thresholdisplacements("4","displthres","Step 4: threshold displacements using the given reliability threshold.", false);
 	TCLAP::SwitchArg p_placetiles("5","placetiles","Step 5: places tiles in the image space using a globally optimal tiles placement algorithm.", false);
 	TCLAP::SwitchArg p_merge("6","merge","Step 6: merges tiles at different resolutions.", false);
-	TCLAP::SwitchArg p_test("t","test","Stitches the middle slice of the whole volume and saves it locally. Stage coordinates will be used, so this can be used to test their precision as well as the selected reference system.",false);
+	TCLAP::SwitchArg p_test("t","test","(deprecated) Stitches the middle slice of the whole volume and saves it locally. Stage coordinates will be used, so this can be used to test their precision as well as the selected reference system.",false);
 	TCLAP::SwitchArg p_dump("d","dump","Print the entire content of metadata file mdata.bin",false);
 	TCLAP::SwitchArg p_pluginsinfo("p","pluginsinfo","Display plugins informations",false);
 	TCLAP::ValueArg<std::string> p_vol_in_path("","volin","Directory path where the volume is stored.",false,"null","string");

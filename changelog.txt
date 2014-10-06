@@ -11,6 +11,16 @@ ties names are:
 - Rem: a feature no longer available
 
 ============================================================================================
+TeraStitcher version 1.6.10
+October 6th, 2014
+--------------------------------------------------------------------------------------------
+- Opt: the 2D preview produced by --import and --test now emphasizes  the  tile  border with
+       white lines.
+- Opt: --import mode now behaves like --test (deprecated), i.e. it too produces a 2D preview
+       of the stitched image using nominal stage coordinates.
+--------------------------------------------------------------------------------------------
+
+
 TeraStitcher version 1.6.9
 September 29th, 2014
 --------------------------------------------------------------------------------------------
