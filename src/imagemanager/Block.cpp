@@ -478,5 +478,3 @@ Segm_t* Block::Intersects(int D0, int D1) {
 
 	return intersect_segm;
 }
-
-

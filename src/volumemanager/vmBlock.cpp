@@ -67,7 +67,7 @@ Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char
 	: VirtualStack()
 {
 	#if VM_VERBOSE > 3
-    printf("\t\t\t\tin Block::Stack(StackedVolume* _CONTAINER, int _ROW_INDEX=%d, int _COL_INDEX=%d, char* _DIR_NAME=%s)\n",
+    printf("\t\t\t\tin Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX=%d, int _COL_INDEX=%d, char* _DIR_NAME=%s)\n",
 		_ROW_INDEX, _COL_INDEX, _DIR_NAME);
 	#endif
 
@@ -91,7 +91,7 @@ Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_
 	: VirtualStack()
 {
 	#if VM_VERBOSE > 3
-    printf("\t\t\t\tin Block::Stack(StackedVolume* _CONTAINER, int _ROW_INDEX=%d, int _COL_INDEX=%d, FILE* bin_file)\n",
+    printf("\t\t\t\tin Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX=%d, int _COL_INDEX=%d, FILE* bin_file)\n",
 		_ROW_INDEX, _COL_INDEX);
 	#endif
 
