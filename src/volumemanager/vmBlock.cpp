@@ -583,6 +583,7 @@ throw (iom::exception)
 	while (pch != NULL)
 	{
 		BLOCK_SIZE[j]=atoi(pch);
+		j++; //141027_Onofri: added missing increment
 		pch = strtok (NULL, ",");
 	}
 	delete[] BLOCK_SIZES2; 
