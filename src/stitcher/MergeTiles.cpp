@@ -178,7 +178,7 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
     block_height = (block_height == -1 ? (int)height : block_height);
     block_width  = (block_width  == -1 ? (int)width  : block_width);
     block_depth  = (block_depth  == -1 ? (int)depth  : block_depth);
-    if(block_height < S_MIN_SLICE_DIM || block_width < S_MIN_SLICE_DIM || block_depth < S_MIN_SLICE_DIM)
+    if(block_height < S_MIN_SLICE_DIM || block_width < S_MIN_SLICE_DIM /* 2014-10-29. Giulio. @REMOVED (|| block_depth < S_MIN_SLICE_DIM) */)
     {
         char err_msg[5000];
         sprintf(err_msg,"The minimum dimension for block width, height and depth is %d", S_MIN_SLICE_DIM);
