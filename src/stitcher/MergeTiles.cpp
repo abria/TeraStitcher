@@ -342,6 +342,7 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 			slice_start[res_i] = 0; // indices must start from 0 because they should have relative meaning 
 			slice_end[res_i] = slice_start[res_i] + stacks_depth[res_i][0][0][0] - 1;
 		}
+		// z must begin from D0 (absolute index into the volume) since it is used to compute tha file names (containing the absolute position along D)
 		z = this->D0;
 		z_parts = 1;
 	}
