@@ -37,7 +37,7 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2014-10-31. Giulio.     @CHANGED computations in compute_NCC are performed in double precision (and not in sngle precision) to avoit roundoff errors
+* 2014-10-31. Giulio.     @CHANGED computations in compute_NCC are performed in double precision (and not in single precision) to avoit roundoff errors
 */
 
 # include <math.h>
