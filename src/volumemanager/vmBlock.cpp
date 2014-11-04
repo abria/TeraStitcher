@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2014-11-04. Giulio.     @FIXED bug in conversion from pixel uint16 to float
 * 2014-09-09. Alessandro. @FIXED 'getXML()' method to deal with empty stacks.
 * 2014-09-09. Alessandro. @BUG in 'loadImageStack()'. 'first_file' and 'last_file' are set to '-1' by default. But here, they are never checked nor corrected. 
 * 2014-09-09. Alessandro. @FIXED 'loadImageStack()' method to deal with empty tiles.
@@ -425,9 +426,9 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 		throw iom::exception(errMsg);
 	}
 
-	if ( N_BYTESxCHAN == 1)
+	if ( N_BYTESxCHAN == 1 )
 		scale_factor  = 255.0F;
-	else if (N_BYTESxCHAN == 2)
+	else if ( N_BYTESxCHAN == 2 )
 		scale_factor = 65535.0F;
 	else
 	{
@@ -441,8 +442,13 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 	int offset;
 
 	if ( N_CHANS == 1 ) {
-		for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
-			STACKED_IMAGE[i] = (iom::real_t) data[i]/scale_factor;
+		// 2014-11-04. Giulio. @FIXED
+		if ( N_BYTESxCHAN == 1 )
+			for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
+				STACKED_IMAGE[i] = (iom::real_t) data[i]/scale_factor;
+		else // N_BYTESxCHAN == 2
+			for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
+				STACKED_IMAGE[i] = (iom::real_t) ((iom::uint16 *)data)[i]/scale_factor; // data must be interpreted as a uint16 array
 	}
 	else { // conversion to an intensity image
 		if ( iom::CHANS == iom::ALL ) {
@@ -464,8 +470,13 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 			sprintf(errMsg, "in Block[%d,%d]::loadImageStack(...): wrong value for parameter iom::CHANNEL_SELECTION.", ROW_INDEX, COL_INDEX);
 			throw iom::exception(errMsg);
 		}
-		for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
-			STACKED_IMAGE[i] = (iom::real_t) data[3*i + offset]/scale_factor;
+		// 2014-11-04. Giulio. @FIXED
+		if ( N_BYTESxCHAN == 1 )
+			for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
+				STACKED_IMAGE[i] = (iom::real_t) data[3*i + offset]/scale_factor;
+		else // N_BYTESxCHAN == 2
+			for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
+				STACKED_IMAGE[i] = (iom::real_t) ((iom::uint16 *)data)[3*i + offset]/scale_factor; // data must be interpreted as a uint16 array
 	}
 
 	delete [] data;
