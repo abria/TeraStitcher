@@ -12,10 +12,6 @@
 *    1. This material is free for non-profit research, but needs a special license for any commercial purpose. Please contact Alessandro Bria at a.bria@unicas.it or Giulio Iannello at 
 *       g.iannello@unicampus.it for further details.
 *    2. You agree to appropriately cite this work in your related studies and publications.
-*
-*       Bria, A., et al., (2012) "Stitching Terabyte-sized 3D Images Acquired in Confocal Ultramicroscopy", Proceedings of the 9th IEEE International Symposium on Biomedical Imaging.
-*       Bria, A., Iannello, G., "TeraStitcher - A Tool for Fast 3D Automatic Stitching of Teravoxel-sized Microscopy Images", submitted for publication, 2012.
-*
 *    3. This material is provided by  the copyright holders (Alessandro Bria  and  Giulio Iannello),  University Campus Bio-Medico and contributors "as is" and any express or implied war-
 *       ranties, including, but  not limited to,  any implied warranties  of merchantability,  non-infringement, or fitness for a particular purpose are  disclaimed. In no event shall the
 *       copyright owners, University Campus Bio-Medico, or contributors be liable for any direct, indirect, incidental, special, exemplary, or  consequential  damages  (including, but not 
@@ -26,55 +22,86 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
-/******************
-*    CHANGELOG    *
-*******************
-* 2014-11-10. Giulio.     @FIXED writes mdata.bin if it does not exist OR it must be overwritten (WARNING: by default it should not overwritten and there is not an overwrite option 
-*/
+# include <stdio.h> 
+# include <stdlib.h>
 
-#include <iostream>
-#include <stdio.h>
+#include "VolumeConverter.h"
 #include <CmdLine.h>
 #include "TemplateCLI.h"
-
-#include "IM_config.h"
 #include "iomanager.config.h"
-#include "Stack.h"
-#include "StackedVolume.h"
-#include "TiledVolume.h"
-#include "TiledMCVolume.h"
 
-using namespace std;
-using namespace iim;
-using namespace iom;
+/*
+ * This is the driver program for the library class VolumeConverter
+ *
+ * User has to pass on the command line the following parameters:
+ * - directory or file name of the source image (the file name if the image 
+ *   is stored in a single file, e.g. in V3D raw format)
+ * - directory where to store the output image
+ * - the height of the slices of the substacks in the output image
+ * - the width of the slices of the substacks in the output image
+ * - format of the source image ("Stacked" for Terastitcher stacked format, 
+ *   "Simple" for sequence of numbered .tif images in the same directory,
+ *   "Raw" for V3D raw 4D format)
+ * - format of the output image ("intensity" for real valued pixels in [0,1],
+ *   "graylevel" for integer valued pixels in [0,255], "RGB" for pixel represented
+ *   according to RGB format)
+ * - number of resolutions to be generated; all resolutions other than the highest 
+ *   one are generated; to generate the highest resolution a command line flag has
+ *   to be set
+ *
+ * If the source image is multi channel the format of the output image is 
+ * automatically set to "RGB"
+ *
+ * Allowed suffixes for V3D raw 4D format are: .raw .RAW, .v3draw .V3DRAW
+ *
+ *
+ * ****************** NEW FEATURE **********************
+ *
+ * It is possoble to generate the multiresolution image in different formats
+ * Allowed formats:
+ * - stacks of 2D tiff (default)
+ * - blocks stored in Vaa3D raw format (-f Vaa3DRaw, --outFmt Vaa3DRaw)
+ * - one image per channel and single channel blocks stored in Vaa3D raw format 
+ *   (-f Vaa3DRawMC, --outFmt Vaa3DRawMC)
+ *
+ */
 
-int main(int argc, char** argv)
-{
-	try
-	{
+
+int main ( int argc, char *argv[] ) {
+
+	//char err_msg[IM_STATIC_STRINGS_SIZE];
+	try {
+
 		//importing command-line arguments from <TeraStitcherCLI> object
 		TemplateCLI cli;
 		cli.readParams(argc, argv);
 		cli.checkParams();
 		
 		// do what you have to do
+		VolumeConverter vc;
+		
+		vc.setSrcVolume(cli.src_root_dir.c_str(),cli.src_format.c_str(),cli.dst_format.c_str());
 
-		//trying to unserialize an already existing metadata file, if it doesn't exist the full initialization procedure is performed and metadata is saved
-		char mdata_filepath[1000];
-		sprintf(mdata_filepath, "%s/%s", cli.root_dir.c_str(), MDATA_BIN_FILE_NAME.c_str());
-		if ( !isFile(mdata_filepath) || cli.overwrite_mdata ) {
-            if(cli.src_format.compare(iim::STACKED_FORMAT) == 0)
-				StackedVolume volume(cli.root_dir.c_str(),ref_sys(cli.axis_V,cli.axis_H,cli.axis_D),cli.vxlsz_V,cli.vxlsz_H,cli.vxlsz_D);
-            else if(cli.src_format.compare(iim::TILED_FORMAT) == 0 || cli.src_format.compare(iim::TILED_TIF3D_FORMAT) == 0)
-				TiledVolume volume(cli.root_dir.c_str(),ref_sys(cli.axis_V,cli.axis_H,cli.axis_D),cli.vxlsz_V,cli.vxlsz_H,cli.vxlsz_D);
-            else if(cli.src_format.compare(iim::TILED_MC_FORMAT) == 0 || cli.src_format.compare(iim::TILED_MC_TIF3D_FORMAT) == 0)
-				TiledMCVolume volume(cli.root_dir.c_str(),ref_sys(cli.axis_V,cli.axis_H,cli.axis_D),cli.vxlsz_V,cli.vxlsz_H,cli.vxlsz_D);
-		}
-		else {
-			char err_msg[2000];
-			sprintf(err_msg,"mdata.bin generation: file already exists");
-			throw iom::exception(err_msg);
-		}
+		if ( cli.outFmt == "Tiff2DStck" )
+			vc.generateTiles(cli.dst_root_dir.c_str(),cli.resolutions,
+				cli.slice_height,cli.slice_width,cli.halving_method,
+				true,"tif",8*vc.getVolume()->getBYTESxCHAN());
+		else if ( cli.outFmt == "Vaa3DRaw" )
+			vc.generateTilesVaa3DRaw(cli.dst_root_dir.c_str(),cli.resolutions,
+				cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,
+				true,"vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN());
+		else if ( cli.outFmt == "Tiff3D" )
+			vc.generateTilesVaa3DRaw(cli.dst_root_dir.c_str(),cli.resolutions,
+				cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,
+				true,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN());
+		else if ( cli.outFmt == "Vaa3DRawMC" )
+			vc.generateTilesVaa3DRawMC(cli.dst_root_dir.c_str(),cli.resolutions,
+				cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,
+				true,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN());
+		else if ( cli.outFmt == "Tiff3DMC" )
+			vc.generateTilesVaa3DRawMC(cli.dst_root_dir.c_str(),cli.resolutions,
+				cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,
+				true,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN());
 	}
 	catch( iom::exception& exception){
 		cout<<"ERROR: "<<exception.what()<<endl<<endl;
@@ -85,6 +112,6 @@ int main(int argc, char** argv)
 	catch(char* error){
 		cout<<"GENERIC ERROR: "<<error<<endl<<endl;
 	}
-	//system("PAUSE");
+
 	return EXIT_SUCCESS;
 }

@@ -22,85 +22,53 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
-/******************
-*    CHANGELOG    *
-*******************
-* 2014-09-05. Alessandro. @ADDED 'z_end' parameter in 'loadXML()' method to support sparse data feature.
-* 2014-08-25. Alessandro. @ADDED missing 'throw (iom::iom::exception)' statement in the 'loadImageStack()' method's signature
-*/
+#ifndef _TEMPLATE_COMMAND_LINE_INTERFACE_H
+#define _TEMPLATE_COMMAND_LINE_INTERFACE_H
 
-#ifndef _VM_BLOCK_H
-#define _VM_BLOCK_H
-
+#include <string>
 #include "iomanager.config.h"
-#include "tinyxml.h"
-#include "vmVirtualStack.h" 
+#include "GUI_config.h"
 
-class BlockVolume;
-class Displacement;
+using namespace std;
 
-//TYPE DEFINITIONS
-//structure representing a substack
-//D0: first slice, D1: last slice, ind0: index of 1st block (containing D0), ind1: index of last block (containing D1) 
-typedef struct {int D0, D1, ind0, ind1;} Segm_t;
-
-class Block : public VirtualStack
+class TemplateCLI
 {
-	private:
-
-		BlockVolume* CONTAINER;					//pointer to <VirtualVolume> object that contains the current object
-		int          N_BLOCKS;                   //number of blocks along z
-		int         *BLOCK_SIZE;                 //dimensions of blocks along z
-		int         *BLOCK_ABS_D;                //absolute D voxel coordinates of blocks
-		int          N_CHANS;                    //number of channels
-		int          N_BYTESxCHAN;               //number of bytes per channel
-
-		//******** OBJECT PRIVATE METHODS *********
-        Block(void){}
-
-		//Initializes all object's members given DIR_NAME
-		void init();
-
-	    //binarizing-unbinarizing methods
-		void binarizeInto(FILE* file);
-		void unBinarizeFrom(FILE* file) throw (iom::exception);
-
-		//returns a pointer to the intersection segment (along D) if the given segment (D0,D1-1) intersects current stack, otherwise returns NULL
-		//D0 first index of the segment
-		//D1 last index of the segment + 1
-		Segm_t* Intersects(int D0, int D1);
-
-		//******** FRIEND CLASS DECLARATION *********
-		//BlockVolume can access Block private members and methods
-		friend class BlockVolume;
-	
 	public:
-		//CONSTRUCTORS
-		Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char* _DIR_NAME);
-		Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file);
-		~Block(void);
 
-		//GET methods
-		int  getN_BLOCKS()		{return N_BLOCKS;}
-		int  getN_CHANS()		{return N_CHANS;}
-		int  getN_BYTESxCHAN()	{return N_BYTESxCHAN;}
+		// switch parameters
+		bool highest_resolution;						// generate highest resolution (default: false)
 
-		int  *getBLOCK_SIZE()   {return BLOCK_SIZE;}
-		int  *getBLOCK_ABS_D()  {return BLOCK_ABS_D;}
-		
-        void *getCONTAINER()    {return CONTAINER;}
+		// other parameters
+		// int/float/double/string XXXX;	// description
+		string src_root_dir;
+		string dst_root_dir;
+		int slice_depth;
+		int slice_height;
+		int slice_width;
+		string src_format;
+		string dst_format;
+		bool resolutions[S_MAX_MULTIRES];
+		int halving_method;
 
-		//LOAD and RELEASE methods
-        iom::real_t* loadImageStack(int first_file=-1, int last_file=-1) throw (iom::exception);
-		void releaseImageStack();
+		string outFmt;
 
-		//XML methods
-		TiXmlElement* getXML();
-		void loadXML(
-			TiXmlElement *stack_node,
-			int z_end)					// 2014-09-05. Alessandro. @ADDED 'z_end' parameter to support sparse data feature
-										//			   Here 'z_end' identifies the range [0, z_end) that slices can span
-		throw (iom::exception);
+		//constructor - deconstructor
+		TemplateCLI(void);					//set default params
+		~TemplateCLI(void){};
+
+		//reads options and parameters from command line
+		void readParams(int argc, char** argv) throw (iom::exception);
+
+		//checks parameters correctness
+		void checkParams() throw (iom::exception);
+
+		//returns help text
+		string getHelpText();
+
+		//print all arguments
+		void print();
 };
 
-#endif //_BLOCK_H
+#endif /* _TERASTITCHER_COMMAND_LINE_INTERFACE_H */
+
+

@@ -402,7 +402,7 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 		return STACKED_IMAGE;
 	}
 
-	Segm_t *intersect_segm = Intersects(first_file, last_file);
+	Segm_t *intersect_segm = Intersects(first_file, last_file+1); // the second parameter should be the last slice + 1
 	unsigned char *data = new unsigned char[HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN * N_CHANS];
 	unsigned char *temp = data;
 
@@ -648,7 +648,7 @@ throw (iom::exception)
 
 Segm_t* Block::Intersects(int D0, int D1) {
 
-	if ( D0 >= BLOCK_ABS_D[N_BLOCKS-1]+BLOCK_SIZE[N_BLOCKS-1] || D1 < 0 )
+	if ( D0 >= BLOCK_ABS_D[N_BLOCKS-1]+BLOCK_SIZE[N_BLOCKS-1] || D1 <= 0 )
 		// there is no intersection
 		return NULL;
 
@@ -667,7 +667,7 @@ Segm_t* Block::Intersects(int D0, int D1) {
 	found1 = false;
 	i1     = (int)(N_BLOCKS-1);
 	while ( i1>0 && !found1 )
-		if ( D1 >= BLOCK_ABS_D[i1] ) // GI_140502 changed '>' to '>=' 
+		if ( D1 > BLOCK_ABS_D[i1] ) // GI_141110 re-changed '>=' to '>' (D1 is the last index + 1)
 			found1 = true;
 		else
 			i1--;
