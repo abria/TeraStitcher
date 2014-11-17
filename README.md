@@ -32,5 +32,5 @@ Main features
 - sparse data support 
 - i/o plugin-based architecture
 - stop and resume the last step of stitching (merge)
-- 
+
 ===========================================================
