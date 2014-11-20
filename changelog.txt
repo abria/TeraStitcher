@@ -11,6 +11,20 @@ ties names are:
 - Rem: a feature no longer available
 
 ============================================================================================
+TeraStitcher version 1.7.0
+November 17th, 2014
+--------------------------------------------------------------------------------------------
+- Dev: corrected a bug in the calls to Block::Intersects(int D0, int D1) both in image mana-
+       ger and volumemanger
+- Dev: corrected a condition in mdatagenerator
+- Dev: added fflush after writes in resume.cpp
+- Dev: saved the reference system in the XML file in terastitcher.
+- Fix: minor bug fixes.
+- Fix: fixed a bug in conversion from integer pixels to float when the depth is 16 bits.
+- New: added the possibility to stop and resume the last step of stitching (merge). 
+--------------------------------------------------------------------------------------------
+
+
 TeraStitcher version 1.6.10
 October 6th, 2014
 --------------------------------------------------------------------------------------------
