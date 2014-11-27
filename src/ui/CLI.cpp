@@ -25,6 +25,12 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2014-11-22 Giulio. @CHANGED input plugin used for StackedVolume volumes is "tiff2D"
+*/
+
 #include "CLI.h"
 #include "volumemanager.config.h"
 #include "IOPluginAPI.h"
@@ -421,7 +427,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 		}
 
 		if(vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(StackedVolume::id) == 0)
-			iom::IMIN_PLUGIN = "opencv2D";
+			iom::IMIN_PLUGIN = "tiff2D";
 		else if(vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(BlockVolume::id) == 0)
 			iom::IMIN_PLUGIN = "tiff3D";
 	}
@@ -433,7 +439,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	if(p_im_out_plugin.getValue().compare("auto") == 0)
 	{
 		if(p_vol_out_plugin.getValue().compare(StackedVolume::id) == 0)
-			iom::IMOUT_PLUGIN = "opencv2D";
+			iom::IMOUT_PLUGIN = "tiff2D";
 		else if(p_vol_out_plugin.getValue().compare(BlockVolume::id) == 0)
 			iom::IMOUT_PLUGIN = "tiff3D";
 	}

@@ -22,6 +22,12 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
+*/
+
 #include <iostream>
 #include <string>
 #include "StackedVolume.h"
@@ -33,9 +39,9 @@
 #else
 #include <dirent.h>
 #endif
-#include <cxcore.h>
-#include <cv.h>
-#include <highgui.h>
+// Giulio_CV #include <cxcore.h>
+// Giulio_CV #include <cv.h>
+// Giulio_CV #include <highgui.h>
 #include <list>
 #include <fstream>
 #include "ProgressBar.h"
@@ -48,6 +54,8 @@ StackedVolume::StackedVolume(const char* _root_dir)  throw (IOException)
 : VirtualVolume(_root_dir) // iannello ADDED
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir = \"%s\"", _root_dir).c_str(), __iim__current__function__);
+
+	throw IOException("in StackedVolume::StackedVolume(...): disabled to remove dependence from openCV"); // Giulio_CV
 
 	// iannello this->root_dir = new char[strlen(_root_dir)+1];
 	// iannello strcpy(this->root_dir,_root_dir);
@@ -80,6 +88,8 @@ StackedVolume::StackedVolume(const char* _root_dir, ref_sys _reference_system, f
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir=%s, ref_sys reference_system={%d,%d,%d}, VXL_1=%.4f, VXL_2=%.4f, VXL_3=%.4f",
                                         _root_dir, _reference_system.first, _reference_system.second, _reference_system.third, _VXL_1, _VXL_2, _VXL_3).c_str(), __iim__current__function__);
+
+	throw IOException("in StackedVolume::StackedVolume(...): disabled to remove dependence from openCV"); // Giulio_CV
 
 	// iannello this->root_dir = new char[strlen(_root_dir)+1];
 	// iannello strcpy(this->root_dir,_root_dir);
@@ -568,6 +578,8 @@ void StackedVolume::initChannels ( ) throw (IOException)
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
+	/* Giulio_CV
+
     char slice_fullpath[STATIC_STRINGS_SIZE];
 
 	sprintf(slice_fullpath, "%s/%s/%s", root_dir, STACKS[0][0]->getDIR_NAME(), STACKS[0][0]->getFILENAMES()[0]);
@@ -593,6 +605,8 @@ void StackedVolume::initChannels ( ) throw (IOException)
         active[c] = c; // all channels are assumed active
 
 	cvReleaseImage(&slice);
+
+	*/
 }
 
 //PRINT method
@@ -865,6 +879,9 @@ real32* StackedVolume::loadSubvolume(int V0,int V1, int H0, int H1, int D0, int 
 	subvol_area.V0 = V0;
 	subvol_area.H1 = H1;
 	subvol_area.V1 = V1;
+
+	/* Giulio_CV
+
 	for(int row=0; row<N_ROWS; row++)
 		for(int col=0; col<N_COLS; col++)
 		{
@@ -894,6 +911,9 @@ real32* StackedVolume::loadSubvolume(int V0,int V1, int H0, int H1, int D0, int 
 					STACKS[row][col]->releaseStack();
 			}
 		}
+
+	*/
+
 	return subvol;
 }
 
@@ -952,6 +972,9 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
     subvol_area.V1 = V1;
     char slice_fullpath[STATIC_STRINGS_SIZE];
     bool first_time = true;
+
+	/* Giulio_CV
+
     for(int row=0; row<N_ROWS; row++)
         for(int col=0; col<N_COLS; col++)
         {
@@ -1045,6 +1068,8 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
             throw IOException(err_msg);
 		}
 	}
+
+	*/
 
     return subvol;
 }

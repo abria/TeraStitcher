@@ -22,6 +22,12 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
+*/
+
 #include "SimpleVolume.h"
 #include "Stack.h"
 #ifdef _WIN32
@@ -30,9 +36,9 @@
 #include <dirent.h>
 #endif
 #include <list>
-#include <cxcore.h>
-#include <cv.h>
-#include <highgui.h>
+// Giulio_CV #include <cxcore.h>
+// Giulio_CV #include <cv.h>
+// Giulio_CV #include <highgui.h>
 
 using namespace std;
 using namespace iim;
@@ -139,6 +145,9 @@ void SimpleVolume::initChannels ( ) throw (IOException)
 	char slice_fullpath[STATIC_STRINGS_SIZE];
 
 	sprintf(slice_fullpath, "%s/%s/%s", root_dir, STACKS[0][0]->getDIR_NAME(), STACKS[0][0]->getFILENAMES()[0]);
+
+	/* Giulio_CV_temp 
+	
 	IplImage* slice = cvLoadImage(slice_fullpath, CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR);  //without CV_LOAD_IMAGE_ANYDEPTH, image is converted to 8-bits if needed
 	if(!slice)
         throw IOException(std::string("Unable to load slice at \"").append(slice_fullpath).append("\"").c_str());
@@ -160,6 +169,8 @@ void SimpleVolume::initChannels ( ) throw (IOException)
         active[c] = c; // all channels are assumed active
 
 	cvReleaseImage(&slice);
+
+	*/
 }
 
 
@@ -187,6 +198,9 @@ real32 *SimpleVolume::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, int
 	subvol_area.V0 = V0;
 	subvol_area.H1 = H1;
 	subvol_area.V1 = V1;
+
+	/* Giulio_CV_temp
+
 	for(int row=0; row<N_ROWS; row++)
 		for(int col=0; col<N_COLS; col++)
 		{
@@ -212,6 +226,9 @@ real32 *SimpleVolume::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, int
 				STACKS[row][col]->releaseStack();
 			}
 		}
+
+	*/
+
 	return subvol;
 }
 
@@ -260,6 +277,8 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
 	subvol_area.H1 = H1;
 	subvol_area.V1 = V1;
 	bool first_time = true;
+
+	/* Giulio_CV_temp
 
 	for(int row=0; row<N_ROWS; row++) // probably can be eliminated: N_ROWS is always 1
 	{
@@ -378,5 +397,8 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
 
     if(channels)
         *channels = (int)sbv_channels;
+
+	*/
+
 	return subvol;
 }

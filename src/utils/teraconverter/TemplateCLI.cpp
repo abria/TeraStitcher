@@ -149,7 +149,17 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		 p_src_format.getValue() != iim::TIF3D_FORMAT  && 
 		 p_src_format.getValue() != iim::TILED_TIF3D_FORMAT  && 
 		 p_src_format.getValue() != iim::TILED_MC_TIF3D_FORMAT ) {
-		sprintf(errMsg, "Unknown source format!\nAllowed formats are:\n\tStacked / Simple / SimpeRaw / Raw / Tiled / TiledMC");
+		temp = "Unknown source format!\nAllowed formats are:\n\t\"" + 
+			iim::TILED_MC_FORMAT + "\"/\"" + 
+			iim::TILED_FORMAT + "\"/\"" + 
+			iim::STACKED_FORMAT + "\"/\"" + 
+			iim::SIMPLE_FORMAT + "\"/\"" + 
+			iim::SIMPLE_RAW_FORMAT + "\"/\"" + 
+			iim::RAW_FORMAT + "\"/\"" + 
+			iim::TIF3D_FORMAT + "\"/\"" + 
+			iim::TILED_TIF3D_FORMAT  + "\"";
+		//sprintf(errMsg, "Unknown source format!\nAllowed formats are:\n\tStacked / Simple / SimpeRaw / Raw / Tiled / TiledMC");
+		sprintf(errMsg, "%s", temp.c_str());
 		throw iom::exception(errMsg);
 	}
 	if ( p_dst_format.getValue() != "intensity" && 
@@ -168,7 +178,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		 p_outFmt.getValue() != "Tiff3D"   &&
 		 p_outFmt.getValue() != "Vaa3DRawMC" &&
 		 p_outFmt.getValue() != "Tiff3DMC" ) {
-		sprintf(errMsg, "Unknown output format!\nAllowed formats are:\n\tTiff2DStck / Vaa3DRaw / Vaa3DRawMC");
+		sprintf(errMsg, "Unknown output format!\nAllowed formats are:\n\tTiff2DStck / Vaa3DRaw / Vaa3DRawMC / Tiff3D / Tiff3DMC");
 		throw iom::exception(errMsg);
 	}
 

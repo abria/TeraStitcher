@@ -22,6 +22,12 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
+*/
+
 #include "SimpleVolumeRaw.h"
 #include "StackRaw.h"
 #include "RawFmtMngr.h"
@@ -31,9 +37,9 @@
 #include <dirent.h>
 #endif
 #include <list>
-#include <cxcore.h>
-#include <cv.h>
-#include <highgui.h>
+// Giulio_CV #include <cxcore.h>
+// Giulio_CV #include <cv.h>
+// Giulio_CV #include <highgui.h>
 
 using namespace std;
 using namespace iim;
@@ -201,6 +207,8 @@ real32 *SimpleVolumeRaw::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, 
 	subvol_area.V0 = V0;
 	subvol_area.H1 = H1;
 	subvol_area.V1 = V1;
+
+	/* Giulio_CV_temp
 	for(int row=0; row<N_ROWS; row++)
 		for(int col=0; col<N_COLS; col++)
 		{
@@ -226,6 +234,9 @@ real32 *SimpleVolumeRaw::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, 
 				STACKS[row][col]->releaseStack();
 			}
 		}
+
+	*/
+
 	return subvol;
 }
 

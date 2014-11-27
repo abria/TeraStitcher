@@ -28,6 +28,11 @@
 #include "iomanager.config.h"
 #include "IOPluginAPI.h"
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2014-11-25 Giulio. @CHANGED default plugins are set to "empty" because they have to be set by the application
+*/
 
 // initialize namespace parameters
 namespace iomanager
@@ -39,9 +44,9 @@ namespace iomanager
     int DEBUG = NO_DEBUG;					// debug level
     bool TIME_CALC = true;					// whether to enable time measurements
     channel CHANS = ALL;					// channel to be loaded (default is ALL)
-	std::string IMIN_PLUGIN  = "opencv2D";	// plugin to manage input image format
+	std::string IMIN_PLUGIN  = "empty";		// plugin to manage input image format 
 	std::string IMIN_PLUGIN_PARAMS="";		// additional parameters <param1=val,param2=val,...> to the plugin for image input 
-	std::string IMOUT_PLUGIN = "opencv2D";	// plugin to manage output image format
+	std::string IMOUT_PLUGIN = "empty";	// plugin to manage output image format (WARNING: must be a 2D pluging to output test image until 3D plugins do not have a write operation)
 	std::string IMOUT_PLUGIN_PARAMS="";		// additional parameters <param1=val,param2=val,...> to the plugin for image output 
     /*-------------------------------------------------------------------------------------------------------------------------*/
 }

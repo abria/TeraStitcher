@@ -22,6 +22,12 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
+*/
+
 #include <iostream>
 #include <string>
 #include "TiledVolume.h"
@@ -35,9 +41,11 @@
 #else
 #include <dirent.h>
 #endif
-#include <cxcore.h>
-#include <cv.h>
-#include <highgui.h>
+
+// Giulio_CV #include <cxcore.h>
+// Giulio_CV #include <cv.h>
+// Giulio_CV #include <highgui.h>
+
 #include <list>
 #include <fstream>
 #include "ProgressBar.h"

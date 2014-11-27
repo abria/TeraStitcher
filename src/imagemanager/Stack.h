@@ -22,6 +22,12 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
+*/
+
 #ifndef _IIM_STACK_H
 #define _IIM_STACK_H
 
@@ -30,7 +36,7 @@
 #include "VirtualVolume.h"
 
 //FORWARD-DECLARATIONS
-struct CvMat;
+struct CvMat; // Giulio_CV
 
 //class  iim::VirtualVolume;
 /* modified (iannello)

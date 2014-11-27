@@ -7,9 +7,9 @@ include_directories (${CMAKE_SOURCE_DIR}/3rdparty/libtiff)
 include_directories (${CMAKE_BINARY_DIR}/3rdparty/libtiff)
 
 # set up OpenCV library
-find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS})
-link_directories(${OpenCV_LIB_DIR})
+#find_package(OpenCV REQUIRED)
+#include_directories(${OpenCV_INCLUDE_DIRS})
+#link_directories(${OpenCV_LIB_DIR})
 
 # add STATIC library from the all .h and .cpp files
 file(GLOB imagemanager_headers *.h)

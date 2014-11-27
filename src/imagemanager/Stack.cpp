@@ -22,10 +22,16 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
+*/
+
 #include "Stack.h"
 #include "VirtualVolume.h"
-#include <cxcore.h>
-#include <highgui.h>
+// Giulio_CV #include <cxcore.h>
+// Giulio_CV #include <highgui.h>
 #ifdef _WIN32
 #include "dirent_win.h"
 #else
@@ -43,7 +49,7 @@
 #undef max
 #endif
 
-#include <cv.h>
+// Giulio_CV #include <cv.h>
 
 using namespace std;
 using namespace iim;
@@ -51,6 +57,8 @@ using namespace iim;
 Stack::Stack(VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, char* _DIR_NAME) throw (IOException)
 {
     /**/iim::debug(iim::LEV3, strprintf("_ROW_INDEX=%d, _COL_INDEX=%d, _DIR_NAME=%s", _ROW_INDEX, _COL_INDEX, _DIR_NAME).c_str(), __iim__current__function__);
+
+	throw IOException("in Stack::Stack(...): disabled to remove dependence from openCV"); // Giulio_CV
 
 	this->CONTAINER = _CONTAINER;
 
@@ -71,6 +79,8 @@ Stack::Stack(VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, char* _D
 Stack::Stack(VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) throw (IOException)
 {
     /**/iim::debug(iim::LEV3, strprintf("_ROW_INDEX=%d, _COL_INDEX=%d", _ROW_INDEX, _COL_INDEX).c_str(), __iim__current__function__);
+
+	throw IOException("in Stack::Stack(...): disabled to remove dependence from openCV"); // Giulio_CV
 
 	CONTAINER = _CONTAINER;
 	ROW_INDEX = _ROW_INDEX;
@@ -94,6 +104,8 @@ Stack::~Stack(void)
 {
     /**/iim::debug(iim::LEV3, strprintf("_ROW_INDEX=%d, _COL_INDEX=%d", ROW_INDEX, COL_INDEX).c_str(), __iim__current__function__);
 
+	/* Giulio_CV
+
 	for(uint32 z=0; z<DEPTH; z++)
 	{
 		if(STACKED_IMAGE[z])
@@ -108,6 +120,8 @@ Stack::~Stack(void)
 		delete[] FILENAMES;
 	if(DIR_NAME)
 		delete[] DIR_NAME;
+
+	*/
 }
 
 //binarizing-unbinarizing methods
@@ -278,6 +292,9 @@ void Stack::init() throw (IOException)
 	char slice_fullpath[STATIC_STRINGS_SIZE];
 	sprintf(slice_fullpath, "%s/%s/%s", CONTAINER->getROOT_DIR(), DIR_NAME, FILENAMES[0]);
     /**/iim::debug(iim::LEV3, strprintf("ROW_INDEX=%d, COL_INDEX=%d: trying to load image at \"%s\"", ROW_INDEX, COL_INDEX, slice_fullpath).c_str(), __iim__current__function__);
+
+	/* Giulio_CV
+
 	IplImage *img_tmp = cvLoadImage(slice_fullpath, CV_LOAD_IMAGE_GRAYSCALE);
 	if(!img_tmp)
 	{
@@ -286,10 +303,12 @@ void Stack::init() throw (IOException)
 			ROW_INDEX, COL_INDEX, slice_fullpath);
         throw IOException(msg);
 	}
-    /**/iim::debug(iim::LEV3, strprintf("ROW_INDEX=%d, COL_INDEX=%d: successfully loaded image at \"%s\"", ROW_INDEX, COL_INDEX, slice_fullpath).c_str(), __iim__current__function__);
+    /** /iim::debug(iim::LEV3, strprintf("ROW_INDEX=%d, COL_INDEX=%d: successfully loaded image at \"%s\"", ROW_INDEX, COL_INDEX, slice_fullpath).c_str(), __iim__current__function__);
 	HEIGHT = img_tmp->height;
 	WIDTH  = img_tmp->width;
 	cvReleaseImage(&img_tmp);
+
+	*/
 }
 
 //PRINT method
@@ -309,6 +328,8 @@ void Stack::print()
 void Stack::loadStack(int first_file, int last_file)
 {	
     /**/iim::debug(iim::LEV3, strprintf("_ROW_INDEX=%d, _COL_INDEX=%d, first_file=%d, last_file=%d", ROW_INDEX, COL_INDEX, first_file, last_file).c_str(), __iim__current__function__);
+
+	/* Giulio_CV
 
 	//LOCAL VARIABLES
 	char slice_fullpath[1000];
@@ -352,12 +373,16 @@ void Stack::loadStack(int first_file, int last_file)
 		}
 	}
 	cvReleaseMat(&mat_buffer);
+
+	*/
 }
 
 //releases images of current stack (from 'first_file' to 'last_file' extremes included, if not specified loads entire stack)
 void Stack::releaseStack(int first_file, int last_file)
 {
     /**/iim::debug(iim::LEV3, strprintf("_ROW_INDEX=%d, _COL_INDEX=%d, first_file=%d, last_file=%d", ROW_INDEX, COL_INDEX, first_file, last_file).c_str(), __iim__current__function__);
+
+	/* Giulio_CV
 
 	//initializations
 	first_file = (first_file == -1 ? 0       : first_file);
@@ -372,17 +397,20 @@ void Stack::releaseStack(int first_file, int last_file)
             STACKED_IMAGE[file_i] = 0;
 		}
 	}
+
+	*/
 }
 
 //returns a pointer to the intersection rectangle if the given area intersects current stack, otherwise returns NULL
 Rect_t* Stack::Intersects(const Rect_t& area)
 {
+	/* Giulio_CV
+
 	//first determining if intersection occurs
 	bool intersects =  ( area.H0    < (int)(ABS_H + WIDTH)	&& 
 						 area.H1    >  ABS_H			&& 
 						 area.V0    < (int)(ABS_V + HEIGHT)	&& 
 						 area.V1    >  ABS_V		); 
-
 	//if intersection occurs, computing intersection area, otherwise returning NULL
 	if(intersects)
 	{
@@ -395,5 +423,7 @@ Rect_t* Stack::Intersects(const Rect_t& area)
 		return intersect_rect;
 	}
 	else
+
+	*/
         return 0;
 }

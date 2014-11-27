@@ -124,10 +124,19 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 	else
 		return ((char *) "More than 3 channels in Tiff files.");
 
-	char *completeFilename = new char[strlen(filename)+4+1];
-	strcpy(completeFilename,filename);
-	strcat(completeFilename,".");
-	strcat(completeFilename,TIFF3D_SUFFIX);
+	char *completeFilename = (char *) 0;
+	int fname_len = strlen(filename);
+	char *suffix = strstr(filename,".tif");
+	if ( (suffix != 0) && (fname_len - (suffix-filename) <= 5) ) { // a substring ".tif is already at the end of the filename
+		completeFilename = new char[fname_len+1];
+		strcpy(completeFilename,filename);
+	}
+	else {	
+		completeFilename = new char[fname_len+4+1];
+		strcpy(completeFilename,filename);
+		strcat(completeFilename,".");
+		strcat(completeFilename,TIFF3D_SUFFIX);
+	}
 
 	TIFF *output;
 	output = TIFFOpen(completeFilename,"w");
@@ -193,6 +202,7 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
     }
 
 	delete[] fakeData;
+	delete []completeFilename;
 
 	check = TIFFWriteDirectory(output);
 	if (!check) {

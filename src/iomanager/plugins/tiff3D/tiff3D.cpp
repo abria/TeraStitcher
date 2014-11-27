@@ -97,6 +97,6 @@ throw (iom::exception)
 
 	char *err_Tiff3Dfmt;
 	if ( (err_Tiff3Dfmt = readTiff3DFile2Buffer(finName,data,XSIZE,YSIZE,first,last)) != 0 ) {
-		throw iom::exception(iom::strprintf("unable to read tiff file (%s)",err_Tiff3Dfmt), __iom__current__function__);
+		throw iom::exception(iom::strprintf("(%s) unable to read tiff file %s in page range [%d,%d]",err_Tiff3Dfmt,finName,first,last), __iom__current__function__);
 	}
 }

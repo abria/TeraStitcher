@@ -22,12 +22,18 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
+*/
+
 #include "Block.h"
 #include "VirtualVolume.h"
 #include "VirtualFmtMngr.h"
 //#include "RawFmtMngr.h"
-#include <cxcore.h>
-#include <highgui.h>
+// Giulio_CV #include <cxcore.h>
+// Giulio_CV #include <highgui.h>
 #ifdef _WIN32
 #include "dirent_win.h"
 #else
@@ -45,7 +51,16 @@
 #undef max
 #endif
 
-#include <cv.h>
+// Giulio_CV #include <cv.h>
+
+//2014-11-21 Giulio. @ADDED MIN, MAX macros
+#ifndef MIN
+#define MIN(a,b) ((a)<(b) ? (a) : (b))
+#endif
+#ifndef MAX
+#define MAX(a,b) ((a)>(b) ? (a) : (b))
+#endif
+
 
 using namespace std;
 using namespace iim;

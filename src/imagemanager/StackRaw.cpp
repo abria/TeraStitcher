@@ -22,11 +22,17 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
+*/
+
 #include "StackRaw.h"
 #include "VirtualVolume.h"
 #include "RawFmtMngr.h"
-#include <cxcore.h>
-#include <highgui.h>
+// Giulio_CV #include <cxcore.h>
+// Giulio_CV #include <highgui.h>
 #ifdef _WIN32
 #include "dirent_win.h"
 #else
@@ -44,7 +50,15 @@
 #undef max
 #endif
 
-#include <cv.h>
+// Giulio_CV #include <cv.h>
+
+//2014-11-21 Giulio. @ADDED MIN, MAX macros
+#ifndef MIN
+#define MIN(a,b) ((a<b) ? (a) : (b))
+#endif
+#ifndef MAX
+#define MAX(a,b) ((a>b) ? (a) : (b))
+#endif
 
 using namespace std;
 using namespace iim;
@@ -95,6 +109,8 @@ StackRaw::~StackRaw(void)
 {
     /**/iim::debug(iim::LEV3, strprintf("ROW_INDEX=%d, COL_INDEX=%d", ROW_INDEX, COL_INDEX).c_str(), __iim__current__function__);
 
+	/* Giulio_CV_temp
+
 	for(uint32 z=0; z<DEPTH; z++)
 	{
 		if(STACKED_IMAGE[z])
@@ -109,6 +125,8 @@ StackRaw::~StackRaw(void)
 		delete[] FILENAMES;
 	if(DIR_NAME)
 		delete[] DIR_NAME;
+
+	*/
 }
 
 //binarizing-unbinarizing methods
@@ -323,6 +341,8 @@ void StackRaw::loadStack(int first_file, int last_file)
 {	
     /**/iim::debug(iim::LEV3, strprintf("ROW_INDEX=%d, COL_INDEX=%d, first_file=%d, last_file=%d", ROW_INDEX, COL_INDEX, first_file, last_file).c_str(), __iim__current__function__);
 
+	/* Giulio_CV_temp
+
 	//LOCAL VARIABLES
 	char slice_fullpath[1000];
 	IplImage *slice_img_i;
@@ -345,7 +365,7 @@ void StackRaw::loadStack(int first_file, int last_file)
 			sprintf(slice_fullpath, "%s/%s/%s", CONTAINER->getROOT_DIR(), DIR_NAME, FILENAMES[file_i]);
 			
 			//loading image
-			slice_img_i = cvLoadImage(slice_fullpath, CV_LOAD_IMAGE_GRAYSCALE | CV_LOAD_IMAGE_ANYDEPTH);
+			// Giulio_CV_temp slice_img_i = cvLoadImage(slice_fullpath, CV_LOAD_IMAGE_GRAYSCALE | CV_LOAD_IMAGE_ANYDEPTH);
 			if(!slice_img_i)
 			{
 				char msg[1000];
@@ -365,12 +385,16 @@ void StackRaw::loadStack(int first_file, int last_file)
 		}
 	}
 	cvReleaseMat(&mat_buffer);
+
+	*/
 }
 
 //releases images of current stack (from 'first_file' to 'last_file' extremes included, if not specified loads entire stack)
 void StackRaw::releaseStack(int first_file, int last_file)
 {
     /**/iim::debug(iim::LEV3, strprintf("ROW_INDEX=%d, COL_INDEX=%d, first_file=%d, last_file=%d", ROW_INDEX, COL_INDEX, first_file, last_file).c_str(), __iim__current__function__);
+
+	/* Giulio_CV_temp
 
 	//initializations
 	first_file = (first_file == -1 ? 0       : first_file);
@@ -385,6 +409,8 @@ void StackRaw::releaseStack(int first_file, int last_file)
 			STACKED_IMAGE[file_i] = NULL;
 		}
 	}
+
+	*/
 }
 
 

@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2014-11-22. Giulio.     @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
 * 2014-11-10. Giulio.     @CHANGED allowed saving 2dseries with a depth of 16 bit (generateTiles)
 */
 
@@ -39,8 +40,10 @@
 #include "Tiff3DMngr.h"
 #include "TimeSeries.h"
 
-#include <cxcore.h>
-#include <highgui.h>
+// Giulio_CV #include <cxcore.h>
+// Giulio_CV #include <highgui.h>
+#include "../iomanager/IOPluginAPI.h" // 2014-11-26. Giulio. 
+
 #include <stdio.h>
 
 using namespace iim;
@@ -63,13 +66,14 @@ void VirtualVolume::saveImage(std::string img_path, real32* raw_img, int raw_img
     /**/iim::debug(iim::LEV3, strprintf("img_path=%s, raw_img_height=%d, raw_img_width=%d, start_height=%d, end_height=%d, start_width=%d, end_width=%d",
                                         img_path.c_str(), raw_img_height, raw_img_width, start_height, end_height, start_width, end_width).c_str(), __iim__current__function__);
 
-	IplImage *img;
-	uint8  *row_data_8bit;
-	uint16 *row_data_16bit;
-	uint32 img_data_step;
-	float scale_factor_16b, scale_factor_8b;
+	//throw IOException("in VirtualVolume::saveImage(...): disabled to remove dependence from openCV"); // Giulio_CV
+
+	// Giulio_CV uint8  *row_data_8bit;
+	// Giulio_CV uint16 *row_data_16bit;
+	// Giulio_CV uint32 img_data_step;
+	// Giulio_CV float scale_factor_16b, scale_factor_8b;
 	int img_height, img_width;
-	int i,j;
+	// Giulio_CV int i,j;
 	char img_filepath[5000];
 
 	//setting some default parameters and image dimensions
@@ -96,7 +100,14 @@ void VirtualVolume::saveImage(std::string img_path, real32* raw_img, int raw_img
 	//generating complete path for image to be saved
 	sprintf(img_filepath, "%s.%s", img_path.c_str(), img_format);
 
+	// 2014-11-26. Giulio. @ADDED the output plugin must be explicitly set by the caller 
+	iomanager::IOPluginFactory::getPlugin2D(iomanager::IMOUT_PLUGIN)->writeData(
+		img_filepath, raw_img, img_height, img_width, 1, start_height, end_height, start_width, end_width, img_depth);
+
+	/* Giulio_CV
+
 	//converting raw data in image data
+	IplImage *img;
 	img = cvCreateImage(cvSize(img_width, img_height), (img_depth == 8 ? IPL_DEPTH_8U : IPL_DEPTH_16U), 1);
 	scale_factor_16b = 65535.0F;
 	scale_factor_8b  = 255.0F;
@@ -132,6 +143,8 @@ void VirtualVolume::saveImage(std::string img_path, real32* raw_img, int raw_img
 
 	//releasing memory of img
 	cvReleaseImage(&img);
+
+	*/
 }
 
 /*************************************************************************************************************
@@ -159,6 +172,11 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
     /**/iim::debug(iim::LEV3, strprintf("img_path=%s, raw_img_height=%d, raw_img_width=%d, start_height=%d, end_height=%d, start_width=%d, end_width=%d, img_format=%s, img_depth=%d",
                                         img_path.c_str(), raw_img_height, raw_img_width, start_height, end_height, start_width, end_width, img_format, img_depth).c_str(), __iim__current__function__);
 
+	// throw IOException("in VirtualVolume::saveImage_from_UINT8(...): disabled to remove dependence from openCV"); // Giulio_CV
+
+	if ( strcmp(img_format,"tif") != 0 ) 
+		throw iom::exception(iom::strprintf("unsupported file format %s",img_format), __iom__current__function__);
+
     //checking for non implemented features
 	//if( img_depth != 8 ) {
 	//	char err_msg[STATIC_STRINGS_SIZE];
@@ -168,7 +186,8 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
 
     //LOCAL VARIABLES
     char buffer[STATIC_STRINGS_SIZE];
-    IplImage* img = 0;
+    // Giulio_CV IplImage* img = 0;
+	uint8 *img = (uint8 *) 0;
     int img_height, img_width;
     int nchannels = 0;
 
@@ -207,57 +226,58 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
         throw IOException(buffer);
     }
 
-    //converting raw data into OpenCV image data
+    //converting raw data into tif image data
     if(nchannels == 3)
     {
-        img = cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 3);
-        int img_data_step = img->widthStep / sizeof(uint8);
+        img = new uint8[img_width * img_height * nchannels]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 3);
+        int img_data_step = img_width * nchannels;
         for(int i = 0; i <img_height; i++)
         {
-            uint8* row_data_8bit = ((uint8*)(img->imageData)) + i*img_data_step;
+            uint8* row_data_8bit = img + i*img_data_step;
             for(int j1 = 0, j2 = start_width; j1 < img_width*3; j1+=3, j2++)
             {
-                row_data_8bit[j1  ] = raw_ch3[(i+start_height)*raw_img_width + j2];
+                row_data_8bit[j1  ] = raw_ch1[(i+start_height)*raw_img_width + j2];
                 row_data_8bit[j1+1] = raw_ch2[(i+start_height)*raw_img_width + j2];
-                row_data_8bit[j1+2] = raw_ch1[(i+start_height)*raw_img_width + j2];
+                row_data_8bit[j1+2] = raw_ch3[(i+start_height)*raw_img_width + j2];
             }
         }
     }
     if(nchannels == 2)
     {
-        img = cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 3);
-        int img_data_step = img->widthStep / sizeof(uint8);
+		// stores in any case as a 3 channels image (RGB)
+        img = new uint8[img_width * img_height * (nchannels+1)]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 3);
+        int img_data_step = img_width * (nchannels+1); 
         for(int i = 0; i <img_height; i++)
         {
-            uint8* row_data_8bit = ((uint8*)(img->imageData)) + i*img_data_step;
+            uint8* row_data_8bit = img + i*img_data_step;
             for(int j1 = 0, j2 = start_width; j1 < img_width*3; j1+=3, j2++)
             {
-                row_data_8bit[j1  ] = 0;
+                row_data_8bit[j1  ] = raw_ch1[(i+start_height)*raw_img_width + j2];
                 row_data_8bit[j1+1] = raw_ch2[(i+start_height)*raw_img_width + j2];
-                row_data_8bit[j1+2] = raw_ch1[(i+start_height)*raw_img_width + j2];
+                row_data_8bit[j1+2] = 0;
             }
         }
     }
     else if(nchannels == 1) // source and destination depths are guarenteed to be the same
     {
-        img = cvCreateImage(cvSize(img_width, img_height), (img_depth == 8 ? IPL_DEPTH_8U : IPL_DEPTH_16U), 1);
+        img = new uint8[img_width * img_height * nchannels * img_depth/8]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), (img_depth == 8 ? IPL_DEPTH_8U : IPL_DEPTH_16U), 1);
         //float scale_factor_16b = 65535.0F/255; // conversion is not supported yet
-        if(img->depth == IPL_DEPTH_8U)
+        if(img_depth == 8)
         {
-            int img_data_step = img->widthStep / sizeof(uint8);
+            int img_data_step = img_width * nchannels;
             for(int i = 0; i <img_height; i++)
             {
-                uint8* row_data_8bit = ((uint8*)(img->imageData)) + i*img_data_step;
+                uint8* row_data_8bit = img + i*img_data_step;
                 for(int j = 0; j < img_width; j++)
                     row_data_8bit[j] = raw_ch1[(i+start_height)*raw_img_width+j+start_width];
             }
         }
-        else // img->depth == IPL_DEPTH_16U
+        else // img->depth == 16
         {
-            int img_data_step = img->widthStep / sizeof(uint16);
+            int img_data_step = img_width * nchannels * 2;
             for(int i = 0; i <img_height; i++)
             {
-                uint16* row_data_16bit = ((uint16*)(img->imageData)) + i*img_data_step;
+                uint16* row_data_16bit = ((uint16*)img) + i*img_data_step;
                 for(int j = 0; j < img_width; j++)
                     // row_data_16bit[j] = (uint16) (raw_ch1[(i+start_height)*raw_img_width+j+start_width] * scale_factor_16b); // conversion is not supported yet
                     row_data_16bit[j] = ((uint16 *) raw_ch1)[(i+start_height)*raw_img_width+j+start_width] /* 2014-11-10. Giulio.    removed: [* scale_factor_16b )] */;
@@ -270,7 +290,23 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
     sprintf(buffer, "%s.%s", img_path.c_str(), img_format);
 
     //saving image
-    try{cvSaveImage(buffer, img);}
+	// Giulio_CV try{
+		// Giulio_CV cvSaveImage(buffer, img);
+
+	char *err_tiff_fmt;
+
+	// creates the file (2D image: depth is 1)
+	if ( (err_tiff_fmt = initTiff3DFile((char *)img_path.c_str(),img_width,img_height,1,(nchannels>1 ? 3 : 1),img_depth/8)) != 0 ) {
+		throw iom::exception(iom::strprintf("unable to create tiff file (%s)",err_tiff_fmt), __iom__current__function__);
+	}
+
+	if ( (err_tiff_fmt = appendSlice2Tiff3DFile(buffer,0,(unsigned char *)img,(int)img_height,(int)img_width)) != 0 ) {
+		throw iom::exception(iom::strprintf("error in saving 2D image (%lld x %lld) in file %s (appendSlice2Tiff3DFile: %s)",img_height,img_width,buffer,err_tiff_fmt), __iom__current__function__);
+	}
+
+	/* Giulio_CV
+
+	}
     catch(std::exception ex)
     {
         char err_msg[STATIC_STRINGS_SIZE];
@@ -278,8 +314,13 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
         throw IOException(err_msg);
     }
 
-    //releasing memory
+    releasing memory
     cvReleaseImage(&img);
+
+	*/
+
+	if ( img )
+		delete []img;
 }
 
 
@@ -470,7 +511,7 @@ void VirtualVolume::saveImage_from_UINT8_to_Vaa3DRaw (int slice, std::string img
 		char err_msg[STATIC_STRINGS_SIZE];
 		sprintf(err_msg,"VirtualVolume::saveImage_from_UINT8_to_Vaa3DRaw: error in saving slice %d (%lld x %lld) in file %s (writeSlice2RawFile: %s)", slice,img_height,img_width,buffer,err_rawfmt);
         throw IOException(err_msg);
-	};
+	}
 
 	delete imageData;
 }
