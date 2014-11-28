@@ -37,7 +37,7 @@ add_subdirectory( ui )
 SUBDIRLIST(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 # --- ask for selection of the modules to be included in the project (default is OFF) ---
 FOREACH(subdir ${SUBDIRS})
-	option (WITH_UTILITY_MODULE_${subdir} "Include this plugin in the project" OFF) 
+	option (WITH_UTILITY_MODULE_${subdir} "Include this utility module (optional) in the project" OFF) 
 ENDFOREACH()
 # --- include selected modules only ---
 FOREACH(subdir ${SUBDIRS})
