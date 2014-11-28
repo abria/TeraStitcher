@@ -30,7 +30,7 @@
 #include "VirtualVolume.h"
 
 //FORWARD-DECLARATIONS
-struct CvMat;
+// Giulio_CV struct CvMat;
 
 //class  iim::VirtualVolume;
 /* modified (iannello)
@@ -48,7 +48,7 @@ class StackRaw
 
 		//*********** OBJECT ATTRIBUTES ***********
 		iim::VirtualVolume*	CONTAINER;					//pointer to <VirtualVolume> object that contains the current object
-		CvMat**			STACKED_IMAGE;				//1-D dinamic array of <CvMat> pointers. Every <CvMat> stores a single 2-D image
+		/* Giulio_CV CvMat** */ iim::uint8			**STACKED_IMAGE;				//1-D dinamic array of <CvMat> pointers. Every <CvMat> stores a single 2-D image
 		char**			FILENAMES;					//1-D dinamic array of <char>  pointers to images filanames
         iim::uint32			HEIGHT, WIDTH, DEPTH;		//VHD (Vertical, Horizontal, Depth) dimensions of current stack
 		int				ROW_INDEX,  COL_INDEX;		//row and col index relative to stack matrix
@@ -77,7 +77,7 @@ class StackRaw
 		int getABS_V()				{return ABS_V;}
 		int getABS_H()				{return ABS_H;}
 		char** getFILENAMES()		{return FILENAMES;}
-		CvMat** getSTACKED_IMAGE()	{return STACKED_IMAGE;}
+		/* Giulio_CV CvMat** */ iim::uint8 **getSTACKED_IMAGE()	{return STACKED_IMAGE;}
 
 		//SET methods
 		void setROW_INDEX(int _ROW_INDEX){ROW_INDEX = _ROW_INDEX;}

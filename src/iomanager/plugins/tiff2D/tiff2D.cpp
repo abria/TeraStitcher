@@ -49,6 +49,9 @@ throw (iom::exception)
 {
 	/**/iom::debug(iom::LEV3, iom::strprintf("img_path = \"%s\", params = \"%s\"",img_path.c_str(), params.c_str()).c_str(), __iom__current__function__);
 
+	uint16 bpp;
+	uint16 spp;
+
 	 // disable warning handler to avoid messages on unrecognized tags
 	TIFFSetWarningHandler(0);
 
@@ -62,12 +65,13 @@ throw (iom::exception)
 	if (!TIFFGetField(input, TIFFTAG_IMAGELENGTH, &img_height))
 		throw iom::exception(iom::strprintf("unable to determine 'TIFFTAG_IMAGELENGTH' from image \"%s\". ", img_path.c_str()), __iom__current__function__);
 
-	if (!TIFFGetField(input, TIFFTAG_BITSPERSAMPLE, &img_bytes_x_chan))
+	if (!TIFFGetField(input, TIFFTAG_BITSPERSAMPLE, &bpp))
 		throw iom::exception(iom::strprintf("unable to determine 'TIFFTAG_BITSPERSAMPLE' from image \"%s\". ", img_path.c_str()), __iom__current__function__);
-	img_bytes_x_chan /= 8;
+	img_bytes_x_chan = bpp/8;
 
-	if (!TIFFGetField(input, TIFFTAG_SAMPLESPERPIXEL, &img_chans)) 
+	if (!TIFFGetField(input, TIFFTAG_SAMPLESPERPIXEL, &spp)) 
 		throw iom::exception(iom::strprintf("unable to determine 'TIFFTAG_SAMPLESPERPIXEL' from image \"%s\". ", img_path.c_str()), __iom__current__function__);
+	img_chans = spp;
 
 	// Onofri
 	int img_depth;			// image depth (in pixels)

@@ -100,7 +100,7 @@ StackRaw::StackRaw(VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FI
 	unBinarizeFrom(bin_file);
 
 	//initializing STACKED_IMAGE array
-	this->STACKED_IMAGE = new CvMat*[DEPTH];
+	this->STACKED_IMAGE = new uint8 *[DEPTH]; // Giulio_CV new CvMat*[DEPTH];
 	for(uint32 z=0; z<DEPTH; z++)
         this->STACKED_IMAGE[z] = 0;
 }
@@ -109,12 +109,10 @@ StackRaw::~StackRaw(void)
 {
     /**/iim::debug(iim::LEV3, strprintf("ROW_INDEX=%d, COL_INDEX=%d", ROW_INDEX, COL_INDEX).c_str(), __iim__current__function__);
 
-	/* Giulio_CV_temp
-
 	for(uint32 z=0; z<DEPTH; z++)
 	{
 		if(STACKED_IMAGE[z])
-			cvReleaseMat(&STACKED_IMAGE[z]);
+			delete []STACKED_IMAGE[z]; // Giulio_CV cvReleaseMat(&STACKED_IMAGE[z]);
 		if(FILENAMES[z])
 			delete[] FILENAMES[z];
 	}
@@ -125,8 +123,6 @@ StackRaw::~StackRaw(void)
 		delete[] FILENAMES;
 	if(DIR_NAME)
 		delete[] DIR_NAME;
-
-	*/
 }
 
 //binarizing-unbinarizing methods
@@ -287,7 +283,7 @@ void StackRaw::init()
 	entries_lev3.clear();
 
 	//initializing STACKED_IMAGE array
-	this->STACKED_IMAGE = new CvMat*[DEPTH];
+	this->STACKED_IMAGE = new uint8 *[DEPTH]; // Giulio_CV new CvMat*[DEPTH];
 	for(uint32 z=0; z<DEPTH; z++)
 		this->STACKED_IMAGE[z] = NULL;
 
@@ -341,7 +337,9 @@ void StackRaw::loadStack(int first_file, int last_file)
 {	
     /**/iim::debug(iim::LEV3, strprintf("ROW_INDEX=%d, COL_INDEX=%d, first_file=%d, last_file=%d", ROW_INDEX, COL_INDEX, first_file, last_file).c_str(), __iim__current__function__);
 
-	/* Giulio_CV_temp
+	throw IOException("in StackRaw::loadStack(...): disabled to remove dependence from openCV"); // Giulio_CV
+
+	/* Giulio_CV
 
 	//LOCAL VARIABLES
 	char slice_fullpath[1000];
@@ -365,7 +363,7 @@ void StackRaw::loadStack(int first_file, int last_file)
 			sprintf(slice_fullpath, "%s/%s/%s", CONTAINER->getROOT_DIR(), DIR_NAME, FILENAMES[file_i]);
 			
 			//loading image
-			// Giulio_CV_temp slice_img_i = cvLoadImage(slice_fullpath, CV_LOAD_IMAGE_GRAYSCALE | CV_LOAD_IMAGE_ANYDEPTH);
+			temp slice_img_i = cvLoadImage(slice_fullpath, CV_LOAD_IMAGE_GRAYSCALE | CV_LOAD_IMAGE_ANYDEPTH);
 			if(!slice_img_i)
 			{
 				char msg[1000];
@@ -394,8 +392,6 @@ void StackRaw::releaseStack(int first_file, int last_file)
 {
     /**/iim::debug(iim::LEV3, strprintf("ROW_INDEX=%d, COL_INDEX=%d, first_file=%d, last_file=%d", ROW_INDEX, COL_INDEX, first_file, last_file).c_str(), __iim__current__function__);
 
-	/* Giulio_CV_temp
-
 	//initializations
 	first_file = (first_file == -1 ? 0       : first_file);
 	last_file  = (last_file  == -1 ? DEPTH-1 : last_file);
@@ -405,12 +401,10 @@ void StackRaw::releaseStack(int first_file, int last_file)
 	{
 		if(STACKED_IMAGE[file_i])
 		{
-			cvReleaseMat(&(STACKED_IMAGE[file_i]));
+			delete []STACKED_IMAGE[file_i]; // Giulio_CV cvReleaseMat(&(STACKED_IMAGE[file_i]));
 			STACKED_IMAGE[file_i] = NULL;
 		}
 	}
-
-	*/
 }
 
 

@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2014-11-27 Giulio. @FIXED   eliminated part of the dipendences from OpenCV and restored the corresponding code
 * 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
 */
 
@@ -33,6 +34,7 @@
 #include "StackedVolume.h"
 #include "Stack.h"
 #include "RawFmtMngr.h"
+#include "Tiff3DMngr.h"
 
 #ifdef _WIN32
 #include "dirent_win.h"
@@ -46,6 +48,8 @@
 #include <fstream>
 #include "ProgressBar.h"
 
+#include "../iomanager/IOPluginAPI.h" // 2014-11-26. Giulio.
+
 using namespace std;
 using namespace iim;
 
@@ -55,7 +59,7 @@ StackedVolume::StackedVolume(const char* _root_dir)  throw (IOException)
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir = \"%s\"", _root_dir).c_str(), __iim__current__function__);
 
-	throw IOException("in StackedVolume::StackedVolume(...): disabled to remove dependence from openCV"); // Giulio_CV
+	//throw IOException("in StackedVolume::StackedVolume(...): disabled to remove dependence from openCV"); // Giulio_CV
 
 	// iannello this->root_dir = new char[strlen(_root_dir)+1];
 	// iannello strcpy(this->root_dir,_root_dir);
@@ -89,7 +93,7 @@ StackedVolume::StackedVolume(const char* _root_dir, ref_sys _reference_system, f
     /**/iim::debug(iim::LEV3, strprintf("_root_dir=%s, ref_sys reference_system={%d,%d,%d}, VXL_1=%.4f, VXL_2=%.4f, VXL_3=%.4f",
                                         _root_dir, _reference_system.first, _reference_system.second, _reference_system.third, _VXL_1, _VXL_2, _VXL_3).c_str(), __iim__current__function__);
 
-	throw IOException("in StackedVolume::StackedVolume(...): disabled to remove dependence from openCV"); // Giulio_CV
+	//throw IOException("in StackedVolume::StackedVolume(...): disabled to remove dependence from openCV"); // Giulio_CV
 
 	// iannello this->root_dir = new char[strlen(_root_dir)+1];
 	// iannello strcpy(this->root_dir,_root_dir);
@@ -578,20 +582,27 @@ void StackedVolume::initChannels ( ) throw (IOException)
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
-	/* Giulio_CV
-
     char slice_fullpath[STATIC_STRINGS_SIZE];
+	int img_width;
+	int img_height;
+	std::string params;
 
 	sprintf(slice_fullpath, "%s/%s/%s", root_dir, STACKS[0][0]->getDIR_NAME(), STACKS[0][0]->getFILENAMES()[0]);
-    IplImage* slice = cvLoadImage(slice_fullpath, CV_LOAD_IMAGE_ANYCOLOR);  // 2014-10-03. Alessandro. @FIXED: eliminated CV_LOAD_IMAGE_ANYDEPTH flag since we want 16 bit images to be automatically converted to 8 bit.
+
+    // Giulio_CVIplImage* slice = cvLoadImage(slice_fullpath, CV_LOAD_IMAGE_ANYCOLOR);  // 2014-10-03. Alessandro. @FIXED: eliminated CV_LOAD_IMAGE_ANYDEPTH flag since we want 16 bit images to be automatically converted to 8 bit.
+	iomanager::IOPluginFactory::getPlugin2D("tiff2D")->readMetadata(slice_fullpath, img_width, img_height,	BYTESxCHAN, DIM_C, params);
+
+	/* Giulio_CV
+
 	if(!slice)
         throw IOException(std::string("Unable to load slice at \"").append(slice_fullpath).append("\"").c_str());
-    DIM_C = slice->nChannels;
-	if ( slice->depth == IPL_DEPTH_8U )
+	DIM_C = slice->nChannels;
+
+	if ( depth == 8 )
 		BYTESxCHAN = 1; 
-	else if ( slice->depth == IPL_DEPTH_16U )
+	else if ( depth == 16 )
 		BYTESxCHAN = 2; 
-	else if ( slice->depth == IPL_DEPTH_32F )
+	else if ( depth == 32 )
 		BYTESxCHAN = 4;
 	else {
         char msg[STATIC_STRINGS_SIZE];
@@ -599,14 +610,15 @@ void StackedVolume::initChannels ( ) throw (IOException)
         throw IOException(msg);
 	}
 
+	*/
+
     n_active = DIM_C;
     active = new uint32[n_active];
     for ( int c=0; c<DIM_C; c++ )
         active[c] = c; // all channels are assumed active
 
-	cvReleaseImage(&slice);
+	// Giulio_CV cvReleaseImage(&slice);
 
-	*/
 }
 
 //PRINT method
@@ -852,7 +864,9 @@ real32* StackedVolume::loadSubvolume(int V0,int V1, int H0, int H1, int D0, int 
 {
     /**/iim::debug(iim::LEV3, strprintf("V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d%s", V0, V1, H0, H1, D0, D1, (involved_stacks? ", involved_stacks" : "")).c_str(), __iim__current__function__);
 
-    //checking for non implemented features
+	throw IOException("in StackedVolume::loadSubvolume(...): disabled to remove dependence from openCV"); // Giulio_CV
+
+	//checking for non implemented features
 	if( this->BYTESxCHAN != 1 ) {
         char err_msg[STATIC_STRINGS_SIZE];
 		sprintf(err_msg,"StackedVolume::loadSubvolume: invalid number of bytes per channel (%d)",this->BYTESxCHAN); 
@@ -923,7 +937,9 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
 {
     /**/iim::debug(iim::LEV3, strprintf("V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d, *channels=%d, ret_type=%d", V0, V1, H0, H1, D0, D1, channels ? *channels : -1, ret_type).c_str(), __iim__current__function__);
 
-    //checking for non implemented features
+ 	//throw IOException("in StackedVolume::loadSubvolume_to_UINT8(...): disabled to remove dependence from openCV"); // Giulio_CV
+
+	//checking for non implemented features
 	//if( this->BYTESxCHAN != 1 ) {
     //	char err_msg[STATIC_STRINGS_SIZE];
 	//	sprintf(err_msg,"StackedVolume::loadSubvolume_to_UINT8: invalid number of bytes per channel (%d)",this->BYTESxCHAN); 
@@ -973,8 +989,6 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
     char slice_fullpath[STATIC_STRINGS_SIZE];
     bool first_time = true;
 
-	/* Giulio_CV
-
     for(int row=0; row<N_ROWS; row++)
         for(int col=0; col<N_COLS; col++)
         {
@@ -987,15 +1001,35 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
                 {
                     //loading slice
                     sprintf(slice_fullpath, "%s/%s/%s", root_dir, STACKS[row][col]->getDIR_NAME(), STACKS[row][col]->getFILENAMES()[D0+k]);
-                    IplImage* slice = cvLoadImage(slice_fullpath, CV_LOAD_IMAGE_ANYCOLOR);  // 2014-10-03. Alessandro. @FIXED: eliminated CV_LOAD_IMAGE_ANYDEPTH flag since we want 16 bit images to be automatically converted to 8 bit.
-                    if(!slice)
-                        throw IOException(std::string("Unable to load slice at \"").append(slice_fullpath).append("\"").c_str());
+                    //IplImage* slice = cvLoadImage(slice_fullpath, CV_LOAD_IMAGE_ANYCOLOR);  // 2014-10-03. Alessandro. @FIXED: eliminated CV_LOAD_IMAGE_ANYDEPTH flag since we want 16 bit images to be automatically converted to 8 bit.
+
+					char *err_Tiff3Dfmt;
+
+					unsigned int rows;
+					unsigned int cols;
+					unsigned int n_slices;
+					unsigned int channels;
+					int bytes_x_chan;
+					int swap;
+					void *dummy;
+					int dummy_len;
+
+					if ( (err_Tiff3Dfmt = loadTiff3D2Metadata((char *)slice_fullpath,cols,rows,n_slices,channels,bytes_x_chan,swap,dummy,dummy_len)) != 0 ) {
+						throw iom::exception(iom::strprintf("unable to read tiff file (%s)",err_Tiff3Dfmt), __iom__current__function__);
+					}
+					uint8 *slice = new uint8[rows * cols * channels * bytes_x_chan];
+					if ( (err_Tiff3Dfmt = readTiff3DFile2Buffer((char *)slice_fullpath,slice,cols,rows,0,0)) != 0 ) {
+						throw iom::exception(iom::strprintf("unable to read tiff file (%s)",err_Tiff3Dfmt), __iom__current__function__);
+					}
+
+					//if(!slice)
+                    //    throw IOException(std::string("Unable to load slice at \"").append(slice_fullpath).append("\"").c_str());
 
                     //if this is the first time a slice is loaded, detecting the number of channels and safely allocating memory for data
                     if(first_time)
                     {
                         first_time = false;
-                        sbv_channels = slice->nChannels;
+                        sbv_channels = DIM_C; // Giulio_CV slice->nChannels;
                         if(sbv_channels != 1 && sbv_channels != 3)
                             throw IOException(std::string("Unsupported number of channels at \"").append(slice_fullpath).append("\". Only 1 and 3-channels images are supported").c_str());
 
@@ -1006,12 +1040,12 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
                         catch(...){throw IOException("in StackedVolume::loadSubvolume_to_UINT8: unable to allocate memory");}
                     }
                     //otherwise checking that all the other slices have the same bitdepth of the first one
-                    else if(slice->nChannels != sbv_channels)
-                        throw IOException(std::string("Image depth mismatch at slice at \"").append(slice_fullpath).append("\": all slices must have the same bitdepth").c_str());
+                    else if (channels != sbv_channels || cols != sbv_width || rows != sbv_height )
+                        throw IOException(std::string("Image width/height/depth mismatch at slice at \"").append(slice_fullpath).append("\": all slices must have the same bitdepth").c_str());
 
 
                     //computing offsets
-                    int slice_step = slice->widthStep / sizeof(uint8);
+                    int slice_step = cols * bytes_x_chan * channels; // Giulio_CV slice->widthStep / sizeof(uint8);
                     int ABS_V_offset = V0 - STACKS[row][col]->getABS_V();
                     int ABS_H_offset = (H0 - STACKS[row][col]->getABS_H())*((int)sbv_channels);
 
@@ -1026,7 +1060,7 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
                         sint64 k_offset = k*sbv_height*sbv_width;
                         for(int i = istart; i < iend; i++)
                         {
-                            uint8* slice_row = ((uint8*)slice->imageData) + (i+ABS_V_offset)*slice_step;
+                            uint8* slice_row = slice + (i+ABS_V_offset)*slice_step;
                             for(int j = jstart; j < jend; j++)
                                 subvol[k_offset + i*sbv_width + j] = slice_row[j+ABS_H_offset];
                         }
@@ -1039,7 +1073,7 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
                         sint64 offset3 = 2*sbv_height*sbv_width*sbv_depth  + k*sbv_height*sbv_width;
                         for(int i = istart; i < iend; i++)
                         {
-                            uint8* slice_row = ((uint8*)slice->imageData) + (i+ABS_V_offset)*slice_step;
+                            uint8* slice_row = slice + (i+ABS_V_offset)*slice_step;
                             for(int j1 = jstart, j2 = jstart*3; j1 < jend; j1++, j2+=3)
                             {
                                 subvol[offset1 + i*sbv_width + j1] = slice_row[j2 + ABS_H_offset + 2];
@@ -1051,7 +1085,7 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
                     else
                         throw IOException(std::string("Unsupported number of channels at \"").append(slice_fullpath).append("\". Only 1 and 3-channels images are supported").c_str());
 
-                    cvReleaseImage(&slice);
+                    delete []slice; // Giulio_CV cvReleaseImage(&slice);
                 }
             }
         }
@@ -1064,12 +1098,10 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
 		char *err_rawfmt;
 		if ( (err_rawfmt = convert2depth8bits(red_factor,(sbv_height*sbv_width*sbv_depth),sbv_channels,subvol)) ) {
             char err_msg[STATIC_STRINGS_SIZE];
-			sprintf(err_msg,"TiledVolume::loadSubvolume_to_UINT8: %s", err_rawfmt);
+			sprintf(err_msg,"StackedVolume::loadSubvolume_to_UINT8: %s", err_rawfmt);
             throw IOException(err_msg);
 		}
 	}
-
-	*/
 
     return subvol;
 }

@@ -106,6 +106,9 @@ int main ( int argc, char *argv[] ) {
 	catch( iom::exception& exception){
 		cout<<"ERROR: "<<exception.what()<<endl<<endl;
 	}
+	catch( iim::IOException& exception){
+		cout<<"ERROR: "<<exception.what()<<endl<<endl;
+	}
 	catch(bad_exception& be){
 		cout<<"GENERIC ERROR: "<<be.what()<<endl<<endl;
 	}

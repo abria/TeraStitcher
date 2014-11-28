@@ -183,6 +183,8 @@ real32 *SimpleVolumeRaw::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, 
 {
     /**/iim::debug(iim::LEV3, strprintf("V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d", V0, V1, H0, H1, D0, D1).c_str(), __iim__current__function__);
 
+	throw IOException("in SimpleVolumeRaw::loadSubvolume_to_real32(...): disabled to remove dependence from openCV"); // Giulio_CV
+
 	char msg[STATIC_STRINGS_SIZE];
     sprintf(msg,"in SimpleVolumeRaw::loadSubvolume_to_real32: not implemented yet");
     throw IOException(msg);
@@ -208,7 +210,8 @@ real32 *SimpleVolumeRaw::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, 
 	subvol_area.H1 = H1;
 	subvol_area.V1 = V1;
 
-	/* Giulio_CV_temp
+	/* Giulio_CV
+
 	for(int row=0; row<N_ROWS; row++)
 		for(int col=0; col<N_COLS; col++)
 		{
