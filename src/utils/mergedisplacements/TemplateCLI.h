@@ -41,12 +41,11 @@ class TemplateCLI
 	public:
 
 		// switch parameters
-		bool overwrite_mdata;						// overwrite data (mdata.bin file)
 
 		// other parameters
 		// int/float/double/string XXXX;	// description
-		string root_dir;  
-		string src_format;
+		string main_dir;  
+		string out_file;
 
 		
 		// root directory of the volume

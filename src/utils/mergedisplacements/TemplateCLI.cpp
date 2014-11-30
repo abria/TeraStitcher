@@ -63,7 +63,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 
 	//argument objects definitions
-	TCLAP::SwitchArg p_overwrite_mdata("","ovrw","Overwrite data.",false); 
+	//TCLAP::SwitchArg p_overwrite_mdata("","ovrw","Overwrite data.",false); 
         /**
 		 * SwitchArg constructor.
 		 * \param flag - The one character flag that identifies this
@@ -77,7 +77,9 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		 * use this unless you have a very good reason.
 		 */
 
-	TCLAP::ValueArg<std::string> p_root_dir("r","rdir","Root directory path.",true,"","string");
+	TCLAP::ValueArg<std::string> p_main_dir("d","mdir","Main directory path.",true,"","string");
+	TCLAP::ValueArg<std::string> p_out_file("o","outf","Output file.",true,"","string");
+	/*
 	TCLAP::ValueArg<int> p_axis_V("","vax","Vertical axis (default=1).",false,1,"[-3,3]");
 	TCLAP::ValueArg<int> p_axis_H("","hax","Horizontal axis (default=2).",false,2,"[-3,3]");
 	TCLAP::ValueArg<int> p_axis_D("","dax","Depth axis (default=3).",false,3,"[-3,3]");
@@ -95,6 +97,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		iim::TIF3D_FORMAT + "\"/\"" + 
 		iim::TILED_TIF3D_FORMAT  + "\")";
 	TCLAP::ValueArg<string> p_src_format("","sfmt",temp.c_str(),true,"","string");
+	*/
 
         /**
          * Labeled ValueArg constructor.
@@ -122,6 +125,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 
 	//argument objects must be inserted using LIFO policy (last inserted, first shown)
+	/*
 	cmd.add(p_src_format);
 	cmd.add(p_axis_D);
 	cmd.add(p_axis_H);
@@ -131,7 +135,10 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_vxl_size_V);
 	cmd.add(p_vxl_size);
 	cmd.add(p_overwrite_mdata);
-	cmd.add(p_root_dir);
+	*/
+
+	cmd.add(p_out_file);
+	cmd.add(p_main_dir);
 
 	// Parse the argv array and catch <TCLAP> exceptions, which are translated into <MyException> exceptions
 	char errMsg[S_STATIC_STRINGS_SIZE];
@@ -142,7 +149,8 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		throw iom::exception(errMsg);
 	}
 
-	/* Checking parameter consistency */
+	/*
+	/* Checking parameter consistency * /
 
 	if( p_axis_V.isSet() || p_axis_H.isSet() || p_axis_D.isSet() ) { // there is at least one parameter
 		if ( !p_axis_V.isSet() || !p_axis_H.isSet() || !p_axis_D.isSet() ) { // some parameter missing
@@ -154,7 +162,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		}
 	}
 
-	/* Checking parameter consistency */
+	/* Checking parameter consistency * /
 	if ( p_src_format.getValue() != iim::STACKED_FORMAT && 
 		 p_src_format.getValue() != iim::SIMPLE_FORMAT  && 
 		 p_src_format.getValue() != iim::SIMPLE_RAW_FORMAT  && 
@@ -169,10 +177,13 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	}
 
 	//importing parameters not set yet
+	*/
 
-	this->root_dir = p_root_dir.getValue();
-	this->overwrite_mdata = p_overwrite_mdata.getValue();
-	this->src_format  = p_src_format.getValue();
+	this->main_dir = p_main_dir.getValue();
+	this->out_file = p_out_file.getValue();
+
+	//this->overwrite_mdata = p_overwrite_mdata.getValue();
+	//this->src_format  = p_src_format.getValue();
 
 }
 
@@ -198,6 +209,6 @@ string TemplateCLI::getHelpText()
 void TemplateCLI::print()
 {
 	printf("\n\n");
-	printf("overwrite_mdata = \t\t%s\n", overwrite_mdata ? "ENABLED" : "disabled");
-	printf("root_dir = \t%s\n", root_dir.c_str());
+	//printf("overwrite_mdata = \t\t%s\n", overwrite_mdata ? "ENABLED" : "disabled");
+	printf("root_dir = \t%s\n", main_dir.c_str());
 }

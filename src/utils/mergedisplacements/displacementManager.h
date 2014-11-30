@@ -25,6 +25,29 @@
 #ifndef DISPLACEMENT_MANAGER_H
 #define DISPLACEMENT_MANAGER_H
 
+#include "tinyxml.h"
+
+
+class XMLDisplacementBag {
+
+protected:
+	//******OBJECT ATTRIBUTES******
+    char   *main_dir;				// C-string that contains the directory path of bag of XML files
+	char  **XMLFileNames;				//1-D dinamic array of <char>  pointers to images filanames
+	int     nFiles;
+
+	void init ( );
+	void mergeStack ( TiXmlElement **stack_nodes, TiXmlElement *out_pelem );
+	void mergeDisp  ( TiXmlElement *disp_node, TiXmlElement *out_pelem );
+
+public:
+
+	XMLDisplacementBag ( const char *main_dir_ );
+	~XMLDisplacementBag ( );
+
+	void merge ( const char *xml_out_file );
+
+};
 
 #endif
 

@@ -53,6 +53,9 @@ int main(int argc, char** argv)
 		cli.checkParams();
 		
 		// do what you have to do
+		XMLDisplacementBag dispBag(cli.main_dir.c_str());
+
+		dispBag.merge(cli.out_file.c_str());
 
 	}
 	catch( iom::exception& exception){
