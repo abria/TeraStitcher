@@ -42,7 +42,7 @@
 
 // Giulio_CV #include <cxcore.h>
 // Giulio_CV #include <highgui.h>
-#include "../iomanager/IOPluginAPI.h" // 2014-11-26. Giulio. 
+#include "IOPluginAPI.h" // 2014-11-26. Giulio. 
 
 #include <stdio.h>
 

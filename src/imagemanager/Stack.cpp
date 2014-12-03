@@ -40,7 +40,7 @@
 #include <list>
 #include <string>
 
-#include "../iomanager/IOPluginAPI.h" // 2014-11-26. Giulio.
+#include "IOPluginAPI.h" // 2014-11-26. Giulio.
 
 
 // 140427_IANNELLO

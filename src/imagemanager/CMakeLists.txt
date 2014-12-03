@@ -1,6 +1,9 @@
 # CmakeLists.txt in imagemanager dir
 
-# Make sure the compiler can find include files of other modules.
+# add used modules to include path 
+include_directories (${TeraStitcher_SOURCE_DIR}/iomanager)
+
+# add 3rd party modules to include path
 include_directories (${CMAKE_SOURCE_DIR}/3rdparty/zlib)
 include_directories (${CMAKE_BINARY_DIR}/3rdparty/zlib)
 include_directories (${CMAKE_SOURCE_DIR}/3rdparty/libtiff)

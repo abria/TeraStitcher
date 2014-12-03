@@ -28,7 +28,7 @@
 #include "VirtualVolume.h" // ADDED
 #include <list>
 #include <string>
-#include "Block.h"
+#include "imBlock.h"
 
 //FORWARD-DECLARATIONS
 //class  Block;

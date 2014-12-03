@@ -48,7 +48,7 @@
 #include <fstream>
 #include "ProgressBar.h"
 
-#include "../iomanager/IOPluginAPI.h" // 2014-11-26. Giulio.
+#include "IOPluginAPI.h" // 2014-11-26. Giulio.
 
 using namespace std;
 using namespace iim;

@@ -42,7 +42,7 @@
 // Giulio_CV #include <highgui.h>
 #include "Tiff3DMngr.h"
 
-#include "../iomanager/IOPluginAPI.h" // 2014-11-26. Giulio.
+#include "IOPluginAPI.h" // 2014-11-26. Giulio.
 
 using namespace std;
 using namespace iim;

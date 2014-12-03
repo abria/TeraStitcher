@@ -28,7 +28,7 @@
 * 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
 */
 
-#include "Block.h"
+#include "imBlock.h"
 #include "VirtualVolume.h"
 #include "VirtualFmtMngr.h"
 //#include "RawFmtMngr.h"
