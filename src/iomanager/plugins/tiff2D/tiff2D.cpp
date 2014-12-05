@@ -142,7 +142,12 @@ throw (iom::exception)
 	TIFFSetWarningHandler(0);
 
 	// build absolute image path of first file in the stack
-	std::string image_path = path ? std::string(path) + "/" + files[0] : files[0];
+	int i = 0;
+	while ( is_sparse && i<files_size && files[i]==0 ) // look for existing file
+		i++;
+	if ( i == files_size )
+		throw iom::exception("stack is entirely empty: cannot recover slice dimension", __iom__current__function__);
+	std::string image_path = path ? std::string(path) + "/" + files[i] : files[i];
 	
 	// load metadata
 	//iomanager::tiff2D::readMetadata(image_path,cols,rows,depth,channels,params);
@@ -209,7 +214,6 @@ throw (iom::exception)
 		else if(image_stack_width != (uint64)cols || image_stack_height != (uint64)rows)
 			throw iom::exception("images in stack have not the same dimensions", __iom__current__function__);
 
-		// convert image to [0.0,1.0]-valued array
 // 		iom::real_t *raw_data = &image_stack[z*image.rows*image.cols];
 // 		if(image.depth == CV_8U)
 // 		{
@@ -234,6 +238,8 @@ throw (iom::exception)
 
 		int offset;
 
+		// convert image to [0.0,1.0]-valued array
+ 		iom::real_t *raw_data = &image_stack[z*rows*cols];
 		if ( channels == 1 ) {
 			if ( depth == 1 )
 				for(int i = 0; i <rows * cols * (last-first+1); i++)

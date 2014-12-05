@@ -22,6 +22,12 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2014-12-05 Giulio. @ADDED input file should be closed at the end of 'loadTiff3D2Metadata'
+*/
+
 #include "Tiff3DMngr.h"
 #include <stdlib.h> // needed by clang: defines size_t
 #include <string.h>
@@ -96,6 +102,8 @@ char *loadTiff3D2Metadata ( char * filename, unsigned int &sz0, unsigned int  &s
 	b_swap = 0;
 	fhandle = (void *) input;
 	header_len = -1;
+
+	TIFFClose(input);
 
 	return ((char *) 0);
 }
@@ -352,7 +360,8 @@ char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int i
 	
 	}while ( page < static_cast<int>(last-first+1) && TIFFReadDirectory(input));//while (TIFFReadDirectory(input));
 
-	//TIFFClose(input);
+	// input file is assumedo ti be already open and it is provided as an handler; the file should be closed by caller
+	//TIFFClose(input);  
 
 	if ( page < static_cast<int>(last-first+1) ){
 		return ((char *) "Cannot read all the pages.");

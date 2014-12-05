@@ -31,7 +31,7 @@
 #include <iostream>
 #include <string>
 #include "TiledVolume.h"
-#include "Block.h"
+#include "imBlock.h"
 #include "VirtualFmtMngr.h"
 #include "Tiff3DMngr.h"
 #include "RawFmtMngr.h"

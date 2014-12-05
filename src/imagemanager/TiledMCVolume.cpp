@@ -25,7 +25,7 @@
 #include <iostream>
 #include <string>
 #include "TiledMCVolume.h"
-#include "Block.h"
+#include "imBlock.h"
 #include "RawFmtMngr.h"
 
 #ifdef _WIN32
