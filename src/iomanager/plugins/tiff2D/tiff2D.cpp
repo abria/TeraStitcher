@@ -332,7 +332,7 @@ throw (iom::exception)
 	char *err_Tiff3Dfmt;
 
 	// creates the file (2D image: depth is 1)
-	if ( (err_Tiff3Dfmt = initTiff3DFile((char *)img_path.c_str(),img_width,img_height,1,img_chans,bpp/8)) != 0 ) {
+	if ( (err_Tiff3Dfmt = initTiff3DFile((char *)img_path.c_str(),ROI_width,ROI_height,1,img_chans,bpp/8)) != 0 ) {
 		throw iom::exception(iom::strprintf("unable to create tiff file (%s)",err_Tiff3Dfmt), __iom__current__function__);
 	}
 
@@ -366,7 +366,7 @@ throw (iom::exception)
 	}
 
 	// save image
-	if ( (err_Tiff3Dfmt = appendSlice2Tiff3DFile((char *)img_path.c_str(),0,buffer,img_width,img_height)) != 0 ) {
+	if ( (err_Tiff3Dfmt = appendSlice2Tiff3DFile((char *)img_path.c_str(),0,buffer,ROI_width,ROI_height)) != 0 ) {
 		throw iom::exception(iom::strprintf("unable to save image at \"%s\". Unsupported format or wrong path.\n", img_path.c_str()), __iom__current__function__);
 	}
 

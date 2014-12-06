@@ -1008,16 +1008,16 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
 					unsigned int rows;
 					unsigned int cols;
 					unsigned int n_slices;
-					unsigned int channels;
+					unsigned int chans;
 					int bytes_x_chan;
 					int swap;
 					void *dummy;
 					int dummy_len;
 
-					if ( (err_Tiff3Dfmt = loadTiff3D2Metadata((char *)slice_fullpath,cols,rows,n_slices,channels,bytes_x_chan,swap,dummy,dummy_len)) != 0 ) {
+					if ( (err_Tiff3Dfmt = loadTiff3D2Metadata((char *)slice_fullpath,cols,rows,n_slices,chans,bytes_x_chan,swap,dummy,dummy_len)) != 0 ) {
 						throw iom::exception(iom::strprintf("unable to read tiff file (%s)",err_Tiff3Dfmt), __iom__current__function__);
 					}
-					uint8 *slice = new uint8[rows * cols * channels * bytes_x_chan];
+					uint8 *slice = new uint8[rows * cols * chans * bytes_x_chan];
 					if ( (err_Tiff3Dfmt = readTiff3DFile2Buffer((char *)slice_fullpath,slice,cols,rows,0,0)) != 0 ) {
 						throw iom::exception(iom::strprintf("unable to read tiff file (%s)",err_Tiff3Dfmt), __iom__current__function__);
 					}
@@ -1040,12 +1040,15 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
                         catch(...){throw IOException("in StackedVolume::loadSubvolume_to_UINT8: unable to allocate memory");}
                     }
                     //otherwise checking that all the other slices have the same bitdepth of the first one
-                    else if (channels != sbv_channels || cols != sbv_width || rows != sbv_height )
-                        throw IOException(std::string("Image width/height/depth mismatch at slice at \"").append(slice_fullpath).append("\": all slices must have the same bitdepth").c_str());
+                    else if (chans != sbv_channels || bytes_x_chan != BYTESxCHAN )
+						throw iom::exception(
+							iom::strprintf(std::string("Image channels/bytes_x_chans mismatch at slice \"").append(slice_fullpath).append("\" (%d-%d / %d-%d): all slices must have the same bitdepth").c_str(),
+										   chans,sbv_channels,bytes_x_chan,BYTESxCHAN), __iom__current__function__);
+                        //throw IOException(std::string("Image channels/width/height mismatch at slice \"").append(slice_fullpath).append("\" (%d-%d / %d-%d / %d-%d): all slices must have the same bitdepth").c_str());
 
 
                     //computing offsets
-                    int slice_step = cols * bytes_x_chan * channels; // Giulio_CV slice->widthStep / sizeof(uint8);
+                    int slice_step = cols * bytes_x_chan * chans; // Giulio_CV slice->widthStep / sizeof(uint8);
                     int ABS_V_offset = V0 - STACKS[row][col]->getABS_V();
                     int ABS_H_offset = (H0 - STACKS[row][col]->getABS_H())*((int)sbv_channels);
 
