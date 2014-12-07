@@ -154,6 +154,7 @@ throw (iom::exception)
 	if ( (err_Tiff3Dfmt = loadTiff3D2Metadata((char *)image_path.c_str(),cols,rows,n_slices,channels,depth,swap,dummy,dummy_len)) != 0 ) {
 		throw iom::exception(iom::strprintf("unable to read tiff file (%s)",err_Tiff3Dfmt), __iom__current__function__);
 	}
+	closeTiff3DFile(dummy);
 	
 	// allocate buffer
 	data = new unsigned char[cols * rows * depth * channels];

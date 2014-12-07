@@ -51,6 +51,7 @@ class TeraStitcherCLI
 		bool dumpMData;							//dump mdata.bin
 		bool pluginsinfo;						//display plugins information
         bool rescanFiles;                       //rescan files
+        bool makeDirs;                         //creates the directory hiererchy
 
 		//STITCHING pipeline parameters
 		string volume_load_path;				//directory path where the volume is stored used during the volume import step

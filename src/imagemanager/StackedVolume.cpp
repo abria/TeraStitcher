@@ -1017,6 +1017,7 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
 					if ( (err_Tiff3Dfmt = loadTiff3D2Metadata((char *)slice_fullpath,cols,rows,n_slices,chans,bytes_x_chan,swap,dummy,dummy_len)) != 0 ) {
 						throw iom::exception(iom::strprintf("unable to read tiff file (%s)",err_Tiff3Dfmt), __iom__current__function__);
 					}
+					closeTiff3DFile(dummy);
 					uint8 *slice = new uint8[rows * cols * chans * bytes_x_chan];
 					if ( (err_Tiff3Dfmt = readTiff3DFile2Buffer((char *)slice_fullpath,slice,cols,rows,0,0)) != 0 ) {
 						throw iom::exception(iom::strprintf("unable to read tiff file (%s)",err_Tiff3Dfmt), __iom__current__function__);

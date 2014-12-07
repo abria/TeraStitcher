@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2014-12-06 Giulio. @FIXED input file should NOT be closed at the end of 'loadTiff3D2Metadata'
 * 2014-12-05 Giulio. @ADDED input file should be closed at the end of 'loadTiff3D2Metadata'
 */
 
@@ -103,7 +104,8 @@ char *loadTiff3D2Metadata ( char * filename, unsigned int &sz0, unsigned int  &s
 	fhandle = (void *) input;
 	header_len = -1;
 
-	TIFFClose(input);
+	// the file must non be closed (it is responsibility of the caller)
+	//TIFFClose(input);
 
 	return ((char *) 0);
 }

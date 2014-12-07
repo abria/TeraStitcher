@@ -115,6 +115,7 @@ char *Tiff3DFmtMngr::loadMetadata ( char * filename, sint64 * &sz, int &datatype
 	if ( (err_msg = loadTiff3D2Metadata(filename,sz0,sz1,sz2,sz3,datatype,b_swap,fhandle,header_len)) != 0 ) {
 		return err_msg;
 	}
+
 	sz = new sint64[4];
 	sz[0] = (sint64) sz0;
 	sz[1] = (sint64) sz1;
@@ -193,6 +194,7 @@ char *Tiff3DFmtMngr::copyFileBlock2Buffer ( char *filename, int sV0, int sV1, in
     if ( (err_msg = loadTiff3D2Metadata(filename,sz[0],sz[1],sz[2],sz[3],datatype,b_swap,fhandle,header_len)) != 0 ) {
 		return ((char *) "in Tiff3DFmtMngr::copyFileBlock2Buffer(...): cannot load metadata of Tiff file");
 	}
+	// fhandle should be left open
 
 	if ( datatype != pxl_size ) {
 		return ((char *) "in Tiff3DFmtMngr::copyFileBlock2Buffer(...): source data type differs from destination pixel size");

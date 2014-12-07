@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2014-12-06. Giulio @ADDED   makedirs flag.
 * 2014-11-22 Giulio. @CHANGED input plugin used for StackedVolume volumes is "tiff2D"
 */
 
@@ -119,6 +120,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	TCLAP::SwitchArg p_sparse_data("","sparse_data","If enabled, this option allows to import sparse data organizations, i.e. with empty or incomplete tiles",false);
     TCLAP::SwitchArg p_rescan("","rescan","If enabled, TeraStitcher will rescan all acquisition files according to the given import parameters",false);
+	TCLAP::SwitchArg p_makedirs("","makedirs","Creates the directory hierarchy.", false);
 
 
 	// argument objects must be inserted using FIFO policy (first inserted, first shown)
@@ -132,6 +134,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_im_in_channel);
 	cmd.add(p_im_in_regex);
 
+    cmd.add(p_makedirs);
     cmd.add(p_rescan);
 	cmd.add(p_sparse_data);
 	cmd.add(p_hide_progress_bar);
@@ -313,8 +316,8 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 		throw iom::exception(errMsg);
 	}
 
-	//STEP 6
-	if(p_merge.isSet() &&!(p_proj_in_path.isSet() && p_vol_out_path.isSet()))
+	//STEP 6 or makedirs is set
+	if((p_merge.isSet() || p_makedirs.isSet()) &&!(p_proj_in_path.isSet() && p_vol_out_path.isSet()))
 	{
 		sprintf(errMsg, "One or more required arguments missing for --%s!\n\nUSAGE is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s> \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s --%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>]",
 			p_merge.getName().c_str(), p_merge.getName().c_str(),
@@ -408,7 +411,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	}
 
 	//checking that at least one operation has been selected
-	if(!(p_test.isSet() || p_import.isSet() || p_computedisplacements.isSet() || p_projdisplacements.isSet() || 
+	if(!(p_test.isSet() || p_makedirs.isSet() || p_import.isSet() || p_computedisplacements.isSet() || p_projdisplacements.isSet() || 
 		p_thresholdisplacements.isSet() || p_placetiles.isSet() || p_merge.isSet() || p_stitch.isSet() || p_dump.isSet() || p_pluginsinfo.isSet()))
 		throw iom::exception("No operation selected. See --help for usage.");
 
@@ -448,6 +451,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	iom::IMOUT_PLUGIN_PARAMS = p_im_out_plugin_params.getValue();
 
 	vm::SPARSE_DATA = p_sparse_data.getValue();
+    this->makeDirs = p_makedirs.getValue();
     this->rescanFiles = p_rescan.getValue();
 	this->pluginsinfo = p_pluginsinfo.getValue();
 	this->dumpMData = p_dump.getValue();

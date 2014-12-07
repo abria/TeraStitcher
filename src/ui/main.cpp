@@ -25,6 +25,12 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2014-12-06. Giulio @ADDED   a case in main to be executed when the makedirs flag is set.
+*/
+
 #include <iostream>
 #include <stdio.h>
 #include <CmdLine.h>
@@ -156,7 +162,7 @@ int main(int argc, char** argv)
             volume = volumemanager::VirtualVolumeFactory::createFromXML(cli.projfile_load_path.c_str(), cli.rescanFiles || !vm::IMG_FILTER_REGEX.empty());
 		else if(cli.import || (cli.computedisplacements && cli.projfile_load_path.compare("null")==0) || cli.stitch || cli.test)
 			volume = volumemanager::VirtualVolumeFactory::createFromData(vm::VOLUME_INPUT_FORMAT_PLUGIN, cli.volume_load_path.c_str(), cli.reference_system, cli.VXL_1, cli.VXL_2, cli.VXL_3, true);
-		else if( (cli.computedisplacements && cli.volume_load_path.compare("null")==0) || cli.projdisplacements || cli.thresholddisplacements || cli.placetiles || cli.mergetiles)
+		else if( (cli.computedisplacements && cli.volume_load_path.compare("null")==0) || cli.projdisplacements || cli.thresholddisplacements || cli.placetiles || cli.mergetiles || cli.makeDirs)
             volume = volumemanager::VirtualVolumeFactory::createFromXML(cli.projfile_load_path.c_str(), cli.rescanFiles || !vm::IMG_FILTER_REGEX.empty());
 
 		// process volume		
@@ -185,6 +191,11 @@ int main(int argc, char** argv)
 		{
 			stitcher->computeTilesPlacement(cli.tp_algo);
 			defaultOutputFileName = "xml_merging";
+		}
+		if(cli.makeDirs) {
+			stitcher->createDirectoryHierarchy(cli.volume_save_path, cli.slice_height, cli.slice_width, cli.slice_depth, cli.resolutions, cli.exclude_nonstitchables, 
+									 cli.start_stack_row, cli.end_stack_row, cli.start_stack_col, cli.end_stack_col, cli.D0, cli.D1, 
+									 cli.enable_restore, cli.restoring_direction, cli.tm_blending, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
 		}
 		if(cli.mergetiles || cli.stitch)
 		{
