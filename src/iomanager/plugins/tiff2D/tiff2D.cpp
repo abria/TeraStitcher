@@ -124,7 +124,8 @@ throw (iom::exception)
 	int dummy_len;
 
 	unsigned char *data;
-
+ 	iom::real_t *raw_data;
+ 
 	iom::real_t *image_stack = 0;
 	uint64 image_stack_width=0, image_stack_height=0, z=0;
 	
@@ -240,14 +241,16 @@ throw (iom::exception)
 		int offset;
 
 		// convert image to [0.0,1.0]-valued array
- 		iom::real_t *raw_data = &image_stack[z*rows*cols];
 		if ( channels == 1 ) {
-			if ( depth == 1 )
-				for(int i = 0; i <rows * cols * (last-first+1); i++)
-					image_stack[i] = (iom::real_t) data[i]/255.0f;
-			else // depth == 2
-				for(int i = 0; i <rows * cols * (last-first+1); i++)
-					image_stack[i] = (iom::real_t) ((uint16 *)data)[i]/65535.0f; // data must be interpreted as a uint16 array
+			raw_data = &image_stack[z*rows*cols];
+			if ( depth == 1 ) {
+				for(int i = 0; i < (rows * cols); i++)
+					raw_data[i] = (iom::real_t) data[i]/255.0f;
+			}
+			else { // depth == 2
+				for(int i = 0; i < (rows * cols); i++)
+					raw_data[i] = (iom::real_t) ((uint16 *)data)[i]/65535.0f; // data must be interpreted as a uint16 array
+			}
 		}
 		else { // conversion to an intensity image
 			if ( chan == iom::ALL ) {
@@ -265,12 +268,13 @@ throw (iom::exception)
 			else {
 				throw iom::exception("wrong value for parameter iom::CHANNEL_SELECTION.", __iom__current__function__);
 			}
+			raw_data = &image_stack[z*rows*cols];
 			if ( depth == 1 )
-				for(int i = 0; i <rows * cols * (last-first+1); i++)
-					image_stack[i] = (iom::real_t) data[3*i + offset]/255.0f;
+				for(int i = 0; i < (rows * cols); i++)
+					raw_data[i] = (iom::real_t) data[3*i + offset]/255.0f;
 			else // depth == 2
-				for(int i = 0; i <rows * cols * (last-first+1); i++)
-					image_stack[i] = (iom::real_t) ((uint16 *)data)[3*i + offset]/65535.0f; // data must be interpreted as a uint16 array
+				for(int i = 0; i < (rows * cols); i++)
+					raw_data[i] = (iom::real_t) ((uint16 *)data)[3*i + offset]/65535.0f; // data must be interpreted as a uint16 array
 		}
 
 		// update time
