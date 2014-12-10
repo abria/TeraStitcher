@@ -28,8 +28,9 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2014-12-06. Giulio @ADDED   makedirs flag.
-* 2014-11-22 Giulio. @CHANGED input plugin used for StackedVolume volumes is "tiff2D"
+* 2014-12-10. Alessandro. @FIXED check of "Import" step if a project file is provided.
+* 2014-12-06. Giulio. @ADDED makedirs flag.
+* 2014-11-22. Giulio. @CHANGED input plugin used for StackedVolume volumes is "tiff2D"
 */
 
 #include "CLI.h"
@@ -216,7 +217,8 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	}
 
 	//STEP 1
-	if(p_import.isSet() && !(
+	// @FIXED by Alessandro on 2014-12-10. Skip this check if a project file has been provided.
+	if(p_import.isSet() && !p_proj_in_path.isSet() && !(
 		p_vol_in_path.isSet() && 
 		p_refsys_1.isSet() && p_refsys_2.isSet() && p_refsys_3.isSet() &&
 		p_vxl_1.isSet() && p_vxl_2.isSet() && p_vxl_3.isSet() ))

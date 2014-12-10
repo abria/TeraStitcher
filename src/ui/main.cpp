@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2014-12-10. Alessandro. @FIXED not working --import step with XML file.
 * 2014-12-06. Giulio @ADDED   a case in main to be executed when the makedirs flag is set.
 */
 
@@ -158,7 +159,8 @@ int main(int argc, char** argv)
 
 		// import volume from directory or XML file
 		volumemanager::VirtualVolume* volume = 0;
-		if(cli.test && cli.projfile_load_path.compare("null")!=0)
+		// 2014-12-10. Alessandro. @FIXED not working --import step with XML file.
+		if((cli.test || cli.import) && cli.projfile_load_path.compare("null")!=0)
             volume = volumemanager::VirtualVolumeFactory::createFromXML(cli.projfile_load_path.c_str(), cli.rescanFiles || !vm::IMG_FILTER_REGEX.empty());
 		else if(cli.import || (cli.computedisplacements && cli.projfile_load_path.compare("null")==0) || cli.stitch || cli.test)
 			volume = volumemanager::VirtualVolumeFactory::createFromData(vm::VOLUME_INPUT_FORMAT_PLUGIN, cli.volume_load_path.c_str(), cli.reference_system, cli.VXL_1, cli.VXL_2, cli.VXL_3, true);
