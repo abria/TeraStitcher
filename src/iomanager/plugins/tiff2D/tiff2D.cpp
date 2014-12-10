@@ -371,7 +371,7 @@ throw (iom::exception)
 	}
 
 	// save image
-	if ( (err_Tiff3Dfmt = appendSlice2Tiff3DFile((char *)img_path.c_str(),0,buffer,ROI_width,ROI_height)) != 0 ) {
+	if ( (err_Tiff3Dfmt = appendSlice2Tiff3DFile((char *)img_path.c_str(),0,buffer,ROI_height,ROI_width)) != 0 ) {
 		throw iom::exception(iom::strprintf("unable to save image at \"%s\". Unsupported format or wrong path.\n", img_path.c_str()), __iom__current__function__);
 	}
 

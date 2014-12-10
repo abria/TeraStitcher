@@ -137,7 +137,10 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 	char *completeFilename = (char *) 0;
 	int fname_len = strlen(filename);
 	char *suffix = strstr(filename,".tif");
-	if ( (suffix != 0) && (fname_len - (suffix-filename) <= 5) ) { // a substring ".tif is already at the end of the filename
+	while ( suffix && (fname_len - (suffix-filename) > 5) )
+		suffix = strstr(suffix+4,".tif");
+	//if ( (suffix != 0) && (fname_len - (suffix-filename) <= 5) ) { // a substring ".tif is already at the end of the filename
+	if ( suffix ) { // a substring ".tif is already at the very end of the filename
 		completeFilename = new char[fname_len+1];
 		strcpy(completeFilename,filename);
 	}
@@ -291,7 +294,8 @@ char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int i
 	if (!check)
 	{
 		return ((char *) "Image length of undefined.");
-	}		
+	}	
+	//rps=600;
     
 	check=TIFFGetField(input, TIFFTAG_BITSPERSAMPLE, &bpp); 
 	if (!check)
