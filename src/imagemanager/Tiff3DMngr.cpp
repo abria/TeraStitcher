@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2014-12-10 Giulio. @ADDED added management of mismatch between machine/image endian
 * 2014-12-06 Giulio. @FIXED input file should NOT be closed at the end of 'loadTiff3D2Metadata'
 * 2014-12-05 Giulio. @ADDED input file should be closed at the end of 'loadTiff3D2Metadata'
 */
@@ -33,6 +34,29 @@
 #include <stdlib.h> // needed by clang: defines size_t
 #include <string.h>
 #include "tiffio.h"
+
+
+
+static
+void swap2bytes(void *targetp)
+{
+    unsigned char * tp = (unsigned char *)targetp;
+    unsigned char a = *tp;
+    *tp = *(tp+1);
+    *(tp+1) = a;
+}
+
+static
+void swap4bytes(void *targetp)
+{
+    unsigned char * tp = (unsigned char *)targetp;
+    unsigned char a = *tp;
+    *tp = *(tp+3);
+    *(tp+3) = a;
+    a = *(tp+1);
+    *(tp+1) = *(tp+2);
+    *(tp+2) = a;
+}
 
 
 char *loadTiff3D2Metadata ( char * filename, unsigned int &sz0, unsigned int  &sz1, unsigned int  &sz2, unsigned int  &sz3, int &datatype, int &b_swap, void * &fhandle, int &header_len ) {
@@ -100,7 +124,9 @@ char *loadTiff3D2Metadata ( char * filename, unsigned int &sz0, unsigned int  &s
 	sz2 = Npages;
 	sz3 = spp;
 	datatype = bpp/8;
-	b_swap = 0;
+
+	//b_swap = 0;
+	b_swap=TIFFIsByteSwapped(input);
 	fhandle = (void *) input;
 	header_len = -1;
 
@@ -276,14 +302,15 @@ char *readTiff3DFile2Buffer ( char *filename, unsigned char *img, unsigned int i
 		return ((char *) "Cannot open the file.");
     }
     
-	char *err_msg = readTiff3DFile2Buffer(input,img,img_width,img_height,first,last);
+	int b_swap=TIFFIsByteSwapped(input);
+	char *err_msg = readTiff3DFile2Buffer(input,img,img_width,img_height,first,last,b_swap);
 
 	TIFFClose(input);
 
 	return err_msg;
 }
 
-char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int img_width, unsigned int img_height, unsigned int first, unsigned int last ) {
+char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int img_width, unsigned int img_height, unsigned int first, unsigned int last, int b_swap ) {
 	uint32 rps;
     uint16 spp, bpp, photo, comp, planar_config;
     int check, StripsPerImage,LastStripSize;
@@ -371,6 +398,27 @@ char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int i
 
 	if ( page < static_cast<int>(last-first+1) ){
 		return ((char *) "Cannot read all the pages.");
+	}
+
+	// swap the data bytes if necessary 	
+	if (b_swap)
+	{
+		int i;
+		size_t total = img_width * img_height * spp * (last-first+1);
+		if (bpp/8 == 2)
+		{
+			for (i=0;i<total; i++)
+			{
+				swap2bytes((void *)(img+2*i));
+			}
+		}
+		else if (bpp/8 == 4)
+		{
+			for (i=0;i<total; i++)
+			{
+				swap4bytes((void *)(img+4*i));
+			}
+		}
 	}
 
 	return (char *) 0;

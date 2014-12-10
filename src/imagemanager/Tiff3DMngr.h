@@ -77,7 +77,7 @@ char *readTiff3DFile2Buffer ( char *filename, unsigned char *img, unsigned int i
  * where bps and spp are the bit-per-sample and sample-per-pixel tags of the multipage tiff file
  */
 
-char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int img_width, unsigned int img_height, unsigned int first, unsigned int last );
+char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int img_width, unsigned int img_height, unsigned int first, unsigned int last, int b_swap );
 /* reads a substack from a file containing a 3D image
  * 
  * input:      handler of the file to be modified
@@ -86,6 +86,8 @@ char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int i
  * img_height: height of the slice
  * first:      index of first slice
  * last:       index of last slice
+ * b_swap:     a 0/1 value that indicates if endianness of the file is the same (0) or 
+ *             is different (1) from the one of the current machine
  *
  * PRE: img points to a buffer of img_height * img_width * (last-first+1) * bps * spp
  * where bps and spp are the bit-per-sample and sample-per-pixel tags of the multipage tiff file

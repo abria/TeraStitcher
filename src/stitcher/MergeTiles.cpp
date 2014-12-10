@@ -806,29 +806,11 @@ void StackStitcher::createDirectoryHierarchy(std::string output_path, int block_
 
 	//LOCAL VARIABLES
 	sint64 height, width, depth;                                            //height, width and depth of the whole volume that covers all stacks
-	iom::real_t* buffer;								//buffer temporary image data are stored
-	iom::real_t* stripe_up=NULL, *stripe_down;                                   //will contain up-stripe and down-stripe computed by calling 'getStripe' method
-	double angle;								//angle between 0 and PI used to sample overlapping zone in [0,PI]
-	double delta_angle;							//angle step
-	int z_ratio, z_max_res;
+	iom::real_t* stripe_up=NULL;                                   //will contain up-stripe and down-stripe computed by calling 'getStripe' method
     int n_stacks_V[S_MAX_MULTIRES], n_stacks_H[S_MAX_MULTIRES], n_stacks_D[S_MAX_MULTIRES];             //array of number of tiles along V and H directions respectively at i-th resolution
     int ***stacks_height[S_MAX_MULTIRES], ***stacks_width[S_MAX_MULTIRES], ***stacks_depth[S_MAX_MULTIRES];	//array of matrices of tiles dimensions at i-th resolution
-	sint64 u_strp_bottom_displ;
-	sint64 d_strp_top_displ;
-	sint64 u_strp_top_displ;
-	sint64 d_strp_left_displ;
-	sint64 u_strp_left_displ;
-	sint64 d_strp_width;
-	sint64 u_strp_width;
-	sint64 dd_strp_top_displ;
-	sint64 u_strp_d_strp_overlap;
-	sint64 h_up, h_down, h_overlap;
-	stripe_2Dcoords  *stripesCoords;
-	stripe_2Dcorners *stripesCorners;
 	int resolutions_size = 0;
 	StackRestorer *stk_rst = NULL;
-	iom::real_t *buffer_ptr, *ustripe_ptr, *dstripe_ptr;	
-	iom::real_t (*blending)(double& angle, iom::real_t& pixel1, iom::real_t& pixel2);
 
 	std::stringstream file_path[S_MAX_MULTIRES];
 
@@ -837,24 +819,16 @@ void StackStitcher::createDirectoryHierarchy(std::string output_path, int block_
 	 * processed together to generate slices of all resolution requested
 	 */
 
-	/* stack_block[i] is the index of current block along z (it depends on the resolution i)
-	 * current block is the block in which falls the first slice of the group
-	 * of slices that is currently being processed, i.e. from z to z+z_max_res-1
-	 */
-    int stack_block[S_MAX_MULTIRES];
-
 	/* these arrays are the indices of first and last slice of current block at resolution i
 	 * WARNING: the slice index refers to the index of the slice in the volume at resolution i 
 	 */
     int slice_start[S_MAX_MULTIRES];
-    int slice_end[S_MAX_MULTIRES];
 
 	/* the number of slice of already processed groups at current resolution
 	 * the index of the slice to be saved at current resolution is:
 	 *
 	 *      n_slices_pred + z_buffer
 	 */
-	sint64 n_slices_pred;       
 
 	//computing dimensions of volume to be stitched
 	this->computeVolumeDims(exclude_nonstitchable_stacks, _ROW_START, _ROW_END, _COL_START, _COL_END, _D0, _D1);

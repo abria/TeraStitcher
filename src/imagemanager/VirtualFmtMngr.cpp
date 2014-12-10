@@ -130,7 +130,7 @@ char *Tiff3DFmtMngr::load2SubStack ( void *fhandle, unsigned char *img, sint64 *
 							 int datatype, int b_swap, int header_len ) {
 	char *err_msg;
 	unsigned char *img_t = new unsigned char[sz[0] * sz[1] * (endz - startz + 1) * sz[3] * datatype];
-	if ( (err_msg = readTiff3DFile2Buffer(fhandle,img_t,(uint32)sz[0],(uint32)sz[1],(uint32)startz,(uint32)endz)) != 0 ) {
+	if ( (err_msg = readTiff3DFile2Buffer(fhandle,img_t,(uint32)sz[0],(uint32)sz[1],(uint32)startz,(uint32)endz,b_swap)) != 0 ) {
 		delete [] img_t;
 		return err_msg;      
 	}
@@ -202,7 +202,7 @@ char *Tiff3DFmtMngr::copyFileBlock2Buffer ( char *filename, int sV0, int sV1, in
 
 	unsigned char *buf_t = new unsigned char[sz[0] * sz[1] * (sD1 - sD0) * sz[3] * datatype];
 	
-	if ( (err_msg = readTiff3DFile2Buffer(fhandle,buf_t,sz[0],sz[1],sD0,sD1-1)) != 0 ) {
+	if ( (err_msg = readTiff3DFile2Buffer(fhandle,buf_t,sz[0],sz[1],sD0,sD1-1,b_swap)) != 0 ) {
 		closeTiff3DFile(fhandle);
 		delete [] buf_t;
 		return err_msg;      
