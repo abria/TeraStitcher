@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2014-12-10. Giulio.  @ADDED parallel flag
 * 2014-12-10. Alessandro. @FIXED check of "Import" step if a project file is provided.
 * 2014-12-06. Giulio. @ADDED makedirs flag.
 * 2014-11-22. Giulio. @CHANGED input plugin used for StackedVolume volumes is "tiff2D"
@@ -64,6 +65,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::SwitchArg p_placetiles("5","placetiles","Step 5: places tiles in the image space using a globally optimal tiles placement algorithm.", false);
 	TCLAP::SwitchArg p_merge("6","merge","Step 6: merges tiles at different resolutions.", false);
 	TCLAP::SwitchArg p_test("t","test","(deprecated) Stitches the middle slice of the whole volume and saves it locally. Stage coordinates will be used, so this can be used to test their precision as well as the selected reference system.",false);
+	TCLAP::SwitchArg p_parallel("","parallel","Does not perform side-effect operations during the merge step. Use this flag when more merge steps are launched in parallel",false);
 	TCLAP::SwitchArg p_dump("d","dump","Print the entire content of metadata file mdata.bin",false);
 	TCLAP::SwitchArg p_pluginsinfo("p","pluginsinfo","Display plugins informations",false);
 	TCLAP::ValueArg<std::string> p_vol_in_path("","volin","Directory path where the volume is stored.",false,"null","string");
@@ -121,7 +123,8 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	TCLAP::SwitchArg p_sparse_data("","sparse_data","If enabled, this option allows to import sparse data organizations, i.e. with empty or incomplete tiles",false);
     TCLAP::SwitchArg p_rescan("","rescan","If enabled, TeraStitcher will rescan all acquisition files according to the given import parameters",false);
-	TCLAP::SwitchArg p_makedirs("","makedirs","Creates the directory hierarchy.", false);
+	TCLAP::SwitchArg p_makedirs("","makedirs","Creates the mdata.bin file of the output volume.", false);
+	TCLAP::SwitchArg p_metadata("","metadata","Creates the directory hierarchy.", false);
 
 
 	// argument objects must be inserted using FIFO policy (first inserted, first shown)
@@ -135,6 +138,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_im_in_channel);
 	cmd.add(p_im_in_regex);
 
+    cmd.add(p_metadata);
     cmd.add(p_makedirs);
     cmd.add(p_rescan);
 	cmd.add(p_sparse_data);
@@ -184,6 +188,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_computedisplacements);
 	cmd.add(p_import);
 	cmd.add(p_test);
+	cmd.add(p_parallel);
 
 	// Parse the argv array and catch <TCLAP> exceptions, which are translated into <iom::MyException> exceptions
 	char errMsg[S_STATIC_STRINGS_SIZE];
@@ -214,6 +219,10 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 			p_test.getName().c_str(),
 			p_proj_in_path.getName().c_str(), cmd.getDelimiter(), "string");
 		throw iom::exception(errMsg);
+	}
+
+	if((p_parallel.isSet() || p_stitch.isSet())&& !p_merge.isSet()) {
+		throw iom::exception("--parallel option is set, but neither --stitch not --merge have been launched");
 	}
 
 	//STEP 1
@@ -318,8 +327,8 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 		throw iom::exception(errMsg);
 	}
 
-	//STEP 6 or makedirs is set
-	if((p_merge.isSet() || p_makedirs.isSet()) &&!(p_proj_in_path.isSet() && p_vol_out_path.isSet()))
+	//STEP 6 or makedirs or metadata is set
+	if((p_merge.isSet() || p_makedirs.isSet() ||p_metadata.isSet()) &&!(p_proj_in_path.isSet() && p_vol_out_path.isSet()))
 	{
 		sprintf(errMsg, "One or more required arguments missing for --%s!\n\nUSAGE is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s> \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s --%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>]",
 			p_merge.getName().c_str(), p_merge.getName().c_str(),
@@ -413,7 +422,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	}
 
 	//checking that at least one operation has been selected
-	if(!(p_test.isSet() || p_makedirs.isSet() || p_import.isSet() || p_computedisplacements.isSet() || p_projdisplacements.isSet() || 
+	if(!(p_test.isSet() || p_makedirs.isSet() || p_metadata.isSet() || p_import.isSet() || p_computedisplacements.isSet() || p_projdisplacements.isSet() || 
 		p_thresholdisplacements.isSet() || p_placetiles.isSet() || p_merge.isSet() || p_stitch.isSet() || p_dump.isSet() || p_pluginsinfo.isSet()))
 		throw iom::exception("No operation selected. See --help for usage.");
 
@@ -453,10 +462,12 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	iom::IMOUT_PLUGIN_PARAMS = p_im_out_plugin_params.getValue();
 
 	vm::SPARSE_DATA = p_sparse_data.getValue();
+    this->metaData = p_metadata.getValue();
     this->makeDirs = p_makedirs.getValue();
     this->rescanFiles = p_rescan.getValue();
 	this->pluginsinfo = p_pluginsinfo.getValue();
 	this->dumpMData = p_dump.getValue();
+	this->parallel = p_parallel.getValue();
 	this->test = p_test.getValue();
 	this->stitch = p_stitch.getValue();
 	this->import = p_import.getValue();
