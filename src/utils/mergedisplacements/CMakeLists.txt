@@ -14,6 +14,6 @@ file(GLOB mergedisplacements_sources *.cpp)
 add_executable(mergedisplacements ${mergedisplacements_headers} ${mergedisplacements_sources})
 
 # Link the executable to the other modules. 
-target_link_libraries(mergedisplacements imagemanager )
 target_link_libraries(mergedisplacements iomanager )
 target_link_libraries(mergedisplacements tinyxml )
+
