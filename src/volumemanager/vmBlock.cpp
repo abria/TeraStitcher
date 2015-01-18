@@ -277,7 +277,7 @@ void Block::init() throw (iom::exception)
 
 
 //binarizing-unbinarizing methods
-void Block::binarizeInto(FILE* file)
+void Block::binarizeInto(FILE* file) throw (iom::exception)
 {
 	#if VM_VERBOSE > 3
     printf("\t\t\t\tin Block[%d,%d]::binarizeInto(...)\n",ROW_INDEX, COL_INDEX);
