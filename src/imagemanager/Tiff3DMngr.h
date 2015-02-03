@@ -89,6 +89,9 @@ char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int i
  * b_swap:     a 0/1 value that indicates if endianness of the file is the same (0) or 
  *             is different (1) from the one of the current machine
  *
+ * WARNING: the value of b_swap determines if swapping has to be performed or not before returning the buffer
+ * filled with data; it is responsibility of the caller to set this parameter correctly
+ *
  * PRE: img points to a buffer of img_height * img_width * (last-first+1) * bps * spp
  * where bps and spp are the bit-per-sample and sample-per-pixel tags of the multipage tiff file
  */
