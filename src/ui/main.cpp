@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-02-03. Alessandro. @FIXED bug in the call of mergeTiles (wrong D1 if D1 was not set).
 * 2014-12-10. Alessandro. @FIXED not working --import step with XML file.
 * 2014-12-06. Giulio @ADDED   a case in main to be executed when the makedirs flag is set.
 */
@@ -206,13 +207,14 @@ int main(int argc, char** argv)
 		}
 		if(cli.mergetiles || cli.stitch)
 		{
+			// 2015-02-03. Alessandro. @FIXED bug in the call of mergeTiles (wrong D1 if D1 was not set).
 			if ( vm::VOLUME_OUTPUT_FORMAT_PLUGIN.compare(BlockVolume::id)==0 )
 				stitcher->mergeTilesVaa3DRaw(cli.volume_save_path, cli.slice_height, cli.slice_width, cli.slice_depth, cli.resolutions, cli.exclude_nonstitchables, 
-									 cli.start_stack_row, cli.end_stack_row, cli.start_stack_col, cli.end_stack_col, cli.D0, cli.D1+1, 
+									 cli.start_stack_row, cli.end_stack_row, cli.start_stack_col, cli.end_stack_col, cli.D0, (cli.D1 == -1 ? -1 : cli.D1+1), 
 									 cli.enable_restore, cli.restoring_direction, cli.tm_blending, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth,cli.parallel);
 			else if ( vm::VOLUME_OUTPUT_FORMAT_PLUGIN.compare(StackedVolume::id)==0 )
 				stitcher->mergeTiles(cli.volume_save_path, cli.slice_height, cli.slice_width, cli.resolutions, cli.exclude_nonstitchables, 
-									 cli.start_stack_row, cli.end_stack_row, cli.start_stack_col, cli.end_stack_col, cli.D0, cli.D1+1, 
+									 cli.start_stack_row, cli.end_stack_row, cli.start_stack_col, cli.end_stack_col, cli.D0, (cli.D1 == -1 ? -1 : cli.D1+1), 
 									 cli.enable_restore, cli.restoring_direction, cli.tm_blending, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
 			else
 				throw iom::exception(vm::strprintf("Unsupported output volume format plugin \"%s\"", vm::VOLUME_OUTPUT_FORMAT_PLUGIN.c_str()).c_str());

@@ -11,6 +11,15 @@ ties names are:
 - Rem: a feature no longer available
 
 ============================================================================================
+TeraStitcher version 1.9.2
+February 3rd, 2015
+--------------------------------------------------------------------------------------------
+- Fix: fixed bug which might cause null z-dimension of the stitched image when the parameter
+       -D1 was not provided.
+- Dev: added check of invalid x-y-z stitched image dimensions.
+- Dev: added time measurements in the I/O core handling multipage TIFFs.
+
+
 TeraStitcher version 1.9.1
 January 18th, 2015
 --------------------------------------------------------------------------------------------

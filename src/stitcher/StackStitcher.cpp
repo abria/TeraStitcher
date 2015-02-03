@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-02-03. Alessandro. @ADDED check of invalid stitched image dimensions
 * 2014-11-25. Giluio.     @CHANGED in test mode the "tiff2D" plugin is explicitly used to write the test slice to avoid conflict with plugin used for saving the stitched volume
 * 2014-11-03. Giulio.     @FIXED stop and resume facility should be inactive when in test mode
 * 2014-10-31. Giulio.     @ADDED stop and resume facility - saved_img_format has been used to check if resume parameters have not been changed
@@ -820,6 +821,14 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 	width = this->H1-this->H0;
 	height = this->V1-this->V0;
 	depth = this->D1-this->D0;
+
+	// 2015-02-03. Alessandro. @ADDED check of invalid stitched image dimensions
+	if(width <= 0)
+		throw iom::exception(iom::strprintf("The stitched image has invalid x-dimension (= %d)", width));
+	if(height <= 0)
+		throw iom::exception(iom::strprintf("The stitched image has invalid y-dimension (= %d)", height));
+	if(depth <= 0)
+		throw iom::exception(iom::strprintf("The stitched image has invalid z-dimension (= %d)", depth));
 
 	//activating resolutions
     slice_height = (int)(slice_height == -1 ? height : slice_height);
