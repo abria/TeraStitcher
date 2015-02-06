@@ -1,3 +1,36 @@
+//------------------------------------------------------------------------------------------------
+// Copyright (c) 2012  Alessandro Bria and Giulio Iannello (University Campus Bio-Medico of Rome).  
+// All rights reserved.
+//------------------------------------------------------------------------------------------------
+
+/*******************************************************************************************************************************************************************************************
+*    LICENSE NOTICE
+********************************************************************************************************************************************************************************************
+*    By downloading/using/running/editing/changing any portion of codes in this package you agree to this license. If you do not agree to this license, do not download/use/run/edit/change
+*    this code.
+********************************************************************************************************************************************************************************************
+*    1. This material is free for non-profit research, but needs a special license for any commercial purpose. Please contact Alessandro Bria at a.bria@unicas.it or Giulio Iannello at 
+*       g.iannello@unicampus.it for further details.
+*    2. You agree to appropriately cite this work in your related studies and publications.
+*
+*       Bria, A., Iannello, G., "TeraStitcher - A Tool for Fast 3D Automatic Stitching of Teravoxel-sized Microscopy Images", (2012) BMC Bioinformatics, 13 (1), art. no. 316.
+*
+*    3. This material is provided by  the copyright holders (Alessandro Bria  and  Giulio Iannello),  University Campus Bio-Medico and contributors "as is" and any express or implied war-
+*       ranties, including, but  not limited to,  any implied warranties  of merchantability,  non-infringement, or fitness for a particular purpose are  disclaimed. In no event shall the
+*       copyright owners, University Campus Bio-Medico, or contributors be liable for any direct, indirect, incidental, special, exemplary, or  consequential  damages  (including, but not 
+*       limited to, procurement of substitute goods or services; loss of use, data, or profits;reasonable royalties; or business interruption) however caused  and on any theory of liabil-
+*       ity, whether in contract, strict liability, or tort  (including negligence or otherwise) arising in any way out of the use of this software,  even if advised of the possibility of
+*       such damage.
+*    4. Neither the name of University  Campus Bio-Medico of Rome, nor Alessandro Bria and Giulio Iannello, may be used to endorse or  promote products  derived from this software without
+*       specific prior written permission.
+********************************************************************************************************************************************************************************************/
+
+/******************
+*    CHANGELOG    *
+*******************
+* 2015-01-02. Giulio.     @IMPLEMENTED new plugins interface
+*/
+
 #include <cxcore.h>
 #include <cv.h>
 #include <highgui.h>
@@ -36,6 +69,15 @@ std::string iomanager::opencv2D::desc()
 			"*                                                    *\n"
 			"******************************************************\n";
 }
+
+
+// Return if channels are interleaved (in case the image has just one channel return value is indefinite)
+bool 
+	iomanager::opencv2D::isChansInterleaved( ) 
+{
+	return true;
+}
+
 
 // read image metadata from a 2D image file
 void 
@@ -79,6 +121,49 @@ throw (iom::exception)
 		default:
 			throw iom::exception(iom::strprintf("unable determine bitdepth of image at \"%s\"",	img_path.c_str()), __iom__current__function__);
 	}
+}
+
+
+// Read 2D image data
+unsigned char *						// (OUTPUT) a buffer storing the 2D image
+	iomanager::opencv2D::readData(
+	std::string img_path,			// (INPUT)	image filepath
+	int & img_width,				// (INPUT/OUTPUT) image width  (in pixels)
+	int & img_height,				// (INPUT/OUTPUT) image height (in pixels)
+	int & img_bytes_x_chan,			// (INPUT/OUTPUT) number of bytes per channel
+	int & img_chans,				// (INPUT/OUTPUT) number of channels to be read
+	int * chans,					// (INPUT)  list of the img_chans channels to be read 
+	unsigned char *data,			// (INPUT) image data
+	int y0,							// (INPUT)	region of interest [x0,x1)[y0,y1) to be set on the image
+	int y1,							// (INPUT)	region of interest [x0,x1)[y0,y1) to be set on the image
+	int x0,							// (INPUT)	region of interest [x0,x1)[y0,y1) to be set on the image
+	int x1,							// (INPUT)	region of interest [x0,x1)[y0,y1) to be set on the image
+	const std::string & params)		// (INPUT) additional parameters <param1=val, param2=val, ...> 
+throw (iom::exception) 
+{
+	throw iom::exception(iom::strprintf("not implemented yet"), __iom__current__function__);
+
+	return 0;
+}
+
+
+// Write 2D image data into a single (2D) image file
+void 
+	iomanager::opencv2D::writeData(
+	std::string img_path,			// (INPUT)	image filepath (it includes the file extension)
+	unsigned char *raw_img,			// (INPUT)	image data to be saved into the file
+	int img_height,					// (INPUT)	image height
+	int img_width,					// (INPUT)	image width
+	int img_bytes_x_chan,			// (INPUT)  number of bytes per channel
+	int img_chans,					// (INPUT)	number of channels
+	int y0,							// (INPUT)	region of interest [x0,x1][y0,y1] to be set on the image
+	int y1,							// (INPUT)	region of interest [x0,x1][y0,y1] to be set on the image
+	int x0,							// (INPUT)	region of interest [x0,x1][y0,y1] to be set on the image
+	int x1,							// (INPUT)	region of interest [x0,x1][y0,y1] to be set on the image
+	const std::string & params)		// (INPUT) additional parameters <param1=val, param2=val, ...> 
+throw (iom::exception)
+{
+	throw iom::exception(iom::strprintf("not implemented yet"), __iom__current__function__);
 }
 
 
