@@ -36,7 +36,7 @@ class TemplateCLI
 	public:
 
 		// switch parameters
-		bool highest_resolution;						// generate highest resolution (default: false)
+		//bool highest_resolution;						// generate highest resolution (default: false)
 
 		// other parameters
 		// int/float/double/string XXXX;	// description

@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-01-06. Giulio.     @ADDED optimizations to reduce opend/close in append operations (only in saveImage_from_UINT8_to_Tiff3D)
 * 2014-11-22. Giulio.     @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
 * 2014-11-10. Giulio.     @CHANGED allowed saving 2dseries with a depth of 16 bit (generateTiles)
 */
@@ -540,7 +541,7 @@ void VirtualVolume::saveImage_from_UINT8_to_Vaa3DRaw (int slice, std::string img
 **************************************************************************************************************/
 void VirtualVolume::saveImage_from_UINT8_to_Tiff3D (int slice, std::string img_path, uint8** raw_ch, int n_chans, sint64 offset, 
                        int raw_img_height, int raw_img_width, int start_height, int end_height, int start_width,
-                       int end_width, const char* img_format, int img_depth ) throw (IOException)
+                       int end_width, const char* img_format, int img_depth, void *fhandle, int n_pages, bool do_open ) throw (IOException)
 {
     /**/iim::debug(iim::LEV3, strprintf("img_path=%s, raw_img_height=%d, raw_img_width=%d, start_height=%d, end_height=%d, start_width=%d, end_width=%d", img_path.c_str(), raw_img_height, raw_img_width, start_height, end_height, start_width, end_width).c_str(), __iim__current__function__);
 
@@ -620,7 +621,9 @@ void VirtualVolume::saveImage_from_UINT8_to_Tiff3D (int slice, std::string img_p
     sprintf(buffer, "%s.%s", img_path.c_str(), TIFF3D_SUFFIX);
 
 	char *err_tiff_fmt;
-	if ( (err_tiff_fmt = appendSlice2Tiff3DFile(buffer,slice,(unsigned char *)imageData,(int)img_height,(int)img_width)) != 0 ) {
+	if ( do_open ? 
+		((err_tiff_fmt = appendSlice2Tiff3DFile(buffer,slice,(unsigned char *)imageData,(int)img_height,(int)img_width)) != 0) : 
+		((err_tiff_fmt = appendSlice2Tiff3DFile(fhandle,slice,(unsigned char *)imageData,(int)img_height,(int)img_width,n_chans,img_depth,n_pages)) != 0) ) {
 		char err_msg[STATIC_STRINGS_SIZE];
 		sprintf(err_msg,"VirtualVolume::saveImage_from_UINT8_to_Tiff3D: error in saving slice %d (%lld x %lld) in file %s (appendSlice2Tiff3DFile: %s)", slice,img_height,img_width,buffer,err_tiff_fmt);
         throw IOException(err_msg);

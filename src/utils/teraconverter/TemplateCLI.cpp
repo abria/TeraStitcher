@@ -22,6 +22,12 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2015-02-10. Giulio.     @CHANGED changed how the resolutions parameter works (resolutions can be chosen individually)
+*/
+
 #include "TemplateCLI.h"
 #include "IM_config.h"
 #include "StackedVolume.h"
@@ -57,7 +63,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 
 	//argument objects definitions
-	TCLAP::SwitchArg p_highest_resolution("a","all","Generate also the highest resolution.",false); 
+	//TCLAP::SwitchArg p_highest_resolution("a","all","Generate also the highest resolution.",false); 
         /**
 		 * SwitchArg constructor.
 		 * \param flag - The one character flag that identifies this
@@ -88,7 +94,8 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		iim::TILED_TIF3D_FORMAT  + "\")";
 	TCLAP::ValueArg<string> p_src_format("","sfmt",temp.c_str(),true,"","string");
 	TCLAP::ValueArg<string> p_dst_format("","dfmt","Destination format (intensity/graylevel/RGB).",true,"","string");
- 	TCLAP::ValueArg<int> p_n_resolutions("","res","Number of resolutions.",true,2,"unsigned");
+ 	//TCLAP::ValueArg<int> p_n_resolutions("","res","Number of resolutions.",true,2,"unsigned");
+	TCLAP::ValueArg<std::string> p_resolutions("","resolutions","Resolutions to be produced. Possible values are [[i]...]             where i = 0,..,5 and 2^i is the subsampling factor.",false,"0","string");
 	TCLAP::ValueArg<string> p_halving_method("","halve","Halving method (mean/max, default: mean).",false,"mean","unsigned");
 	TCLAP::ValueArg<std::string> p_outFmt("f","outFmt","Output format (Tiff2DStck/Vaa3DRaw/Tiff3D/Vaa3DRawMC/Tiff3DMC, default: Tiff2DStck).",false,"Tiff2DStck","string");
        /**
@@ -118,8 +125,9 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	//argument objects must be inserted using LIFO policy (last inserted, first shown)
 	cmd.add(p_outFmt);
-	cmd.add(p_highest_resolution);
-	cmd.add(p_n_resolutions);
+	//cmd.add(p_highest_resolution);
+	//cmd.add(p_n_resolutions);
+	cmd.add(p_resolutions);
 	cmd.add(p_dst_format);
 	cmd.add(p_src_format);
 	cmd.add(p_slice_width);
@@ -192,11 +200,16 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	this->src_format   = p_src_format.getValue();
 	this->dst_format   = p_dst_format.getValue();
 
-	this->resolutions[0] = p_highest_resolution.getValue() ? 1 : 0;
-	for ( i=1; i<p_n_resolutions.getValue(); i++ )
-		this->resolutions[i] = 1;
-	for ( ; i<S_MAX_MULTIRES; i++ )
-		this->resolutions[i] = 0;
+	//this->resolutions[0] = p_highest_resolution.getValue() ? 1 : 0;
+	//for ( i=1; i<p_n_resolutions.getValue(); i++ )
+	//	this->resolutions[i] = 1;
+	//for ( ; i<S_MAX_MULTIRES; i++ )
+	//	this->resolutions[i] = 0;
+	for(i=0; i<= S_MAX_MULTIRES; i++) {
+		stringstream buf;
+		buf << i;
+		this->resolutions[i] = p_resolutions.getValue().find(buf.str()) != std::string::npos;
+	}
 
 	if ( p_halving_method.getValue() == "mean" )
 		this->halving_method = HALVE_BY_MEAN;

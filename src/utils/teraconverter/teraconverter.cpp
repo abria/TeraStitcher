@@ -45,9 +45,7 @@
  * - format of the output image ("intensity" for real valued pixels in [0,1],
  *   "graylevel" for integer valued pixels in [0,255], "RGB" for pixel represented
  *   according to RGB format)
- * - number of resolutions to be generated; all resolutions other than the highest 
- *   one are generated; to generate the highest resolution a command line flag has
- *   to be set
+ * - which resolutions have to be generated; specified resolutions are generated
  *
  * If the source image is multi channel the format of the output image is 
  * automatically set to "RGB"

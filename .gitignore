@@ -4,3 +4,5 @@ src/iomanager/ioplugins.h
 src/CMakeCache.txt
 
 src/CMakeFiles/cmake.check_cache
+
+src/imagemanager/VirtualVolume.cpp

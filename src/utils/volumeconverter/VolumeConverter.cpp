@@ -25,6 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-02-10. Giulio.     @ADDED completed optimizations to reduce opend/close in append operations (only in generateTilesVaa3DRaw)
+* 2015-01-06. Giulio.     @ADDED optimizations to reduce opend/close in append operations (only in generateTilesVaa3DRaw)
 * 2015-01-30. Alessandro. @ADDED performance (time) measurement in 'generateTilesVaa3DRaw()' method.
 * 2014-11-10. Giulio.     @CHANGED allowed saving 2dseries with a depth of 16 bit (generateTiles)
 */
@@ -582,7 +584,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 	 *
 	 *      n_slices_pred + z_buffer
 	 */
-	sint64 n_slices_pred;       
+	sint64 n_slices_pred;  
 
 	if ( volume == 0 ) {
 		char err_msg[STATIC_STRINGS_SIZE];
@@ -923,30 +925,57 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
                         #endif
 
 						//saving HERE
-                        for(int buffer_z=0; buffer_z<z_size/(powInt(2,i)); buffer_z++)
-						{
-							int slice_ind; 
- 							std::stringstream img_path;
- 							std::stringstream abs_pos_z_next;
-							img_path << H_DIR_path.str() << "/" 
-										<< this->getMultiresABS_V_string(i,start_height) << "_" 
-										<< this->getMultiresABS_H_string(i,start_width) << "_";
 
+						// 2015-02-10. Giulio. @CHANGED changed how img_path is constructed
+ 						std::stringstream partial_img_path;
+						partial_img_path << H_DIR_path.str() << "/" 
+									<< this->getMultiresABS_V_string(i,start_height) << "_" 
+									<< this->getMultiresABS_H_string(i,start_width) << "_";
+
+						int slice_ind = (int)(n_slices_pred - slice_start[i]); 
+
+ 						std::stringstream img_path;
+						img_path << partial_img_path.str() << abs_pos_z.str();
+
+						/* 2015-02-06. Giulio. @ADDED optimization to reduce the number of open/close operations in append operations
+						 * Since slices of the same block in a group are appended in sequence, to minimize the overhead of append operations, 
+						 * all slices of a group to be appended to the same block file are appended leaving the file open and positioned at 
+						 * end of the file.
+						 * The number of pages of block files of interest can be easily computed as:
+						 *
+						 *    number of slice of current block = stacks_depth[i][0][0][stack_block[i]] 
+						 *    number of slice of next block    = stacks_depth[i][0][0][stack_block[i]+1] 
+						 */
+
+						void *fhandle = 0;
+						int  n_pages_block = stacks_depth[i][0][0][stack_block[i]]; // number of pages of current block
+						bool block_changed = false;                                 // true if block is changed executing the next for cycle
+						// fhandle = open file corresponding to current block 
+						if ( strcmp(saved_img_format,"Tiff3D") == 0 )
+							openTiff3DFile((char *)img_path.str().c_str(),(char *)(slice_ind ? "a" : "w"),fhandle);
+
+						// WARNING: assumes that block size along z is not less that z_size/(powInt(2,i))
+                        for(int buffer_z=0; buffer_z<z_size/(powInt(2,i)); buffer_z++, slice_ind++)
+						{
 							// D0 must be subtracted because z is an absolute index in volume while slice index should be computed on a relative basis (i.e. starting form 0)
-							if ( ((z - this->D0)  /powInt(2,i)+buffer_z) > slice_end[i] ) { // start a new block along z
+							if ( ((z - this->D0) / powInt(2,i) + buffer_z) > slice_end[i] && !block_changed) { // start a new block along z
+ 								std::stringstream abs_pos_z_next;
 								abs_pos_z_next.width(6);
 								abs_pos_z_next.fill('0');
 								abs_pos_z_next << (int)(this->getMultiresABS_D(i) + // all stacks start at the same D position
                                         (powInt(2,i)*(slice_end[i]+1)) * volume->getVXL_D());
-								img_path << abs_pos_z_next.str();
-								slice_ind = (int)(n_slices_pred - (slice_end[i]+1)) + buffer_z;
-							}
-							else {
-								img_path << abs_pos_z.str(); 
-								slice_ind = (int)(n_slices_pred - slice_start[i]) + buffer_z;
-							}
+								img_path.str("");
+								img_path << partial_img_path.str() << abs_pos_z_next.str();
 
+								slice_ind = 0; // 2015-02-10. Giulio. @CHANGED (int)(n_slices_pred - (slice_end[i]+1)) + buffer_z;
 
+								// close(fhandle) i.e. file corresponding to current block 
+								closeTiff3DFile(fhandle);
+								// fhandle = open file corresponding to next block
+								openTiff3DFile((char *)img_path.str().c_str(),(char *)"w",fhandle);
+								n_pages_block = stacks_depth[i][0][0][stack_block[i]+1];
+								block_changed = true;
+							}
 
 							if ( internal_rep == REAL_INTERNAL_REP )
 								VirtualVolume::saveImage_to_Vaa3DRaw(
@@ -967,7 +996,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 										buffer_z*(height/powInt(2,i))*(width/powInt(2,i))*bytes_chan,  // stride to be added for slice buffer_z
 										(int)height/(powInt(2,i)),(int)width/(powInt(2,i)),
 										start_height,end_height,start_width,end_width, 
-										saved_img_format, saved_img_depth);
+										saved_img_format, saved_img_depth,fhandle,n_pages_block,false);
 								}
 								else { // can be only Vaa3DRaw
 									VirtualVolume::saveImage_from_UINT8_to_Vaa3DRaw(
@@ -981,6 +1010,10 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 										saved_img_format, saved_img_depth);
 								}
                         }
+
+						// close(fhandle) i.e. currently opened file
+						closeTiff3DFile(fhandle);
+
 						start_width  += stacks_width [i][stack_row][stack_column][0]; // WARNING TO BE CHECKED FOR CORRECTNESS
 
                         // 2015-01-30. Alessandro. @ADDED performance (time) measurement in 'generateTilesVaa3DRaw()' method.
