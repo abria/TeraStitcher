@@ -180,6 +180,7 @@ char *openTiff3DFile ( char *filename, char *mode, void *&fhandle ) {
     {
 		return ((char *) "Cannot open the file.");
     }
+	return ((char *) 0);
 }
 
 void closeTiff3DFile ( void *fhandle ) {
