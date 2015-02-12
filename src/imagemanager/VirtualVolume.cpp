@@ -25,7 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2015-01-06. Giulio.     @ADDED added optimizations to reduce opend/close in append operations (only in saveImage_from_UINT8_to_Tiff3D)
+* 2015-02-12. Giulio.     @FIXED bug concerning the number of channels in the saved image in method 'saveImage_from_UINT8_to_Tiff3D'
+* 2015-02-06. Giulio.     @ADDED added optimizations to reduce opend/close in append operations (only in saveImage_from_UINT8_to_Tiff3D)
 * 2015-02-06. Alessandro. @ADDED volume format metadata file for fast opening of a "directory format"
 * 2014-11-22. Giulio.     @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
 * 2014-11-10. Giulio.     @CHANGED allowed saving 2dseries with a depth of 16 bit (generateTiles)
@@ -555,7 +556,7 @@ void VirtualVolume::saveImage_from_UINT8_to_Tiff3D (int slice, std::string img_p
     sint64 img_height, img_width;
 	sint64 img_width_b; // image width in bytes
 	int img_bytes_per_chan;
-	int temp_n_chans = n_chans; // save number of channels in the source volume
+	int temp_n_chans = n_chans; // number of channels of the saved image: initialize with the number of channels of the source volume
 
 	//add offset to raw_ch
 	//for each channel adds to raw_ch the offset of current slice from the beginning of buffer 
@@ -586,7 +587,7 @@ void VirtualVolume::saveImage_from_UINT8_to_Tiff3D (int slice, std::string img_p
 	img_bytes_per_chan = (img_depth == 8) ? 1 : 2;
 	img_width_b    = img_width * img_bytes_per_chan; 
 
-	if ( n_chans == 2 ) // for Tiff files channel must be 1 or 3
+	if ( n_chans == 2 ) // for Tiff files channels must be 1 or 3
 		temp_n_chans++;
 
 	uint8 *imageData = new uint8[img_height * img_width_b * temp_n_chans];
@@ -628,7 +629,7 @@ void VirtualVolume::saveImage_from_UINT8_to_Tiff3D (int slice, std::string img_p
 	char *err_tiff_fmt;
 	if ( do_open ? 
 		((err_tiff_fmt = appendSlice2Tiff3DFile(buffer,slice,(unsigned char *)imageData,(int)img_height,(int)img_width)) != 0) : 
-		((err_tiff_fmt = appendSlice2Tiff3DFile(fhandle,slice,(unsigned char *)imageData,(int)img_height,(int)img_width,n_chans,img_depth,n_pages)) != 0) ) {
+		((err_tiff_fmt = appendSlice2Tiff3DFile(fhandle,slice,(unsigned char *)imageData,(int)img_height,(int)img_width,temp_n_chans,img_depth,n_pages)) != 0) ) {
 		char err_msg[STATIC_STRINGS_SIZE];
 		sprintf(err_msg,"VirtualVolume::saveImage_from_UINT8_to_Tiff3D: error in saving slice %d (%lld x %lld) in file %s (appendSlice2Tiff3DFile: %s)", slice,img_height,img_width,buffer,err_tiff_fmt);
         throw IOException(err_msg);

@@ -91,14 +91,16 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		iim::SIMPLE_RAW_FORMAT + "\"/\"" + 
 		iim::RAW_FORMAT + "\"/\"" + 
 		iim::TIF3D_FORMAT + "\"/\"" + 
-		iim::TILED_TIF3D_FORMAT  + "\")";
+		iim::TILED_TIF3D_FORMAT  + "\"/\"" +
+		iim::TILED_MC_TIF3D_FORMAT  + "\")";
 	TCLAP::ValueArg<string> p_src_format("","sfmt",temp.c_str(),true,"","string");
 	TCLAP::ValueArg<string> p_dst_format("","dfmt","Destination format (intensity/graylevel/RGB).",true,"","string");
  	//TCLAP::ValueArg<int> p_n_resolutions("","res","Number of resolutions.",true,2,"unsigned");
 	TCLAP::ValueArg<std::string> p_resolutions("","resolutions","Resolutions to be produced. Possible values are [[i]...]             where i = 0,..,5 and 2^i is the subsampling factor.",false,"0","string");
 	TCLAP::ValueArg<string> p_halving_method("","halve","Halving method (mean/max, default: mean).",false,"mean","unsigned");
 	TCLAP::ValueArg<std::string> p_outFmt("f","outFmt","Output format (Tiff2DStck/Vaa3DRaw/Tiff3D/Vaa3DRawMC/Tiff3DMC, default: Tiff2DStck).",false,"Tiff2DStck","string");
-       /**
+ 	TCLAP::SwitchArg p_hide_progress_bar("","noprogressbar","Disables progress bar and estimated time remaining", false);
+      /**
          * Labeled ValueArg constructor.
          * You could conceivably call this constructor with a blank flag, 
          * but that would make you a bad person.  It would also cause
@@ -124,6 +126,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 
 	//argument objects must be inserted using LIFO policy (last inserted, first shown)
+	cmd.add(p_hide_progress_bar);
 	cmd.add(p_outFmt);
 	//cmd.add(p_highest_resolution);
 	//cmd.add(p_n_resolutions);
@@ -194,7 +197,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	this->src_root_dir = p_src_root_dir.getValue();
 	this->dst_root_dir = p_dst_root_dir.getValue();
-	this->slice_depth = p_slice_depth.getValue();
+	this->slice_depth  = p_slice_depth.getValue();
 	this->slice_height = p_slice_height.getValue();
 	this->slice_width  = p_slice_width.getValue();
 	this->src_format   = p_src_format.getValue();
@@ -217,6 +220,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		this->halving_method = HALVE_BY_MAX;
 
 	this->outFmt = p_outFmt.getValue();
+	this->show_progress_bar = !p_hide_progress_bar.getValue();
 }
 
 //checks parameters correctness

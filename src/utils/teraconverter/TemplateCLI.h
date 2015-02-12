@@ -49,6 +49,7 @@ class TemplateCLI
 		string dst_format;
 		bool resolutions[S_MAX_MULTIRES];
 		int halving_method;
+		bool show_progress_bar;					//enables/disables progress bar with estimated time remaining
 
 		string outFmt;
 

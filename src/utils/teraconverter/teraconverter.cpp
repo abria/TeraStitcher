@@ -83,23 +83,23 @@ int main ( int argc, char *argv[] ) {
 		if ( cli.outFmt == "Tiff2DStck" )
 			vc.generateTiles(cli.dst_root_dir.c_str(),cli.resolutions,
 				cli.slice_height,cli.slice_width,cli.halving_method,
-				true,"tif",8*vc.getVolume()->getBYTESxCHAN());
+				cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN());
 		else if ( cli.outFmt == "Vaa3DRaw" )
 			vc.generateTilesVaa3DRaw(cli.dst_root_dir.c_str(),cli.resolutions,
 				cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,
-				true,"vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN());
+				cli.show_progress_bar,"vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN());
 		else if ( cli.outFmt == "Tiff3D" )
 			vc.generateTilesVaa3DRaw(cli.dst_root_dir.c_str(),cli.resolutions,
 				cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,
-				true,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN());
+				cli.show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN());
 		else if ( cli.outFmt == "Vaa3DRawMC" )
 			vc.generateTilesVaa3DRawMC(cli.dst_root_dir.c_str(),cli.resolutions,
 				cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,
-				true,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN());
+				cli.show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN());
 		else if ( cli.outFmt == "Tiff3DMC" )
 			vc.generateTilesVaa3DRawMC(cli.dst_root_dir.c_str(),cli.resolutions,
 				cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,
-				true,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN());
+				cli.show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN());
 	}
 	catch( iom::exception& exception){
 		cout<<"ERROR: "<<exception.what()<<endl<<endl;
