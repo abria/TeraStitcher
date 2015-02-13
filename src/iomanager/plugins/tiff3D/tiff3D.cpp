@@ -161,6 +161,8 @@ throw (iom::exception)
 		if ( (err_Tiff3Dfmt = loadTiff3D2Metadata((char *)img_path.c_str(),_width,_height,_depth,_chans,_bytes_x_chan,b_swap,fhandle,header_len)) != 0 ) {
 			throw iom::exception(iom::strprintf("(%s) unable to read meta data of tiff file %s",err_Tiff3Dfmt,img_path.c_str()), __iom__current__function__);
 		}
+		closeTiff3DFile(fhandle);
+
 		data = new unsigned char[_width * _height * _depth * _chans * _bytes_x_chan];
 		img_width        = _width;
 		img_height       = _height;
@@ -177,7 +179,7 @@ throw (iom::exception)
 		throw iom::exception(iom::strprintf("wrong slice indices (z0 = %d, z1 = %d)",z0, z1), __iom__current__function__);
 
 	// get the image
-	if ( (err_Tiff3Dfmt = readTiff3DFile2Buffer((char *)img_path.c_str(),data,img_width,img_height,z0,z1-1,b_swap)) != 0 ) {
+	if ( (err_Tiff3Dfmt = readTiff3DFile2Buffer((char *)img_path.c_str(),data,img_width,img_height,z0,z1-1)) != 0 ) {
 		throw iom::exception(iom::strprintf("(%s) unable to read tiff file %s in page range [%d,%d]",err_Tiff3Dfmt,img_path.c_str(),z0,z1-1), __iom__current__function__);
 	}
 

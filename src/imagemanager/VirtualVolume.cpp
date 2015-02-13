@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-02-13. Giulio.     @CHANGED method saveImage_from_UINT8_to_Tiff3D now call a 3D pluging to save a slice (only when do_open is true)
 * 2015-02-12. Giulio.     @FIXED bug concerning the number of channels in the saved image in method 'saveImage_from_UINT8_to_Tiff3D'
 * 2015-02-06. Giulio.     @ADDED added optimizations to reduce opend/close in append operations (only in saveImage_from_UINT8_to_Tiff3D)
 * 2015-02-06. Alessandro. @ADDED volume format metadata file for fast opening of a "directory format"
@@ -627,9 +628,16 @@ void VirtualVolume::saveImage_from_UINT8_to_Tiff3D (int slice, std::string img_p
     sprintf(buffer, "%s.%s", img_path.c_str(), TIFF3D_SUFFIX);
 
 	char *err_tiff_fmt;
-	if ( do_open ? 
-		((err_tiff_fmt = appendSlice2Tiff3DFile(buffer,slice,(unsigned char *)imageData,(int)img_height,(int)img_width)) != 0) : 
-		((err_tiff_fmt = appendSlice2Tiff3DFile(fhandle,slice,(unsigned char *)imageData,(int)img_height,(int)img_width,temp_n_chans,img_depth,n_pages)) != 0) ) {
+	//if ( do_open ? 
+	//	((err_tiff_fmt = appendSlice2Tiff3DFile(buffer,slice,(unsigned char *)imageData,(int)img_height,(int)img_width)) != 0) : 
+	//	((err_tiff_fmt = appendSlice2Tiff3DFile(fhandle,slice,(unsigned char *)imageData,(int)img_height,(int)img_width,temp_n_chans,img_depth,n_pages)) != 0) ) {
+	//	char err_msg[STATIC_STRINGS_SIZE];
+	//	sprintf(err_msg,"VirtualVolume::saveImage_from_UINT8_to_Tiff3D: error in saving slice %d (%lld x %lld) in file %s (appendSlice2Tiff3DFile: %s)", slice,img_height,img_width,buffer,err_tiff_fmt);
+	//		throw IOException(err_msg);
+	//};
+	if ( do_open )
+		iom::IOPluginFactory::getPlugin3D(iom::IMOUT_PLUGIN)->appendSlice(buffer,(unsigned char *)imageData,(int)img_height,(int)img_width,img_bytes_per_chan,temp_n_chans,-1,-1,-1,-1,slice);
+	else if ( ((err_tiff_fmt = appendSlice2Tiff3DFile(fhandle,slice,(unsigned char *)imageData,(int)img_height,(int)img_width,temp_n_chans,img_depth,n_pages)) != 0) ) {
 		char err_msg[STATIC_STRINGS_SIZE];
 		sprintf(err_msg,"VirtualVolume::saveImage_from_UINT8_to_Tiff3D: error in saving slice %d (%lld x %lld) in file %s (appendSlice2Tiff3DFile: %s)", slice,img_height,img_width,buffer,err_tiff_fmt);
         throw IOException(err_msg);

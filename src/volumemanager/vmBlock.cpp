@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-02-13. Giulio.     @CHANGED 3D ioplugin is called instead of Tiff3DMngr functions
 * 2015-01-17. Alessandro. @ADDED constructor for initialization from XML.
 * 2015-01-17. Alessandro. @ADDED support for all-in-one-folder data (import from xml only).
 * 2015-01-17. Alessandro. @FIXED missing throw(iom::exception) declaration in many methods.
@@ -455,7 +456,8 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 		sprintf(slice_fullpath, "%s/%s/%s", CONTAINER->getSTACKS_DIR(), DIR_NAME, FILENAMES[i]);
 
 		// 2014-09-05. Alessandro & Iannello. @MODIFIED to deal with IO plugins
-		iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->readData(slice_fullpath, WIDTH, HEIGHT, temp, first, last);
+		//iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->readData(slice_fullpath, WIDTH, HEIGHT, temp, first, last);
+		iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->readData(slice_fullpath,WIDTH,HEIGHT,BLOCK_SIZE[i],N_BYTESxCHAN,N_CHANS,temp,first,last+1);
 
 		temp +=  HEIGHT * WIDTH * (last-first+1) * N_BYTESxCHAN * N_CHANS;
 	}
