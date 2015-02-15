@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-02-14. Giulio.     @CHANGED saveImage is called again since it now calls the plugin
 * 2015-02-03. Alessandro. @ADDED check of invalid stitched image dimensions
 * 2014-11-25. Giluio.     @CHANGED in test mode the "tiff2D" plugin is explicitly used to write the test slice to avoid conflict with plugin used for saving the stitched volume
 * 2014-11-03. Giulio.     @FIXED stop and resume facility should be inactive when in test mode
@@ -1194,34 +1195,36 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 							{
 								img_path.str("");
 								img_path << volume->getSTACKS_DIR() << "/test_middle_slice";
-
-								// 2014-11-25. Giulio. @CHANGED the "tiff2D" plugin is explicitly used because in test mode the output plugin may not be a 2D plugin
-								iomanager::IOPluginFactory::getPlugin2D("tiff2D")->writeData(
-									img_path.str() + "." + saved_img_format, 
-									buffer + buffer_z*(height/POW_INT(2,i))*(width/POW_INT(2,i)),
-									(int)(height/(POW_INT(2,i))),
-									(int)(width/(POW_INT(2,i))),
-									1,
-									start_height,
-									end_height,
-									start_width,
-									end_width, 
-									saved_img_depth);
+							//	// 2014-11-25. Giulio. @CHANGED the "tiff2D" plugin is explicitly used because in test mode the output plugin may not be a 2D plugin
+							//	//iomanager::IOPluginFactory::getPlugin2D("tiff2D")->writeData(
+							//	iim::VirtualVolume::saveImage(
+							//		img_path.str(), 
+							//		buffer + buffer_z*(height/POW_INT(2,i))*(width/POW_INT(2,i)),
+							//		(int)(height/(POW_INT(2,i))),
+							//		(int)(width/(POW_INT(2,i))),
+							//		start_height,
+							//		end_height,
+							//		start_width,
+							//		end_width, 
+							//		saved_img_format,
+							//		saved_img_depth);
 							}
-							else {
+							//else {
+								// 2015-02-14. Giulio. restored call to saveImage which now calls the plugin
 								// 2014-09-10. Alessandro. @FIXED 'mergeTiles()' method to include plugin support.
-								iomanager::IOPluginFactory::getPlugin2D(iomanager::IMOUT_PLUGIN)->writeData(
-									img_path.str() + "." + saved_img_format, 
+								//iomanager::IOPluginFactory::getPlugin2D(iomanager::IMOUT_PLUGIN)->writeData(
+								iim::VirtualVolume::saveImage(
+									img_path.str(), 
 									buffer + buffer_z*(height/POW_INT(2,i))*(width/POW_INT(2,i)),
 									(int)(height/(POW_INT(2,i))),
 									(int)(width/(POW_INT(2,i))),
-									1,
 									start_height,
 									end_height,
 									start_width,
 									end_width, 
+									saved_img_format,
 									saved_img_depth);
-							}
+							//}
 						}
 						start_width  += stacks_width [i][stack_row][stack_column];
 					}

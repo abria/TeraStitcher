@@ -221,8 +221,8 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 		throw iom::exception(errMsg);
 	}
 
-	if((p_parallel.isSet() || p_stitch.isSet())&& !p_merge.isSet()) {
-		throw iom::exception("--parallel option is set, but neither --stitch not --merge have been launched");
+	if(p_parallel.isSet() && !(p_stitch.isSet() || p_merge.isSet())) {
+		throw iom::exception("--parallel option is set, but neither --stitch nor --merge have been launched");
 	}
 
 	//STEP 1

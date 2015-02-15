@@ -316,7 +316,7 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 	return (char *) 0;
 }
 
-char *appendSlice2Tiff3DFile ( char *filename, int slice, unsigned char *img, unsigned int img_height, unsigned int img_width ) {
+char *appendSlice2Tiff3DFile ( char *filename, int slice, unsigned char *img, unsigned int img_width, unsigned int img_height ) {
     // 2015-01-30. Alessandro. @ADDED performance (time) measurement in all most time-consuming methods.
     #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
     TERAFLY_TIME_START(TiffAppendData)

@@ -360,6 +360,8 @@ void
 	const std::string & params)		// (INPUT)	additional parameters <param1=val, param2=val, ...> 
 throw (iom::exception)
 {
+	throw iom::exception(iom::strprintf("no more available"), __iom__current__function__);
+
 	/**/iom::debug(iom::LEV3, iom::strprintf("finName = %s, XSIZE = %d, YSIZE = %d, first = %d, last = %d, params = \"%s\"",
 		finName, XSIZE, YSIZE, first, last, params.c_str()).c_str(), __iom__current__function__);
 

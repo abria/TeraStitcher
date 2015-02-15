@@ -171,7 +171,56 @@ void
 	const std::string & params)		// (INPUT) additional parameters <param1=val, param2=val, ...> 
 throw (iom::exception)
 {
-	throw iom::exception(iom::strprintf("not implemented yet"), __iom__current__function__);
+	//throw iom::exception(iom::strprintf("not implemented yet"), __iom__current__function__);
+
+	/**/iom::debug(iom::LEV3, iom::strprintf("img_path = %s, img_height = %d, img_width = %d, img_bytes_x_chan = %d, img_chans = %d, y0 = %d, y1 = %d, x0 = %d, x1 = %d, params = \"%s\"", 
+		img_path.c_str(), img_height, img_width, img_bytes_x_chan, img_chans, y0, y1, x0, x1, params.c_str()).c_str(), __iom__current__function__);
+
+	// correct default parameters
+	y1 = (y1 == -1 ? img_height - 1 : y1);
+	x1 = (x1 == -1 ? img_width  - 1 : x1 );
+
+	// compute ROI dimensions
+	int ROI_height = y1 - y0 + 1;
+	int ROI_width  = x1 - x0 + 1;
+
+	// precondition checks
+	if(! (y0>=0 && y1>y0 && y1<img_height && x0>=0 && x1>x0 && x1<img_width) )
+		throw iom::exception(iom::strprintf("invalid ROI [%d,%d](X) x [%d,%d](Y) on image %d(X) x %d(Y)", x0, x1, y0, y1, img_width, img_height), __iom__current__function__);
+	if(img_bytes_x_chan != 1 && img_bytes_x_chan != 2)
+		throw iom::exception(iom::strprintf("unsupported bitdepth %d\n", img_bytes_x_chan*8), __iom__current__function__);
+	if(img_chans != 1)
+		throw iom::exception(iom::strprintf("unsupported number of channels = %d\n. Only single-channel images are supported", img_chans), __iom__current__function__);
+
+	// convert raw data to image data
+	double proctime = -TIME(0);
+
+	char *err_Tiff3Dfmt;
+
+	// creates the file (2D image: depth is 1)
+	if ( (err_Tiff3Dfmt = initTiff3DFile((char *)img_path.c_str(),ROI_width,ROI_height,1,img_chans,img_bytes_x_chan)) != 0 ) {
+		throw iom::exception(iom::strprintf("unable to create tiff file (%s)",err_Tiff3Dfmt), __iom__current__function__);
+	}
+
+	// update conversion time
+	if(TIME_CALC)
+	{
+		proctime += TIME(0);
+		time_conversions+=proctime;
+		proctime = -TIME(0);
+	}
+
+	// save image
+	if ( (err_Tiff3Dfmt = appendSlice2Tiff3DFile((char *)img_path.c_str(),0,raw_img,ROI_width,ROI_height)) != 0 ) {
+		throw iom::exception(iom::strprintf("unable to save image at \"%s\". Unsupported format or wrong path.\n", img_path.c_str()), __iom__current__function__);
+	}
+
+	// update IO time
+	if(TIME_CALC)
+	{
+		proctime += TIME(0);
+		time_IO+=proctime;
+	}
 }
 
 
@@ -390,6 +439,8 @@ void
 	const std::string & params)	// (INPUT)	additional parameters <param1=val, param2=val, ...> 
 throw (iom::exception)
 {
+	throw iom::exception(iom::strprintf("no more available"), __iom__current__function__);
+
 	/**/iom::debug(iom::LEV3, iom::strprintf("img_path = %s, img_height = %d, img_width = %d, y0 = %d, y1 = %d, x0 = %d, x1 = %d, bpp = %d, params = \"%s\"", 
 		img_path.c_str(), img_height, img_width, y0, y1, x0, x1, bpp, params.c_str()).c_str(), __iom__current__function__);
 
@@ -450,7 +501,7 @@ throw (iom::exception)
 	}
 
 	// save image
-	if ( (err_Tiff3Dfmt = appendSlice2Tiff3DFile((char *)img_path.c_str(),0,buffer,ROI_height,ROI_width)) != 0 ) {
+	if ( (err_Tiff3Dfmt = appendSlice2Tiff3DFile((char *)img_path.c_str(),0,buffer,ROI_width,ROI_height)) != 0 ) {
 		throw iom::exception(iom::strprintf("unable to save image at \"%s\". Unsupported format or wrong path.\n", img_path.c_str()), __iom__current__function__);
 	}
 
