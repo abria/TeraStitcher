@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2015-02-15. Giulio. @CHANGED revised all interfaces passing always width and height in this order
 * 2015-02-06. Giulio. @ADDED append operation that assumes an already open and positioned file
 * 2015-02-06. Giulio. @ADDED open operation
 */

@@ -113,12 +113,7 @@ unsigned char *						// (OUTPUT) a buffer storing the 2D image
 	int & img_height,				// (INPUT/OUTPUT) image height (in pixels)
 	int & img_bytes_x_chan,			// (INPUT/OUTPUT) number of bytes per channel
 	int & img_chans,				// (INPUT/OUTPUT) number of channels to be read
-	int * chans,					// (INPUT)  list of the img_chans channels to be read 
 	unsigned char *data,			// (INPUT) image data
-	int y0,							// (INPUT)	region of interest [x0,x1)[y0,y1) to be set on the image
-	int y1,							// (INPUT)	region of interest [x0,x1)[y0,y1) to be set on the image
-	int x0,							// (INPUT)	region of interest [x0,x1)[y0,y1) to be set on the image
-	int x1,							// (INPUT)	region of interest [x0,x1)[y0,y1) to be set on the image
 	const std::string & params)		// (INPUT) additional parameters <param1=val, param2=val, ...> 
 throw (iom::exception) 
 {
@@ -161,11 +156,10 @@ iom::real_t*						// (OUTPUT) a [0.0,1.0]-valued array storing the 3D image in c
 	const std::string & params)		// (INPUT)	additional parameters <param1=val, param2=val, ...> 
 throw (iom::exception)
 {
+	throw iom::exception(iom::strprintf("not implemented yet (params = \"%s\")", params.c_str()), __iom__current__function__);
+
 	/**/iom::debug(iom::LEV3, iom::strprintf("files_size = %d, path = %s, first = %d, last = %d, is_sparse = %s, chan = %d, params = \"%s\"",
 		files_size, path ? path : "null", first, last, is_sparse ? "true" : "false", chan, params.c_str()).c_str(), __iom__current__function__);
-
-
-	throw iom::exception(iom::strprintf("not implemented yet (params = \"%s\")", params.c_str()), __iom__current__function__);
 }
 
 
@@ -185,9 +179,8 @@ void
 	const std::string & params)	// (INPUT)	additional parameters <param1=val, param2=val, ...> 
 	throw (iom::exception)
 {
+	throw iom::exception(iom::strprintf("not implemented yet (params = \"%s\")", params.c_str()), __iom__current__function__);
+
 	/**/iom::debug(iom::LEV3, iom::strprintf("img_path = %s, img_height = %d, img_width = %d, y0 = %d, y1 = %d, x0 = %d, x1 = %d, bpp = %d, params = \"%s\"", 
 		img_path.c_str(), img_height, img_width, y0, y1, x0, x1, bpp, params.c_str()).c_str(), __iom__current__function__);
-
-
-	throw iom::exception(iom::strprintf("not implemented yet (params = \"%s\")", params.c_str()), __iom__current__function__);
 }

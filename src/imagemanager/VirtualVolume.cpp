@@ -25,7 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2015-02-14. Giulio.     @CHANGED method saveImage converts from real to uint8 and calls the new interface of the plugin
+* 2015-02-15. Giulio.     @CHANGED revised all calls to Tiff3DMngr routines passing always width and height in this order
+* 2015-02-14. Giulio.     @CHANGED method saveImage now converts from real to uint8 and calls the new interface of the plugin
 * 2015-02-13. Giulio.     @CHANGED method saveImage_from_UINT8_to_Tiff3D now call a 3D pluging to save a slice (only when do_open is true)
 * 2015-02-12. Giulio.     @FIXED bug concerning the number of channels in the saved image in method 'saveImage_from_UINT8_to_Tiff3D'
 * 2015-02-06. Giulio.     @ADDED added optimizations to reduce opend/close in append operations (only in saveImage_from_UINT8_to_Tiff3D)
@@ -138,13 +139,13 @@ void VirtualVolume::saveImage(std::string img_path, real32* raw_img, int raw_img
 		//iomanager::IOPluginFactory::getPlugin2D(iomanager::IMOUT_PLUGIN)->writeData(
 		//	img_filepath, raw_img, img_height, img_width, 1, start_height, end_height, start_width, end_width, img_depth);
 		iomanager::IOPluginFactory::getPlugin2D(iomanager::IMOUT_PLUGIN)->writeData(
-			img_filepath, buffer, img_height, img_width, img_depth/8, 1, start_height, end_height, start_width, end_width);
+			img_filepath, buffer, img_height, img_width, img_depth/8, 1, start_height, end_height+1, start_width, end_width+1); // ROI limits specify right-open intervals  
 	}
 	catch (iom::exception & ex)
 	{
 		if ( strstr(ex.what(),"2D I/O plugin") ) // this method has be called to save the middle slice for test purposes, even though output plugin is not a 2D plugin
 			iomanager::IOPluginFactory::getPlugin2D("tiff2D")->writeData(
-				img_filepath, buffer, img_height, img_width, img_depth/8, 1, start_height, end_height, start_width, end_width);
+				img_filepath, buffer, img_height, img_width, img_depth/8, 1, start_height, end_height+1, start_width, end_width+1); // ROI limits specify right-open intervals
 		else
 			throw iom::exception(iom::strprintf(ex.what()), __iom__current__function__);
 	}
@@ -230,23 +231,26 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
         sprintf(buffer,"in saveImage_from_UINT8(..., img_depth=%d, ...): unsupported bit depth for multi-channels images\n",img_depth);
         throw IOException(buffer);
     }
+	if ( nchannels >1 && !(iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved()) ) {
+		throw iom::exception("the 3D plugin do not store channels in interleaved mode: more than one channel not supported yet.");
+	}
 
     //converting raw data into tif image data
     if(nchannels == 3)
     {
-        img = new uint8[img_width * img_height * nchannels]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 3);
-        int img_data_step = img_width * nchannels;
-        for(int i = 0; i <img_height; i++)
-        {
-            uint8* row_data_8bit = img + i*img_data_step;
-            for(int j1 = 0, j2 = start_width; j1 < img_width*3; j1+=3, j2++)
-            {
-                row_data_8bit[j1  ] = raw_ch1[(i+start_height)*raw_img_width + j2];
-                row_data_8bit[j1+1] = raw_ch2[(i+start_height)*raw_img_width + j2];
-                row_data_8bit[j1+2] = raw_ch3[(i+start_height)*raw_img_width + j2];
-            }
-        }
-    }
+		img = new uint8[img_width * img_height * nchannels]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 3);
+		int img_data_step = img_width * nchannels;
+		for(int i = 0; i <img_height; i++)
+		{
+			uint8* row_data_8bit = img + i*img_data_step;
+			for(int j1 = 0, j2 = start_width; j1 < img_width*3; j1+=3, j2++)
+			{
+				row_data_8bit[j1  ] = raw_ch1[(i+start_height)*raw_img_width + j2];
+				row_data_8bit[j1+1] = raw_ch2[(i+start_height)*raw_img_width + j2];
+				row_data_8bit[j1+2] = raw_ch3[(i+start_height)*raw_img_width + j2];
+			}
+		}
+   }
     if(nchannels == 2)
     {
 		// stores in any case as a 3 channels image (RGB)
@@ -573,6 +577,10 @@ void VirtualVolume::saveImage_from_UINT8_to_Tiff3D (int slice, std::string img_p
 	{
 		sprintf(buffer,"in saveImage_from_UINT8(..., img_depth=%d, ...): unsupported bit depth\n",img_depth);
         throw IOException(buffer);
+	}
+
+	if ( n_chans >1 && !(iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved()) ) {
+		throw iom::exception("the 3D plugin do not store channels in interleaved mode: more than one channel not supported yet.");
 	}
 
 	img_bytes_per_chan = (img_depth == 8) ? 1 : 2;

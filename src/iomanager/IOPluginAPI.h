@@ -96,19 +96,14 @@ class iomanager::IOPlugin2D : public iomanager::IOPlugin
 
 		/************************************************************************************************
 		* Read 2D image data
-		* If chans in not NULL, img_chans must be initialized and only the img_chans channels specified
-		* in chans are read, otherwise all channels are read and their number is returned in img_chans.
 		* If data in not NULL, parameters img_width, img_height, img_bytes_x_chan, img_chans
-		* must be passed by the caller and the data must point to a buffer of 
-		*     (img_width * img_height * img_bytes_x_chan * img_chans)
-		* bytes, otherwise a buffer is internally allocated and the above parameters are set with metadata
-		* recovered from the image (img_chans is not changed if chans is not NULL, see above). 
+		* must be passed by the caller otherwise a buffer is internally allocated and the above parameters 
+		* are set with metadata recovered from the image. 
+		* If data in not NULL data must point to a buffer of:
+		*                    img_height x img_width x img_bytes_x_chan x img_chans
+		* bytes.
 		* In all cases the buffer with read data is returned to the caller.
-		* The ROI specifies a subvolume into the image. This means that the buffer actually returned has 
-		* dimensions:
-		*     (y1-y0) x (x1-x0)
-		* Default values for ROI limits correspond to the whole image stored into the file.
-		* If a ROI is specified, parameters img_width, img_height are managed accordingly.
+		* Bytes swapping, if needed is performed before returning the buffer filled with the image data
 		*************************************************************************************************/
 		virtual unsigned char *						// (OUTPUT) a buffer storing the 2D image
 			readData(
@@ -117,12 +112,7 @@ class iomanager::IOPlugin2D : public iomanager::IOPlugin
 			int & img_height,				// (INPUT/OUTPUT) image height (in pixels)
 			int & img_bytes_x_chan,			// (INPUT/OUTPUT) number of bytes per channel
 			int & img_chans,				// (INPUT/OUTPUT) number of channels to be read
-			int * chans = 0,                // (INPUT)  list of the img_chans channels to be read 
 			unsigned char *data = 0,		// (INPUT) image data
-			int y0 = -1,						// (INPUT)	region of interest [x0,x1)[y0,y1) to be set on the image
-			int y1 = -1,						// (INPUT)	region of interest [x0,x1)[y0,y1) to be set on the image
-			int x0 = -1,						// (INPUT)	region of interest [x0,x1)[y0,y1) to be set on the image
-			int x1 = -1,						// (INPUT)	region of interest [x0,x1)[y0,y1) to be set on the image
 			const std::string & params = iom::IMIN_PLUGIN_PARAMS)	// (INPUT) additional parameters <param1=val, param2=val, ...> 
 		throw (iom::exception) = 0;
 		
@@ -487,12 +477,7 @@ namespace iomanager														\
 				int & img_height,                                       \
 				int & img_bytes_x_chan,                                 \
 				int & img_chans,                                        \
-				int * chans = 0,                                        \
 				unsigned char *data = 0,                                \
-				int y0 = -1,                                            \
-				int y1 = -1,                                            \
-				int x0 = -1,                                            \
-				int x1 = -1,                                            \
 				const std::string & params = iom::IMIN_PLUGIN_PARAMS)   \
 			throw (iom::exception);                                     \
 			                                                            \

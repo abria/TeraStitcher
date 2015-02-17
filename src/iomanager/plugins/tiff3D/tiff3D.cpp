@@ -84,9 +84,7 @@ throw (iom::exception)
 	/**/iom::debug(iom::LEV3, iom::strprintf("img_path = %s, img_width = %d, img_height = %d, img_depth = %d, img_bytes_x_chan = %d, img_chans = %d, params = \"%s\"",
 		img_path.c_str(), img_width, img_height, img_depth,	img_bytes_x_chan, img_chans, params.c_str()).c_str(), __iom__current__function__);
 
-	/**/iom::debug(iom::LEV3, iom::strprintf("img_path = %d, params = \"%s\"",img_path.c_str(), params.c_str()).c_str(), __iom__current__function__);
-
-	 // disable warning handler to avoid messages on unrecognized tags
+	// disable warning handler to avoid messages on unrecognized tags
 	TIFFSetWarningHandler(0);
 
 	TIFF* input=TIFFOpen(img_path.c_str(),"r");
