@@ -49,14 +49,10 @@ TiledMCVolume::TiledMCVolume(const char* _root_dir)  throw (IOException)
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir=%s", _root_dir).c_str(), __iim__current__function__);
 
-	// iannello this->root_dir = new char[strlen(_root_dir)+1];
-	// iannello strcpy(this->root_dir,_root_dir);
-
-	// iannello VXL_V = VXL_H = VXL_D = ORG_V = ORG_H = ORG_D = 0;
-	DIM_V = DIM_H = DIM_D = 0;
+	//DIM_V = DIM_H = DIM_D = 0;
+	VXL_1 = VXL_2 = VXL_3 = 0;
 	N_ROWS = N_COLS = 0;
 	reference_system.first = reference_system.second = reference_system.third = axis_invalid;
-	VXL_1 = VXL_2 = VXL_3 = 0;
 	vol_ch = (TiledVolume **)0;
 	active = (uint32 *)0;
 	n_active = 0;
@@ -84,14 +80,10 @@ TiledMCVolume::TiledMCVolume(const char* _root_dir, ref_sys _reference_system, f
     /**/iim::debug(iim::LEV3, strprintf("_root_dir=%s, ref_sys reference_system={%d,%d,%d}, VXL_1=%.4f, VXL_2=%.4f, VXL_3=%.4f",
                                         _root_dir, _reference_system.first, _reference_system.second, _reference_system.third, _VXL_1, _VXL_2, _VXL_3).c_str(), __iim__current__function__);
 
-	// iannello this->root_dir = new char[strlen(_root_dir)+1];
-	// iannello strcpy(this->root_dir,_root_dir);
-
-	// iannello VXL_V = VXL_H = VXL_D = ORG_V = ORG_H = ORG_D = 0;
-	DIM_V = DIM_H = DIM_D = 0;
+	//DIM_V = DIM_H = DIM_D = 0;
+	VXL_1 = VXL_2 = VXL_3 = 0;
 	N_ROWS = N_COLS = 0;
 	reference_system.first = reference_system.second = reference_system.third = axis_invalid;
-	VXL_1 = VXL_2 = VXL_3 = 0;
 	vol_ch = (TiledVolume **)0;
 	active = (uint32 *)0;
 	n_active = 0;

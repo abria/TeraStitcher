@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-02-26. Giulio.     @ADDED implementation of initChannels private method to initialize fields DIM_C and BYTESxCHAN
 * 2015-01-17. Alessandro. @FIXED missing throw(iom::exception) declaration in loadXML and initFromXML methods.
 * 2015-01-17. Alessandro. @ADDED support for all-in-one-folder data (import from xml only).
 * 2014-11-06. Giulio.     @ADDED saved reference system into XML file
@@ -82,6 +83,7 @@ BlockVolume::BlockVolume(const char* _stacks_dir, vm::ref_sys _reference_system,
 		applyReferenceSystem(reference_system, VXL_1, VXL_2, VXL_3);
 		saveBinaryMetadata(mdata_filepath);
 	}
+	initChannels();
 }
 
 BlockVolume::BlockVolume(const char *xml_filepath, bool overwrite_mdata) throw (iom::exception)
@@ -121,6 +123,7 @@ BlockVolume::BlockVolume(const char *xml_filepath, bool overwrite_mdata) throw (
 		initFromXML(xml_filepath);
 		saveBinaryMetadata(mdata_filepath);
 	}
+	initChannels();
 }
 
 BlockVolume::~BlockVolume()
@@ -242,6 +245,12 @@ void BlockVolume::init() throw (iom::exception)
 	// 2014-09-09. Alessandro. @FIXED both 'init()' and 'initFromXML()' methods to deal with empty stacks. Added call of 'normalize_stacks_attributes()' method.
 	// make stacks have the same attributes
 	normalize_stacks_attributes();
+}
+
+void BlockVolume::initChannels()  throw (iom::exception) 
+{
+	DIM_C = BLOCKS[0][0]->getN_CHANS();
+	BYTESxCHAN = BLOCKS[0][0]->getN_BYTESxCHAN();
 }
 
 void BlockVolume::applyReferenceSystem(vm::ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3) throw (iom::exception)

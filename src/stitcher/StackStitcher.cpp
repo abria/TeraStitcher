@@ -28,6 +28,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-02-26. Giulio.     @ADDED release of space allocated to stripesCoords and stripesCorners in mergeTiles
+* 2015-02-26. Giulio.     @ADDED an empty destructor to class StackStitcher
 * 2015-02-14. Giulio.     @CHANGED saveImage is called again since it now calls the plugin
 * 2015-02-03. Alessandro. @ADDED check of invalid stitched image dimensions
 * 2014-11-25. Giluio.     @CHANGED in test mode the "tiff2D" plugin is explicitly used to write the test slice to avoid conflict with plugin used for saving the stitched volume
@@ -92,6 +94,9 @@ StackStitcher::StackStitcher(volumemanager::VirtualVolume* _volume)
 	V0 = V1 = H0 = H1 = D0 = D1 = ROW_START = ROW_END = COL_START = COL_END = -1;
 }
 
+
+StackStitcher::~StackStitcher(void) {
+}
 
 // compute pairwise displacements
 // 2014-09-12. Alessandro. @ADDED [z0, z1] subdata selection along Z in the 'computeDisplacements()' method.
@@ -1286,6 +1291,12 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 	delete buffer;
 	if(stk_rst)
 		delete stk_rst;
+	delete []stripesCoords;
+	for ( int i=0; i<volume->getN_ROWS(); i++ ) {
+		stripesCorners[i].ups.clear();
+		stripesCorners[i].bottoms.clear();
+		stripesCorners[i].merged.clear();
+	}	delete []stripesCorners;
 }
 
 /*************************************************************************************************************

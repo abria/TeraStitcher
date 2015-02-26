@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-02-26. Giulio.     @ADDED initChannels private method to initialize fields DIM_C and BYTESxCHAN
 * 2014-09-20. Alessandro. @ADDED overwrite_mdata flag to the XML-based constructor.
 * 2014-09-10. Alessandro. @ADDED plugin creation/registration functions to make 'StackedVolume' a volume format plugin.
 * 2014-09-05. Alessandro. @ADDED 'normalize_stacks_attributes()' method to normalize stacks attributes (width, height, etc.)
@@ -69,6 +70,7 @@ class StackedVolume : public volumemanager::VirtualVolume
 
 		//initialization methods
 		void init() throw (iom::exception);
+        void initChannels() throw (iom::exception);
 		void applyReferenceSystem(vm::ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3) throw (iom::exception);
 
 		//binary metadata load/save methods

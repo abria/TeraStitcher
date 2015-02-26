@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-02-18. Giulio.     @CHANGED modified defalut values of parameters of loadSubvolume methods
 * 2015-01-06. Giulio.     @ADDED changed interface of saveImage_from_UINT8_to_Tiff3D to introduce optimizations to reduce opend/close in append operations 
 */
 
@@ -87,7 +88,7 @@ public:
     virtual void initChannels ( ) throw (iim::IOException) = 0;
 
     //loads given subvolume in a 1-D array of iim::real32 while releasing stacks slices memory when they are no longer needed
-    virtual iim::real32 *loadSubvolume_to_real32(int V0,int V1, int H0, int H1, int D0, int D1)  throw (iim::IOException) = 0;
+    virtual iim::real32 *loadSubvolume_to_real32(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1)  throw (iim::IOException) = 0;
 
     //loads given subvolume in a 1-D array of iim::uint8 while releasing stacks slices memory when they are no longer needed
     virtual iim::uint8 *loadSubvolume_to_UINT8(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1,

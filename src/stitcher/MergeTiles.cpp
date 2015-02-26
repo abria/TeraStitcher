@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-02-26. Giulio.     @ADDED release of space allocated to stripesCoords and stripesCorners in mergeTiles
 * 2015-02-13. Giulio.     @CHANGED 3D ioplugin is called instead of Tiff3DMngr functions
 * 2014-12-06. Giulio    . @ADDED par_mode parameter in method mergeTilesVaa3DRaw controlling the execution when multiple instances of the function are launched.
 * 2014-12-06. Giulio    . @ADDED createDirectoryHiererchy method.
@@ -397,9 +398,6 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 			{
 				//loading down stripe
 				if(row_index==ROW_START) stripe_up = NULL;
-				if ( z+k == 250 ) {
-					int a = 0;
-				}
 				stripe_down = this->getStripe(row_index,(int)(z+k), restore_direction, stk_rst, blending_algo);
 
 				#ifdef S_TIME_CALC
@@ -789,6 +787,13 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 	delete buffer;
 	if(stk_rst)
 		delete stk_rst;
+	delete []stripesCoords;
+	for ( int i=0; i<volume->getN_ROWS(); i++ ) {
+		stripesCorners[i].ups.clear();
+		stripesCorners[i].bottoms.clear();
+		stripesCorners[i].merged.clear();
+	}
+	delete []stripesCorners;
 
 	if ( n_err ) { // errors in mdat.bin creation
 		char err_msg[2000];

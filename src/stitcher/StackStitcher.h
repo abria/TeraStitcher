@@ -28,7 +28,9 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2014-12-06. Giulio    . @ADDED createDirectoryHiererchy method.
+* 2015-02-26. Giulio.     @ADDED a destructor to class StackStitcher
+* 2015-02-18. Giulio.     @ADDED declared class UnstitchedVolume as a friend of class StackStitcher
+* 2014-12-06. Giulio.     @ADDED createDirectoryHiererchy method.
 * 2014-09-12. Alessandro. @ADDED [z0, z1] subdata selection along Z in the 'computeDisplacements()' method.
 * 2014-09-09. Alessandro. @CHANGED. Black pixels (=0) are ignored in 'sinusoidal_blending()' function (especially useful in 'sparse data' mode).
 * 2014-09-02. Alessandro. @FIXED major bug in 'getStripe()' method. Argument 2 ('d_index') has 'short' type, but it should have at least 'int'.
@@ -60,6 +62,8 @@ class StackRestorer;
 
 class StackStitcher
 {
+	friend class UnstitchedVolume; // 2015-02-18. Giulio. added unstitched volume
+
 	private:
 
 		/******OBJECT MEMBERS******/
@@ -153,6 +157,9 @@ class StackStitcher
 	public:
 
         StackStitcher(volumemanager::VirtualVolume* _volume);
+
+		// WARNING: the distructor does not deallocate the 'volume' field
+		~StackStitcher(void);
 
 		// compute pairwise displacements
 		// 2014-09-12. Alessandro. @ADDED [z0, z1] subdata selection along Z in the 'computeDisplacements()' method.

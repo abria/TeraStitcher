@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-02-26. Giulio.     @ADDED implementation of initChannels private method to initialize fields DIM_C and BYTESxCHAN
 * 2015-01-17. Alessandro. @ADDED support for all-in-one-folder data (import from xml only).
 * 2014-11-06. Giulio.     @ADDED saved reference system into XML file
 * 2014-09-20. Alessandro. @ADDED overwrite_mdata flag to the XML-based constructor.
@@ -338,6 +339,12 @@ void StackedVolume::init() throw (iom::exception)
 
 	// check stacks have the same width and height
 	normalize_stacks_attributes();
+}
+
+void StackedVolume::initChannels()  throw (iom::exception) 
+{
+	DIM_C = STACKS[0][0]->getN_CHANS();
+	BYTESxCHAN = STACKS[0][0]->getN_BYTESxCHAN();
 }
 
 void StackedVolume::applyReferenceSystem(vm::ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3) throw (iom::exception)

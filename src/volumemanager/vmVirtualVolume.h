@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-02-26. Giulio.     @ADDED fields DIM_C and BYTESxCHAN
 * 2014-09-10. Alessandro. @ADDED 'getVolumeFormat' method to be applied on xml file.
 * 2014-09-02. Alessandro. @FIXED possible bottleneck: N_SLICES was of 'uint16' type, now changed to 'int'. 'int' has been chosen in place of 'uint64'
 *                         to avoid possible bugs as most of the code that uses 'N_SLICES' is 'int'-based. 
@@ -59,6 +60,8 @@ class volumemanager::VirtualVolume
 		iom::uint16 N_ROWS, N_COLS;			//dimensions (in stacks) of stacks matrix along VH axes
 		int N_SLICES;						//dimension along D(Z).
 		vm::ref_sys reference_system;
+		int    DIM_C;					// number of channels        (@ADDED by Iannello   on ..........)
+		int    BYTESxCHAN;              // number of bytes per channel
 
 		//initialization methods
 		virtual void init() throw (iom::exception);
@@ -120,6 +123,8 @@ class volumemanager::VirtualVolume
 		int		 getN_ROWS();
 		int		 getN_COLS();
 		int		 getN_SLICES();
+		int		 getDIM_C();
+		int		 getBYTESxCHAN();
 		virtual VirtualStack*** getSTACKS() = 0;
 		char*    getSTACKS_DIR(){return this->stacks_dir;}
 		int		 getOVERLAP_V();

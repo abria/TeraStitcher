@@ -61,15 +61,11 @@ StackedVolume::StackedVolume(const char* _root_dir)  throw (IOException)
 
 	//throw IOException("in StackedVolume::StackedVolume(...): disabled to remove dependence from openCV"); // Giulio_CV
 
-	// iannello this->root_dir = new char[strlen(_root_dir)+1];
-	// iannello strcpy(this->root_dir,_root_dir);
-
-	// iannello VXL_V = VXL_H = VXL_D = ORG_V = ORG_H = ORG_D = 0;
-	DIM_V = DIM_H = DIM_D = 0;
+	//DIM_V = DIM_H = DIM_D = 0;
+	VXL_1 = VXL_2 = VXL_3 = 0;
 	N_ROWS = N_COLS = 0;
 	STACKS = NULL;
 	reference_system.first = reference_system.second = reference_system.third = axis_invalid;
-	VXL_1 = VXL_2 = VXL_3 = 0;
 
 	//without any configuration parameter, volume import must be done from the metadata file stored in the root directory, if it exists
     char mdata_filepath[STATIC_STRINGS_SIZE];
@@ -95,15 +91,11 @@ StackedVolume::StackedVolume(const char* _root_dir, ref_sys _reference_system, f
 
 	//throw IOException("in StackedVolume::StackedVolume(...): disabled to remove dependence from openCV"); // Giulio_CV
 
-	// iannello this->root_dir = new char[strlen(_root_dir)+1];
-	// iannello strcpy(this->root_dir,_root_dir);
-
-	// iannello VXL_V = VXL_H = VXL_D = ORG_V = ORG_H = ORG_D = 0;
-	DIM_V = DIM_H = DIM_D = 0;
+	//DIM_V = DIM_H = DIM_D = 0;
+	VXL_1 = VXL_2 = VXL_3 = 0;
 	N_ROWS = N_COLS = 0;
 	STACKS = NULL;
 	reference_system.first = reference_system.second = reference_system.third = axis_invalid;
-	VXL_1 = VXL_2 = VXL_3 = 0;
 
 	//trying to unserialize an already existing metadata file, if it doesn't exist the full initialization procedure is performed and metadata is saved
     char mdata_filepath[STATIC_STRINGS_SIZE];

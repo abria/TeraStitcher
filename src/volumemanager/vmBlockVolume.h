@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-02-26. Giulio.     @ADDED initChannels private method to initialize fields DIM_C and BYTESxCHAN
 * 2015-01-17. Alessandro. @FIXED missing throw(iom::exception) declaration in loadXML and initFromXML methods.
 * 2014-09-20. Alessandro. @ADDED overwrite_mdata flag to the XML-based constructor.
 * 2014-09-10. Alessandro. @ADDED plugin creation/registration functions to make 'StackedVolume' a volume format plugin.
@@ -60,6 +61,7 @@ class BlockVolume : public volumemanager::VirtualVolume
 
 		//Given the reference system, initializes all object's members using stack's directories hierarchy
         void init() throw (iom::exception);
+        void initChannels() throw (iom::exception);
 
 		void applyReferenceSystem(vm::ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3) throw (iom::exception);
 
