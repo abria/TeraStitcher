@@ -48,25 +48,21 @@
 #include <limits>
 #include <cstring>
 
-//FORWARD-DECLARATIONS
-class VirtualStack;
-class Stack;
 
-
-class StackedVolume : public volumemanager::VirtualVolume
+class vm::StackedVolume : public vm::VirtualVolume
 {
 	private:
 
 		// 2014-09-10. Alessandro. @ADDED plugin creation/registration functions to make 'StackedVolume' a volume format plugin.
 		static const std::string creator_id1, creator_id2;							
-        static VirtualVolume* createFromXML(const char* xml_path, bool ow_mdata) { return new StackedVolume(xml_path, ow_mdata); }
-		static VirtualVolume* createFromData(const char* data_path, vm::ref_sys ref, float vxl1, float vxl2, float vxl3, bool ow_mdata) { 
+        static vm::VirtualVolume* createFromXML(const char* xml_path, bool ow_mdata) { return new StackedVolume(xml_path, ow_mdata); }
+		static vm::VirtualVolume* createFromData(const char* data_path, vm::ref_sys ref, float vxl1, float vxl2, float vxl3, bool ow_mdata) { 
 			return new StackedVolume(data_path, ref, vxl1, vxl2, vxl3, ow_mdata); 
 		}
 
 
 		//******OBJECT ATTRIBUTES******
-		Stack ***STACKS;					//2-D array of <Stack*>	
+		vm::Stack ***STACKS;					//2-D array of <Stack*>	
 
 		//initialization methods
 		void init() throw (iom::exception);
@@ -92,7 +88,7 @@ class StackedVolume : public volumemanager::VirtualVolume
 		static const std::string id;	
 
 		//CONSTRUCTORS-DECONSTRUCTOR
-		StackedVolume() : VirtualVolume(){}
+		StackedVolume() : vm::VirtualVolume(){}
         StackedVolume(const char* _stacks_dir, vm::ref_sys reference_system, float VXL_1=0, float VXL_2=0, float VXL_3=0, bool overwrite_mdata=false) throw (iom::exception);
         StackedVolume(const char *xml_filepath, bool overwrite_mdata=false) throw (iom::exception);
 		~StackedVolume();
@@ -100,7 +96,7 @@ class StackedVolume : public volumemanager::VirtualVolume
 		// ******GET METHODS******
 		int		 getStacksHeight();
 		int		 getStacksWidth();
-		VirtualStack*** getSTACKS();
+		vm::VirtualStack*** getSTACKS();
 
 		//loads/saves metadata from/in the given xml filename
 		void loadXML(const char *xml_filename) throw (iom::exception);
@@ -126,7 +122,7 @@ class StackedVolume : public volumemanager::VirtualVolume
 };
 
 namespace{																
-	const StackedVolume* objectStackedVolume = new StackedVolume();
+	const vm::StackedVolume* objectStackedVolume = new vm::StackedVolume();
 } 
 
 

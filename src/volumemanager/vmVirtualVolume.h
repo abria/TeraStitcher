@@ -45,7 +45,6 @@
 
 
 //FORWARD-DECLARATIONS
-class VirtualStack;
 class Displacement;
 
 class volumemanager::VirtualVolume

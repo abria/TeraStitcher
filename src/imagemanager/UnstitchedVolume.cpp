@@ -25,12 +25,15 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2014-09-29. Alessandro. @ADDED automated selection of IO plugin if not provided.
 * 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
 */
 
 #include <iostream>
 #include <string>
 #include "UnstitchedVolume.h"
+#include "vmBlockVolume.h"
+#include "vmStackedVolume.h"
 
 #ifdef _WIN32
 #include "dirent_win.h"
@@ -50,6 +53,17 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir)  throw (IOException)
 : VirtualVolume(_root_dir) 
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir=%s", _root_dir).c_str(), __iim__current__function__);
+
+	// 2014-09-29. Alessandro. @ADDED automated selection of IO plugin if not provided.
+	if(iom::IMIN_PLUGIN.compare("auto") == 0)
+	{
+		std::string volformat = vm::VirtualVolume::getVolumeFormat(_root_dir);
+
+		if(volformat.compare(vm::StackedVolume::id) == 0)
+			iom::IMIN_PLUGIN = "tiff2D";
+		else if(volformat.compare(vm::BlockVolume::id) == 0)
+			iom::IMIN_PLUGIN = "tiff3D";
+	}
 
 	volume = volumemanager::VirtualVolumeFactory::createFromXML(_root_dir,false);
 	stitcher = new StackStitcher(volume);
@@ -437,6 +451,8 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 //loads given subvolume in a 1-D array of float
 real32* UnstitchedVolume::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, int D0, int D1) throw (IOException)
 {
+	throw iim::IOException("Not yet implemented", __iom__current__function__);
+
 	int VV0, VV1, HH0, HH1, DD0, DD1;
 	
 	return internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1);
@@ -482,9 +498,9 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 					*ptr_d = uint8(*ptr_s * 255.0f);
 	}
 	else if ( BYTESxCHAN == 2 )
-  		throw iom::exception(iom::strprintf("16 bits depth not supported yet"), __iom__current__function__);
+  		throw iim::IOException(iom::strprintf("16 bits depth not supported yet"), __iim__current__function__);
 	else
-  		throw iom::exception(iom::strprintf("%d bits depth not supported yet", BYTESxCHAN*8), __iom__current__function__);
+  		throw iim::IOException(iom::strprintf("%d bits depth not supported yet", BYTESxCHAN*8), __iim__current__function__);
 
 	delete buf;
 

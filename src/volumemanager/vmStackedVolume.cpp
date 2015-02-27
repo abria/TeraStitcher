@@ -76,6 +76,7 @@
 
 using namespace std;
 using namespace iom;
+using namespace vm;
 
 // 2014-09-10. Alessandro. @ADDED plugin creation/registration functions to make 'StackedVolume' a volume format plugin.
 const std::string StackedVolume::id = "TiledXY|2Dseries";
@@ -217,7 +218,7 @@ int		StackedVolume::getStacksWidth()				{return STACKS[0][0]->getWIDTH();}
 //int		StackedVolume::getN_ROWS()					{return this->N_ROWS;}
 //int		StackedVolume::getN_COLS()					{return this->N_COLS;}
 //int		StackedVolume::getN_SLICES()				{return this->N_SLICES;}
-VirtualStack***StackedVolume::getSTACKS()					{return (VirtualStack***)this->STACKS;}
+VirtualStack*** StackedVolume::getSTACKS()					{return (VirtualStack***)this->STACKS;}
 //char*   StackedVolume::getSTACKS_DIR()				{return this->stacks_dir;}
 //int		StackedVolume::getOVERLAP_V()				{return (int)(getStacksHeight() - MEC_V/VXL_V);}
 //int		StackedVolume::getOVERLAP_H()				{return (int)(getStacksWidth() -  MEC_H/VXL_H);}

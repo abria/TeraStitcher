@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-02-27. Alessandro. @ADDED automated selection of IO plugin if not provided.
 * 2014-11-27 Giulio. @FIXED   eliminated part of the dipendences from OpenCV and restored the corresponding code
 * 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
 */
@@ -188,6 +189,12 @@ void StackedVolume::save(char* metadata_filepath) throw (IOException)
 void StackedVolume::load(char* metadata_filepath) throw (IOException)
 {
     /**/iim::debug(iim::LEV3, strprintf("metadata_filepath = \"%s\"", metadata_filepath).c_str(), __iim__current__function__);
+
+	// 2015-02-27. Alessandro. @ADDED automated selection of IO plugin if not provided.
+	// Currently, this class does not use the IO plugins, but directly calls functions in Tiff3DMngr.cpp.
+	// This should be changed if a different policy will be used in the future.
+	if(iom::IMIN_PLUGIN.compare("empty") == 0)
+		iom::IMIN_PLUGIN = "tiff2D";
 
 	//LOCAL VARIABLES
 	FILE *file;
@@ -386,6 +393,12 @@ void StackedVolume::load(char* metadata_filepath) throw (IOException)
 void StackedVolume::init()
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
+
+	// 2015-02-27. Alessandro. @ADDED automated selection of IO plugin if not provided.
+	// Currently, this class does not use the IO plugins, but directly calls functions in Tiff3DMngr.cpp.
+	// This should be changed if a different policy will be used in the future.
+	if(iom::IMIN_PLUGIN.compare("empty") == 0)
+		iom::IMIN_PLUGIN = "tiff2D";
 
 	/************************* 1) LOADING STRUCTURE *************************    
 	*************************************************************************/

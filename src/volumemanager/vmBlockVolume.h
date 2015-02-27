@@ -42,22 +42,19 @@
 #include "vmVirtualVolume.h" 
 #include "vmBlock.h"
 
-//FORWARD-DECLARATIONS
-class VirtualStack;
-class Block;
 
-class BlockVolume : public volumemanager::VirtualVolume
+class vm::BlockVolume : public vm::VirtualVolume
 {
 	private:
 
 		// 2014-09-10. Alessandro. @ADDED plugin creation/registration functions to make 'StackedVolume' a volume format plugin.
 		static const std::string creator_id1, creator_id2;							
-        static VirtualVolume* createFromXML(const char* xml_path, bool ow_mdata) { return new BlockVolume(xml_path, ow_mdata); }
-		static VirtualVolume* createFromData(const char* data_path, vm::ref_sys ref, float vxl1, float vxl2, float vxl3, bool ow_mdata) { 
+        static vm::VirtualVolume* createFromXML(const char* xml_path, bool ow_mdata) { return new BlockVolume(xml_path, ow_mdata); }
+		static vm::VirtualVolume* createFromData(const char* data_path, vm::ref_sys ref, float vxl1, float vxl2, float vxl3, bool ow_mdata) { 
 			return new BlockVolume(data_path, ref, vxl1, vxl2, vxl3, ow_mdata); 
 		}
 
-		Block ***BLOCKS;			    //2-D array of <Block*>
+		vm::Block ***BLOCKS;			    //2-D array of <Block*>
 
 		//Given the reference system, initializes all object's members using stack's directories hierarchy
         void init() throw (iom::exception);
@@ -87,7 +84,7 @@ class BlockVolume : public volumemanager::VirtualVolume
 		static const std::string id;		
 
 		//CONSTRUCTORS-DECONSTRUCTOR
-		BlockVolume() : VirtualVolume(){}
+		BlockVolume() : vm::VirtualVolume(){}
         BlockVolume(const char* _stacks_dir, vm::ref_sys reference_system, float VXL_1=0, float VXL_2=0, float VXL_3=0, bool overwrite_mdata=false) throw (iom::exception);
         BlockVolume(const char *xml_filepath, bool overwrite_mdata=false) throw (iom::exception);
 		~BlockVolume();
@@ -95,7 +92,7 @@ class BlockVolume : public volumemanager::VirtualVolume
 		// ******GET METHODS******
 		int		 getStacksHeight()   {return BLOCKS[0][0]->getHEIGHT();}
 		int		 getStacksWidth()    {return BLOCKS[0][0]->getWIDTH();}
-		VirtualStack*** getSTACKS()  {return (VirtualStack***)this->BLOCKS;}
+		vm::VirtualStack*** getSTACKS()  {return (vm::VirtualStack***)this->BLOCKS;}
 
 		//loads/saves metadata from/in the given xml filename
 		void loadXML(const char *xml_filename) throw (iom::exception);
@@ -118,7 +115,7 @@ class BlockVolume : public volumemanager::VirtualVolume
 };
 
 namespace{																
-	const BlockVolume* objectBlockVolume = new BlockVolume();
+	const vm::BlockVolume* objectBlockVolume = new vm::BlockVolume();
 } 
 
 

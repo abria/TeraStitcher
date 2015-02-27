@@ -38,7 +38,6 @@
 #include "tinyxml.h"
 #include "vmVirtualStack.h" 
 
-class BlockVolume;
 class Displacement;
 
 //TYPE DEFINITIONS
@@ -46,11 +45,11 @@ class Displacement;
 //D0: first slice, D1: last slice, ind0: index of 1st block (containing D0), ind1: index of last block (containing D1) 
 typedef struct {int D0, D1, ind0, ind1;} Segm_t;
 
-class Block : public VirtualStack
+class vm::Block : public vm::VirtualStack
 {
 	private:
 
-		BlockVolume* CONTAINER;					//pointer to <VirtualVolume> object that contains the current object
+		vm::BlockVolume* CONTAINER;					//pointer to <VirtualVolume> object that contains the current object
 		int          N_BLOCKS;                   //number of blocks along z
 		int         *BLOCK_SIZE;                 //dimensions of blocks along z
 		int         *BLOCK_ABS_D;                //absolute D voxel coordinates of blocks
@@ -74,13 +73,13 @@ class Block : public VirtualStack
 
 		//******** FRIEND CLASS DECLARATION *********
 		//BlockVolume can access Block private members and methods
-		friend class BlockVolume;
+		friend class vm::BlockVolume;
 	
 	public:
 		//CONSTRUCTORS
-		Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char* _DIR_NAME) throw (iom::exception);				// build from scratch
-		Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) throw (iom::exception);						// build from mdata.bin
-		Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlElement* stack_node, int z_end) throw (iom::exception);	// build from XML
+		Block(vm::BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char* _DIR_NAME) throw (iom::exception);				// build from scratch
+		Block(vm::BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) throw (iom::exception);						// build from mdata.bin
+		Block(vm::BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlElement* stack_node, int z_end) throw (iom::exception);	// build from XML
 		~Block(void);
 
 		//GET methods

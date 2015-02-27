@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-02-27. Alessandro. @ADDED automated selection of IO plugin if not provided.
 * 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
 */
 
@@ -35,6 +36,7 @@
 #include "VirtualFmtMngr.h"
 #include "Tiff3DMngr.h"
 #include "RawFmtMngr.h"
+#include "iomanager.config.h"
 
 #ifdef _WIN32
 #include "dirent_win.h"
@@ -374,9 +376,16 @@ void TiledVolume::load(char* metadata_filepath) throw (IOException)
 	// get the file format of the blocks
 	ffmt = BLOCKS[0][0]->getFMT();
 	if ( ffmt == "Tiff3D" )
+	{
+		// 2015-02-27. Alessandro. @ADDED automated selection of IO plugin if not provided.
+		if(iom::IMIN_PLUGIN.compare("empty") == 0)
+			iom::IMIN_PLUGIN = "tiff3D";
 		fmtMngr = new Tiff3DFmtMngr();
+	}
 	else if ( ffmt == "Vaa3DRaw" )
+	{
 		fmtMngr = new Vaa3DRawFmtMngr();
+	}
 	else {
         char msg[STATIC_STRINGS_SIZE];
         sprintf(msg,"in TiledVolume::unBinarizeFrom(...): Unknown file format \"%s\"", ffmt.c_str());
@@ -479,7 +488,12 @@ void TiledVolume::init()
 	// get the file format of the blocks
 	ffmt = BLOCKS[0][0]->getFMT();
 	if ( ffmt == "Tiff3D" )
+	{
+		// 2015-02-27. Alessandro. @ADDED automated selection of IO plugin if not provided.
+		if(iom::IMIN_PLUGIN.compare("empty") == 0)
+			iom::IMIN_PLUGIN = "tiff3D";
 		fmtMngr = new Tiff3DFmtMngr();
+	}
 	else if ( ffmt == "Vaa3DRaw" )
 		fmtMngr = new Vaa3DRawFmtMngr();
 	else {

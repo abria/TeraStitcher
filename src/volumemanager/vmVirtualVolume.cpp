@@ -47,8 +47,6 @@
 using namespace std;
 using namespace vm;
 
-class VirtualStack;
-
 float	VirtualVolume::getORG_V()					{return ORG_V;}
 float	VirtualVolume::getORG_H()					{return ORG_H;}
 float	VirtualVolume::getORG_D()					{return ORG_D;}

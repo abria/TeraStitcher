@@ -38,6 +38,8 @@
 
 #include "vmVirtualStack.h"
 
+using namespace vm;
+
 VirtualStack::VirtualStack()
 {
     FILENAMES = 0;

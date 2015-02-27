@@ -66,6 +66,7 @@
 
 using namespace std;
 using namespace iom;
+using namespace vm;
 
 //CONSTRUCTOR WITH ARGUMENTS
 Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char* _DIR_NAME) throw (iom::exception)

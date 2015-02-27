@@ -52,13 +52,15 @@
 #include <sstream>
 #include <set>
 
+using namespace std;
+using namespace iom;
+using namespace vm;
+
 // 2014-09-10. Alessandro. @ADDED plugin creation/registration functions to make 'StackedVolume' a volume format plugin.
 const std::string BlockVolume::id = "TiledXY|3Dseries";
 const std::string BlockVolume::creator_id1 = volumemanager::VirtualVolumeFactory::registerPluginCreatorXML(&createFromXML, BlockVolume::id);
 const std::string BlockVolume::creator_id2 = volumemanager::VirtualVolumeFactory::registerPluginCreatorData(&createFromData, BlockVolume::id);
 
-using namespace std;
-using namespace iom;
 
 BlockVolume::BlockVolume(const char* _stacks_dir, vm::ref_sys _reference_system, float VXL_1, float VXL_2, float VXL_3, bool overwrite_mdata) throw (iom::exception)
 	: VirtualVolume(_stacks_dir, _reference_system, VXL_1, VXL_2, VXL_3)

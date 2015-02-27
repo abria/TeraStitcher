@@ -56,7 +56,7 @@
 #include "IOPluginAPI.h"
 
 using namespace std;
-using namespace volumemanager;
+using namespace vm;
 using namespace iom;
 
 //CONSTRUCTOR WITH ARGUMENTS

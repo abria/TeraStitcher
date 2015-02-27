@@ -42,16 +42,14 @@
 #include "tinyxml.h"
 #include "vmVirtualStack.h" 
 
-using namespace volumemanager;
 
-class StackedVolume;
 class Displacement;
-class Stack : public VirtualStack
+class vm::Stack : public vm::VirtualStack
 {
 	private:
 
 		//*********** OBJECT ATTRIBUTES ***********
-		StackedVolume*	CONTAINER;				//pointer to <StackedVolume> object that contains the current object
+		vm::StackedVolume*	CONTAINER;				//pointer to <StackedVolume> object that contains the current object
 		int          N_CHANS;                    //number of channels
 		int          N_BYTESxCHAN;               //number of bytes per channel
 		
@@ -73,14 +71,14 @@ class Stack : public VirtualStack
 
 		//******** FRIEND CLASS DECLARATION *********
 		//StackedVolume can access Stack private members and methods
-		friend class StackedVolume;
+		friend class vm::StackedVolume;
 
 	public:
 
 		//CONSTRUCTORS
-		Stack(StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char* _DIR_NAME) throw (iom::exception);					// build from scratch
-        Stack(StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) throw (iom::exception);						// build from mdata.bin
-		Stack(StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlElement* stack_node, int z_end) throw (iom::exception);	// build from XML
+		Stack(vm::StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char* _DIR_NAME) throw (iom::exception);					// build from scratch
+        Stack(vm::StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) throw (iom::exception);						// build from mdata.bin
+		Stack(vm::StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlElement* stack_node, int z_end) throw (iom::exception);	// build from XML
 		~Stack(void);
 
 		//GET methods

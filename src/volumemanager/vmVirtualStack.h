@@ -50,7 +50,7 @@
 
 //class Displacement;
 
-class VirtualStack
+class vm::VirtualStack
 {
     protected:
 

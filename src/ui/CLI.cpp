@@ -440,9 +440,9 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 			catch(...){}
 		}
 
-		if(vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(StackedVolume::id) == 0)
+		if(vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(vm::StackedVolume::id) == 0)
 			iom::IMIN_PLUGIN = "tiff2D";
-		else if(vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(BlockVolume::id) == 0)
+		else if(vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(vm::BlockVolume::id) == 0)
 			iom::IMIN_PLUGIN = "tiff3D";
 	}
 	else
@@ -452,9 +452,9 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	// 2014-09-29. Alessandro. @ADDED automated selection of IO plugin if not provided.
 	if(p_im_out_plugin.getValue().compare("auto") == 0)
 	{
-		if(p_vol_out_plugin.getValue().compare(StackedVolume::id) == 0)
+		if(p_vol_out_plugin.getValue().compare(vm::StackedVolume::id) == 0)
 			iom::IMOUT_PLUGIN = "tiff2D";
-		else if(p_vol_out_plugin.getValue().compare(BlockVolume::id) == 0)
+		else if(p_vol_out_plugin.getValue().compare(vm::BlockVolume::id) == 0)
 			iom::IMOUT_PLUGIN = "tiff3D";
 	}
 	else
