@@ -55,7 +55,7 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir)  throw (IOException)
     /**/iim::debug(iim::LEV3, strprintf("_root_dir=%s", _root_dir).c_str(), __iim__current__function__);
 
 	// 2014-09-29. Alessandro. @ADDED automated selection of IO plugin if not provided.
-	if(iom::IMIN_PLUGIN.compare("auto") == 0)
+	if(iom::IMIN_PLUGIN.compare("empty") == 0)
 	{
 		std::string volformat = vm::VirtualVolume::getVolumeFormat(_root_dir);
 
