@@ -347,7 +347,7 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
                         first_time = false;
                         sbv_channels = sz[3];
                         //if(sbv_channels != 1 && sbv_channels != 3)
-                        //	throw MyException(std::string("Unsupported number of channels at \"").append(slice_fullpath).append("\". Only 1 and 3-channels images are supported").c_str());
+                        //	throw iim::IOException(std::string("Unsupported number of channels at \"").append(slice_fullpath).append("\". Only 1 and 3-channels images are supported").c_str());
 
                         try
                         {

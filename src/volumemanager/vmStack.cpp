@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-02-28. Giulio.     @ADDED saving of fields N_CHANS and N_BYTESxCHAN in the xml files
 * 2015-02-26. Giulio.     @ADDED initialization of fields N_CHANS and N_BYTESxCHAN in constructor; this information is NOT saved in mdata.bin and xml files
 * 2015-01-17. Alessandro. @ADDED constructor for initialization from XML.
 * 2015-01-17. Alessandro. @ADDED support for all-in-one-folder data (import from xml only).
@@ -73,8 +74,6 @@ Stack::Stack(StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const ch
     strcpy(DIR_NAME, _DIR_NAME);
     ROW_INDEX = _ROW_INDEX;
     COL_INDEX = _COL_INDEX;
-	N_CHANS = -1;                 
-	N_BYTESxCHAN = -1;      
 
 	init();
 }
@@ -346,6 +345,8 @@ TiXmlElement* Stack::getXML()
 	#endif
 
 	TiXmlElement *xml_representation = new TiXmlElement("Stack");
+	xml_representation->SetAttribute("N_CHANS",N_CHANS);
+	xml_representation->SetAttribute("N_BYTESxCHAN",N_BYTESxCHAN);
 	xml_representation->SetAttribute("ROW",ROW_INDEX);
 	xml_representation->SetAttribute("COL",COL_INDEX);
 	xml_representation->SetAttribute("ABS_V",ABS_V);
@@ -391,6 +392,15 @@ throw (iom::exception)
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin Stack[%d,%d]::loadXML(TiXmlElement *stack_node)\n",ROW_INDEX, COL_INDEX);
 	#endif
+
+	stack_node->QueryIntAttribute("N_CHANS",&N_CHANS);
+	stack_node->QueryIntAttribute("N_BYTESxCHAN",&N_BYTESxCHAN);
+	if ( N_CHANS == -1 ||N_BYTESxCHAN == -1 ) {
+		iom::warning(iom::strprintf("old xml file: missing N_CHANS and N_BYTESxCHAN tags; class data members set to 1.").c_str(), __iom__current__function__);
+		// data members set to 1 assuming that there is only one 8bits channel
+		N_CHANS = 1;
+		N_BYTESxCHAN = 1;
+	}
 
 	stack_node->QueryIntAttribute("ABS_V", &ABS_V);
 	stack_node->QueryIntAttribute("ABS_H", &ABS_H);

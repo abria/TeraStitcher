@@ -53,8 +53,6 @@ class vm::Block : public vm::VirtualStack
 		int          N_BLOCKS;                   //number of blocks along z
 		int         *BLOCK_SIZE;                 //dimensions of blocks along z
 		int         *BLOCK_ABS_D;                //absolute D voxel coordinates of blocks
-		int          N_CHANS;                    //number of channels
-		int          N_BYTESxCHAN;               //number of bytes per channel
 
 		//******** OBJECT PRIVATE METHODS *********
         Block(void){}
@@ -84,8 +82,6 @@ class vm::Block : public vm::VirtualStack
 
 		//GET methods
 		int  getN_BLOCKS()		{return N_BLOCKS;}
-		int  getN_CHANS()		{return N_CHANS;}
-		int  getN_BYTESxCHAN()	{return N_BYTESxCHAN;}
 
 		int  *getBLOCK_SIZE()   {return BLOCK_SIZE;}
 		int  *getBLOCK_ABS_D()  {return BLOCK_ABS_D;}

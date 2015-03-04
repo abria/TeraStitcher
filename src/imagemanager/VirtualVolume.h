@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-02-28. Giulio.     @FIXED added deallocation of data member 'active' in the destructor
 * 2015-02-18. Giulio.     @CHANGED modified defalut values of parameters of loadSubvolume methods
 * 2015-01-06. Giulio.     @ADDED changed interface of saveImage_from_UINT8_to_Tiff3D to introduce optimizations to reduce opend/close in append operations 
 */
@@ -83,6 +84,8 @@ public:
 	virtual ~VirtualVolume() { 
 		if(root_dir)
 			delete[] root_dir;
+		if(active)
+			delete []active;
 	}    
 
     virtual void initChannels ( ) throw (iim::IOException) = 0;
@@ -170,6 +173,9 @@ public:
     * [start/end_height/width]  : optional ROI (region of interest) to be set on the given image.
     * [img_format]              : image format extension to be used (e.g. "tif", "png", etc.)
     * [img_depth]               : image bitdepth to be used (8 or 16)
+	*
+	* WARNING: this method is intended to be used to save one slice into a file using a 2D format (i.e. a 2D plugin)
+	* use saveImage_from_UINT8_to_Tiff3D to append one slice to a file storing images in 3D format
     **************************************************************************************************************/
     static void saveImage_from_UINT8 (std::string img_path, 
                                       iim::uint8* raw_ch1, iim::uint8* raw_ch2, iim::uint8* raw_ch3,

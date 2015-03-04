@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-03-03. Giulio.     @FIXED a 2D plugin has to be used in saveImage_from_UINT8 
 * 2015-02-15. Giulio.     @CHANGED revised all calls to Tiff3DMngr routines passing always width and height in this order
 * 2015-02-14. Giulio.     @CHANGED method saveImage now converts from real to uint8 and calls the new interface of the plugin
 * 2015-02-13. Giulio.     @CHANGED method saveImage_from_UINT8_to_Tiff3D now call a 3D pluging to save a slice (only when do_open is true)
@@ -231,8 +232,8 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
         sprintf(buffer,"in saveImage_from_UINT8(..., img_depth=%d, ...): unsupported bit depth for multi-channels images\n",img_depth);
         throw IOException(buffer);
     }
-	if ( nchannels >1 && !(iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved()) ) {
-		throw iom::exception("the 3D plugin do not store channels in interleaved mode: more than one channel not supported yet.");
+	if ( nchannels >1 && !(iom::IOPluginFactory::getPlugin2D(iom::IMOUT_PLUGIN)->isChansInterleaved()) ) {
+		throw iom::exception("the plugin do not store channels in interleaved mode: more than one channel not supported yet.");
 	}
 
     //converting raw data into tif image data
@@ -483,12 +484,12 @@ void VirtualVolume::saveImage_from_UINT8_to_Vaa3DRaw (int slice, std::string img
  //if(img_depth != 8 && img_depth != 16 && n_chans == 1)
  //   {
  //       sprintf(buffer,"in saveImage_from_UINT8(..., img_depth=%d, ...): unsupported bit depth for greyscale images\n",img_depth);
- //       throw MyException(buffer);
+ //       throw iim::IOException(buffer);
  //   }
  //   if(img_depth != 8 && n_chans > 1)
  //   {
  //       sprintf(buffer,"in saveImage_from_UINT8(..., img_depth=%d, ...): unsupported bit depth for multi-channel images\n",img_depth);
- //       throw MyException(buffer);
+ //       throw iim::IOException(buffer);
  //   }
 
 	if(img_depth != 8 && img_depth != 16 && n_chans == 1)
@@ -579,7 +580,7 @@ void VirtualVolume::saveImage_from_UINT8_to_Tiff3D (int slice, std::string img_p
         throw IOException(buffer);
 	}
 
-	if ( n_chans >1 && !(iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved()) ) {
+	if ( n_chans >1 && !(iom::IOPluginFactory::getPlugin3D(iom::IMOUT_PLUGIN)->isChansInterleaved()) ) {
 		throw iom::exception("the 3D plugin do not store channels in interleaved mode: more than one channel not supported yet.");
 	}
 

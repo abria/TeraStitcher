@@ -190,7 +190,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_test);
 	cmd.add(p_parallel);
 
-	// Parse the argv array and catch <TCLAP> exceptions, which are translated into <iom::MyException> exceptions
+	// Parse the argv array and catch <TCLAP> exceptions, which are translated into <iom::iim::IOException> exceptions
 	char errMsg[S_STATIC_STRINGS_SIZE];
 	try{ cmd.parse( argc, argv ); } 
 	catch (TCLAP::ArgException &e)

@@ -106,6 +106,8 @@ StackedVolume::StackedVolume(const char* _stacks_dir, vm::ref_sys _reference_sys
 		applyReferenceSystem(reference_system, VXL_1, VXL_2, VXL_3);
 		saveBinaryMetadata(mdata_filepath);
 	}
+
+	initChannels();
 	
 	// check all stacks have the same number of slices (@ADDED by Alessandro on 2014-03-06)
 	// 2014-09-05. Alessandro. @FIXED to support sparse data.
@@ -163,6 +165,8 @@ StackedVolume::StackedVolume(const char *xml_filepath, bool overwrite_mdata) thr
 		saveBinaryMetadata(mdata_filepath);
 	}
 
+	initChannels();
+	
 	// check all stacks have the same number of slices (@ADDED by Alessandro on 2014-03-06)
 	// 2014-09-05. Alessandro. @FIXED to support sparse data.
 	if(!vm::SPARSE_DATA)

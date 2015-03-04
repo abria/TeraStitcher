@@ -157,7 +157,7 @@ uint8 *RawVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, 
 	//else {
 	//	char err_msg[STATIC_STRINGS_SIZE];
 	//	sprintf(err_msg,"RawVolume::loadSubvolume_to_UINT8: too many channels [%d]",CHANS);
-	//	throw MyException(err_msg);
+	//	throw iim::IOException(err_msg);
 	//}
     if(channels)
         *channels = DIM_C; 	// returns the exact number of channels;

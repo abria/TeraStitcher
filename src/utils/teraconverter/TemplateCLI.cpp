@@ -139,7 +139,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_dst_root_dir);
 	cmd.add(p_src_root_dir);
 
-	// Parse the argv array and catch <TCLAP> exceptions, which are translated into <MyException> exceptions
+	// Parse the argv array and catch <TCLAP> exceptions, which are translated into <iim::IOException> exceptions
 	char errMsg[S_STATIC_STRINGS_SIZE];
 	try{ cmd.parse( argc, argv ); } 
 	catch (TCLAP::ArgException &e)

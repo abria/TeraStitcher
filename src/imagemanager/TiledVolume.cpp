@@ -25,8 +25,10 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-03-03. Giulio.     @ADDED check that ioplugin interleaves channels in loadSubvolume_to_UINT8.
+* 2015-03-03. Giulio.     @ADDED selection of IO plugin in the constructors if not provided.
 * 2015-02-27. Alessandro. @ADDED automated selection of IO plugin if not provided.
-* 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
+* 2014-11-22 Giulio.      @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
 */
 
 #include <iostream>
@@ -52,6 +54,8 @@
 #include <fstream>
 #include "ProgressBar.h"
 
+#include "IOPluginAPI.h" // 2015-03-03. Giulio.
+
 using namespace std;
 using namespace iim;
 
@@ -60,6 +64,12 @@ TiledVolume::TiledVolume(const char* _root_dir)  throw (IOException)
 : VirtualVolume(_root_dir) // iannello ADDED
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir=%s", _root_dir).c_str(), __iim__current__function__);
+
+	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
+	if(iom::IMIN_PLUGIN.compare("empty") == 0)
+	{
+		iom::IMIN_PLUGIN = "tiff3D";
+	}
 
 	//DIM_V = DIM_H = DIM_D = 0;
 	VXL_1 = VXL_2 = VXL_3 = 0;
@@ -91,6 +101,12 @@ TiledVolume::TiledVolume(const char* _root_dir, ref_sys _reference_system, float
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir=%s, ref_sys reference_system={%d,%d,%d}, VXL_1=%.4f, VXL_2=%.4f, VXL_3=%.4f",
                                         _root_dir, _reference_system.first, _reference_system.second, _reference_system.third, _VXL_1, _VXL_2, _VXL_3).c_str(), __iim__current__function__);
+
+	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
+	if(iom::IMIN_PLUGIN.compare("empty") == 0)
+	{
+		iom::IMIN_PLUGIN = "tiff3D";
+	}
 
 	//DIM_V = DIM_H = DIM_D = 0;
 	VXL_1 = VXL_2 = VXL_3 = 0;
@@ -225,7 +241,7 @@ void TiledVolume::load(char* metadata_filepath) throw (IOException)
 //            char errMsg[STATIC_STRINGS_SIZE];
 //            sprintf(errMsg, "in Block::unBinarizeFrom(...): metadata file version (%.2f) is different from the supported one (%.2f). "
 //                    "Please re-import the current volume.", mdata_version_read, mdata_version);
-//            throw MyException(errMsg);
+//            throw iim::IOException(errMsg);
 
         fclose(file);
         file = fopen(metadata_filepath, "rb");
@@ -943,7 +959,7 @@ iim::uint8* TiledVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, i
 	//if( this->BYTESxCHAN != 1 ) {
     //	char err_msg[STATIC_STRINGS_SIZE];
 	//	sprintf(err_msg,"TiledVolume::loadSubvolume_to_UINT8: invalid number of bytes per channel (%d)",this->BYTESxCHAN); 
-	//	throw MyException(err_msg);
+	//	throw iim::IOException(err_msg);
 	//}
 
     //if ( (ret_type == iim::DEF_IMG_DEPTH) && ((8 * this->BYTESxCHAN) != iim::DEF_IMG_DEPTH) ) {
@@ -1015,11 +1031,15 @@ iim::uint8* TiledVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, i
 							sbv_channels = this->DIM_C;
 							sbv_bytes_chan = this->BYTESxCHAN;
 
+							if ( sbv_channels >1 && !(iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved()) ) {
+								throw iom::exception("the plugin do not store channels in interleaved mode: more than one channel not supported yet.");
+							}
+
 							try
 					        {
 								subvol = new iim::uint8[sbv_height * sbv_width * sbv_depth * sbv_channels * sbv_bytes_chan];
 					            //if ( !subvol )
-								//	throw MyException("in TiledVolume::loadSubvolume_to_UINT8: unable to allocate memory");
+								//	throw iim::IOException("in TiledVolume::loadSubvolume_to_UINT8: unable to allocate memory");
 					        }
                             catch(...){throw IOException("in TiledVolume::loadSubvolume_to_UINT8: unable to allocate memory");}
 					    }
@@ -1128,7 +1148,7 @@ iim::uint8* TiledVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, i
 		//else {
         //	char err_msg[STATIC_STRINGS_SIZE];
 		//	sprintf(err_msg,"TiledVolume::loadSubvolume_to_UINT8: unknown machine endianess (%c)", endianCodeMachine);
-		//	throw MyException(err_msg);
+		//	throw iim::IOException(err_msg);
 		//}
 
 		//// look for maximum values in each channel and rescale each channel separately

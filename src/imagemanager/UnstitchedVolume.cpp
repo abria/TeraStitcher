@@ -25,8 +25,9 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2014-09-29. Alessandro. @ADDED automated selection of IO plugin if not provided.
-* 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
+* 2015-02-28. Giulio.     @ADDED management of multi-channel, multi-bytes per channel images: currently supported up to three channels 8 or 16 bits per channel
+* 2015-02-27. Alessandro. @ADDED automated selection of IO plugin if not provided.
+* 2015-02-18. Giulio.     @CREATED  
 */
 
 #include <iostream>
@@ -76,10 +77,14 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir)  throw (IOException)
 	ORG_H = volume->getORG_H();
 	ORG_D = volume->getORG_D();
 
-	DIM_C = 1;
-	BYTESxCHAN = 1;
-    active = (iim::uint32 *) new iim::uint32[1];
-    n_active = 1;
+	DIM_C = volume->getDIM_C();
+	BYTESxCHAN = volume->getBYTESxCHAN();
+
+	if ( DIM_C > 3 || BYTESxCHAN > 2 )
+ 		throw iim::IOException(iom::strprintf("image not supported by UnstitchedVolume (DIM_C=%d, BYTESxCHAN=%d)", DIM_C, BYTESxCHAN), __iom__current__function__);
+
+    active = (iim::uint32 *) new iim::uint32[DIM_C];
+    n_active = DIM_C;
 	for ( int i=0; i<DIM_C; i++ )
 		active[i] = i;
 
@@ -332,7 +337,7 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 	else if(blending_algo == S_SHOW_STACK_MARGIN)
         blending = StackStitcher::stack_margin;
 	else
- 		throw iom::exception(iom::strprintf("unrecognized blending function"), __iom__current__function__);
+ 		throw iim::IOException(iom::strprintf("unrecognized blending function"), __iom__current__function__);
 
 	buffer = new iom::real_t[height*width*depth];
 	for (int i=0; i<height*width*depth; i++)
@@ -451,11 +456,55 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 //loads given subvolume in a 1-D array of float
 real32* UnstitchedVolume::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, int D0, int D1) throw (IOException)
 {
-	throw iim::IOException("Not yet implemented", __iom__current__function__);
+	//throw iim::IOException("Not yet implemented", __iom__current__function__);
+
+    /**/iim::debug(iim::LEV3, strprintf("V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d", V0, V1, H0, H1, D0, D1).c_str(), __iim__current__function__);
+
+	if ( DIM_C > 1 && iom::CHANS == iom::ALL ) {
+ 		throw iim::IOException(iom::strprintf("conversion from multi-channel to intensity images not supported"), __iom__current__function__);
+	}
 
 	int VV0, VV1, HH0, HH1, DD0, DD1;
 	
-	return internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1);
+	 //initializations
+    V0 = V0 < 0 ? 0 : V0;
+    H0 = H0 < 0 ? 0 : H0;
+    D0 = D0 < 0 ? 0 : D0;
+    V1 = (V1 < 0 || V1 > (int)DIM_V) ? DIM_V : V1; 
+    H1 = (H1 < 0 || H1 > (int)DIM_H) ? DIM_H : H1; 
+    D1 = (D1 < 0 || D1 > (int)DIM_D) ? DIM_D : D1; 
+
+	real32 *buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1);
+
+	if ( VV0 == V0 && HH0 == H0 && DD0 == D0 && VV1 == V1 && HH1 == H1 && DD1 == D1 ) 
+		// there is no need to extract the subvolume from the returned buffer
+		return buf;
+
+	// extract requested subvolume from the returned buffer
+
+	sint64 stridex  = HH1 - HH0;
+	sint64 stridexy = stridex * (VV1 - VV0);
+
+	sint64 sbv_width = H1 - H0;
+	sint64 sbv_height = V1 - V0;
+	sint64 sbv_depth = D1 - D0;
+
+    real32 *subvol = new real32[sbv_width * sbv_height * sbv_depth * DIM_C * BYTESxCHAN];
+
+	int i, j, k;
+	real32 *ptr_s_xy;
+	real32 *ptr_s_x;
+	real32 *ptr_s;
+	real32  *ptr_d = subvol;
+	for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
+		for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
+			for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
+				*ptr_d = *ptr_s;
+
+	delete []buf;
+
+	return subvol;
+
 }
 
 //loads given subvolume in a 1-D array of iim::uint8 while releasing stacks slices memory when they are no longer needed
@@ -466,12 +515,6 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 
 	int VV0, VV1, HH0, HH1, DD0, DD1;
 
-	real32 *buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1); //, V0, V1, H0, H1, D0, D1); // loadSubvolume_to_real32(-1,-1,-1,-1,D0,D1);
-
-	// change when subvolumes are enabled
-	sint64 stridex  = HH1 - HH0;
-	sint64 stridexy = stridex * (VV1 - VV0);
-
 	 //initializations
     V0 = V0 < 0 ? 0 : V0;
     H0 = H0 < 0 ? 0 : H0;
@@ -480,29 +523,75 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
     H1 = (H1 < 0 || H1 > (int)DIM_H) ? DIM_H : H1; 
     D1 = (D1 < 0 || D1 > (int)DIM_D) ? DIM_D : D1; 
 
+	if ( DIM_C > 1 ){ 
+		// load the first channel
+		iom::CHANS = iom::R;
+	}
+
+	real32 *buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1); 
+
+	if ( VV0 > V0 || HH0 > H0 || DD0 > D0 || VV1 < V1 || HH1 < H1 || DD1 < D1 )
+  		throw iim::IOException(iom::strprintf("returned buffer is smaller than the requested subvolume (requested [V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d] -- returned [VV0=%d, VV1=%d, HH0=%d, HH1=%d, DD0=%d, DD1=%d])", 
+												V0, V1, H0, H1, D0, D1, VV0, VV1, HH0, HH1, DD0, DD1), __iim__current__function__);
+
+	// change when subvolumes are enabled
+	sint64 stridex  = HH1 - HH0;
+	sint64 stridexy = stridex * (VV1 - VV0);
+
 	sint64 sbv_width = H1 - H0;
 	sint64 sbv_height = V1 - V0;
 	sint64 sbv_depth = D1 - D0;
 
     uint8 *subvol = new uint8[sbv_width * sbv_height * sbv_depth * DIM_C * BYTESxCHAN];
 
+	int i, j, k, c;
+	real32 *ptr_s_xy;
+	real32 *ptr_s_x;
+	real32 *ptr_s;
 	if ( BYTESxCHAN == 1 ) {
-		int i, j, k;
-		real32 *ptr_s_xy;
-		real32 *ptr_s_x;
-		real32 *ptr_s;
+
 		uint8  *ptr_d = subvol;
 		for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
 			for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
 				for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
 					*ptr_d = uint8(*ptr_s * 255.0f);
-	}
-	else if ( BYTESxCHAN == 2 )
-  		throw iim::IOException(iom::strprintf("16 bits depth not supported yet"), __iim__current__function__);
-	else
-  		throw iim::IOException(iom::strprintf("%d bits depth not supported yet", BYTESxCHAN*8), __iim__current__function__);
 
-	delete buf;
+		for ( c=1; c<DIM_C; c++ ) { // more than one channel
+			delete []buf;
+			iom::CHANS = c==1 ? iom::G : iom::B; // only two more channels are currently supported
+			// loads next channel
+			buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1);
+			// append next channel to the subvolume buffer
+			for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
+				for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
+					for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
+						*ptr_d = uint8(*ptr_s * 255.0f);
+		}
+	}
+	else if ( BYTESxCHAN == 2 ) {
+
+		uint16  *ptr_d = (uint16 *) subvol;
+		for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
+			for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
+				for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
+					*ptr_d = uint16(*ptr_s * 65535.0F);
+
+		for ( c=1; c<DIM_C; c++ ) { // more than one channel
+			delete []buf;
+			iom::CHANS = c==1 ? iom::G : iom::B; // only two more channels are currently supported
+			// loads next channel
+			buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1);
+			// append next channel to the subvolume buffer
+			for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
+				for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
+					for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
+						*ptr_d = uint16(*ptr_s * 65535.0F);
+		}
+	}
+	else
+  		throw iim::IOException(iom::strprintf("%d bits depth not currently supported", BYTESxCHAN*8), __iim__current__function__);
+
+	delete []buf;
 
 	*channels = DIM_C;
 

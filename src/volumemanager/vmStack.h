@@ -50,8 +50,6 @@ class vm::Stack : public vm::VirtualStack
 
 		//*********** OBJECT ATTRIBUTES ***********
 		vm::StackedVolume*	CONTAINER;				//pointer to <StackedVolume> object that contains the current object
-		int          N_CHANS;                    //number of channels
-		int          N_BYTESxCHAN;               //number of bytes per channel
 		
 		//******** OBJECT PRIVATE METHODS *********
 		Stack(void){}

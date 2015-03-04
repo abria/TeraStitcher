@@ -87,8 +87,6 @@ Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char
 	N_BLOCKS = -1;
     BLOCK_SIZE = 0;
     BLOCK_ABS_D = 0;
-	N_CHANS = 1;                 
-	N_BYTESxCHAN = 1;      
 
 	init();
 }
@@ -117,8 +115,6 @@ Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlEleme
 	N_BLOCKS = -1;
 	BLOCK_SIZE = 0;
 	BLOCK_ABS_D = 0;
-	N_CHANS = 1;                 
-	N_BYTESxCHAN = 1;      
 
 	// first read image regex field (if any) from xml node
 	readImgRegex(stack_node);
@@ -145,8 +141,6 @@ Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_
 	N_BLOCKS = -1;
     BLOCK_SIZE = 0;
     BLOCK_ABS_D = 0;
-	N_CHANS = 1;                 
-	N_BYTESxCHAN = 1;      
 
 	unBinarizeFrom(bin_file);
 }

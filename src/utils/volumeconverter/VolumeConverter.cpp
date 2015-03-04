@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-03-03. Giulio.     @ADDED selection of IO plugin if not provided (2D or 3D according to the method).
 * 2015-02-12. Giulio.     @ADDED the same optimizations also in multi-channels (MC) methods
 * 2015-02-12. Giulio.     #ADDED check on the number of slice in the buffer if multiple resolutions are requested
 * 2015-02-10. Giulio.     @ADDED completed optimizations to reduce opend/close in append operations (only in generateTilesVaa3DRaw)
@@ -36,6 +37,7 @@
 #include "VolumeConverter.h"
 #include "../imagemanager/IM_config.h"
 #include "../imagemanager/ProgressBar.h"
+#include "iomanager.config.h"
 #include <math.h>
 #include <string>
 
@@ -208,6 +210,12 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
        imProgressBar::getInstance()->start("Multiresolution tile generation");
        imProgressBar::getInstance()->update(0,"Initializing...");
        imProgressBar::getInstance()->show();
+	}
+
+	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
+	if(iom::IMOUT_PLUGIN.compare("empty") == 0)
+	{
+		iom::IMOUT_PLUGIN = "tiff2D";
 	}
 
 	//computing dimensions of volume to be stitched
@@ -603,6 +611,12 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
                    imProgressBar::getInstance()->show();
 	}
 
+	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
+	if(iom::IMOUT_PLUGIN.compare("empty") == 0)
+	{
+		iom::IMOUT_PLUGIN = "tiff3D";
+	}
+
 	//computing dimensions of volume to be stitched
 	//this->computeVolumeDims(exclude_nonstitchable_stacks, _ROW_START, _ROW_END, _COL_START, _COL_END, _D0, _D1);
 	width = this->H1-this->H0;
@@ -744,7 +758,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 	{
 		//if ( z > (this->D1/2) ) {
 		//	closeResumer(fhandle);
-		//	throw MyException("interruption for test");
+		//	throw IOExcpetion("interruption for test");
 		//}
 
         // 2015-01-30. Alessandro. @ADDED performance (time) measurement in 'generateTilesVaa3DRaw()' method.
@@ -1194,7 +1208,7 @@ int VolumeConverter::getMultiresABS_D(int res)
 void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* resolutions, 
 				int block_height, int block_width, int block_depth, int method, 
 				bool show_progress_bar, const char* saved_img_format, 
-				int saved_img_depth, std::string frame_dir )	throw (MyException)
+				int saved_img_depth, std::string frame_dir )	throw (IOExcpetion)
 {
     printf("in VolumeConverter::generateTilesVaa3DRawMC(path = \"%s\", resolutions = ", output_path.c_str());
     for(int i=0; i< S_MAX_MULTIRES; i++)
@@ -1209,7 +1223,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 		char err_msg[STATIC_STRINGS_SIZE];
 		sprintf(err_msg,"VolumeConverter::generateTilesVaa3DRaw: mismatch between bits per channel of source (%d) and destination (%d)",
 			volume->getBYTESxCHAN() * 8, saved_img_depth);
-		throw MyException(err_msg);
+		throw IOExcpetion(err_msg);
 	}
 
 	//LOCAL VARIABLES
@@ -1260,7 +1274,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 	if ( volume == 0 ) {
 		char err_msg[STATIC_STRINGS_SIZE];
 		sprintf(err_msg,"VolumeConverter::generateTilesVaa3DRawMC: undefined source volume");
-		throw MyException(err_msg);
+		throw IOExcpetion(err_msg);
 	}
 
 	//initializing the progress bar
@@ -1270,6 +1284,12 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
                    imProgressBar::getInstance()->start("Multiresolution tile generation");
                    imProgressBar::getInstance()->update(0,"Initializing...");
                    imProgressBar::getInstance()->show();
+	}
+
+	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
+	if(iom::IMOUT_PLUGIN.compare("empty") == 0)
+	{
+		iom::IMOUT_PLUGIN = "tiff3D";
 	}
 
 	//computing dimensions of volume to be stitched
@@ -1291,7 +1311,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
     { 
         char err_msg[STATIC_STRINGS_SIZE];
         sprintf(err_msg,"The minimum dimension for block height, width, and depth is %d", S_MIN_SLICE_DIM);
-        throw MyException(err_msg);
+        throw IOExcpetion(err_msg);
     }
 
 	if(resolutions == NULL)
@@ -1366,7 +1386,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 		{
 			char err_msg[S_MAX_MULTIRES];
 			sprintf(err_msg, "in generateTilesVaa3DRawMC(...): unable to create DIR = \"%s\"\n", chans_dir[c].c_str());
-			throw MyException(err_msg);
+			throw IOExcpetion(err_msg);
 		}
 		for(int res_i=0; res_i< resolutions_size; res_i++) {
 			//creating volume directory iff current resolution is selected and test mode is disabled
@@ -1379,7 +1399,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 				{
 					char err_msg[S_MAX_MULTIRES];
 					sprintf(err_msg, "in generateTilesVaa3DRawMC(...): unable to create DIR = \"%s\"\n", file_path[res_i].str().c_str());
-					throw MyException(err_msg);
+					throw IOExcpetion(err_msg);
 				}
 			}
 		}
@@ -1433,7 +1453,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 			if ( org_channels != channels ) {
 				char err_msg[STATIC_STRINGS_SIZE];
 				sprintf(err_msg,"The volume contains images with a different number of channels (%d,%d)", org_channels, channels);
-				throw MyException(err_msg);
+				throw IOExcpetion(err_msg);
 			}
 		
 			for (int i=1; i<channels; i++ ) { // WARNING: assume 1-byte pixels
@@ -1522,7 +1542,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 						{
                             char err_msg[STATIC_STRINGS_SIZE];
 							sprintf(err_msg, "in generateTilesVaa3DRawMC(...): unable to create V_DIR = \"%s\"\n", V_DIR_path.str().c_str());
-							throw MyException(err_msg);
+							throw IOExcpetion(err_msg);
 						}
 
 						for(int stack_column = 0, start_width=0, end_width=0; stack_column < n_stacks_H[i]; stack_column++)
@@ -1537,7 +1557,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 								{
                                     char err_msg[STATIC_STRINGS_SIZE];
 									sprintf(err_msg, "in generateTilesVaa3DRawMC(...): unable to create H_DIR = \"%s\"\n", H_DIR_path.str().c_str());
-									throw MyException(err_msg);
+									throw IOExcpetion(err_msg);
 								}
 								else { // the directory has been created for the first time
 									   // initialize block files
@@ -1559,13 +1579,13 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 										else {
                                             char err_msg[STATIC_STRINGS_SIZE];
 											sprintf(err_msg, "in generateTilesVaa3DRaw(...): unknown image depth (%d)", saved_img_depth);
-											throw MyException(err_msg);
+											throw IOExcpetion(err_msg);
 										}
 									}
 									else {
                                         char err_msg[STATIC_STRINGS_SIZE];
 										sprintf(err_msg, "in generateTilesVaa3DRaw(...): unknown internal representation (%d)", internal_rep);
-										throw MyException(err_msg);
+										throw IOExcpetion(err_msg);
 									}
 
 									int slice_start_temp = 0;
@@ -1590,7 +1610,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 												( (err_rawfmt = initRawFile((char *)img_path_temp.str().c_str(),sz,datatype)) != 0 ) ) ) {
 											char err_msg[STATIC_STRINGS_SIZE];
 											sprintf(err_msg,"VolumeConverter::generateTilesVaa3DRawMC: error in initializing block file - %s", err_rawfmt);
-											throw MyException(err_msg);
+											throw IOExcpetion(err_msg);
 										};
 
 										slice_start_temp += (int)sz[2];
@@ -1854,6 +1874,12 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
        imProgressBar::getInstance()->start("Multiresolution tile generation");
        imProgressBar::getInstance()->update(0,"Initializing...");
        imProgressBar::getInstance()->show();
+	}
+
+	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
+	if(iom::IMOUT_PLUGIN.compare("empty") == 0)
+	{
+		iom::IMOUT_PLUGIN = "tiff3D";
 	}
 
 	//computing dimensions of volume to be stitched

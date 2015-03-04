@@ -22,6 +22,12 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2015-02-28. Giulio.     @FIXED removed deallocation of data member 'active' in the destructor because it is performed by the desctructor of the base class iim::VirtualVolume
+*/
+
 #include <iostream>
 #include <string>
 #include "TiledMCVolume.h"
@@ -125,8 +131,6 @@ TiledMCVolume::~TiledMCVolume(void)
 			delete vol_ch[c];
 		delete[] vol_ch;
 	}
-	if ( active )
-		delete[] active;
 }
 
 
@@ -220,7 +224,7 @@ void TiledMCVolume::load(char* metadata_filepath) throw (IOException)
 //            char errMsg[STATIC_STRINGS_SIZE];
 //            sprintf(errMsg, "in TiledMCVolume::unBinarizeFrom(...): metadata file version (%.2f) is different from the supported one (%.2f). "
 //                    "Please re-import the current volume.", mdata_version_read, mdata_version);
-//            throw MyException(errMsg);
+//            throw iim::IOException(errMsg);
 
         fclose(file);
         file = fopen(metadata_filepath, "rb");
@@ -720,7 +724,7 @@ void TiledMCVolume::mirror(axis mrr_axis)
 //	{
 //		char msg[1000];
 //		sprintf(msg,"in TiledMCVolume::mirror(axis mrr_axis=%d): unsupported axis mirroring", mrr_axis);
-//		throw MyException(msg);
+//		throw iim::IOException(msg);
 //	}
 //
 //	Stack*** new_STACK_2D_ARRAY;
@@ -813,7 +817,7 @@ uint8* TiledMCVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
 	//if( this->BYTESxCHAN != 1 ) {
 	//	char err_msg[STATIC_STRINGS_SIZE];
 	//	sprintf(err_msg,"TiledMCVolume::loadSubvolume_to_UINT8: invalid number of bytes per channel (%d)",this->BYTESxCHAN); 
-	//	throw MyException(err_msg);
+	//	throw iim::IOException(err_msg);
 	//}
 
     //if ( (ret_type == iim::DEF_IMG_DEPTH) && ((8 * this->BYTESxCHAN) != iim::DEF_IMG_DEPTH)  ) {
