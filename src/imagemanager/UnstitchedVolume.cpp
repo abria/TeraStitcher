@@ -25,6 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-03-13. Giulio.     @FIXED a bug in 'internal_loadSubvolume_to_real32': MEC must be divided by VXL (and not multiplied)
+* 2015-03-13. Giulio.     @FIXED a bug in 'internal_loadSubvolume_to_real32': getWIDTH -> getHEIGHT in computing tiles' row indices
 * 2015-02-28. Giulio.     @ADDED management of multi-channel, multi-bytes per channel images: currently supported up to three channels 8 or 16 bits per channel
 * 2015-02-27. Alessandro. @ADDED automated selection of IO plugin if not provided.
 * 2015-02-18. Giulio.     @CREATED  
@@ -189,19 +191,19 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 	int vxl_i;
 
 	row_start = 0;
-	vxl_i = (int) floor( volume->getMEC_V() * volume->getVXL_V() );
+	vxl_i = (int) floor( volume->getMEC_V() / volume->getVXL_V() );
 	while ( vxl_i < V0 ) {
 		row_start++;
-		vxl_i += volume->getSTACKS()[row_start][0]->getWIDTH();
+		vxl_i += volume->getSTACKS()[row_start][0]->getHEIGHT();
 	}
 	row_end   = row_start;
 	while ( vxl_i < V1 ) {
 		row_end++;
-		vxl_i += volume->getSTACKS()[row_end][0]->getWIDTH();
+		vxl_i += volume->getSTACKS()[row_end][0]->getHEIGHT();
 	}
 
 	col_start = 0;
-	vxl_i = (int) floor( volume->getMEC_H() * volume->getVXL_H());
+	vxl_i = (int) floor( volume->getMEC_H() / volume->getVXL_H());
 	while ( vxl_i < H0 ) {
 		col_start++;
 		vxl_i += volume->getSTACKS()[0][col_start]->getWIDTH();
