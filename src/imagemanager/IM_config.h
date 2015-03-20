@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-03-17. Giulio.     @CHANGED includes of standard header files (stdlib.h and stdio.h) moved outside the directive #ifdef _WIN32 
 * 2015-02-18. Giulio.     @ADDED Identifier for unstitched volume
 */
 
@@ -39,6 +40,8 @@
 #include <limits>
 #include <cstring>
 #include <math.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <sys/stat.h>
 #ifdef _WIN32
 #include <ctime>
@@ -46,9 +49,7 @@
 #else
 #include <time.h>
 #include <sys/types.h>
-#include <stdlib.h>
 #include <errno.h>
-#include <stdio.h>
 #endif
 
 #ifdef max
