@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-03-21. Giulio.     @FIXED bug in saveImage when tiles have to be saved (the management of offsets over the buffer was wrong)
 * 2015-03-03. Giulio.     @FIXED a 2D plugin has to be used in saveImage_from_UINT8 
 * 2015-02-15. Giulio.     @CHANGED revised all calls to Tiff3DMngr routines passing always width and height in this order
 * 2015-02-14. Giulio.     @CHANGED method saveImage now converts from real to uint8 and calls the new interface of the plugin
@@ -114,20 +115,20 @@ void VirtualVolume::saveImage(std::string img_path, real32* raw_img, int raw_img
 
 	if(img_depth == 8)
 	{
-		for(int i = 0; i <img_height; i++)
+		for(int i = 0, ii = start_height; i <img_height; i++, ii++)
 		{
 			uint8* img_data = buffer + i*img_width;
-			for(int j = 0; j < img_width; j++)
-				img_data[j] = static_cast<uint8>(raw_img[i*img_width+j] * 255.0f + 0.5f);
+			for(int j = 0, jj = start_width; j < img_width; j++, jj++)
+				img_data[j] = static_cast<uint8>(raw_img[ii*raw_img_width+jj] * 255.0f + 0.5f);
 		}
 	}
 	else // img_depth == 16
 	{
-		for(int i = 0; i <img_height; i++)
+		for(int i = 0, ii = start_height; i <img_height; i++, ii++)
 		{
 			uint16* img_data = ((uint16 *)buffer) + i*img_width; // the cast to uint16* guarantees the right offset
-			for(int j = 0; j < img_width; j++)
-				img_data[j] = static_cast<uint16>(raw_img[i*img_width+j] * 65535.0f + 0.5f);
+			for(int j = 0, jj = start_width; j < img_width; j++, jj++)
+				img_data[j] = static_cast<uint16>(raw_img[ii*raw_img_width+jj] * 65535.0f + 0.5f);
 		}
 	}
 
@@ -140,7 +141,7 @@ void VirtualVolume::saveImage(std::string img_path, real32* raw_img, int raw_img
 		//iomanager::IOPluginFactory::getPlugin2D(iomanager::IMOUT_PLUGIN)->writeData(
 		//	img_filepath, raw_img, img_height, img_width, 1, start_height, end_height, start_width, end_width, img_depth);
 		iomanager::IOPluginFactory::getPlugin2D(iomanager::IMOUT_PLUGIN)->writeData(
-			img_filepath, buffer, img_height, img_width, img_depth/8, 1, start_height, end_height+1, start_width, end_width+1); // ROI limits specify right-open intervals  
+			img_filepath, buffer, img_height, img_width, img_depth/8, 1, 0, img_height, 0, img_width); // ROI limits specify right-open intervals  
 	}
 	catch (iom::exception & ex)
 	{
