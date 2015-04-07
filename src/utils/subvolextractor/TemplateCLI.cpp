@@ -63,7 +63,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 
 	//argument objects definitions
-	TCLAP::SwitchArg p_overwrite_mdata("","ovrw","Overwrite data.",false); 
+	//TCLAP::SwitchArg p_overwrite_mdata("","ovrw","Overwrite data.",false); 
         /**
 		 * SwitchArg constructor.
 		 * \param flag - The one character flag that identifies this
@@ -77,22 +77,15 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		 * use this unless you have a very good reason.
 		 */
 
-	TCLAP::ValueArg<std::string> p_root_dir("r","rdir","Root directory path.",true,"","string");
-	TCLAP::ValueArg<int> p_axis_V("","vax","Vertical axis (default=1).",false,1,"[-3,3]");
-	TCLAP::ValueArg<int> p_axis_H("","hax","Horizontal axis (default=2).",false,2,"[-3,3]");
-	TCLAP::ValueArg<int> p_axis_D("","dax","Depth axis (default=3).",false,3,"[-3,3]");
-	TCLAP::ValueArg<float> p_vxl_size("s","size","Voxel size (the same in all directions, default=1.0).",false,(float)1.0,"real");
-	TCLAP::ValueArg<float> p_vxl_size_V("","szV","Voxel vertical size (default=1.0).",false,(float)1.0,"real");
-	TCLAP::ValueArg<float> p_vxl_size_H("","szH","Voxel horizontal size (default=1.0).",false,(float)1.0,"real");
-	TCLAP::ValueArg<float> p_vxl_size_D("","szD","Voxel depth size (default=1.0).",false,(float)1.0,"real");
-	string temp = "Source format (\"" + 
-		iim::STACKED_FORMAT + "\"/\"" + 
-		iim::TILED_FORMAT + "\"/\"" + 
-		iim::TILED_TIF3D_FORMAT  + "\"/\"" + 
-		iim::TILED_MC_FORMAT + "\"/\"" + 
-		iim::TILED_MC_TIF3D_FORMAT  + "\")"; 
-	TCLAP::ValueArg<string> p_src_format("","sfmt",temp.c_str(),true,"","string");
-
+	TCLAP::ValueArg<std::string> p_root_dir("r","rdir","Source root directory path.",true,"","string");
+	TCLAP::ValueArg<std::string> p_dst_dir("d","ddir","Destination path.",true,"","string");
+	TCLAP::ValueArg<int> p_V0("","V0","First coordinate along V.",true,-1,"unsigned");
+	TCLAP::ValueArg<int> p_V1("","V1","Last coordinate along V.",true,-1,"unsigned");
+	TCLAP::ValueArg<int> p_H0("","H0","First coordinate along H.",true,-1,"unsigned");
+	TCLAP::ValueArg<int> p_H1("","H1","Last coordinate along H.",true,-1,"unsigned");
+	TCLAP::ValueArg<int> p_D0("","D0","First coordinate along D.",true,-1,"unsigned");
+	TCLAP::ValueArg<int> p_D1("","D1","Last coordinate along D.",true,-1,"unsigned");
+	TCLAP::ValueArg<double> p_mem("m","mem","Max memory occupancy (MB).",false,1000.0,"unsigned");
         /**
          * Labeled ValueArg constructor.
          * You could conceivably call this constructor with a blank flag, 
@@ -119,18 +112,17 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 
 	//argument objects must be inserted using LIFO policy (last inserted, first shown)
-	cmd.add(p_src_format);
-	cmd.add(p_axis_D);
-	cmd.add(p_axis_H);
-	cmd.add(p_axis_V);
-	cmd.add(p_vxl_size_D);
-	cmd.add(p_vxl_size_H);
-	cmd.add(p_vxl_size_V);
-	cmd.add(p_vxl_size);
-	cmd.add(p_overwrite_mdata);
+	cmd.add(p_mem);
+	cmd.add(p_D1);
+	cmd.add(p_D0);
+	cmd.add(p_H1);
+	cmd.add(p_H0);
+	cmd.add(p_V1);
+	cmd.add(p_V0);
+	cmd.add(p_dst_dir);
 	cmd.add(p_root_dir);
 
-	// Parse the argv array and catch <TCLAP> exceptions, which are translated into <iim::IOException> exceptions
+	// Parse the argv array and catch <TCLAP> exceptions, which are translated into <MyException> exceptions
 	char errMsg[S_STATIC_STRINGS_SIZE];
 	try{ cmd.parse( argc, argv ); } 
 	catch (TCLAP::ArgException &e)
@@ -141,67 +133,17 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	/* Checking parameter consistency */
 
-	if( p_axis_V.isSet() || p_axis_H.isSet() || p_axis_D.isSet() ) { // there is at least one parameter
-		if ( !p_axis_V.isSet() || !p_axis_H.isSet() || !p_axis_D.isSet() ) { // some parameter missing
-			sprintf(errMsg, "Complete reference system must be specified!\nUSAGE is:\n\t--%s%c<%s>%c--%s%c<%s>%c--%s%c<%s>", 
-				p_axis_V.getName().c_str(), cmd.getDelimiter(), "[-3,3]", cmd.getDelimiter(), 
-				p_axis_H.getName().c_str(), cmd.getDelimiter(), "[-3,3]", cmd.getDelimiter(), 
-				p_axis_D.getName().c_str(), cmd.getDelimiter(), "[-3,3]" );
-			throw iom::exception(errMsg);
-		}
-	}
-
-	if ( p_vxl_size.isSet() ) { // the same size for all dimensions is specified 
-		if ( p_vxl_size_V.isSet() || p_vxl_size_H.isSet() || p_vxl_size_D.isSet() ) { // also single dimensions are specified 
-			sprintf(errMsg, "Conflicting voxel size!\nUSAGE is either:\n\t--%s%c<%s>\nor:\n\t--%s%c<%s>%c--%s%c<%s>%c--%s%c<%s>", 
-				p_vxl_size.getName().c_str(), cmd.getDelimiter(), "real", 
-				p_vxl_size_V.getName().c_str(), cmd.getDelimiter(), "real", cmd.getDelimiter(), 
-				p_vxl_size_H.getName().c_str(), cmd.getDelimiter(), "real", cmd.getDelimiter(), 
-				p_vxl_size_D.getName().c_str(), cmd.getDelimiter(), "real" );
-			throw iom::exception(errMsg);
-		}
-		else { // only the same size for all dimensions is specified
-			this->vxlsz_V = this->vxlsz_H = this->vxlsz_D = p_vxl_size.getValue();
-		}
-	}
-	else if ( p_vxl_size_V.isSet() || p_vxl_size_H.isSet() || p_vxl_size_D.isSet() ) { // different size specified for each dimension
-		if ( !p_vxl_size_V.isSet() || !p_vxl_size_H.isSet() || !p_vxl_size_D.isSet() ) { // some parameter is missing
-			sprintf(errMsg, "Voxel size missing in some dimension!\nUSAGE is:\n\t--%s%c<%s>%c--%s%c<%s>%c--%s%c<%s>", 
-				p_vxl_size_V.getName().c_str(), cmd.getDelimiter(), "real", cmd.getDelimiter(), 
-				p_vxl_size_H.getName().c_str(), cmd.getDelimiter(), "real", cmd.getDelimiter(), 
-				p_vxl_size_D.getName().c_str(), cmd.getDelimiter(), "real" );
-			throw iom::exception(errMsg);
-		}
-		else {
-			this->vxlsz_V = p_vxl_size_V.getValue();
-			this->vxlsz_H = p_vxl_size_H.getValue();
-			this->vxlsz_D = p_vxl_size_D.getValue();
-		}
-	}
-
-	/* Checking parameter consistency */
-	if ( p_src_format.getValue() != iim::STACKED_FORMAT && 
-		 p_src_format.getValue() != iim::SIMPLE_FORMAT  && 
-		 p_src_format.getValue() != iim::SIMPLE_RAW_FORMAT  && 
-		 p_src_format.getValue() != iim::RAW_FORMAT  && 
-		 p_src_format.getValue() != iim::TILED_FORMAT  && 
-		 p_src_format.getValue() != iim::TILED_MC_FORMAT &&
-		 p_src_format.getValue() != iim::TIF3D_FORMAT  && 
-		 p_src_format.getValue() != iim::TILED_TIF3D_FORMAT  && 
-		 p_src_format.getValue() != iim::TILED_MC_TIF3D_FORMAT ) {
-		sprintf(errMsg, "Unknown source format!\nAllowed formats are:\n\tStacked / Simple / SimpeRaw / Raw / Tiled / TiledMC");
-		throw iom::exception(errMsg);
-	}
-
 	//importing parameters not set yet
 
 	this->root_dir = p_root_dir.getValue();
-	this->overwrite_mdata = p_overwrite_mdata.getValue();
-	this->axis_V = axis(p_axis_V.getValue());
-	this->axis_H = axis(p_axis_H.getValue());
-	this->axis_D = axis(p_axis_D.getValue());
-	this->src_format  = p_src_format.getValue();
-
+	this->dst_dir = p_dst_dir.getValue();
+	this->V0 = p_V0.getValue();
+	this->V1 = p_V1.getValue();
+	this->H0 = p_H0.getValue();
+	this->H1 = p_H1.getValue();
+	this->D0 = p_D0.getValue();
+	this->D1 = p_D1.getValue();
+	this->mem = p_mem.getValue();
 }
 
 //checks parameters correctness
@@ -218,7 +160,7 @@ void TemplateCLI::checkParams() throw (iom::exception)
 string TemplateCLI::getHelpText()
 {
 	stringstream helptext;
-	helptext << "Generator of volume description v1.0.0\n";
+	helptext << "Subvolume extractor v1.0.0\n";
 	return helptext.str();
 }
 

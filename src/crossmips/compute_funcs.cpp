@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-04-06. Giulio.     @CHANGED corrected compute_NCC_alignment to deal with the case widthX = 1 which likely to be an anomaly
 * 2015-03-20. Giulio.     @CHANGED newu and newv have been moved as parameters in compute_Neighborhood
 * 2014-10-31. Giulio.     @CHANGED computations in compute_NCC are performed in double precision (and not in single precision) to avoit roundoff errors
 */
@@ -143,10 +144,21 @@ void compute_NCC_width ( NCC_parms_t *NCC_params, iom::real_t *NCC, int dimj, in
  * and 2 for depth), and two alignments d1 and d2 with the corresponding NCC maxima (peak_val1
  * and peak_val2) and half widths (width1 and width2), returns in result the aligment for that 
  * with a measure of its reliability and potential error 
+ *
+ * 2015-04-06. Giulio. The algorithm has been vcorrected as follows:
+ * when widthX is 1 the alignment is unreliable since it is very likely that it is due to
+ * a spike or a too little NCC map (e.g. because the stack is very thin); for this reason
+ * parametes width1 and width2 are first checked and changes if equal to 1
  */
 static
 void compute_NCC_alignment ( NCC_parms_t *NCC_params, NCC_descr_t *result, int i,
 							int d1, iom::real_t peak_val1, int width1, int d2, iom::real_t peak_val2, int width2 ) {
+
+	// check width1 and widthw
+	if ( width1 == 1 ) // alignment 1 is unreliable
+		width1 = NCC_params->INF_W;
+	if ( width2 == 1 ) // alignment 1 is unreliable
+		width2 = NCC_params->INF_W;
 
 	// check how many values contribute to final alignment
 	if ( peak_val1 >= NCC_params->maxThr && width1 < NCC_params->INF_W ) // first value may be considered

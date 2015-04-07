@@ -41,6 +41,7 @@ class TemplateCLI
 	public:
 
 		// switch parameters
+		bool merge_groups;
 
 		// other parameters
 		// int/float/double/string XXXX;	// description

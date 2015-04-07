@@ -63,7 +63,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 
 	//argument objects definitions
-	//TCLAP::SwitchArg p_overwrite_mdata("","ovrw","Overwrite data.",false); 
+	TCLAP::SwitchArg p_merge_groups("","mgroups","Merge groups of tiles.",false); 
         /**
 		 * SwitchArg constructor.
 		 * \param flag - The one character flag that identifies this
@@ -137,6 +137,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_overwrite_mdata);
 	*/
 
+	cmd.add(p_merge_groups);
 	cmd.add(p_out_file);
 	cmd.add(p_main_dir);
 
@@ -181,6 +182,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	this->main_dir = p_main_dir.getValue();
 	this->out_file = p_out_file.getValue();
+	this->merge_groups = p_merge_groups.getValue();
 
 	//this->overwrite_mdata = p_overwrite_mdata.getValue();
 	//this->src_format  = p_src_format.getValue();

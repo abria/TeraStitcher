@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+2015-04-06. Giulio.       @CHANGED Modified prunt method: printing stacks information is now off by default
 * 2015-02-28. Giulio.     @FIXED removed deallocation of data member 'active' in the destructor because it is performed by the desctructor of the base class iim::VirtualVolume
 */
 
@@ -600,19 +601,22 @@ void TiledMCVolume::initChannels ( ) throw (IOException)
 }
 
 //PRINT method
-void TiledMCVolume::print()
+void TiledMCVolume::print( bool print_stacks )
 {
-	printf("*** Begin printing StakedVolume object...\n\n");
+	printf("*** Begin printing TiledMCVolume object...\n\n");
 	printf("\tDirectory:\t%s\n", root_dir);
-	printf("\tDimensions:\t%d(V) x %d(H) x %d(D)\n", DIM_V, DIM_H, DIM_D);
-	printf("\tVoxels:\t\t%.4f(V) x %.4f(H) x %.4f(D)\n", VXL_V, VXL_H, VXL_D);
-	printf("\tOrigin:\t\t%.4f(V) x %.4f(H) x %.4f(D)\n", ORG_V, ORG_H, ORG_D);
-	printf("\tStacks matrix:\t%d(V) x %d(H)\n", N_ROWS, N_COLS);
-	//printf("\t |\n");
-	//for(int row=0; row<N_ROWS; row++)
-	//	for(int col=0; col<N_COLS; col++)
-	//		BLOCKS[row][col]->print();
-	printf("\n*** END printing StakedVolume object...\n\n");
+	printf("\tDimensions:\t\t%d(V) x %d(H) x %d(D)\n", DIM_V, DIM_H, DIM_D);
+	printf("\tVoxels:\t\t\t%.4f(V) x %.4f(H) x %.4f(D)\n", VXL_V, VXL_H, VXL_D);
+	printf("\tOrigin:\t\t\t%.4f(V) x %.4f(H) x %.4f(D)\n", ORG_V, ORG_H, ORG_D);
+	printf("\tChannels:\t\t%d\n", DIM_C);
+	printf("\tBytes per channel:\t%d\n", BYTESxCHAN);
+	printf("\tReference system:\tref1=%d, ref2=%d, ref3=%d\n",reference_system.first,reference_system.second,reference_system.third);
+	printf("\tChannels:\n");
+	for ( int c=0; c<DIM_C; c++ ) {
+		printf("\t\tChannel: %d\n",c);
+		vol_ch[c]->print(print_stacks);
+	}
+	printf("\n*** END printing TiledMCVolume object...\n\n");
 }
 
 //rotate stacks matrix around D axis (accepted values are theta=0,90,180,270)

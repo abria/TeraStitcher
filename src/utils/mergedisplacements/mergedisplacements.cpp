@@ -55,7 +55,10 @@ int main(int argc, char** argv)
 		// do what you have to do
 		XMLDisplacementBag dispBag(cli.main_dir.c_str());
 
-		dispBag.merge(cli.out_file.c_str());
+		if ( !cli.merge_groups )
+			dispBag.merge(cli.out_file.c_str());
+		else
+			dispBag.mergeTileGroups(cli.out_file.c_str());
 
 	}
 	catch( iom::exception& exception){

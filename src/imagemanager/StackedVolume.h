@@ -22,6 +22,12 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+2015-04-06. Giulio.       @CHANGED Modified prunt method: printing stacks information is now off by default
+*/
+
 #ifndef _IIM_STACKED_VOLUME_H
 #define _IIM_STACKED_VOLUME_H
 
@@ -108,7 +114,7 @@ class iim::StackedVolume : public iim::VirtualVolume
 
 
 		//PRINT method
-		void print();
+		void print( bool print_stacks = false );
 
 		//saving-loading methods to/from metadata binary file
         void save(char* metadata_filepath) throw (iim::IOException);

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------------------------
-// Copyright (c) 2014  Alessandro Bria and Giulio Iannello (University Campus Bio-Medico of Rome).  
+// Copyright (c) 2012  Alessandro Bria and Giulio Iannello (University Campus Bio-Medico of Rome).  
 // All rights reserved.
 //------------------------------------------------------------------------------------------------
 
@@ -12,6 +12,10 @@
 *    1. This material is free for non-profit research, but needs a special license for any commercial purpose. Please contact Alessandro Bria at a.bria@unicas.it or Giulio Iannello at 
 *       g.iannello@unicampus.it for further details.
 *    2. You agree to appropriately cite this work in your related studies and publications.
+*
+*       Bria, A., et al., (2012) "Stitching Terabyte-sized 3D Images Acquired in Confocal Ultramicroscopy", Proceedings of the 9th IEEE International Symposium on Biomedical Imaging.
+*       Bria, A., Iannello, G., "TeraStitcher - A Tool for Fast 3D Automatic Stitching of Teravoxel-sized Microscopy Images", submitted for publication, 2012.
+*
 *    3. This material is provided by  the copyright holders (Alessandro Bria  and  Giulio Iannello),  University Campus Bio-Medico and contributors "as is" and any express or implied war-
 *       ranties, including, but  not limited to,  any implied warranties  of merchantability,  non-infringement, or fitness for a particular purpose are  disclaimed. In no event shall the
 *       copyright owners, University Campus Bio-Medico, or contributors be liable for any direct, indirect, incidental, special, exemplary, or  consequential  damages  (including, but not 
@@ -22,36 +26,10 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
-#ifndef DISPLACEMENT_MANAGER_H
-#define DISPLACEMENT_MANAGER_H
+#ifndef GUI_CONFIG_H
+#define GUI_CONFIG_H
 
-#include "tinyxml.h"
-
-
-class XMLDisplacementBag {
-
-protected:
-	//******OBJECT ATTRIBUTES******
-    char   *main_dir;				// C-string that contains the directory path of bag of XML files
-	char  **XMLFileNames;				//1-D dinamic array of <char>  pointers to images filanames
-	int     nFiles;
-
-	void init ( );
-	void mergeStack  ( TiXmlElement **stack_nodes, TiXmlElement *out_pelem );
-	void mergeStack2 ( TiXmlElement **stack_nodes, TiXmlElement *out_pelem );
-	void mergeDisp   ( TiXmlElement *disp_node,    TiXmlElement *out_pelem );
-
-public:
-
-	XMLDisplacementBag ( const char *main_dir_ );
-	~XMLDisplacementBag ( );
-
-	void merge ( const char *xml_out_file );
-
-	void mergeTileGroups ( const char *xml_out_file );
-
-};
+//DEFAULT CLI PARAMETERS
+#include "S_config.h"
 
 #endif
-
-

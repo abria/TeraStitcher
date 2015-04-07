@@ -26,30 +26,39 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
-/******************
-*    CHANGELOG    *
-*******************
-* 2014-11-10. Giulio.     @FIXED writes mdata.bin if it does not exist OR it must be overwritten (WARNING: by default it should not overwritten and there is not an overwrite option 
-*/
-
 #include <iostream>
+#include <sstream>
 #include <stdio.h>
+#include <string>
+#include <math.h>
 #include <CmdLine.h>
 #include "TemplateCLI.h"
-
+#include "S_config.h"
 #include "IM_config.h"
-#include "iomanager.config.h"
-#include "Stack.h"
-#include "StackedVolume.h"
+
+//#include "Stack.h"
+//#include "StackedVolume.h"
 #include "TiledVolume.h"
-#include "TiledMCVolume.h"
+
+#define STACK_FOLDER_NAME   "stack"
+#define CMDLINE_FILE_NAME   "cmdline.txt"
 
 using namespace std;
 using namespace iim;
-using namespace iom;
 
 int main(int argc, char** argv)
 {
+	char err_msg[3000];
+	int height;
+	int width;
+	int depth;
+	int zb, zl, z;
+	int z_nblocks, z_lblocks;
+
+	char mdata_filepath[3000];
+	uint8 *buffer = (uint8 *) 0;
+	int channels;
+
 	try
 	{
 		//importing command-line arguments from <TeraStitcherCLI> object
@@ -58,30 +67,110 @@ int main(int argc, char** argv)
 		cli.checkParams();
 		
 		// do what you have to do
+		iom::IMOUT_PLUGIN = "tiff2D";
 
-		char mdata_filepath[1000];
+		//trying to unserialize an already existing metadata file, if it doesn't exist the full initialization procedure is performed and metadata is saved
 		sprintf(mdata_filepath, "%s/%s", cli.root_dir.c_str(), MDATA_BIN_FILE_NAME.c_str());
-		if ( !isFile(mdata_filepath) || cli.overwrite_mdata ) { // if metadata file does not exist or must be overw written the full initialization procedure is performaed and metadata saved
-            if(cli.src_format.compare(iim::STACKED_FORMAT) == 0)
-				StackedVolume volume(cli.root_dir.c_str(),ref_sys(cli.axis_V,cli.axis_H,cli.axis_D),cli.vxlsz_V,cli.vxlsz_H,cli.vxlsz_D,cli.overwrite_mdata);
-            else if(cli.src_format.compare(iim::TILED_FORMAT) == 0 || cli.src_format.compare(iim::TILED_TIF3D_FORMAT) == 0)
-				TiledVolume volume(cli.root_dir.c_str(),ref_sys(cli.axis_V,cli.axis_H,cli.axis_D),cli.vxlsz_V,cli.vxlsz_H,cli.vxlsz_D,cli.overwrite_mdata);
-            else if(cli.src_format.compare(iim::TILED_MC_FORMAT) == 0 || cli.src_format.compare(iim::TILED_MC_TIF3D_FORMAT) == 0)
-				TiledMCVolume volume(cli.root_dir.c_str(),ref_sys(cli.axis_V,cli.axis_H,cli.axis_D),cli.vxlsz_V,cli.vxlsz_H,cli.vxlsz_D,cli.overwrite_mdata);
+		if ( isFile(mdata_filepath) ) {
+
+			string fname = cli.dst_dir + "/" + STACK_FOLDER_NAME;
+			if(!makeDir(fname.c_str()))
+			{
+				char err_msg[S_STATIC_STRINGS_SIZE];
+				sprintf(err_msg, "subvolume extractor: unable to create stack directory = \"%s\"\n", fname.c_str());
+				throw iom::exception(err_msg);
+			}
+			//save data on extracted subvolume
+			FILE *fsav;
+			fname = cli.dst_dir + "/" + CMDLINE_FILE_NAME;
+			if ( (fsav = fopen(fname.c_str(),"w")) == 0 ) {
+				sprintf(err_msg,"subvolume extractor: cannot be opened file to save command line");
+				throw iom::exception(err_msg);
+			};
+			for ( int i=0; i<argc; i++ )
+				fprintf(fsav,"%s ",argv[i]);
+			fprintf(fsav,"\n");
+			fclose(fsav);
+
+			//StackedVolume volume(cli.root_dir.c_str());
+			TiledVolume volume(cli.root_dir.c_str());
+
+			//height, width and depth of the whole volume that covers all stacks
+			height = cli.V1 - cli.V0;
+			width  = cli.H1 - cli.H0;
+			depth  = cli.D1 - cli.D0;
+
+			z_lblocks = (int) floor((cli.mem * 1.0e6) / ((double)(height * width)));
+			z_nblocks = depth / z_lblocks;
+
+			for ( zb = 0, z = 0; zb < z_nblocks; zb++ ) {
+
+				buffer = volume.loadSubvolume_to_UINT8(cli.V0,cli.V1,cli.H0,cli.H1,cli.D0+z,cli.D0+z+z_lblocks,&channels);
+
+				if ( channels != 1 ) {
+					sprintf(err_msg,
+						"subvolume extractor: multi-channel images not supported (#channels: %d)",
+						channels
+					);
+					throw iom::exception(err_msg);
+				}
+
+				for ( zl = 0; zl < z_lblocks; zl++, z++ ) {
+					stringstream img_path;
+					stringstream abs_pos_z;
+					abs_pos_z.width(6);
+					abs_pos_z.fill('0');
+					abs_pos_z << (int)(z * volume.getVXL_D());
+					img_path << cli.dst_dir << "/" << STACK_FOLDER_NAME << "/" << abs_pos_z.str(); 
+					VirtualVolume::saveImage_from_UINT8(
+						img_path.str(), 
+						buffer + (height*width*zl),
+						(uint8 *) 0,(uint8 *) 0,
+						height,width
+					);
+				}
+
+				delete buffer;
+			}
+
+			if ( z < depth ) { // there are slices not extracted
+
+				buffer = volume.loadSubvolume_to_UINT8(cli.V0,cli.V1,cli.H0,cli.H1,cli.D0+z,cli.D0+depth,&channels);
+
+				//if ( channels != 1 ) {
+				//	sprintf(err_msg,
+				//		"subvolume extractor: multi-channel images not supported (#channels: %d)",
+				//		channels
+				//	);
+				//	throw MyException(err_msg);
+				//}
+
+				for ( zl = 0; z < depth; zl++, z++ ) {
+					stringstream img_path;
+					stringstream abs_pos_z;
+					abs_pos_z.width(6);
+					abs_pos_z.fill('0');
+					abs_pos_z << (int)(z * volume.getVXL_D());
+					img_path << cli.dst_dir << "/" << STACK_FOLDER_NAME << "/" << abs_pos_z.str(); 
+					VirtualVolume::saveImage_from_UINT8(
+						img_path.str(), 
+						buffer + (height*width*zl),
+						(channels<2) ? (uint8 *) 0 : buffer + (height*width*depth) + (height*width*zl),
+						(channels<3) ? (uint8 *) 0 : buffer + 2*(height*width*depth) + (height*width*zl),
+						height,width
+					);
+				}
+
+				delete buffer;
+			}
+
 		}
-		else {  // perform normal initialization and prints metadata if a text file
-           if(cli.src_format.compare(iim::STACKED_FORMAT) == 0) {
-				StackedVolume volume(cli.root_dir.c_str());
-				volume.print();
-		   }
-            else if(cli.src_format.compare(iim::TILED_FORMAT) == 0 || cli.src_format.compare(iim::TILED_TIF3D_FORMAT) == 0) {
-				TiledVolume volume(cli.root_dir.c_str());
-				volume.print();
-			}
-            else if(cli.src_format.compare(iim::TILED_MC_FORMAT) == 0 || cli.src_format.compare(iim::TILED_MC_TIF3D_FORMAT) == 0) {
-				TiledMCVolume volume(cli.root_dir.c_str());
-				volume.print();
-			}
+		else {
+			sprintf(err_msg,
+				"subvolume extractor: mdata.bin missing in directory %s",
+				cli.root_dir.c_str()
+			);
+			throw iom::exception(err_msg);
 		}
 	}
 	catch( iom::exception& exception){

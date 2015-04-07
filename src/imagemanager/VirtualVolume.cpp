@@ -147,7 +147,7 @@ void VirtualVolume::saveImage(std::string img_path, real32* raw_img, int raw_img
 	{
 		if ( strstr(ex.what(),"2D I/O plugin") ) // this method has be called to save the middle slice for test purposes, even though output plugin is not a 2D plugin
 			iomanager::IOPluginFactory::getPlugin2D("tiff2D")->writeData(
-				img_filepath, buffer, img_height, img_width, img_depth/8, 1, start_height, end_height+1, start_width, end_width+1); // ROI limits specify right-open intervals
+				img_filepath, buffer, img_height, img_width, img_depth/8, 1, 0, img_height, 0, img_width); // ROI limits specify right-open intervals
 		else
 			throw iom::exception(iom::strprintf(ex.what()), __iom__current__function__);
 	}
