@@ -63,7 +63,7 @@ class iim::StackedVolume : public iim::VirtualVolume
 		StackedVolume(void);
 
 		//Given the reference system, initializes all object's members using stack's directories hierarchy
-        void init();
+        void init() throw (iim::IOException);
 
 		//rotate stacks matrix around D axis (accepted values are theta=0,90,180,270)
 		void rotate(int theta);
@@ -136,6 +136,8 @@ class iim::StackedVolume : public iim::VirtualVolume
 
 		//releases allocated memory of stacks
 		void releaseStacks(int first_file=-1, int last_file=-1);
+    
+        friend class iim::VirtualVolume;
 
 };
 

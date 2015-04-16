@@ -25,7 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
-2015-04-06. Giulio.       @CHANGED Modified prunt method: printing stacks information is now off by default
+* 2015-04-15. Alessandro. @ADDED definition for default constructor.
+* 2015-04-06. Giulio.       @CHANGED Modified prunt method: printing stacks information is now off by default
 * 2015-03-03. Giulio.     @ADDED check that ioplugin interleaves channels in loadSubvolume_to_UINT8.
 * 2015-03-03. Giulio.     @CHANGED the order of how RGB images are copied in the subvol buffer in loadSubvolume_to_UINT8.
 * 2015-03-03. Giulio.     @ADDED selection of IO plugin in the constructors if not provided.
@@ -58,6 +59,16 @@
 using namespace std;
 using namespace iim;
 
+// 2015-04-15. Alessandro. @ADDED definition for default constructor.
+StackedVolume::StackedVolume(void) : VirtualVolume()
+{
+    /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
+    
+    N_ROWS = N_COLS = 0;
+    reference_system.first = reference_system.second = reference_system.third = iim::axis_invalid;
+    VXL_1 = VXL_2 = VXL_3 = 0.0f;
+    STACKS = 0;
+}
 
 StackedVolume::StackedVolume(const char* _root_dir)  throw (IOException)
 : VirtualVolume(_root_dir) // iannello ADDED
@@ -406,7 +417,7 @@ void StackedVolume::load(char* metadata_filepath) throw (IOException)
 	fclose(file);
 }
 
-void StackedVolume::init()
+void StackedVolume::init() throw (IOException)
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 

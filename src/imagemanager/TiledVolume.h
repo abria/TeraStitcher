@@ -56,7 +56,7 @@ class TiledVolume : public iim::VirtualVolume
 		TiledVolume(void);
 
 		//Given the reference system, initializes all object's members using stack's directories hierarchy
-        void init();
+        void init() throw (iim::IOException);
 
 		//rotate stacks matrix around D axis (accepted values are theta=0,90,180,270)
 		void rotate(int theta);
@@ -158,6 +158,8 @@ class TiledVolume : public iim::VirtualVolume
 		 * reused by the caller and the operation returns a null pointer
 		 */
          iim::uint8 *streamedLoadSubvolume_close ( void *stream_descr, bool return_buffer=true );
+    
+         friend class iim::VirtualVolume;
 
 };
 

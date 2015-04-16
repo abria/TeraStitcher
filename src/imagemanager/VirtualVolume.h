@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-04-14. Alessandro. @ADDED 'instance_format' method with inputs = {path, format}.
 * 2015-02-28. Giulio.     @FIXED added deallocation of data member 'active' in the destructor
 * 2015-02-18. Giulio.     @CHANGED modified defalut values of parameters of loadSubvolume methods
 * 2015-01-06. Giulio.     @ADDED changed interface of saveImage_from_UINT8_to_Tiff3D to introduce optimizations to reduce opend/close in append operations 
@@ -58,6 +59,7 @@ protected:
 
 public:
 	//CONSTRUCTORS-DECONSTRUCTOR
+    VirtualVolume();
     VirtualVolume(const char* _root_dir, float VXL_1=0, float VXL_2=0, float VXL_3=0) throw (iim::IOException)
     {
 
@@ -279,6 +281,9 @@ public:
                                    iim::axis AXS_1 = iim::axis_invalid, iim::axis AXS_2 = iim::axis_invalid, iim::axis AXS_3 = iim::axis_invalid,
                                    float VXL_1=0.0f, float VXL_2=0.0f, float VXL_3=0.0f) throw (iim::IOException);
 
+    // 2015-04-14. Alessandro. @ADDED 'instance_format' method with inputs = {path, format}.
+    static VirtualVolume* instance_format(const char* path, std::string format) throw (iim::IOException);
+    
     // checks whether the volume stored in "path" can be imported directly (i.e., w/o additional metadata provided by the user)
     static bool isDirectlyImportable(const char* path)
     {

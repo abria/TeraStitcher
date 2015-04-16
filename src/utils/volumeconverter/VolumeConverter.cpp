@@ -25,6 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-04-14. Alessandro. @FIXED misleading usage of 'VirtualVolume::instance' w/o format argument in 'setSrcVolume'
+* 2015-04-14. Alessandro. @FIXED bug-crash when the volume has not been imported correctly in setSrcVolume.
 * 2015-03-03. Giulio.     @ADDED selection of IO plugin if not provided (2D or 3D according to the method).
 * 2015-02-12. Giulio.     @ADDED the same optimizations also in multi-channels (MC) methods
 * 2015-02-12. Giulio.     #ADDED check on the number of slice in the buffer if multiple resolutions are requested
@@ -100,7 +102,13 @@ void VolumeConverter::setSrcVolume(const char* _root_dir, const char* _fmt, cons
         volume = new TimeSeries(_root_dir, _fmt);
     else
         //volume = VirtualVolume::instance(_root_dir, _fmt, vertical, horizontal, depth, 1.0f, 1.0f, 1.0f);
-        volume = VirtualVolume::instance(_root_dir);
+        //volume = VirtualVolume::instance_format(_root_dir);
+        // 2015-04-14. Alessandro. @FIXED misleading usage of 'VirtualVolume::instance' w/o format argument in 'setSrcVolume'
+        volume = VirtualVolume::instance_format(_root_dir, _fmt);
+    
+    // 2015-04-14 Alessandro. @FIXED bug-crash when the volume has not been imported correctly in setSrcVolume.
+    if(!volume)
+        throw iim::IOException(iim::strprintf("in VolumeConverter::setSrcVolume(): unable to recognize the volume format of \"%s\"", _root_dir));
 
 	//channels = (volume->getDIM_C()>1) ? 3 : 1; // only 1 or 3 channels supported
 	channels = volume->getDIM_C();

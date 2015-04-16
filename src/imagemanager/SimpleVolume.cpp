@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-04-15. Alessandro. @ADDED definition for default constructor.
 * 2015-02-27. Alessandro. @ADDED automated selection of IO plugin if not provided.
 * 2014-11-27 Giulio. @FIXED   eliminated part of the dipendences from OpenCV and restored the corresponding code
 * 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
@@ -48,6 +49,14 @@
 using namespace std;
 using namespace iim;
 
+// 2015-04-15. Alessandro. @ADDED definition for default constructor.
+SimpleVolume::SimpleVolume(void) : VirtualVolume()
+{
+    /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
+    
+    N_ROWS = N_COLS = 0;
+    STACKS = 0;
+}
 
 SimpleVolume::SimpleVolume(const char* _root_dir)  throw (IOException)
 : VirtualVolume(_root_dir, 1.0f, 1.0f, 1.0f)
@@ -76,7 +85,7 @@ SimpleVolume::~SimpleVolume(void)
 }
 
 
-void SimpleVolume::init()
+void SimpleVolume::init() throw (iim::IOException)
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 

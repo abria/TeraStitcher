@@ -25,7 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
-2015-04-06. Giulio.       @CHANGED Modified prunt method: printing stacks information is now off by default
+* 2015-04-15. Alessandro. @ADDED definition for default constructor.
+* 2015-04-06. Giulio.       @CHANGED Modified prunt method: printing stacks information is now off by default
 * 2015-02-28. Giulio.     @FIXED removed deallocation of data member 'active' in the destructor because it is performed by the desctructor of the base class iim::VirtualVolume
 */
 
@@ -50,6 +51,17 @@
 using namespace std;
 using namespace iim;
 
+// 2015-04-15. Alessandro. @ADDED definition for default constructor.
+TiledMCVolume::TiledMCVolume(void) : VirtualVolume()
+{
+    /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
+    
+    N_ROWS = N_COLS = 0;
+    reference_system.first = reference_system.second = reference_system.third = iim::axis_invalid;
+    VXL_1 = VXL_2 = VXL_3 = 0.0f;
+    CHDIRNAMES = 0;
+    vol_ch = 0;
+}
 
 TiledMCVolume::TiledMCVolume(const char* _root_dir)  throw (IOException)
 : VirtualVolume(_root_dir) // iannello ADDED
@@ -410,7 +422,7 @@ void TiledMCVolume::load(char* metadata_filepath) throw (IOException)
 	fclose(file);
 }
 
-void TiledMCVolume::init()
+void TiledMCVolume::init() throw (IOException)
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 

@@ -14,12 +14,10 @@ class TimeSeries : public iim::VirtualVolume
         // pure virtual method inherithed from abstract class <VirtualVolume>
         void initChannels() throw (iim::IOException);
 
-        // removing access to default constructor
-        TimeSeries(void);
-
     public:
 
         //CONSTRUCTORS-DESTRUCTOR
+        TimeSeries(void){}
         TimeSeries(const char* rootDir, std::string frames_format = "") throw (iim::IOException);
         ~TimeSeries(void) throw (iim::IOException);
 

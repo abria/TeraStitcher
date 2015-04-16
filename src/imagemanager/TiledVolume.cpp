@@ -25,7 +25,9 @@
 /******************
 *    CHANGELOG    *
 *******************
-2015-04-06. Giulio.       @CHANGED Modified prunt method: printing stacks information is now off by default
+* 2015-04-15. Alessandro. @FIXED bad/missing exception handling in loadSubvolume_to_UINT8.
+* 2015-04-15. Alessandro. @ADDED definition for default constructor.
+* 2015-04-06. Giulio.     @CHANGED Modified prunt method: printing stacks information is now off by default
 * 2015-03-03. Giulio.     @ADDED check that ioplugin interleaves channels in loadSubvolume_to_UINT8.
 * 2015-03-03. Giulio.     @ADDED selection of IO plugin in the constructors if not provided.
 * 2015-02-27. Alessandro. @ADDED automated selection of IO plugin if not provided.
@@ -60,6 +62,17 @@
 using namespace std;
 using namespace iim;
 
+// 2015-04-15. Alessandro. @ADDED definition for default constructor.
+TiledVolume::TiledVolume(void) : VirtualVolume()
+{
+    /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
+    
+    N_ROWS = N_COLS = 0;
+    BLOCKS = 0;
+    reference_system.first = reference_system.second = reference_system.third = iim::axis_invalid;
+    VXL_1 = VXL_2 = VXL_3 = 0.0f;
+    fmtMngr = 0;
+}
 
 TiledVolume::TiledVolume(const char* _root_dir)  throw (IOException)
 : VirtualVolume(_root_dir) // iannello ADDED
@@ -412,7 +425,7 @@ void TiledVolume::load(char* metadata_filepath) throw (IOException)
 	fclose(file);
 }
 
-void TiledVolume::init()
+void TiledVolume::init() throw (IOException)
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
@@ -1037,9 +1050,17 @@ iim::uint8* TiledVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, i
 							sbv_channels = this->DIM_C;
 							sbv_bytes_chan = this->BYTESxCHAN;
 
-							if ( sbv_channels >1 && !(iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved()) ) {
-								throw iom::exception("the plugin do not store channels in interleaved mode: more than one channel not supported yet.");
-							}
+                            // 2015-04-15. Alessandro. @FIXED bad/missing exception handling in loadSubvolume_to_UINT8.
+                            try
+                            {
+                                if ( sbv_channels >1 && !(iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved()) ) {
+                                    throw iim::IOException("the plugin do not store channels in interleaved mode: more than one channel not supported yet.");
+                                }
+                            }
+                            catch(iom::exception &ex)
+                            {
+                                throw iim::IOException(ex.what());
+                            }
 
 							try
 					        {
