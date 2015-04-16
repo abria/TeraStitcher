@@ -153,7 +153,7 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 	else if(blending_algo == S_SHOW_STACK_MARGIN)
             blending = stack_margin;
 	else
-            throw iom::exception("in StackStitcher::getStripe(...): unrecognized blending function");
+            throw iom::exception("in StackStitcher::mergeTilesVaa3DRaw(...): unrecognized blending function");
 
 	//initializing the progress bar
 	char progressBarMsg[200];
@@ -192,7 +192,7 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
     if(block_height < S_MIN_SLICE_DIM || block_width < S_MIN_SLICE_DIM /* 2014-10-29. Giulio. @REMOVED (|| block_depth < S_MIN_SLICE_DIM) */)
     {
         char err_msg[5000];
-        sprintf(err_msg,"The minimum dimension for block width, height and depth is %d", S_MIN_SLICE_DIM);
+        sprintf(err_msg,"in StackStitcher::mergeTilesVaa3DRaw(...): The minimum dimension for block width, height and depth is %d", S_MIN_SLICE_DIM);
         throw iom::exception(err_msg);
     }
 	if(resolutions == NULL)
@@ -248,7 +248,7 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 				if(!make_dir(file_path[res_i].str().c_str()))
 				{
 					char err_msg[S_STATIC_STRINGS_SIZE];
-					sprintf(err_msg, "in mergeTiles(...): unable to create DIR = \"%s\"\n", file_path[res_i].str().c_str());
+					sprintf(err_msg, "in StackStitcher::mergeTilesVaa3DRaw(...): unable to create DIR = \"%s\"\n", file_path[res_i].str().c_str());
 					throw iom::exception(err_msg);
 				}
 
@@ -566,7 +566,7 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 					if(!test_mode && z==D0 && !make_dir(V_DIR_path.str().c_str()))
 					{
 						char err_msg[S_STATIC_STRINGS_SIZE];
-						sprintf(err_msg, "in mergeTiles(...): unable to create V_DIR = \"%s\"\n", V_DIR_path.str().c_str());
+						sprintf(err_msg, "in StackStitcher::mergeTilesVaa3DRaw(...): unable to create V_DIR = \"%s\"\n", V_DIR_path.str().c_str());
 						throw iom::exception(err_msg);
 					}
 
@@ -581,7 +581,7 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 							if(!test_mode && !make_dir(H_DIR_path.str().c_str()))
 							{
 								char err_msg[S_STATIC_STRINGS_SIZE];
-								sprintf(err_msg, "in mergeTiles(...): unable to create H_DIR = \"%s\"\n", H_DIR_path.str().c_str());
+								sprintf(err_msg, "in StackStitcher::mergeTilesVaa3DRaw(...): unable to create H_DIR = \"%s\"\n", H_DIR_path.str().c_str());
 								throw iom::exception(err_msg);
 							}
 							else { // the directory has been created for the first time
@@ -600,7 +600,7 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 									datatype = 1;
 								else {
 									char err_msg[S_STATIC_STRINGS_SIZE];
-									sprintf(err_msg, "in mergeTilesVaa3DRaw(...): unknown image depth (%d)", saved_img_depth);
+									sprintf(err_msg, "in StackStitcher::mergeTilesVaa3DRaw(...): unknown image depth (%d)", saved_img_depth);
 									throw iom::exception(err_msg);
 								}
 
@@ -751,12 +751,12 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 				}
 				catch (iim::IOException & ex)
 				{
-					printf("n StackStitcher::generateTilesVaa3DRaw: cannot create file mdata.bin in %s [reason: %s]\n\n",file_path[res_i].str().c_str(), ex.what());
+					printf("in StackStitcher::mergeTilesVaa3DRaw: cannot create file mdata.bin in %s [reason: %s]\n\n",file_path[res_i].str().c_str(), ex.what());
 					n_err++;
 				}
 				catch ( ... )
 				{
-					printf("in StackStitcher::generateTilesVaa3DRaw: cannot create file mdata.bin in %s [no reason available]\n\n",file_path[res_i].str().c_str());
+					printf("in StackStitcher::mergeTilesVaa3DRaw: cannot create file mdata.bin in %s [no reason available]\n\n",file_path[res_i].str().c_str());
 					n_err++;
 				}
 			}
@@ -797,7 +797,7 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 
 	if ( n_err ) { // errors in mdat.bin creation
 		char err_msg[2000];
-		sprintf(err_msg,"StackStitcher::generateTilesVaa3DRaw: %d errors in creating mdata.bin files", n_err);
+		sprintf(err_msg,"StackStitcher::mergeTilesVaa3DRaw: %d errors in creating mdata.bin files", n_err);
         throw iom::exception(err_msg);
 	}
 }
