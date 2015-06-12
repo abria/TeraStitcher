@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-06-12. Giulio.     @FIXED the right output reference system is set in all cases at the end of the merge algorithm (the case MC input volume was not properly handled)
 * 2015-04-14. Alessandro. @FIXED misleading usage of 'VirtualVolume::instance' w/o format argument in 'setSrcVolume'
 * 2015-04-14. Alessandro. @FIXED bug-crash when the volume has not been imported correctly in setSrcVolume.
 * 2015-03-03. Giulio.     @ADDED selection of IO plugin if not provided (2D or 3D according to the method).
@@ -485,11 +486,30 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 
 	// reloads created volumes to generate .bin file descriptors at all resolutions
 	ref_sys reference(axis(1),axis(2),axis(3));
-	StackedVolume *probe = dynamic_cast<StackedVolume *>(volume);
-	if ( probe ) {
-		reference.first  = probe->getAXS_1();
-		reference.second = probe->getAXS_2();
-		reference.third  = probe->getAXS_3();
+	TiledMCVolume *mcprobe;
+	TiledVolume   *tprobe;
+	StackedVolume *sprobe;
+	sprobe = dynamic_cast<StackedVolume *>(volume);
+	if ( sprobe ) {
+		reference.first  = sprobe->getAXS_1();
+		reference.second = sprobe->getAXS_2();
+		reference.third  = sprobe->getAXS_3();
+	}
+	else {
+		tprobe = dynamic_cast<TiledVolume *>(volume);
+		if ( tprobe ) {
+			reference.first  = tprobe->getAXS_1();
+			reference.second = tprobe->getAXS_2();
+			reference.third  = tprobe->getAXS_3();
+		}
+		else {
+			mcprobe = dynamic_cast<TiledMCVolume *>(volume);
+			if ( mcprobe ) {
+				reference.first  = mcprobe->getAXS_1();
+				reference.second = mcprobe->getAXS_2();
+				reference.third  = mcprobe->getAXS_3();
+			}
+		}
 	}
 	for(int res_i=0; res_i< resolutions_size; res_i++) {
 		if(resolutions[res_i])
@@ -1087,6 +1107,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 
 	// reloads created volumes to generate .bin file descriptors at all resolutions
 	ref_sys reference(axis(1),axis(2),axis(3));
+	TiledMCVolume *mcprobe;
 	TiledVolume   *tprobe;
 	StackedVolume *sprobe;
 	int n_err = 0; 
@@ -1102,6 +1123,14 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 			reference.first  = tprobe->getAXS_1();
 			reference.second = tprobe->getAXS_2();
 			reference.third  = tprobe->getAXS_3();
+		}
+		else {
+			mcprobe = dynamic_cast<TiledMCVolume *>(volume);
+			if ( mcprobe ) {
+				reference.first  = mcprobe->getAXS_1();
+				reference.second = mcprobe->getAXS_2();
+				reference.third  = mcprobe->getAXS_3();
+			}
 		}
 	}
     for(int res_i=0; res_i< resolutions_size; res_i++)
@@ -1739,6 +1768,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 
 	// reloads created volumes to generate .bin file descriptors at all resolutions
 	ref_sys reference(axis(1),axis(2),axis(3));
+	TiledMCVolume *mcprobe;
 	TiledVolume   *tprobe;
 	StackedVolume *sprobe;
 	sprobe = dynamic_cast<StackedVolume *>(volume);
@@ -1753,6 +1783,14 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 			reference.first  = tprobe->getAXS_1();
 			reference.second = tprobe->getAXS_2();
 			reference.third  = tprobe->getAXS_3();
+		}
+		else {
+			mcprobe = dynamic_cast<TiledMCVolume *>(volume);
+			if ( mcprobe ) {
+				reference.first  = mcprobe->getAXS_1();
+				reference.second = mcprobe->getAXS_2();
+				reference.third  = mcprobe->getAXS_3();
+			}
 		}
 	}
 	for ( int c=0; c<channels; c++ ) {
@@ -2335,6 +2373,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 
 	// reloads created volumes to generate .bin file descriptors at all resolutions
 	ref_sys reference(axis(1),axis(2),axis(3));
+	TiledMCVolume *mcprobe;
 	TiledVolume   *tprobe;
 	StackedVolume *sprobe;
 	sprobe = dynamic_cast<StackedVolume *>(volume);
@@ -2349,6 +2388,14 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 			reference.first  = tprobe->getAXS_1();
 			reference.second = tprobe->getAXS_2();
 			reference.third  = tprobe->getAXS_3();
+		}
+		else {
+			mcprobe = dynamic_cast<TiledMCVolume *>(volume);
+			if ( mcprobe ) {
+				reference.first  = mcprobe->getAXS_1();
+				reference.second = mcprobe->getAXS_2();
+				reference.third  = mcprobe->getAXS_3();
+			}
 		}
 	}
 	for(int res_i=0; res_i< resolutions_size; res_i++) {

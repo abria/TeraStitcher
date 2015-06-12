@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-06-12. Giulio   @ADDED parameter to specify the path and name of an error log file
 * 2014-12-10. Giulio.  @ADDED parallel flag
 * 2014-12-10. Alessandro. @FIXED check of "Import" step if a project file is provided.
 * 2014-12-06. Giulio. @ADDED makedirs flag.
@@ -74,6 +75,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::ValueArg<std::string> p_vol_out_plugin("","volout_plugin",vm::strprintf("Plugin that manages the output volume format/organization. Available plugins are: {%s}. Default is \"%s\".", vm::VirtualVolumeFactory::registeredPlugins().c_str(), vm::VOLUME_OUTPUT_FORMAT_PLUGIN.c_str()),false,vm::VOLUME_OUTPUT_FORMAT_PLUGIN,"string");
 	TCLAP::ValueArg<std::string> p_proj_in_path("","projin","File path of the XML project file to be loaded.",false,"null","string");
 	TCLAP::ValueArg<std::string> p_proj_out_path("","projout","File path of the XML project file to be saved.",false,"","string");
+	TCLAP::ValueArg<std::string> p_errlogfile_path("","errlog","File path of the error log file to be saved.",false,"","string");
 	TCLAP::ValueArg<std::string> p_refsys_1("","ref1",	"First axis of the used reference system.                              "
 														"'Y' or 'V' or '1' = Vertical                                          "
 														"'X' or 'H' or '2' = Horizontal                                        "
@@ -172,6 +174,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_refsys_3);
 	cmd.add(p_refsys_2);
 	cmd.add(p_refsys_1);
+	cmd.add(p_errlogfile_path);
 	cmd.add(p_proj_out_path);
 	cmd.add(p_proj_in_path);
 	cmd.add(p_vol_out_plugin);
@@ -480,6 +483,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	this->volume_save_path = p_vol_out_path.getValue();
 	this->projfile_load_path = p_proj_in_path.getValue();
 	this->projfile_save_path = p_proj_out_path.getValue();
+	this->errlogfile_path = p_proj_out_path.getValue();
 	this->reference_system.first  = vm::axis(vm::str2axis(p_refsys_1.getValue()));
 	this->reference_system.second = vm::axis(vm::str2axis(p_refsys_2.getValue()));
 	this->reference_system.third  = vm::axis(vm::str2axis(p_refsys_3.getValue()));

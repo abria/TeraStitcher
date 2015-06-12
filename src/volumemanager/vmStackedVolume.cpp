@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-06-12. Giulio      @ADDED 'check' method to check completeness and coherence of a volume
 * 2015-02-26. Giulio.     @ADDED implementation of initChannels private method to initialize fields DIM_C and BYTESxCHAN
 * 2015-01-17. Alessandro. @ADDED support for all-in-one-folder data (import from xml only).
 * 2014-11-06. Giulio.     @ADDED saved reference system into XML file
@@ -1122,6 +1123,39 @@ void StackedVolume::mirror(vm::axis mrr_axis) throw (iom::exception)
 
 	STACKS = new_STACK_2D_ARRAY;
 }
+
+
+//check if volume is complete and coherent
+bool StackedVolume::check(const char *errlogFileName) throw (iom::exception)
+{
+	bool ok = true;
+	FILE *errlogf;
+
+	if ( (errlogf = fopen(errlogFileName,"w")) == 0 ) {
+		char errMsg[2000];
+		sprintf(errMsg,"in StackedVolume::check(errlogFileName = \"%s\") : unable to open log file", errlogFileName);
+		throw iom::exception(errMsg);
+	}
+
+	int depth = STACKS[0][0]->getDEPTH();
+
+	fprintf(errlogf,"Volume (StackedVolume): \"%s\"\n",stacks_dir);
+	fprintf(errlogf,"\tdepth: %d\n",depth);
+
+	for ( int i=0; i<N_ROWS; i++ ) {
+		for ( int j=0; j<N_COLS; j++ ) {
+			if ( depth != STACKS[i][j]->getDEPTH() ) {
+				fprintf(errlogf,"\trow=%d, col=%d, depth=%d\n",i,j,STACKS[i][j]->getDEPTH());
+				ok = false;
+			}
+		}
+	}
+
+	fclose(errlogf);
+
+	return ok;
+}
+
 
 //counts the total number of displacements and the number of displacements per stack
 void StackedVolume::countDisplacements(int& total, float& per_stack_pair)

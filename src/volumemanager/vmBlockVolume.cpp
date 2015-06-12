@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-06-12. Giulio      @ADDED 'check' method to check completeness and coherence of a volume
 * 2015-02-26. Giulio.     @ADDED implementation of initChannels private method to initialize fields DIM_C and BYTESxCHAN
 * 2015-01-17. Alessandro. @FIXED missing throw(iom::exception) declaration in loadXML and initFromXML methods.
 * 2015-01-17. Alessandro. @ADDED support for all-in-one-folder data (import from xml only).
@@ -699,6 +700,39 @@ void BlockVolume::mirror(vm::axis mrr_axis)
 
 	BLOCKS = new_STACK_2D_ARRAY;
 }
+
+
+//check if volume is complete and coherent
+bool BlockVolume::check(const char *errlogFileName) throw (iom::exception)
+{
+	bool ok = true;
+	FILE *errlogf;
+
+	if ( (errlogf = fopen(errlogFileName,"w")) == 0 ) {
+		char errMsg[2000];
+		sprintf(errMsg,"in BlockVolume::check(errlogFileName = \"%s\") : unable to open log file", errlogFileName);
+		throw iom::exception(errMsg);
+	}
+
+	int depth = BLOCKS[0][0]->getDEPTH();
+
+	fprintf(errlogf,"Volume (BlockVolume): \"%s\"\n",stacks_dir);
+	fprintf(errlogf,"\tdepth: %d\n",depth);
+
+	for ( int i=0; i<N_ROWS; i++ ) {
+		for ( int j=0; j<N_COLS; j++ ) {
+			if ( depth != BLOCKS[i][j]->getDEPTH() ) {
+				fprintf(errlogf,"\trow=%d, col=%d, depth=%d\n",i,j,BLOCKS[i][j]->getDEPTH());
+				ok = false;
+			}
+		}
+	}
+
+	fclose(errlogf);
+
+	return ok;
+}
+
 
 void BlockVolume::loadXML(const char *xml_filepath) throw (iom::exception)
 {

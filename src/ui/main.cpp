@@ -28,9 +28,10 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-06-12. Giulio.     @ADDED calla to check method on the imported/tested volume
 * 2015-02-03. Alessandro. @FIXED bug in the call of mergeTiles (wrong D1 if D1 was not set).
 * 2014-12-10. Alessandro. @FIXED not working --import step with XML file.
-* 2014-12-06. Giulio @ADDED   a case in main to be executed when the makedirs flag is set.
+* 2014-12-06. Giulio      @ADDED a case in main to be executed when the makedirs flag is set.
 */
 
 #include <iostream>
@@ -223,6 +224,7 @@ int main(int argc, char** argv)
 		{
 			stitcher->mergeTiles(cli.volume_save_path, -1, -1, NULL, false, -1, -1, -1, -1, volume->getN_SLICES()/2, volume->getN_SLICES()/2 +1, 
 			                     false, false, S_SHOW_STACK_MARGIN, true, false, cli.img_format.c_str(), cli.img_depth);
+			bool err = volume->check(fillPath(cli.errlogfile_path, volume->getSTACKS_DIR(), "err_log_file", "txt").c_str());
 			defaultOutputFileName = "xml_import";
 		}
 		total_time += TIME(0);

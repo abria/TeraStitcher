@@ -60,6 +60,7 @@ class TeraStitcherCLI
 		string volume_save_path;				//directory path where to save the stitched volume
 		string projfile_load_path;				//file path of the project XML file to be loaded
 		string projfile_save_path;				//file path of the project XML file to be saved
+		string errlogfile_path;					//file path of the error log file to be saved
 		vm::ref_sys reference_system;			//reference system used by the acquired volume  
 		float VXL_1, VXL_2, VXL_3;				//voxel dimensions (in microns) along first, second and third axes
 		int pd_algo;							//pairwise displacements computation algorithm identifier
