@@ -483,7 +483,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	this->volume_save_path = p_vol_out_path.getValue();
 	this->projfile_load_path = p_proj_in_path.getValue();
 	this->projfile_save_path = p_proj_out_path.getValue();
-	this->errlogfile_path = p_proj_out_path.getValue();
+	this->errlogfile_path = p_errlogfile_path.getValue();
 	this->reference_system.first  = vm::axis(vm::str2axis(p_refsys_1.getValue()));
 	this->reference_system.second = vm::axis(vm::str2axis(p_refsys_2.getValue()));
 	this->reference_system.third  = vm::axis(vm::str2axis(p_refsys_3.getValue()));
