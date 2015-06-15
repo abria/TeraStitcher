@@ -256,9 +256,17 @@ void Block::init() throw (iom::exception)
 	DEPTH=0;
 	for ( int ib=0; ib<(int)N_BLOCKS; ib++ ) 
 	{
-		iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->readMetadata(
-			iom::strprintf("%s/%s/%s", CONTAINER->getSTACKS_DIR(), DIR_NAME, FILENAMES[ib]), 
-			WIDTH, HEIGHT, BLOCK_SIZE[ib], N_BYTESxCHAN, N_CHANS);
+		try {
+			iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->readMetadata(
+				iom::strprintf("%s/%s/%s", CONTAINER->getSTACKS_DIR(), DIR_NAME, FILENAMES[ib]), 
+				WIDTH, HEIGHT, BLOCK_SIZE[ib], N_BYTESxCHAN, N_CHANS);
+		}
+		catch ( iom::exception& exception ) {
+			if ( strstr(exception.what(),"unable to open image") ) // the image is corrupted: capture the exception
+				BLOCK_SIZE[ib] = 0;
+			else // raise the exception again
+				throw iom::exception(exception.what());
+		}
         BLOCK_ABS_D[ib] = DEPTH; 
 		DEPTH += BLOCK_SIZE[ib];
 	}
