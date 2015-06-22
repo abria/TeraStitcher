@@ -149,8 +149,9 @@ class volumemanager::VirtualVolume
         /**********************************************************************************
         * UTILITY methods
         ***********************************************************************************/
-        //check if volume is complete and coherent
-		virtual bool check(const char *errlogFileName) throw (iom::exception)=0;
+        //check if volume is complete and coherent; return true if the volume is ok, false otherwise
+		//if a file name is passed and thevolume is not ok an error log file is generated
+		virtual bool check(const char *errlogFileName = 0) throw (iom::exception)=0;
 
 		//counts the total number of displacements and the number of displacements per pair of adjacent stacks
         virtual void countDisplacements(int& total, float& per_stack_pair) = 0;

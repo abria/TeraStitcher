@@ -714,23 +714,26 @@ bool BlockVolume::check(const char *errlogFileName) throw (iom::exception)
 		for ( int j=0; j<N_COLS; j++ ) {
 			if ( depth != BLOCKS[i][j]->getDEPTH() ) {
 				if ( ok ) { // first anomaly: open and initialize the errlog file
-					if ( (errlogf = fopen(errlogFileName,"w")) == 0 ) {
-						char errMsg[2000];
-						sprintf(errMsg,"in BlockVolume::check(errlogFileName = \"%s\") : unable to open log file", errlogFileName);
-						throw iom::exception(errMsg);
-					}
+					if ( errlogFileName ) {
+						if ( (errlogf = fopen(errlogFileName,"w")) == 0 ) {
+							char errMsg[2000];
+							sprintf(errMsg,"in BlockVolume::check(errlogFileName = \"%s\") : unable to open log file", errlogFileName);
+							throw iom::exception(errMsg);
+						}
 
-					fprintf(errlogf,"errlog file of volume (BlockVolume): \"%s\"\n",stacks_dir);
-					fprintf(errlogf,"\tdepth: %d\n",depth);
+						fprintf(errlogf,"errlog file of volume (BlockVolume): \"%s\"\n",stacks_dir);
+						fprintf(errlogf,"\tdepth: %d\n",depth);
+					}
 
 					ok = false;
 				}
-				fprintf(errlogf,"\trow=%d, col=%d, depth=%d\n",i,j,BLOCKS[i][j]->getDEPTH());
+				if ( errlogFileName ) 
+					fprintf(errlogf,"\trow=%d, col=%d, depth=%d\n",i,j,BLOCKS[i][j]->getDEPTH());
 			}
 		}
 	}
 
-	if ( !ok ) // there are anomalies: close the errlog file
+	if ( errlogFileName && !ok ) // there are anomalies: close the errlog file
 		fclose(errlogf);
 
 	return ok;

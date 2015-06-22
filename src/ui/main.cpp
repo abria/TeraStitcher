@@ -162,12 +162,25 @@ int main(int argc, char** argv)
 		// import volume from directory or XML file
 		volumemanager::VirtualVolume* volume = 0;
 		// 2014-12-10. Alessandro. @FIXED not working --import step with XML file.
-		if((cli.test || cli.import) && cli.projfile_load_path.compare("null")!=0)
+		if((cli.test || cli.import) && cli.projfile_load_path.compare("null")!=0) {
             volume = volumemanager::VirtualVolumeFactory::createFromXML(cli.projfile_load_path.c_str(), cli.rescanFiles || !vm::IMG_FILTER_REGEX.empty());
-		else if(cli.import || (cli.computedisplacements && cli.projfile_load_path.compare("null")==0) || cli.stitch || cli.test)
+			if ( !volume->check() )
+				throw iom::exception(vm::strprintf("Volume \"%s\" is incomplete or not coherent", volume->getSTACKS_DIR()).c_str());
+		}
+		else if(cli.import || (cli.computedisplacements && cli.projfile_load_path.compare("null")==0) || cli.stitch || cli.test) {
 			volume = volumemanager::VirtualVolumeFactory::createFromData(vm::VOLUME_INPUT_FORMAT_PLUGIN, cli.volume_load_path.c_str(), cli.reference_system, cli.VXL_1, cli.VXL_2, cli.VXL_3, true);
-		else if( (cli.computedisplacements && cli.volume_load_path.compare("null")==0) || cli.projdisplacements || cli.thresholddisplacements || cli.placetiles || cli.mergetiles || cli.makeDirs || cli.metaData)
+			if ( !volume->check(fillPath(cli.errlogfile_path, volume->getSTACKS_DIR(), "err_log_file", "txt").c_str()) ) {
+				// save xml for further checking
+				volume->saveXML(0, fillPath(cli.projfile_save_path, volume->getSTACKS_DIR(), "xml_import", "xml").c_str());
+				throw iom::exception(vm::strprintf("Volume \"%s\" is incomplete or not coherent: look at error log file \"%s\"",
+					volume->getSTACKS_DIR(),fillPath(cli.errlogfile_path, volume->getSTACKS_DIR(), "err_log_file", "txt").c_str()).c_str());
+			}
+		}
+		else if( (cli.computedisplacements && cli.volume_load_path.compare("null")==0) || cli.projdisplacements || cli.thresholddisplacements || cli.placetiles || cli.mergetiles || cli.makeDirs || cli.metaData) {
             volume = volumemanager::VirtualVolumeFactory::createFromXML(cli.projfile_load_path.c_str(), cli.rescanFiles || !vm::IMG_FILTER_REGEX.empty());
+			if ( !volume->check() )
+				throw iom::exception(vm::strprintf("Volume \"%s\" is incomplete or not coherent", volume->getSTACKS_DIR()).c_str());
+		}
 
 		// process volume		
 		double total_time = -TIME(0);
@@ -224,7 +237,6 @@ int main(int argc, char** argv)
 		{
 			stitcher->mergeTiles(cli.volume_save_path, -1, -1, NULL, false, -1, -1, -1, -1, volume->getN_SLICES()/2, volume->getN_SLICES()/2 +1, 
 			                     false, false, S_SHOW_STACK_MARGIN, true, false, cli.img_format.c_str(), cli.img_depth);
-			bool err = volume->check(fillPath(cli.errlogfile_path, volume->getSTACKS_DIR(), "err_log_file", "txt").c_str());
 			defaultOutputFileName = "xml_import";
 		}
 		total_time += TIME(0);

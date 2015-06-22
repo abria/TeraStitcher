@@ -105,8 +105,9 @@ class vm::BlockVolume : public vm::VirtualVolume
         * UTILITY methods
         ***********************************************************************************/
 
-		//check if volume is complete and coherent
-		bool check(const char *errlogFileName) throw (iom::exception);
+        //check if volume is complete and coherent; return true if the volume is ok, false otherwise
+		//if a file name is passed and thevolume is not ok an error log file is generated
+		bool check(const char *errlogFileName = 0) throw (iom::exception);
 
         //counts the total number of displacements and the number of displacements per pair of adjacent stacks
         void countDisplacements(int& total, float& per_stack_pair);
