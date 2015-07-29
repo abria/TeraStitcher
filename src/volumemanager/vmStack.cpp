@@ -124,6 +124,30 @@ Stack::Stack(StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bi
 	unBinarizeFrom(bin_file);
 }
 
+Stack::~Stack()
+{
+	#if VM_VERBOSE > 3
+	printf("\t\t\t\tin Stack[%d,%d]::~Stack()\n",ROW_INDEX, COL_INDEX);
+	#endif
+
+	NORTH.clear();
+	EAST.clear();
+	SOUTH.clear();
+	WEST.clear();
+
+    if(FILENAMES)
+    {
+		for(int z=0; z<DEPTH; z++)
+			if(FILENAMES[z])
+				delete[] FILENAMES[z];
+		delete[] FILENAMES;
+	}
+	if(STACKED_IMAGE)
+		delete[] STACKED_IMAGE;
+	if(DIR_NAME)
+		delete[] DIR_NAME;
+}
+
 void Stack::init() throw (iom::exception)
 {
 	#if VM_VERBOSE > 3
@@ -208,30 +232,6 @@ void Stack::init() throw (iom::exception)
 	// add to 'z_ranges' the full range
 	z_ranges.clear();
 	z_ranges.push_back(vm::interval<int>(0, DEPTH));
-}
-
-Stack::~Stack()
-{
-	#if VM_VERBOSE > 3
-	printf("\t\t\t\tin Stack[%d,%d]::~Stack()\n",ROW_INDEX, COL_INDEX);
-	#endif
-
-	NORTH.clear();
-	EAST.clear();
-	SOUTH.clear();
-	WEST.clear();
-
-    if(FILENAMES)
-    {
-		for(int z=0; z<DEPTH; z++)
-			if(FILENAMES[z])
-				delete[] FILENAMES[z];
-		delete[] FILENAMES;
-	}
-	if(STACKED_IMAGE)
-		delete[] STACKED_IMAGE;
-	if(DIR_NAME)
-		delete[] DIR_NAME;
 }
 
 //binarizing-unbinarizing methods

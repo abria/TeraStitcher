@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-07-22. Giluio.     @ADDED supporto for spase data.
 * 2015-01-17. Alessandro. @ADDED constructor for initialization from XML.
 * 2015-01-17. Alessandro. @FIXED missing throw(iom::exception) declaration in many methods.
 * 2014-09-05. Alessandro. @ADDED 'z_end' parameter in 'loadXML()' method to support sparse data feature.
@@ -34,9 +35,14 @@
 #ifndef _VM_BLOCK_H
 #define _VM_BLOCK_H
 
+#include <set>
+
+#include "volumemanager.config.h"
 #include "iomanager.config.h"
 #include "tinyxml.h"
-#include "vmVirtualStack.h" 
+#include "vmVirtualStack.h"
+
+
 
 class Displacement;
 
@@ -63,6 +69,12 @@ class vm::Block : public vm::VirtualStack
 	    //binarizing-unbinarizing methods
 		void binarizeInto(FILE* file) throw (iom::exception);
 		void unBinarizeFrom(FILE* file) throw (iom::exception);
+
+		// compute 'z_ranges'
+		void 
+			compute_z_ranges(
+			std::pair<int,int> const * z_coords = 0)		// set of z-coordinates where at least one slice (of a certain stack) is available
+		throw (iom::exception);								// if null, 'z_ranges' will be compute based on 'FILENAMES' vector
 
 		//returns a pointer to the intersection segment (along D) if the given segment (D0,D1-1) intersects current stack, otherwise returns NULL
 		//D0 first index of the segment

@@ -49,21 +49,21 @@
 */
 
 
-#include <iostream>
-#include <typeinfo>
-#include "vmStackedVolume.h"
-#include "S_config.h"
-#include "tinyxml.h"
-#include <fstream>
-#include <sstream>
 #ifdef _WIN32
 #include "dirent_win.h"
 #else
 #include <dirent.h>
 #endif
+#include <iostream>
+#include <typeinfo>
 #include <limits>
 #include <list>
 #include <set>
+#include <fstream>
+#include <sstream>
+#include "vmStackedVolume.h"
+#include "S_config.h"
+#include "tinyxml.h"
 #include "vmStack.h"
 #include "Displacement.h"
 
