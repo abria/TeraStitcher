@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-07-30. Giluio.     @FIXED bug in extractCoordinates.
 * 2015-07-22. Giluio.     @ADDED support for spase data (see comments below).
 * 2015-06-12. Giulio      @ADDED 'check' method to check completeness and coherence of a volume
 * 2015-02-26. Giulio.     @ADDED implementation of initChannels private method to initialize fields DIM_C and BYTESxCHAN
@@ -374,8 +375,20 @@ void BlockVolume::applyReferenceSystem(vm::ref_sys reference_system, float VXL_1
 			this->mirror(vm::axis(1));
 
 		int computed_ORG_1, computed_ORG_2, computed_ORG_3;
-		extractCoordinates(BLOCKS[0][0], 0, &computed_ORG_1, &computed_ORG_2, &computed_ORG_3);
-		ORG_V = computed_ORG_2/10000.0F;
+
+		// 2015-07-30. Giulio. @FIXED bug: sparse data support
+		if(SPARSE_DATA)
+		{
+			extractCoordinates(BLOCKS[0][0], 0, &computed_ORG_1, &computed_ORG_2);
+		}
+		else {
+			// 2014-09-01. Alessandro. @FIXED: check that this tile has a slice at z=0. Otherwise it's not possible to compute the origin.
+			if(BLOCKS[0][0]->isComplete(0,0) == false)
+				throw iom::exception(vm::strprintf("in StackedVolume::applyReferenceSystem(): cannot compute origin. Tile (0,0) [%s] has no slice at z=0", BLOCKS[0][0]->getDIR_NAME()).c_str());
+
+			extractCoordinates(BLOCKS[0][0], 0, &computed_ORG_1, &computed_ORG_2, &computed_ORG_3);
+			ORG_D = computed_ORG_3/10000.0F;
+		}
 		ORG_H = computed_ORG_1/10000.0F;
 		ORG_D = computed_ORG_3/10000.0F;
 		VXL_V = VXL_2 ;
