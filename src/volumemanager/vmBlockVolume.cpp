@@ -299,14 +299,13 @@ void BlockVolume::init() throw (iom::exception)
 				start_cur = atoi(name2coordZ((*i)->FILENAMES[0]).c_str());
 				if ( start_cur < start_z )
 					start_z = start_cur;
-				end_cur = atoi(name2coordZ((*i)->FILENAMES[(*i)->N_BLOCKS-1]).c_str()) + ((*i)->BLOCK_SIZE[(*i)->N_BLOCKS-1] * 10 * VXL_D);
+				end_cur = atoi(name2coordZ((*i)->FILENAMES[(*i)->N_BLOCKS-1]).c_str()) + (int)floor((*i)->BLOCK_SIZE[(*i)->N_BLOCKS-1] * 10 * VXL_D + 0.5);
 				if ( end_cur > end_z )
 					end_z = end_cur;
 				if ( N_SLICES < (*i)->DEPTH )
 					N_SLICES = (*i)->DEPTH;
 			}
 		}
-		std::pair<int,int> z_coords(start_z,end_z);
 		// check if no stacks are complete
 		if ( N_SLICES < ((int)floor((float)(end_z - start_z) / (10 * VXL_D) + 0.5)) )
 			N_SLICES = (int)floor((float)(end_z - start_z) / (10 * VXL_D) + 0.5);
@@ -319,6 +318,7 @@ void BlockVolume::init() throw (iom::exception)
 		ORG_D = start_z/10000.0F;
 
 		// for each tile, compute the range of available slices
+		std::pair<int,int> z_coords(start_z,end_z);
 		for(list<Block*>::iterator i = stacks_list.begin(); i != stacks_list.end(); i++) {
 			(*i)->compute_z_ranges(&z_coords);
 		}

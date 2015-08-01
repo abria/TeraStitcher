@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-08-01. Giulio.     @FIXED bugs in sparse data management (compute_z_ranges)
 * 2015-07-22. Giluio.     @ADDED support for spase data.
 * 2015-02-13. Giulio.     @CHANGED 3D ioplugin is called instead of Tiff3DMngr functions
 * 2015-01-17. Alessandro. @ADDED constructor for initialization from XML.
@@ -895,15 +896,15 @@ void
 		int *BLOCK_ABS_D_temp  = new int[2*N_BLOCKS+1];
 
 		int n_blocks = 0;
-		int n = 0;
-		int z_next;
-		int z = z_coords->first;
+		int n = 0;  // index of the first slice of the block to be processed
+		int z_next; // D coordinate of block to be processed
+		int z = z_coords->first; // current D coordinate 
 		for ( int i=0; i<N_BLOCKS; i++ ) {
 			z_next = atoi(VirtualVolume::name2coordZ(FILENAMES[i]).c_str());
 			if ( z_next > z ) {
 				FILENAMES_temp[n_blocks]   = 0;
-				BLOCK_SIZE_temp[n_blocks]  = (int) floor((z_next - z)/10 + 0.5);
-				BLOCK_ABS_D_temp[n_blocks] = (int) floor(z/10 + 0.5);
+				BLOCK_SIZE_temp[n_blocks]  = (int) floor((float)(z_next - z)/(10 * CONTAINER->getVXL_D())); // 2015-08-01. Giulio. floor is used to avoid the introduction of one more empty slice; if some slice is missing it will be added at the bottom of the stack
+				BLOCK_ABS_D_temp[n_blocks] = n;
 				n += BLOCK_SIZE_temp[n_blocks];
 				n_blocks++;
 			}
@@ -912,13 +913,18 @@ void
 			BLOCK_ABS_D_temp[n_blocks] = n;
 			n += BLOCK_SIZE_temp[n_blocks];
 			n_blocks++;
-			z = z_next + BLOCK_SIZE[i] * 10 * CONTAINER->getVXL_D();
+			z = (int) floor(z_next + BLOCK_SIZE[i] * 10 * CONTAINER->getVXL_D() + 0.5);
 		}
 		if ( n < n_slices ) {
 			FILENAMES_temp[n_blocks]   = 0;
 			BLOCK_SIZE_temp[n_blocks]  = n_slices - n;
 			BLOCK_ABS_D_temp[n_blocks] = n;
 			n_blocks++;
+		}
+		else if ( n > n_slices ) {
+			char msg[S_STATIC_STRINGS_SIZE];
+			sprintf(msg,"in Block::compute_z_ranges(...): in stack [%d,%d] too many slices (%d instead of %d)", ROW_INDEX, COL_INDEX, n, n_slices);
+			throw iom::exception(msg);
 		}
 
 		if ( N_BLOCKS ) {
@@ -929,12 +935,15 @@ void
 
 		FILENAMES = new char *[n_blocks];
 		memcpy(FILENAMES,FILENAMES_temp,n_blocks*sizeof(char *));
+		delete[] FILENAMES_temp;
 
 		BLOCK_SIZE = new int[n_blocks];
 		memcpy(BLOCK_SIZE,BLOCK_SIZE_temp,n_blocks*sizeof(int));
+		delete[] BLOCK_SIZE_temp;
 
 		BLOCK_ABS_D = new int[n_blocks];
 		memcpy(BLOCK_ABS_D,BLOCK_ABS_D_temp,n_blocks*sizeof(int));
+		delete[] BLOCK_ABS_D_temp;
 
 		N_BLOCKS = n_blocks;
 		DEPTH    = n_slices;
