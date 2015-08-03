@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-07-30. Giluio.     @FIXED bug in applyReference system.
 * 2015-07-30. Giluio.     @FIXED bug in extractCoordinates.
 * 2015-07-22. Giluio.     @ADDED support for spase data (see comments below).
 * 2015-06-12. Giulio      @ADDED 'check' method to check completeness and coherence of a volume
@@ -307,6 +308,7 @@ void BlockVolume::init() throw (iom::exception)
 			}
 		}
 		// check if no stacks are complete
+		// WARNING: VXL_D is assumed positive, it should be used the absolute value
 		if ( N_SLICES < ((int)floor((float)(end_z - start_z) / (10 * VXL_D) + 0.5)) )
 			N_SLICES = (int)floor((float)(end_z - start_z) / (10 * VXL_D) + 0.5);
 
@@ -389,8 +391,8 @@ void BlockVolume::applyReferenceSystem(vm::ref_sys reference_system, float VXL_1
 			extractCoordinates(BLOCKS[0][0], 0, &computed_ORG_1, &computed_ORG_2, &computed_ORG_3);
 			ORG_D = computed_ORG_3/10000.0F;
 		}
+		ORG_V = computed_ORG_2/10000.0F; // 2015-08-03. Giulio. @FIXED bug
 		ORG_H = computed_ORG_1/10000.0F;
-		ORG_D = computed_ORG_3/10000.0F;
 		VXL_V = VXL_2 ;
 		VXL_H = VXL_1 ; 
 		VXL_D = VXL_3 ;
