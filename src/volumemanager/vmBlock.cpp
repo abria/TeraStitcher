@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-08-05. Giulio.     @ADDED detailed error messages in loadImageStack and compute_z_ranges
 * 2015-08-01. Giulio.     @FIXED bugs in sparse data management (compute_z_ranges)
 * 2015-07-22. Giluio.     @ADDED support for spase data.
 * 2015-02-13. Giulio.     @CHANGED 3D ioplugin is called instead of Tiff3DMngr functions
@@ -467,6 +468,9 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 
 	for(int i = intersect_segm->ind0; i <= intersect_segm->ind1; i++)
 	{
+		if ( temp - data > (HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN * N_CHANS) )
+			throw iom::exception(vm::strprintf("in Block[%s]::loadImageStack(): buffer overrun at block %d", DIR_NAME, i-1).c_str());
+			
 		first = (first_file > BLOCK_ABS_D[i]) ? first_file-BLOCK_ABS_D[i] : 0 ;
 		last = (last_file < BLOCK_ABS_D[i]+BLOCK_SIZE[i]-1) ?  last_file-BLOCK_ABS_D[i] : BLOCK_SIZE[i]-1 ;
 		if ( FILENAMES[i] ) { // 2015-07-26. Giulio. @ADDED sparsedata support
@@ -888,8 +892,12 @@ void
 		// compute the number of slices corresponding to the volume
 		int n_slices = (int) floor((float)(z_coords->second - z_coords->first) / (10 * CONTAINER->getVXL_D()) + 0.5);
 		// check non-zero N_SLICES
-		if (CONTAINER->getN_SLICES() != n_slices)
-			throw iom::exception("in Block::compute_z_ranges(...): error in th number of slices");
+		if (CONTAINER->getN_SLICES() != n_slices) {
+			char msg[S_STATIC_STRINGS_SIZE];
+			sprintf(msg,"in Block::compute_z_ranges(...): in stack [%d,%d] error in the number of slices (CONTAINER->getN_SLICES()=%d, z_coords=[%d,%d], CONTAINER->getVXL_D()=%f, n_slices=%d)",
+				ROW_INDEX, COL_INDEX, CONTAINER->getN_SLICES(), z_coords->first, z_coords->second, CONTAINER->getVXL_D(), n_slices);
+			throw iom::exception(msg);
+		}
 
 		char **FILENAMES_temp  = new char*[2*N_BLOCKS+1];
 		int *BLOCK_SIZE_temp   = new int[2*N_BLOCKS+1];
