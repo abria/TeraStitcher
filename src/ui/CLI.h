@@ -89,6 +89,7 @@ class TeraStitcherCLI
 		int img_depth;							//saved image depth
 
 		int slice_depth;						//desired dimension of blocks after merging
+		int halving_method;
 
 		//constructor - deconstructor
 		TeraStitcherCLI(void);					//set default params

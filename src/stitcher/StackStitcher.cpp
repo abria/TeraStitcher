@@ -751,7 +751,7 @@ iom::real_t* StackStitcher::getStripe(int row_index, int d_index, int restore_di
 void StackStitcher::mergeTiles(std::string output_path, int slice_height, int slice_width, bool* resolutions, 
 							   bool exclude_nonstitchable_stacks, int _ROW_START, int _ROW_END, int _COL_START,
 							   int _COL_END, int _D0, int _D1, bool restoreSPIM, int restore_direction,
-							   int blending_algo, bool test_mode, bool show_progress_bar, 
+							   int blending_algo, int method, bool test_mode, bool show_progress_bar, 
 							   const char* saved_img_format, int saved_img_depth)			throw (iom::exception)
 {
         #if S_VERBOSE > 2
@@ -1131,7 +1131,7 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 
 			//halvesampling resolution if current resolution is not the deepest one
 			if(i!=0)	
-				StackStitcher::halveSample(buffer,(int)(height/(POW_INT(2,i-1))),(int)(width/(POW_INT(2,i-1))),(int)(z_size/(POW_INT(2,i-1))));
+				StackStitcher::halveSample(buffer,(int)(height/(POW_INT(2,i-1))),(int)(width/(POW_INT(2,i-1))),(int)(z_size/(POW_INT(2,i-1))),method);
 
 			//saving at current resolution if it has been selected and iff buffer is at least 1 voxel (Z) deep
 			if(resolutions[i] && (z_size/(POW_INT(2,i))) > 0)
@@ -1303,35 +1303,78 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 * Performs downsampling at a halved frequency on the given 3D image.  The given image is overwritten in order
 * to store its halvesampled version without allocating any additional resources.
 **************************************************************************************************************/
-void StackStitcher::halveSample(iom::real_t* img, int height, int width, int depth)
+void StackStitcher::halveSample(iom::real_t* img, int height, int width, int depth, int method)
 {
 	#ifdef S_TIME_CALC
 	double proc_time = -TIME(0);
 	#endif
 
 	float A,B,C,D,E,F,G,H;
-	for(int z=0; z<depth/2; z++)
-	{
-		for(int i=0; i<height/2; i++)
-		{
-			for(int j=0; j<width/2; j++)
-			{
-				//computing 8-neighbours
-				A = img[2*z*width*height +2*i*width + 2*j];
-				B = img[2*z*width*height +2*i*width + (2*j+1)];
-				C = img[2*z*width*height +(2*i+1)*width + 2*j];
-				D = img[2*z*width*height +(2*i+1)*width + (2*j+1)];
-				E = img[(2*z+1)*width*height +2*i*width + 2*j];
-				F = img[(2*z+1)*width*height +2*i*width + (2*j+1)];
-				G = img[(2*z+1)*width*height +(2*i+1)*width + 2*j];
-				H = img[(2*z+1)*width*height +(2*i+1)*width + (2*j+1)];
 
-				//computing mean
-				img[z*(width/2)*(height/2)+i*(width/2)+j] = (A+B+C+D+E+F+G+H)/(float)8;
+	// indices are sint64 because offsets can be larger that 2^31 - 1
+
+	if ( method == HALVE_BY_MEAN ) {
+
+		for(sint64 z=0; z<depth/2; z++)
+		{
+			for(sint64 i=0; i<height/2; i++)
+			{
+				for(sint64 j=0; j<width/2; j++)
+				{
+					//computing 8-neighbours
+					A = img[2*z*width*height +2*i*width + 2*j];
+					B = img[2*z*width*height +2*i*width + (2*j+1)];
+					C = img[2*z*width*height +(2*i+1)*width + 2*j];
+					D = img[2*z*width*height +(2*i+1)*width + (2*j+1)];
+					E = img[(2*z+1)*width*height +2*i*width + 2*j];
+					F = img[(2*z+1)*width*height +2*i*width + (2*j+1)];
+					G = img[(2*z+1)*width*height +(2*i+1)*width + 2*j];
+					H = img[(2*z+1)*width*height +(2*i+1)*width + (2*j+1)];
+
+					//computing mean
+					img[z*(width/2)*(height/2)+i*(width/2)+j] = (A+B+C+D+E+F+G+H)/(float)8;
+				}
 			}
 		}
-	}
 
+	}
+	else if ( method == HALVE_BY_MAX ) {
+
+		for(sint64 z=0; z<depth/2; z++)
+		{
+			for(sint64 i=0; i<height/2; i++)
+			{
+				for(sint64 j=0; j<width/2; j++)
+				{
+					//computing max of 8-neighbours
+					A = img[2*z*width*height + 2*i*width + 2*j];
+					B = img[2*z*width*height + 2*i*width + (2*j+1)];
+					if ( B > A ) A = B;
+					B = img[2*z*width*height + (2*i+1)*width + 2*j];
+					if ( B > A ) A = B;
+					B = img[2*z*width*height + (2*i+1)*width + (2*j+1)];
+					if ( B > A ) A = B;
+					B = img[(2*z+1)*width*height + 2*i*width + 2*j];
+					if ( B > A ) A = B;
+					B = img[(2*z+1)*width*height + 2*i*width + (2*j+1)];
+					if ( B > A ) A = B;
+					B = img[(2*z+1)*width*height + (2*i+1)*width + 2*j];
+					if ( B > A ) A = B;
+					B = img[(2*z+1)*width*height + (2*i+1)*width + (2*j+1)];
+					if ( B > A ) A = B;
+
+					//computing mean
+					img[z*(width/2)*(height/2) + i*(width/2) + j] = A;
+				}
+			}
+		}
+
+	}
+	else {
+		char buffer[S_STATIC_STRINGS_SIZE];
+		sprintf(buffer,"in halveSample(...): invalid halving method\n");
+        throw iom::exception(buffer);
+	}
 	#ifdef S_TIME_CALC
 	proc_time += TIME(0);
 	StackStitcher::time_multiresolution+=proc_time;

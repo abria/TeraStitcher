@@ -127,6 +127,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
     TCLAP::SwitchArg p_rescan("","rescan","If enabled, TeraStitcher will rescan all acquisition files according to the given import parameters",false);
 	TCLAP::SwitchArg p_makedirs("","makedirs","Creates the mdata.bin file of the output volume.", false);
 	TCLAP::SwitchArg p_metadata("","metadata","Creates the directory hierarchy.", false);
+	TCLAP::ValueArg<string> p_halving_method("","halve","Halving method (mean/max, default: mean).",false,"mean","unsigned");
 
 
 	// argument objects must be inserted using FIFO policy (first inserted, first shown)
@@ -140,6 +141,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_im_in_channel);
 	cmd.add(p_im_in_regex);
 
+	cmd.add(p_halving_method);
     cmd.add(p_metadata);
     cmd.add(p_makedirs);
     cmd.add(p_rescan);
@@ -534,7 +536,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	//the [algorithm] parameter is multi-arguments
 	vector<string> algorithms = p_algo.getValue();
-	for(int i = 0; i < algorithms.size(); i++)
+	for(int i = 0; i < algorithms.size(); i++) {
 		if(algorithms[i].compare(S_NCC_NAME) == 0)
 			this->pd_algo = S_NCC_MODE;
 		else if(algorithms[i].compare(S_PC_NAME) == 0)
@@ -556,6 +558,11 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 			sprintf(errMsg, "Invalid argument \"%s\" for parameter --%s! Allowed values are:\n-\"%s\"\n-\"%s\"\n-\"%s\"\n-\"%s\"\n-\"%s\"\n-\"%s\"\n",	algorithms[i].c_str(), p_algo.getName().c_str(), S_NCC_NAME, S_FATPM_SP_TREE_NAME,S_FATPM_SCAN_V_NAME,S_FATPM_SCAN_H_NAME, S_NO_BLENDING_NAME, S_SINUSOIDAL_BLENDING_NAME);
 			throw iom::exception(errMsg);
 		}
+	}
+	if ( p_halving_method.getValue() == "mean" )
+		this->halving_method = HALVE_BY_MEAN;
+	else if ( p_halving_method.getValue() == "max" )
+		this->halving_method = HALVE_BY_MAX;
 }
 
 //checks parameters correctness

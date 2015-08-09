@@ -468,8 +468,8 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 
 	for(int i = intersect_segm->ind0; i <= intersect_segm->ind1; i++)
 	{
-		if ( temp - data > (HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN * N_CHANS) )
-			throw iom::exception(vm::strprintf("in Block[%s]::loadImageStack(): buffer overrun at block %d", DIR_NAME, i-1).c_str());
+		//if ( temp - data > (HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN * N_CHANS) )
+		//	throw iom::exception(vm::strprintf("in Block[%s]::loadImageStack(): buffer overrun at block %d", DIR_NAME, i-1).c_str());
 			
 		first = (first_file > BLOCK_ABS_D[i]) ? first_file-BLOCK_ABS_D[i] : 0 ;
 		last = (last_file < BLOCK_ABS_D[i]+BLOCK_SIZE[i]-1) ?  last_file-BLOCK_ABS_D[i] : BLOCK_SIZE[i]-1 ;

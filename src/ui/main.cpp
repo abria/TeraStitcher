@@ -212,12 +212,12 @@ int main(int argc, char** argv)
 		if(cli.makeDirs) {
 			stitcher->createDirectoryHierarchy(cli.volume_save_path, cli.slice_height, cli.slice_width, cli.slice_depth, cli.resolutions, cli.exclude_nonstitchables, 
 									 cli.start_stack_row, cli.end_stack_row, cli.start_stack_col, cli.end_stack_col, cli.D0, cli.D1, 
-									 cli.enable_restore, cli.restoring_direction, cli.tm_blending, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
+									 cli.enable_restore, cli.restoring_direction, cli.tm_blending, cli.halving_method, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
 		}
 		if(cli.metaData) {
 			stitcher->mdataGenerator(cli.volume_save_path, cli.slice_height, cli.slice_width, cli.slice_depth, cli.resolutions, cli.exclude_nonstitchables, 
 									 cli.start_stack_row, cli.end_stack_row, cli.start_stack_col, cli.end_stack_col, cli.D0, cli.D1, 
-									 cli.enable_restore, cli.restoring_direction, cli.tm_blending, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
+									 cli.enable_restore, cli.restoring_direction, cli.tm_blending, cli.halving_method, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
 		}
 		if(cli.mergetiles || cli.stitch)
 		{
@@ -225,18 +225,18 @@ int main(int argc, char** argv)
 			if ( vm::VOLUME_OUTPUT_FORMAT_PLUGIN.compare(vm::BlockVolume::id)==0 )
 				stitcher->mergeTilesVaa3DRaw(cli.volume_save_path, cli.slice_height, cli.slice_width, cli.slice_depth, cli.resolutions, cli.exclude_nonstitchables, 
 									 cli.start_stack_row, cli.end_stack_row, cli.start_stack_col, cli.end_stack_col, cli.D0, (cli.D1 == -1 ? -1 : cli.D1+1), 
-									 cli.enable_restore, cli.restoring_direction, cli.tm_blending, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth,cli.parallel);
+									 cli.enable_restore, cli.restoring_direction, cli.tm_blending, cli.halving_method, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth,cli.parallel);
 			else if ( vm::VOLUME_OUTPUT_FORMAT_PLUGIN.compare(vm::StackedVolume::id)==0 )
 				stitcher->mergeTiles(cli.volume_save_path, cli.slice_height, cli.slice_width, cli.resolutions, cli.exclude_nonstitchables, 
 									 cli.start_stack_row, cli.end_stack_row, cli.start_stack_col, cli.end_stack_col, cli.D0, (cli.D1 == -1 ? -1 : cli.D1+1), 
-									 cli.enable_restore, cli.restoring_direction, cli.tm_blending, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
+									 cli.enable_restore, cli.restoring_direction, cli.tm_blending, cli.halving_method, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
 			else
 				throw iom::exception(vm::strprintf("Unsupported output volume format plugin \"%s\"", vm::VOLUME_OUTPUT_FORMAT_PLUGIN.c_str()).c_str());
 		}
 		if(cli.test || cli.import)
 		{
 			stitcher->mergeTiles(cli.volume_save_path, -1, -1, NULL, false, -1, -1, -1, -1, volume->getN_SLICES()/2, volume->getN_SLICES()/2 +1, 
-			                     false, false, S_SHOW_STACK_MARGIN, true, false, cli.img_format.c_str(), cli.img_depth);
+			                     false, false, S_SHOW_STACK_MARGIN, cli.halving_method, true, false, cli.img_format.c_str(), cli.img_depth);
 			defaultOutputFileName = "xml_import";
 		}
 		total_time += TIME(0);

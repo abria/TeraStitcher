@@ -80,7 +80,7 @@ bool compareCorners (stripe_corner first, stripe_corner second);
 void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height, int block_width, int block_depth, bool* resolutions, 
 							   bool exclude_nonstitchable_stacks, int _ROW_START, int _ROW_END, int _COL_START,
 							   int _COL_END, int _D0, int _D1, bool restoreSPIM, int restore_direction,
-							   int blending_algo, bool test_mode, bool show_progress_bar, 
+							   int blending_algo, int method, bool test_mode, bool show_progress_bar, 
                                const char* saved_img_format, int saved_img_depth, bool par_mode)			throw (iom::exception)
 {
 #if S_VERBOSE > 2
@@ -533,7 +533,7 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 
 			//halvesampling resolution if current resolution is not the deepest one
 			if(i!=0)	
-				StackStitcher::halveSample(buffer,(int)(height/(POW_INT(2,i-1))),(int)(width/(POW_INT(2,i-1))),(int)(z_size/(POW_INT(2,i-1))));
+				StackStitcher::halveSample(buffer,(int)(height/(POW_INT(2,i-1))),(int)(width/(POW_INT(2,i-1))),(int)(z_size/(POW_INT(2,i-1))),method);
 
 			//saving at current resolution if it has been selected and iff buffer is at least 1 voxel (Z) deep
 			if(resolutions[i] && (z_size/(POW_INT(2,i))) > 0)
@@ -806,7 +806,7 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 void StackStitcher::createDirectoryHierarchy(std::string output_path, int block_height, int block_width, int block_depth, bool* resolutions, 
 							   bool exclude_nonstitchable_stacks, int _ROW_START, int _ROW_END, int _COL_START,
 							   int _COL_END, int _D0, int _D1, bool restoreSPIM, int restore_direction,
-							   int blending_algo, bool test_mode, bool show_progress_bar, 
+							   int blending_algo, int method, bool test_mode, bool show_progress_bar, 
                                const char* saved_img_format, int saved_img_depth, bool par_mode)			throw (iom::exception)
 {
 #if S_VERBOSE > 2
@@ -983,7 +983,7 @@ void StackStitcher::createDirectoryHierarchy(std::string output_path, int block_
 void StackStitcher::mdataGenerator (std::string output_path, int block_height, int block_width, int block_depth, bool* resolutions, 
 							   bool exclude_nonstitchable_stacks, int _ROW_START, int _ROW_END, int _COL_START,
 							   int _COL_END, int _D0, int _D1, bool restoreSPIM, int restore_direction,
-							   int blending_algo, bool test_mode, bool show_progress_bar, 
+							   int blending_algo, int method, bool test_mode, bool show_progress_bar, 
                                const char* saved_img_format, int saved_img_depth, bool par_mode)			throw (iom::exception) 
 {
 #if S_VERBOSE > 2

@@ -128,6 +128,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	//argument objects must be inserted using LIFO policy (last inserted, first shown)
 	cmd.add(p_hide_progress_bar);
 	cmd.add(p_outFmt);
+	cmd.add(p_halving_method);
 	//cmd.add(p_highest_resolution);
 	//cmd.add(p_n_resolutions);
 	cmd.add(p_resolutions);
