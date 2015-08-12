@@ -28,6 +28,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-07-12. Giulio.     @ADDED a halving method parameter to MergeTilesVaa3DRaw
+* 2015-07-12. Giulio.     @FIXED a bug on an int index in MergeTilesVaa3DRaw that should have been sint64
 * 2015-02-26. Giulio.     @ADDED release of space allocated to stripesCoords and stripesCorners in mergeTiles
 * 2015-02-13. Giulio.     @CHANGED 3D ioplugin is called instead of Tiff3DMngr functions
 * 2014-12-06. Giulio    . @ADDED par_mode parameter in method mergeTilesVaa3DRaw controlling the execution when multiple instances of the function are launched.
@@ -352,7 +354,7 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 	if ( !test_mode ) {
 		// WARNING: uses saved_img_format to check that the operation has been resumed withe the sae parameters
 		// resume option not used in parallel mode
-		if ( !par_mode && initResumer(saved_img_format,output_path.c_str(),resolutions_size,resolutions,block_height,block_width,block_depth,HALVE_BY_MEAN,saved_img_format,saved_img_depth,fhandle) ) {
+		if ( !par_mode && initResumer(saved_img_format,output_path.c_str(),resolutions_size,resolutions,block_height,block_width,block_depth,method,saved_img_format,saved_img_depth,fhandle) ) {
 			readResumerState(fhandle,output_path.c_str(),resolutions_size,stack_block,slice_start,slice_end,z,z_parts);
 		}
 		else {
@@ -380,7 +382,7 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 	for( /* 2014-10-29. Giulio. @DELETED (sint64 z = this->D0, z_parts = 1) */; z < this->D1; z += z_max_res, z_parts++)
 	{
 		// 2014-09-09. Alessandro. @FIXED missing buffer initialization and reset in 'mergeTiles()' method.
-		for(int i=0; i<height*width*z_max_res; i++)
+		for(sint64 i=0; i<height*width*z_max_res; i++)
 			buffer[i]=0;
 
 		for(sint64 k = 0; k < ( z_parts <= z_ratio ? z_max_res : depth%z_max_res ); k++)

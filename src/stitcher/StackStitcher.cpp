@@ -28,6 +28,9 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-07-12. Giulio.     @ADDED a halving method parameter to MergeTilesVaa3DRaw
+* 2015-07-12. Giulio.     @FIXED a bug on an int index in MergeTiles that should have been sint64
+* 2015-07-12. Giulio.     @FIXED a bug on int indices in halveSample that should have been sint64
 * 2015-02-26. Giulio.     @ADDED release of space allocated to stripesCoords and stripesCorners in mergeTiles
 * 2015-02-26. Giulio.     @ADDED an empty destructor to class StackStitcher
 * 2015-02-14. Giulio.     @CHANGED saveImage is called again since it now calls the plugin
@@ -998,7 +1001,7 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 	for(/* 2014-10-31. Giulio. @DELETED (sint64 z = this->D0, z_parts = 1) */; z < this->D1; z += z_max_res, z_parts++)
 	{
 		// 2014-09-09. Alessandro. @FIXED missing buffer initialization and reset in 'mergeTiles()' method.
-		for(int i=0; i<height*width*z_max_res; i++)
+		for(sint64 i=0; i<height*width*z_max_res; i++)
 			buffer[i]=0;
 
 		for(sint64 k = 0; k < ( z_parts <= z_ratio ? z_max_res : depth%z_max_res ); k++)

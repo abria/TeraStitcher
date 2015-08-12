@@ -127,7 +127,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
     TCLAP::SwitchArg p_rescan("","rescan","If enabled, TeraStitcher will rescan all acquisition files according to the given import parameters",false);
 	TCLAP::SwitchArg p_makedirs("","makedirs","Creates the mdata.bin file of the output volume.", false);
 	TCLAP::SwitchArg p_metadata("","metadata","Creates the directory hierarchy.", false);
-	TCLAP::ValueArg<string> p_halving_method("","halve","Halving method (mean/max, default: mean).",false,"mean","unsigned");
+	TCLAP::ValueArg<std::string> p_halving_method("","halve","Halving method (mean/max, default: mean).",false,"mean","string");
 
 
 	// argument objects must be inserted using FIFO policy (first inserted, first shown)
