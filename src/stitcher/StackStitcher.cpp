@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-08-16. Giulio.     @ADDED method for halvesampling only V and H dimensions
 * 2015-07-12. Giulio.     @ADDED a halving method parameter to MergeTilesVaa3DRaw
 * 2015-07-12. Giulio.     @FIXED a bug on an int index in MergeTiles that should have been sint64
 * 2015-07-12. Giulio.     @FIXED a bug on int indices in halveSample that should have been sint64
@@ -1367,6 +1368,77 @@ void StackStitcher::halveSample(iom::real_t* img, int height, int width, int dep
 					if ( B > A ) A = B;
 
 					//computing mean
+					img[z*(width/2)*(height/2) + i*(width/2) + j] = A;
+				}
+			}
+		}
+
+	}
+	else {
+		char buffer[S_STATIC_STRINGS_SIZE];
+		sprintf(buffer,"in halveSample(...): invalid halving method\n");
+        throw iom::exception(buffer);
+	}
+	#ifdef S_TIME_CALC
+	proc_time += TIME(0);
+	StackStitcher::time_multiresolution+=proc_time;
+	#endif
+	
+}
+
+/*************************************************************************************************************
+* Performs downsampling at a halved frequency on the given 3D image along V and H dimensions only.  The given 
+* image is overwritten in order to store its halvesampled version without allocating any additional resources.
+**************************************************************************************************************/
+void StackStitcher::halveSample2D(iom::real_t* img, int height, int width, int depth, int method)
+{
+	#ifdef S_TIME_CALC
+	double proc_time = -TIME(0);
+	#endif
+
+	float A,B,C,D;
+
+	// indices are sint64 because offsets can be larger that 2^31 - 1
+
+	if ( method == HALVE_BY_MEAN ) {
+
+		for(sint64 z=0; z<depth; z++)
+		{
+			for(sint64 i=0; i<height/2; i++)
+			{
+				for(sint64 j=0; j<width/2; j++)
+				{
+					//computing 8-neighbours
+					A = img[z*width*height +2*i*width + 2*j];
+					B = img[z*width*height +2*i*width + (2*j+1)];
+					C = img[z*width*height +(2*i+1)*width + 2*j];
+					D = img[z*width*height +(2*i+1)*width + (2*j+1)];
+
+					//computing mean
+					img[z*(width/2)*(height/2)+i*(width/2)+j] = (A+B+C+D)/(float)4;
+				}
+			}
+		}
+
+	}
+	else if ( method == HALVE_BY_MAX ) {
+
+		for(sint64 z=0; z<depth; z++)
+		{
+			for(sint64 i=0; i<height/2; i++)
+			{
+				for(sint64 j=0; j<width/2; j++)
+				{
+					//computing max of 8-neighbours
+					A = img[z*width*height + 2*i*width + 2*j];
+					B = img[z*width*height + 2*i*width + (2*j+1)];
+					if ( B > A ) A = B;
+					B = img[z*width*height + (2*i+1)*width + 2*j];
+					if ( B > A ) A = B;
+					B = img[z*width*height + (2*i+1)*width + (2*j+1)];
+					if ( B > A ) A = B;
+
+					//computing max
 					img[z*(width/2)*(height/2) + i*(width/2) + j] = A;
 				}
 			}

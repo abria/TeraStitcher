@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-08-16. Giulio.     @ADDED the 'method' and 'isotropi' parameters to calls to methods merging 3D tiled images
 * 2015-06-12. Giulio.     @ADDED calla to check method on the imported/tested volume
 * 2015-02-03. Alessandro. @FIXED bug in the call of mergeTiles (wrong D1 if D1 was not set).
 * 2014-12-10. Alessandro. @FIXED not working --import step with XML file.
@@ -212,12 +213,12 @@ int main(int argc, char** argv)
 		if(cli.makeDirs) {
 			stitcher->createDirectoryHierarchy(cli.volume_save_path, cli.slice_height, cli.slice_width, cli.slice_depth, cli.resolutions, cli.exclude_nonstitchables, 
 									 cli.start_stack_row, cli.end_stack_row, cli.start_stack_col, cli.end_stack_col, cli.D0, cli.D1, 
-									 cli.enable_restore, cli.restoring_direction, cli.tm_blending, cli.halving_method, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
+									 cli.enable_restore, cli.restoring_direction, cli.tm_blending, cli.halving_method, cli.isotropic, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
 		}
 		if(cli.metaData) {
 			stitcher->mdataGenerator(cli.volume_save_path, cli.slice_height, cli.slice_width, cli.slice_depth, cli.resolutions, cli.exclude_nonstitchables, 
 									 cli.start_stack_row, cli.end_stack_row, cli.start_stack_col, cli.end_stack_col, cli.D0, cli.D1, 
-									 cli.enable_restore, cli.restoring_direction, cli.tm_blending, cli.halving_method, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
+									 cli.enable_restore, cli.restoring_direction, cli.tm_blending, cli.halving_method, cli.isotropic, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
 		}
 		if(cli.mergetiles || cli.stitch)
 		{
@@ -225,7 +226,7 @@ int main(int argc, char** argv)
 			if ( vm::VOLUME_OUTPUT_FORMAT_PLUGIN.compare(vm::BlockVolume::id)==0 )
 				stitcher->mergeTilesVaa3DRaw(cli.volume_save_path, cli.slice_height, cli.slice_width, cli.slice_depth, cli.resolutions, cli.exclude_nonstitchables, 
 									 cli.start_stack_row, cli.end_stack_row, cli.start_stack_col, cli.end_stack_col, cli.D0, (cli.D1 == -1 ? -1 : cli.D1+1), 
-									 cli.enable_restore, cli.restoring_direction, cli.tm_blending, cli.halving_method, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth,cli.parallel);
+									 cli.enable_restore, cli.restoring_direction, cli.tm_blending, cli.halving_method, cli.isotropic, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth,cli.parallel);
 			else if ( vm::VOLUME_OUTPUT_FORMAT_PLUGIN.compare(vm::StackedVolume::id)==0 )
 				stitcher->mergeTiles(cli.volume_save_path, cli.slice_height, cli.slice_width, cli.resolutions, cli.exclude_nonstitchables, 
 									 cli.start_stack_row, cli.end_stack_row, cli.start_stack_col, cli.end_stack_col, cli.D0, (cli.D1 == -1 ? -1 : cli.D1+1), 

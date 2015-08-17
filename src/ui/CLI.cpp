@@ -28,11 +28,12 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2015-06-12. Giulio   @ADDED parameter to specify the path and name of an error log file
-* 2014-12-10. Giulio.  @ADDED parallel flag
+* 2015-08-16. Giulio.     @ADDED the 'method' and 'isotropi' parameters 
+* 2015-06-12. Giulio      @ADDED parameter to specify the path and name of an error log file
+* 2014-12-10. Giulio.     @ADDED parallel flag
 * 2014-12-10. Alessandro. @FIXED check of "Import" step if a project file is provided.
-* 2014-12-06. Giulio. @ADDED makedirs flag.
-* 2014-11-22. Giulio. @CHANGED input plugin used for StackedVolume volumes is "tiff2D"
+* 2014-12-06. Giulio.     @ADDED makedirs flag.
+* 2014-11-22. Giulio.     @CHANGED input plugin used for StackedVolume volumes is "tiff2D"
 */
 
 #include "CLI.h"
@@ -67,6 +68,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::SwitchArg p_merge("6","merge","Step 6: merges tiles at different resolutions.", false);
 	TCLAP::SwitchArg p_test("t","test","(deprecated) Stitches the middle slice of the whole volume and saves it locally. Stage coordinates will be used, so this can be used to test their precision as well as the selected reference system.",false);
 	TCLAP::SwitchArg p_parallel("","parallel","Does not perform side-effect operations during the merge step. Use this flag when more merge steps are launched in parallel",false);
+	TCLAP::SwitchArg p_isotropic("","isotropic","Generate lowest resolution with voxels as much isotropic as possible. Use this flag when the high resolution image has highy anistropic voxels",false);
 	TCLAP::SwitchArg p_dump("d","dump","Print the entire content of metadata file mdata.bin",false);
 	TCLAP::SwitchArg p_pluginsinfo("p","pluginsinfo","Display plugins informations",false);
 	TCLAP::ValueArg<std::string> p_vol_in_path("","volin","Directory path where the volume is stored.",false,"null","string");
@@ -194,6 +196,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_import);
 	cmd.add(p_test);
 	cmd.add(p_parallel);
+	cmd.add(p_isotropic);
 
 	// Parse the argv array and catch <TCLAP> exceptions, which are translated into <iom::iim::IOException> exceptions
 	char errMsg[S_STATIC_STRINGS_SIZE];
@@ -473,6 +476,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	this->pluginsinfo = p_pluginsinfo.getValue();
 	this->dumpMData = p_dump.getValue();
 	this->parallel = p_parallel.getValue();
+	this->isotropic = p_isotropic.getValue();
 	this->test = p_test.getValue();
 	this->stitch = p_stitch.getValue();
 	this->import = p_import.getValue();
