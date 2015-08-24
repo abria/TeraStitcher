@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-08-24. Giulio.     @FIXED memory leak in loadImageStack
 * 2015-02-28. Giulio.     @ADDED saving of fields N_CHANS and N_BYTESxCHAN in the xml files
 * 2015-02-26. Giulio.     @ADDED initialization of fields N_CHANS and N_BYTESxCHAN in constructor; this information is NOT saved in mdata.bin and xml files
 * 2015-01-17. Alessandro. @ADDED constructor for initialization from XML.
@@ -686,6 +687,9 @@ iom::real_t* Stack::loadImageStack(int first_file, int last_file) throw (iom::ex
 			}
 		}
 	}
+
+	// 2015-08-24. Giulio. data must be released
+	delete [] data;
 
 	return STACKED_IMAGE;
 }
