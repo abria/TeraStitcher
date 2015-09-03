@@ -834,7 +834,7 @@ bool BlockVolume::check(const char *errlogFileName) throw (iom::exception)
 				if ( current->getFILENAMES()[k] && current->getFILENAMES()[k+1] ) { // block is not empty and it is immediately followed by a non empty block
 					f_slice = atoi(name2coordZ(current->getFILENAMES()[k]).c_str());
 					l_slice = atoi(name2coordZ(current->getFILENAMES()[k+1]).c_str());
-					coherent = ( current->getBLOCK_SIZE()[k] == (int)floor( ((l_slice - f_slice) * this->VXL_D / 10) + 0.5 ) );
+					coherent = ( current->getBLOCK_SIZE()[k] == (int)floor( ((l_slice - f_slice) / (this->VXL_D * 10)) + 0.5 ) );
 				}
 				k++;
 			}

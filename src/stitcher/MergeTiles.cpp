@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-08-28. Giulio.     @FIXED reference system of the generated image has always V as a first axis and H as a second axis
 * 2015-08-26. Giulio.     @ADDED stop and resume facility in par mode
 * 2015-08-16. Giulio.     @ADDED the 'isotropi' parameter (flag) to all methods and the halve_pow2 array to control the halving at different resolutions
 * 2015.08.14. Giulio.     @FIXED a a bug on the depth used to create directories in the casethe  --parallel option is used
@@ -824,13 +825,19 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 		// reloads created volumes to generate .bin file descriptors at all resolutions
 		ref_sys temp = volume->getREF_SYS();  // required by clang compiler
 		iim::ref_sys reference = *((iim::ref_sys *) &temp); // the cast is needed because there are two ref_sys in different name spaces
+		// 2015-08-28. Giulio. the generated volume has always V coordinates at the first directory level and H coordinates at the second directory level
+		if ( reference.first == iim::horizontal || reference.first == iim::inv_horizontal ) {
+			iim::axis temp = reference.first;
+			reference.first = reference.second;
+			reference.second = reference.first;
+		}
 		for(int res_i=0; res_i< resolutions_size; res_i++)
 		{
 			if(resolutions[res_i])
 			{
 				//---- Alessandro 2013-04-22 partial fix: wrong voxel size computation. In addition, the predefined reference system {1,2,3} may not be the right
-				//one when dealing with CLSM data. The right reference system is stored in the <StackedVolume> object. A possible solution to implement
-				//is to check whether <volume> is a pointer to a <StackedVolume> object, then specialize it to <StackedVolume*> and get its reference
+				//one when dealing with CLSM data. The right reference system is stored in the <BlockVolume> object. A possible solution to implement
+				//is to check whether <volume> is a pointer to a <BlockVolume> object, then specialize it to <BlockVolume*> and get its reference
 				//system.
 				try 
 				{
@@ -1186,13 +1193,19 @@ void StackStitcher::mdataGenerator (std::string output_path, int block_height, i
 		// reloads created volumes to generate .bin file descriptors at all resolutions
 		ref_sys temp = volume->getREF_SYS();  // required by clang compiler
 		iim::ref_sys reference = *((iim::ref_sys *) &temp); // the cast is needed because there are two ref_sys in different name spaces
+		// 2015-08-28. Giulio. the generated volume has always V coordinates at the first directory level and H coordinates at the second directory level
+		if ( reference.first == iim::horizontal || reference.first == iim::inv_horizontal ) {
+			iim::axis temp = reference.first;
+			reference.first = reference.second;
+			reference.second = reference.first;
+		}
 		for(int res_i=0; res_i< resolutions_size; res_i++)
 		{
 			if(resolutions[res_i])
 			{
 				//---- Alessandro 2013-04-22 partial fix: wrong voxel size computation. In addition, the predefined reference system {1,2,3} may not be the right
-				//one when dealing with CLSM data. The right reference system is stored in the <StackedVolume> object. A possible solution to implement
-				//is to check whether <volume> is a pointer to a <StackedVolume> object, then specialize it to <StackedVolume*> and get its reference
+				//one when dealing with CLSM data. The right reference system is stored in the <BlockVolume> object. A possible solution to implement
+				//is to check whether <volume> is a pointer to a <BlockVolume> object, then specialize it to <BlockVolume*> and get its reference
 				//system.
 				try 
 				{

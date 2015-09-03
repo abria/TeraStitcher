@@ -151,7 +151,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	}
 
 	/*
-	/* Checking parameter consistency * /
+	// Checking parameter consistency 
 
 	if( p_axis_V.isSet() || p_axis_H.isSet() || p_axis_D.isSet() ) { // there is at least one parameter
 		if ( !p_axis_V.isSet() || !p_axis_H.isSet() || !p_axis_D.isSet() ) { // some parameter missing
@@ -163,7 +163,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		}
 	}
 
-	/* Checking parameter consistency * /
+	// Checking parameter consistency 
 	if ( p_src_format.getValue() != iim::STACKED_FORMAT && 
 		 p_src_format.getValue() != iim::SIMPLE_FORMAT  && 
 		 p_src_format.getValue() != iim::SIMPLE_RAW_FORMAT  && 
