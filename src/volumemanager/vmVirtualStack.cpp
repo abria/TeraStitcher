@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-09-18. Alessandro. @FIXED bug which caused image regex to be ignored when scanning the folder tree.
 * 2015-02-28. Giulio.     @ADDED initialization of fields N_CHANS and N_BYTESxCHAN
 * 2015-01-17. Alessandro. @ADDED support for all-in-one-folder data (import from xml only).
 * 2014-09-10. Alessandro. @ADDED 'isEmpty(z0,z1)' method.
@@ -52,6 +53,9 @@ VirtualStack::VirtualStack()
     stitchable = false;
     ABS_V = ABS_H = ABS_D = -1;
     STACKED_IMAGE = 0;
+    
+    // @FIXED by Alessandro on 2015-09-18. By default, assign to img_regex the value of the global variable vm::IMG_FILTER_REGEX.
+    img_regex = vm::IMG_FILTER_REGEX;
 }
 
 // return true if the given range [z0,z1] does not contain missing slices/blocks
