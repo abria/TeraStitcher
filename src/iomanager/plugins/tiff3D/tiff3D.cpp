@@ -209,6 +209,9 @@ throw (iom::exception)
 	/**/iom::debug(iom::LEV3, iom::strprintf("img_path = %s, img_width = %d, img_height = %d, img_depth = %d, img_bytes_x_chan = %d, img_chans = %d, z0 = %d, z1 = %d, y0 = %d, y1 = %d, x0 = %d, x1 = %d, params = \"%s\"",
 		img_path.c_str(), img_width, img_height, img_depth,	img_bytes_x_chan, img_chans, z0, z1, y0, y1, x0, x1, params.c_str()).c_str(), __iom__current__function__);
 
+	//disable warning handler to avoid messages on unrecognized tags
+	TIFFSetWarningHandler(0);
+
 	iim::sint64 stridex  = img_width * img_chans * img_bytes_x_chan;
 	iim::sint64 stridexy = stridex * img_height;
 	unsigned char *buf; // to scan the input buffer
@@ -277,6 +280,9 @@ throw (iom::exception)
 	/**/iom::debug(iom::LEV3, iom::strprintf("img_path = %s, img_width = %d, img_height = %d, img_depth = %d, img_bytes_x_chan = %d, img_chans = %d, params = \"%s\"",
 		img_path.c_str(), img_width, img_height, img_depth,	img_bytes_x_chan, img_chans, params.c_str()).c_str(), __iom__current__function__);
 
+	// disable warning handler to avoid messages on unrecognized tags
+	TIFFSetWarningHandler(0);
+
 	char *err_Tiff3Dfmt;
 
 	// creates an empty file
@@ -307,6 +313,9 @@ throw (iom::exception)
 
 	/**/iom::debug(iom::LEV3, iom::strprintf("img_path = %s, img_width = %d, img_height = %d, img_bytes_x_chan = %d, img_chans = %d, y0 = %d, y1 = %d, x0 = %d, x1 = %d, params = \"%s\"",
 		img_path.c_str(), img_width, img_height, img_bytes_x_chan, img_chans, y0, y1, x0, x1, params.c_str()).c_str(), __iom__current__function__);
+
+	//disable warning handler to avoid messages on unrecognized tags
+	TIFFSetWarningHandler(0);
 
 	iim::sint64 stridex  = img_width * img_chans * img_bytes_x_chan;
 	unsigned char *buf; // to scan the input buffer

@@ -301,15 +301,18 @@ char *streamer_close ( Streamer_Descr_t *streamer );
 /* closes the streamed operation specified by 'streamer'
  */
 
-char *convert2depth8bits ( int red_factor, iim::sint64 totalBlockSize, iim::sint64 sbv_channels, iim::uint8 *&subvol );
+char *convert2depth8bits ( int red_factor, iim::sint64 totalBlockSize, iim::sint64 sbv_channels, iim::uint8 *&subvol, iim::uint8 *dstbuf = 0 );
 /* convert the buffer pointed by subvol to 8 bits per channel
  *
  * red_factor:     number of bytes per channel in the input buffer 
- *                 (reduction factor for the conversion to 8 bits
+ *                 (reduction factor for the conversion to 8 bits: must be > 1)
  * totalBlockSize: number of voxels in each channel (sbv_height*sbv_width*sbv_depth)
  * sbv_channels:   number of channels
- * subvol:         buffer to be converted (of length totalBlockSize*sbv_channels*red_factor); 
- *                 returns the converted buffer (of length totalBlockSize*sbv_channels)
+ * subvol:         buffer to be converted (of length totalBlockSize*sbv_channels*red_factor)
+ *                 the input buffer is always deallocated before returning 
+ *                 if dstbuf = 0, a newly allocated converted buffer (of length totalBlockSize*sbv_channels) is returned
+ *                 otherwise dstbuf buffer is returned
+ * dstbuf:         if != 0 points to destination buffer (which has been allocated by the caller)
  */
 
 #endif

@@ -25,13 +25,14 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2015-04-15. Alessandro. @ADDED definition for default constructor.
-* 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
+* 2015-04-15 Alessandro. @ADDED definition for default constructor.
+* 2014-11-22 Giulio.     @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
 */
 
 #include "SimpleVolumeRaw.h"
 #include "StackRaw.h"
 #include "RawFmtMngr.h"
+
 #ifdef _WIN32
 #include "dirent_win.h"
 #else

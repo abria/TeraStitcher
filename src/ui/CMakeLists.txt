@@ -11,6 +11,8 @@ include_directories (${TeraStitcher_SOURCE_DIR}/stitcher)
 include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty)
 include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty/tclap)
 
+link_directories(${TeraStitcher_SOURCE_DIR}/3rdparty/libs)
+
 # add executable from the all .h and .cpp files
 file(GLOB UI_headers *.h)
 file(GLOB UI_sources *.cpp)

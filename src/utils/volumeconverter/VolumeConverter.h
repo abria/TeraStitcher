@@ -204,6 +204,7 @@ class VolumeConverter
         std::string getMultiresABS_H_string(int res, int REL_H);
 		int getMultiresABS_D(int res);
 
+ 
         /*************************************************************************************************************
         * NEW TILED FORMAT SUPPORTING MULTIPLE CHANNELS
         **************************************************************************************************************/
@@ -227,6 +228,31 @@ class VolumeConverter
 		void generateTilesVaa3DRawMC ( std::string output_path, bool* resolutions = NULL, 
 			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool show_progress_bar = true, 
             const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,
+            std::string frame_dir = "")	throw (iim::IOException);
+
+      /*************************************************************************************************************
+        * NEW FORMAT SUPPORTING BDV HDF5 custom format
+        **************************************************************************************************************/
+
+	   /*************************************************************************************************************
+		* Method to be called for tile generation. <> parameters are mandatory, while [] are optional.
+		* <output_path>			: absolute directory path where generated tiles have to be stored.
+		* [resolutions]			: pointer to an array of S_MAX_MULTIRES  size which boolean entries identify the acti-
+		*						  vaction/deactivation of the i-th resolution.  If not given, all resolutions will  be
+		*						  activated.
+		* [block_height]	    : desired dimensions of tiled  blocks after merging.  It is actually an upper-bound of
+		* [block_width]			  the actual slice dimensions, which will be computed in such a way that all tiles di-
+		* [block_depth]			  mensions can differ by 1 pixel only along both directions. If not given, the maximum
+		*						  allowed dimensions will be set, which will result in a volume composed by  one large 
+		*						  tile only.
+		* [method]              : method used to compute pixel whel halving image size (default: by mean)
+		* [show_progress_bar]	: enables/disables progress bar with estimated time remaining.
+		* [saved_img_format]	: determines saved images format ("raw", "png","tif","jpeg", etc.).
+		* [saved_img_depth]		: determines saved images bitdepth (16 or 8).
+		**************************************************************************************************************/
+		void generateTilesBDV_HDF5 ( std::string output_path, bool* resolutions = NULL, 
+			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool show_progress_bar = true, 
+            const char* saved_img_format = "h5", int saved_img_depth = iim::NUL_IMG_DEPTH,
             std::string frame_dir = "")	throw (iim::IOException);
 
 };

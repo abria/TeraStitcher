@@ -93,10 +93,23 @@ public:
 
     virtual void initChannels ( ) throw (iim::IOException) = 0;
 
+
     //loads given subvolume in a 1-D array of iim::real32 while releasing stacks slices memory when they are no longer needed
     virtual iim::real32 *loadSubvolume_to_real32(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1)  throw (iim::IOException) = 0;
 
-    //loads given subvolume in a 1-D array of iim::uint8 while releasing stacks slices memory when they are no longer needed
+
+    /* @ADDED by Giulio on 2015-12-06:
+     * loads given subvolume in a 1-D array of iim::uint8 
+     * data is returned in interna Vaa3D representation, i.e. voxels are stored as one 3D matrix per channel in C-like ordering
+     * (dimension order is: H,V,D,channel)
+     * 
+     * V0-D1:    indices that define the subvolume; index intervals are open at right (e.g. [V0,V1))
+     * channels: returns the number of channels loaded
+     * ret_type: specifies the number of bits per voxel in each channel; the default is iim::DEF_IMG_DEPTH (see IM_config.h for definition)
+     *           if the value of this parameter is iim::NATIVE_RTYPE (see IM_config.h for definition) the subvolume is stored in the 
+     *           returned buffer using the number of bits per voxel in each channel of the current volume
+     *           currently only iim::DEF_IMG_DEPTH and iim::NATIVE_RTYPE are permitted values for this parameter
+     */
     virtual iim::uint8 *loadSubvolume_to_UINT8(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1,
                                                int *channels=0, int ret_type=iim::DEF_IMG_DEPTH) throw (iim::IOException) = 0;
 
@@ -275,6 +288,9 @@ public:
     // tries to automatically detect the volume format and returns the imported volume if succeeds (otherwise returns 0)
     // WARNING: all metadata files (if needed by that format) are assumed to be present. Otherwise, that format will be skipped.
     static VirtualVolume* instance(const char* path) throw (iim::IOException);
+
+	// should be used to instantiate BDV HDF5 volumes
+    static VirtualVolume* instance(const char* fname, int res, void *descr) throw (iim::IOException);
 
     // returns the imported volume if succeeds (otherwise returns 0)
     // WARNING: no assumption is made on metadata files, which are possibly (re-)generated using the additional informations provided.

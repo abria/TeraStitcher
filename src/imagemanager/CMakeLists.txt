@@ -10,6 +10,11 @@ include_directories (${CMAKE_SOURCE_DIR}/3rdparty/zlib)
 include_directories (${CMAKE_BINARY_DIR}/3rdparty/zlib)
 include_directories (${CMAKE_SOURCE_DIR}/3rdparty/libtiff)
 include_directories (${CMAKE_BINARY_DIR}/3rdparty/libtiff)
+include_directories (${CMAKE_SOURCE_DIR}/3rdparty/HDF5)
+include_directories (${CMAKE_BINARY_DIR}/3rdparty/HDF5)
+
+link_directories(${CMAKE_SOURCE_DIR}/3rdparty/libs)
+
 
 # set up OpenCV library
 #find_package(OpenCV REQUIRED)
@@ -20,3 +25,6 @@ include_directories (${CMAKE_BINARY_DIR}/3rdparty/libtiff)
 file(GLOB imagemanager_headers *.h)
 file(GLOB imagemanager_sources *.cpp)
 add_library(imagemanager STATIC ${imagemanager_headers} ${imagemanager_sources})
+
+target_link_libraries(imagemanager hdf5)
+target_link_libraries(imagemanager szip)

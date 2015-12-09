@@ -7,6 +7,8 @@ include_directories (${TeraStitcher_SOURCE_DIR}/iomanager)
 # add 3rd party modules to include path
 include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty/tclap)
 
+link_directories(${TeraStitcher_SOURCE_DIR}/3rdparty/libs)
+
 # Adds executable called subvolextractor (subvolextractor under Linux, subvolextractor.exe under Windows) from the all .h and .cpp files
 file(GLOB subvolextractor_headers *.h)
 file(GLOB subvolextractor_sources *.cpp)
@@ -15,3 +17,7 @@ add_executable(subvolextractor ${subvolextractor_headers} ${subvolextractor_sour
 # Link the executable to the other modules. 
 target_link_libraries(subvolextractor imagemanager )
 target_link_libraries(subvolextractor iomanager )
+target_link_libraries(subvolextractor volumemanager )
+target_link_libraries(subvolextractor tinyxml )
+target_link_libraries(subvolextractor stitcher )
+target_link_libraries(subvolextractor crossmips )

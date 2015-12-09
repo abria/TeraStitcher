@@ -23,6 +23,9 @@
 ********************************************************************************************************************************************************************************************/
 
 # include "RawVolume.h"
+#include "VirtualFmtMngr.h"
+#include "iomanager.config.h"
+
 # include <stdio.h>
 
 using namespace iim;
@@ -36,6 +39,9 @@ RawVolume::RawVolume(const char* _file_name)  throw (IOException)
 
 	this->file_name = new char[strlen(_file_name)+1];
 	strcpy(this->file_name, _file_name);
+
+	ffmt = "";
+	fmtMngr = 0;
 
 	init();
 	initChannels();
@@ -54,6 +60,9 @@ RawVolume::~RawVolume(void)
 		delete[] sz;
 	if (fhandle)
 		closeRawFile(fhandle);
+
+	if ( fmtMngr )
+		delete fmtMngr;
 }
 
 
@@ -65,15 +74,34 @@ void RawVolume::init ( ) throw (IOException)
 	*************************************************************************/
 
 	img = (unsigned char *) 0;
-	sz  = (V3DLONG *) 0;
+	sz  = (iim::sint64 *) 0;
 	fhandle = (void *) 0;
 	b_swap = 0;
 	header_len = -1;
 
 	//int berror = loadRaw2Stack(file_name,img,sz,datatype);
 
+	// get the file format of the blocks
+	char *temp = file_name+strlen(file_name)-3;
+	if ( strcmp(temp,"tif")==0 ) {
+		ffmt = "Tiff3D";
+		// 2015-02-27. Alessandro. @ADDED automated selection of IO plugin if not provided.
+		if(iom::IMIN_PLUGIN.compare("empty") == 0)
+			iom::IMIN_PLUGIN = "tiff3D";
+		fmtMngr = new Tiff3DFmtMngr();
+	}
+	else if ( strcmp(temp,"raw")==0 ) {
+		ffmt = "Vaa3DRaw";
+		fmtMngr = new Vaa3DRawFmtMngr();
+	}
+	else {
+        char msg[STATIC_STRINGS_SIZE];
+        sprintf(msg,"in RawVolume::init(...): Unknown file format \"%s\"", temp);
+        throw IOException(msg);
+	}
+
 	char *internal_msg;
-	if ( (internal_msg = loadRaw2Metadata(file_name,sz,datatype,b_swap,fhandle,header_len)) ) {
+	if ( (internal_msg = fmtMngr->loadMetadata(file_name,sz,datatype,b_swap,fhandle,header_len)) ) {
 		if ( sz ) delete[] sz;
 		char err_msg[STATIC_STRINGS_SIZE];
 		sprintf(err_msg,"RawVolume::init: error in loading metadata - %s",internal_msg);
@@ -181,20 +209,33 @@ uint8 *RawVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, 
 	uint8 *subvol = new uint8[total_buf_size];
 	memset(subvol,0,sizeof(uint8)*total_buf_size);
 
-    // @ADDED by Alessandro on 2014-03-29: re-opening the file if needed
-    if(fhandle == 0)
-        fhandle = static_cast<void*>(fopen(file_name, "rb"));
+    //// @ADDED by Alessandro on 2014-03-29: re-opening the file if needed
+    //if(fhandle == 0)
+    //    fhandle = static_cast<void*>(fopen(file_name, "rb"));
+	// @CHANGED by Giulio on 2015-12-07: support to Tiff3D assumes that the file has been closed
+	if (fhandle)
+		closeRawFile(fhandle);
 
     char *internal_msg=0;
-	if ( (internal_msg = loadRaw2SubStack(fhandle,subvol,sz,H0,V0,D0,H1,V1,D1,datatype,b_swap,header_len)) ) {
+	//if ( (internal_msg = loadRaw2SubStack(fhandle,subvol,sz,H0,V0,D0,H1,V1,D1,datatype,b_swap,header_len)) ) {
+	if ( (internal_msg = fmtMngr->copyFileBlock2Buffer(
+								file_name,
+								V0,V1,H0,H1,D0,D1,
+								(unsigned char *)subvol,
+								(int)datatype, // this is native rtype, it has substituted sizeof(iim::uint8)
+								0, // offset is always 0 since all data are copied once
+								sbv_width,
+								sbv_width*sbv_height,
+								sbv_width*sbv_height*sbv_depth) ) != 0 ) {
 		char err_msg[STATIC_STRINGS_SIZE];
 		sprintf(err_msg,"RawVolume::init: error in loading metadata - %s",internal_msg);
         throw IOException(err_msg);
 	}
 
-    // @FIXED by Alessandro on 2014-03-29: the file MUST be closed, otherwise the maximum number of opened files will be reached
-    closeRawFile(fhandle);
-    fhandle = 0;
+    //// @FIXED by Alessandro on 2014-03-29: the file MUST be closed, otherwise the maximum number of opened files will be reached
+    //closeRawFile(fhandle);
+ 	// @CHANGED by Giulio on 2015-12-07: support to Tiff3D assumes that the file has been closed by copyFileBlock2Buffer
+   fhandle = 0;
 
 	return subvol;
 }
@@ -204,8 +245,8 @@ uint8 *RawVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, 
 # define PATH_BUF_LEN   5000
 
 static char path_buffer[PATH_BUF_LEN];
-static const char *suffixes[] = { ".raw", ".RAW", ".v3draw", ".V3DRAW", "" };
-static int  suf_lens[] = {      3,      3,         6,         6     };
+static const char *suffixes[] = { ".raw", ".RAW", ".v3draw", ".V3DRAW", ".tif", "" };
+static int  suf_lens[] = {         3,      3,      6,         6,         3     };
 
 char *get_path ( const char *_file_name ) throw (IOException) {
 	strcpy(path_buffer,_file_name);

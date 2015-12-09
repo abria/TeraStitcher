@@ -32,7 +32,7 @@
  * stackutil-11.cpp of the V3D project. See the following licence notice for more details.
  *
  * modified by Giulio Iannello, Centro Integrato di Ricerca, Universita' Campus Bio-Medico di Roma
- * December 2012
+ * December 2012 
  */
 
 
@@ -1461,7 +1461,7 @@ char *Streamer_Descr_t::addSubBlock ( char *filename, sint64 boffs, int sV0, int
 
 /********* SUPPORT TO VISUALIZATION OF 16/32 BITS PER CHANNEL ***********/
 
-char *convert2depth8bits ( int red_factor, sint64 totalBlockSize, sint64 sbv_channels, uint8 *&subvol ) {
+char *convert2depth8bits ( int red_factor, sint64 totalBlockSize, sint64 sbv_channels, uint8 *&subvol, iim::uint8 *dstbuf ) {
 	int c, i, j, p;
 	sint64 totalUnits = totalBlockSize * sbv_channels;
 
@@ -1492,10 +1492,10 @@ char *convert2depth8bits ( int red_factor, sint64 totalBlockSize, sint64 sbv_cha
 				count++;
             temp[i] <<= p;
 		}
-		printf("\t\t\t\tin RawFmtMngr - convert2depth8bits: c=%d, maxVal=%d, p=%d, count=%lld\n\n",c,maxVal,p,count);
+		//printf("\t\t\t\tin RawFmtMngr - convert2depth8bits: c=%d, maxVal=%d, p=%d, count=%lld\n\n",c,maxVal,p,count);
 	}
 	
-	uint8 *temp_buf = new uint8[totalUnits];
+	uint8 *temp_buf = dstbuf ? dstbuf : new uint8[totalUnits];
 	memset(temp_buf,0,totalUnits);
 	for ( i=0; i<totalUnits; i++, j+=red_factor )
 		temp_buf[i] = subvol[j];

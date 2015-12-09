@@ -1155,7 +1155,7 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
 
 	if ( red_factor > 1 ) { // the buffer has to be reduced
 		char *err_rawfmt;
-		if ( (err_rawfmt = convert2depth8bits(red_factor,(sbv_height*sbv_width*sbv_depth),sbv_channels,subvol)) ) {
+		if ( (err_rawfmt = convert2depth8bits(red_factor,(sbv_height*sbv_width*sbv_depth),sbv_channels,subvol)) != 0 ) {
             char err_msg[STATIC_STRINGS_SIZE];
 			sprintf(err_msg,"StackedVolume::loadSubvolume_to_UINT8: %s", err_rawfmt);
             throw IOException(err_msg);

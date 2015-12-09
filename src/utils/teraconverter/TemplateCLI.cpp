@@ -79,9 +79,9 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	TCLAP::ValueArg<std::string> p_src_root_dir("s","src","Source file / root directory path.",true,"","string");
 	TCLAP::ValueArg<std::string> p_dst_root_dir("d","dst","Destination root directory path.",true,"","string");
-	TCLAP::ValueArg<int> p_slice_depth("","depth","Slice depth.",false,512,"unsigned");
-	TCLAP::ValueArg<int> p_slice_height("","height","Slice height.",false,512,"unsigned");
-	TCLAP::ValueArg<int> p_slice_width("","width","Slice width.",false,512,"unsigned");
+	TCLAP::ValueArg<int> p_slice_depth("","depth","Slice depth.",false,-1,"unsigned");
+	TCLAP::ValueArg<int> p_slice_height("","height","Slice height.",false,-1,"unsigned");
+	TCLAP::ValueArg<int> p_slice_width("","width","Slice width.",false,-1,"unsigned");
 	//TCLAP::ValueArg<string> p_src_format("","sfmt","Source format (Stacked/Simple/SimpleRaw/Raw/Tiled/TiledMC).",true,"","string");
 	string temp = "Source format (\"" + 
 		iim::TILED_MC_FORMAT + "\"/\"" + 
@@ -92,13 +92,14 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		iim::RAW_FORMAT + "\"/\"" + 
 		iim::TIF3D_FORMAT + "\"/\"" + 
 		iim::TILED_TIF3D_FORMAT  + "\"/\"" +
-		iim::TILED_MC_TIF3D_FORMAT  + "\")";
+		iim::TILED_MC_TIF3D_FORMAT  + "\"/\"" +
+		iim::UNST_TIF3D_FORMAT  + "\")";
 	TCLAP::ValueArg<string> p_src_format("","sfmt",temp.c_str(),true,"","string");
 	TCLAP::ValueArg<string> p_dst_format("","dfmt","Destination format (intensity/graylevel/RGB).",true,"","string");
  	//TCLAP::ValueArg<int> p_n_resolutions("","res","Number of resolutions.",true,2,"unsigned");
 	TCLAP::ValueArg<std::string> p_resolutions("","resolutions","Resolutions to be produced. Possible values are [[i]...]             where i = 0,..,5 and 2^i is the subsampling factor.",false,"0","string");
 	TCLAP::ValueArg<string> p_halving_method("","halve","Halving method (mean/max, default: mean).",false,"mean","unsigned");
-	TCLAP::ValueArg<std::string> p_outFmt("f","outFmt","Output format (Tiff2DStck/Vaa3DRaw/Tiff3D/Vaa3DRawMC/Tiff3DMC, default: Tiff2DStck).",false,"Tiff2DStck","string");
+	TCLAP::ValueArg<std::string> p_outFmt("f","outFmt","Output format (Tiff2DStck/Vaa3DRaw/Tiff3D/Vaa3DRawMC/Tiff3DMC/Fiji_HDF5, default: Tiff2DStck).",false,"Tiff2DStck","string");
  	TCLAP::SwitchArg p_hide_progress_bar("","noprogressbar","Disables progress bar and estimated time remaining", false);
       /**
          * Labeled ValueArg constructor.
@@ -160,7 +161,8 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		 p_src_format.getValue() != iim::TILED_MC_FORMAT &&
 		 p_src_format.getValue() != iim::TIF3D_FORMAT  && 
 		 p_src_format.getValue() != iim::TILED_TIF3D_FORMAT  && 
-		 p_src_format.getValue() != iim::TILED_MC_TIF3D_FORMAT ) {
+		 p_src_format.getValue() != iim::TILED_MC_TIF3D_FORMAT  && 
+		 p_src_format.getValue() != iim::UNST_TIF3D_FORMAT ) {
 		temp = "Unknown source format!\nAllowed formats are:\n\t\"" + 
 			iim::TILED_MC_FORMAT + "\"/\"" + 
 			iim::TILED_FORMAT + "\"/\"" + 
@@ -169,7 +171,9 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 			iim::SIMPLE_RAW_FORMAT + "\"/\"" + 
 			iim::RAW_FORMAT + "\"/\"" + 
 			iim::TIF3D_FORMAT + "\"/\"" + 
-			iim::TILED_TIF3D_FORMAT  + "\"";
+			iim::TILED_TIF3D_FORMAT  + "\"/\"" +
+			iim::TILED_MC_TIF3D_FORMAT  + "\"/\"" +
+			iim::UNST_TIF3D_FORMAT  + "\"";
 		//sprintf(errMsg, "Unknown source format!\nAllowed formats are:\n\tStacked / Simple / SimpeRaw / Raw / Tiled / TiledMC");
 		sprintf(errMsg, "%s", temp.c_str());
 		throw iom::exception(errMsg);
@@ -189,8 +193,9 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		 p_outFmt.getValue() != "Vaa3DRaw"   &&
 		 p_outFmt.getValue() != "Tiff3D"   &&
 		 p_outFmt.getValue() != "Vaa3DRawMC" &&
-		 p_outFmt.getValue() != "Tiff3DMC" ) {
-		sprintf(errMsg, "Unknown output format!\nAllowed formats are:\n\tTiff2DStck / Vaa3DRaw / Vaa3DRawMC / Tiff3D / Tiff3DMC");
+		 p_outFmt.getValue() != "Tiff3DMC" &&
+		 p_outFmt.getValue() != "Fiji_HDF5" ) {
+		sprintf(errMsg, "Unknown output format!\nAllowed formats are:\n\tTiff2DStck / Vaa3DRaw / Vaa3DRawMC / Tiff3D / Tiff3DMC / Fiji_HDF5");
 		throw iom::exception(errMsg);
 	}
 

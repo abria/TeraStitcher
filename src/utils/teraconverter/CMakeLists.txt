@@ -8,6 +8,8 @@ include_directories (${TeraStitcher_SOURCE_DIR}/utils/volumeconverter)
 # add 3rd party modules to include path
 include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty/tclap)
 
+link_directories(${TeraStitcher_SOURCE_DIR}/3rdparty/libs)
+
 # Adds executable called teraconverter (teraconverter under Linux, teraconverter.exe under Windows) from the all .h and .cpp files
 file(GLOB teraconverter_headers *.h)
 file(GLOB teraconverter_sources *.cpp)
@@ -17,3 +19,7 @@ add_executable(teraconverter ${teraconverter_headers} ${teraconverter_sources})
 target_link_libraries(teraconverter volumeconverter )
 target_link_libraries(teraconverter imagemanager )
 target_link_libraries(teraconverter iomanager )
+target_link_libraries(teraconverter volumemanager )
+target_link_libraries(teraconverter tinyxml )
+target_link_libraries(teraconverter stitcher )
+target_link_libraries(teraconverter crossmips )

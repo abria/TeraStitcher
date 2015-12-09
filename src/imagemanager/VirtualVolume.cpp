@@ -48,6 +48,8 @@
 #include "TiledVolume.h"
 #include "TiledMCVolume.h"
 #include "StackedVolume.h"
+#include "UnstitchedVolume.h"
+#include "BDVVolume.h"
 #include "RawFmtMngr.h"
 #include "Tiff3DMngr.h"
 #include "TimeSeries.h"
@@ -928,8 +930,10 @@ VirtualVolume* VirtualVolume::instance_format(const char* path, std::string form
     // file formats
     else if(isFile(path))
     {
-        if(format.compare(RAW_FORMAT) == 0)
+        if(format.compare(RAW_FORMAT) == 0 || (format.compare(TIF3D_FORMAT) == 0))
             volume = new RawVolume(path);
+		else if(format.compare(UNST_TIF3D_FORMAT) == 0)
+            volume = new UnstitchedVolume(path);
         else
             throw IOException(strprintf("in VirtualVolume::instance(): Unsupported format \"%s\" for path \"%s\" which is a file", format.c_str(), path), __iim__current__function__);
     }
@@ -1075,6 +1079,14 @@ VirtualVolume* VirtualVolume::instance(const char* path) throw (IOException)
     return volume;
 }
 
+
+VirtualVolume* VirtualVolume::instance(const char* fname, int res, void *descr) throw (iim::IOException) {
+    /**/iim::debug(iim::LEV3, strprintf("fname = \"%s\", res = %d, descr = %p", fname, res, descr).c_str(), __iim__current__function__);
+
+	return new BDVVolume(fname,res,0,descr); // assumes there is only time point 0
+}
+
+
 // returns the imported volume if succeeds (otherwise returns 0)
 // WARNING: no assumption is made on metadata files, which are possibly (re-)generated using the additional informations provided.
 VirtualVolume* VirtualVolume::instance(const char* path, std::string format,
@@ -1124,9 +1136,11 @@ VirtualVolume* VirtualVolume::instance(const char* path, std::string format,
     // file formats
     else if(isFile(path))
     {
-        if(format.compare(RAW_FORMAT) == 0)
+        if(format.compare(RAW_FORMAT) == 0  || (format.compare(TIF3D_FORMAT) == 0))
             volume = new RawVolume(path);
-        else
+		else if(format.compare(UNST_TIF3D_FORMAT) == 0)
+            volume = new UnstitchedVolume(path);
+		else
             throw IOException(strprintf("in VirtualVolume::instance(): Unsupported format \"%s\" for path \"%s\" which is a file", format.c_str(), path), __iim__current__function__);
     }
     else

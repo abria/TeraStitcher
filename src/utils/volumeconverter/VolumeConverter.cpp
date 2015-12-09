@@ -67,6 +67,7 @@
 /******************************************************************************************************/
 
 #include "../imagemanager/Tiff3DMngr.h"
+#include "../imagemanager/HDF5Mngr.h"
 
 #include <limits>
 #include <list>
@@ -2449,6 +2450,267 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 	delete[] chans_dir;
 }
 
+#endif
+
+
+void VolumeConverter::generateTilesBDV_HDF5 ( std::string output_path, bool* resolutions, 
+				int block_height, int block_width, int block_depth, int method, 
+				bool show_progress_bar, const char* saved_img_format, 
+                int saved_img_depth, std::string frame_dir )	throw (IOException)
+{
+    printf("in VolumeConverter::generateTilesBDV_HDF5(path = \"%s\", resolutions = ", output_path.c_str());
+    for(int i=0; i< TMITREE_MAX_HEIGHT; i++)
+        printf("%d", resolutions[i]);
+    printf(", block_height = %d, block_width = %d, block_depth = %d, method = %d, show_progress_bar = %s, saved_img_format = %s, saved_img_depth = %d, frame_dir = \"%s\")\n",
+           block_height, block_width, block_depth, method, show_progress_bar ? "true" : "false", saved_img_format, saved_img_depth, frame_dir.c_str());
+
+	if ( saved_img_depth == 0 ) // default is to generate an image with the same depth of the source
+		saved_img_depth = volume->getBYTESxCHAN() * 8;
+		
+	if ( saved_img_depth != (volume->getBYTESxCHAN() * 8) ) {
+		char err_msg[STATIC_STRINGS_SIZE];
+		sprintf(err_msg,"VolumeConverter::generateTilesVaa3DRaw: mismatch between bits per channel of source (%d) and destination (%d)",
+			volume->getBYTESxCHAN() * 8, saved_img_depth);
+        throw IOException(err_msg);
+	}
+
+	//LOCAL VARIABLES
+    sint64 height, width, depth;	//height, width and depth of the whole volume that covers all stacks
+    real32* rbuffer;			//buffer where temporary image data are stored (REAL_INTERNAL_REP)
+	uint8** ubuffer;			//array of buffers where temporary image data of channels are stored (UINT8_INTERNAL_REP)
+	int bytes_chan = volume->getBYTESxCHAN();
+	int org_channels = 0;       //store the number of channels read the first time (for checking purposes)
+	sint64 z_ratio, z_max_res;
+	int resolutions_size = 0;
+
+	void *file_descr;
+	sint64 *hyperslab_descr = new sint64[4*3]; // four 3-valued parameters: [ start(offset), stride count(size), block ]
+	memset(hyperslab_descr,0,4*3*sizeof(sint64));
+	sint64 *buf_dims = new sint64[3];  // dimensions of the buffer in which the subvolume is stored at a given resolution
+	memset(buf_dims,0,3*sizeof(sint64));
+
+	if ( volume == 0 ) {
+		char err_msg[STATIC_STRINGS_SIZE];
+		sprintf(err_msg,"VolumeConverter::generateTilesBDV_HDF5: undefined source volume");
+        throw IOException(err_msg);
+	}
+
+	// HDF5 crea il file HDF5 se non esiste altrimenti determina i setup e i time point gia' presenti
+	BDV_HDF5init(output_path,file_descr,volume->getBYTESxCHAN());
+
+	//initializing the progress bar
+	char progressBarMsg[200];
+	if(show_progress_bar)
+	{
+       imProgressBar::getInstance()->start("Multiresolution tile generation");
+       imProgressBar::getInstance()->update(0,"Initializing...");
+       imProgressBar::getInstance()->show();
+	}
+
+	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
+	if(iom::IMOUT_PLUGIN.compare("empty") == 0)
+	{
+		iom::IMOUT_PLUGIN = "tiff3D";
+	}
+
+	//computing dimensions of volume to be stitched
+	//this->computeVolumeDims(exclude_nonstitchable_stacks, _ROW_START, _ROW_END, _COL_START, _COL_END, _D0, _D1);
+	width = this->H1-this->H0;
+	height = this->V1-this->V0;
+	depth = this->D1-this->D0;
+
+	// code for testing
+	//uint8 *temp = volume->loadSubvolume_to_UINT8(
+	//	10,height-10,10,width-10,10,depth-10,
+	//	&channels);
+
+	//these parameters are used here for chunk dimensions; the default values should be passed without changes to BDV_HDF5 routines
+    //block_height = (block_height == -1 ? (int)height : block_height);
+    //block_width  = (block_width  == -1 ? (int)width  : block_width);
+    //block_depth  = (block_depth  == -1 ? (int)depth  : block_depth);
+    //if(block_height < TMITREE_MIN_BLOCK_DIM || block_width < TMITREE_MIN_BLOCK_DIM /* 2014-11-10. Giulio. @REMOVED (|| block_depth < TMITREE_MIN_BLOCK_DIM9 */)
+    //{ 
+    //    char err_msg[STATIC_STRINGS_SIZE];
+    //    sprintf(err_msg,"The minimum dimension for block height, width, and depth is %d", TMITREE_MIN_BLOCK_DIM);
+    //    throw IOException(err_msg);
+    //}
+
+	if(resolutions == NULL)
+	{
+            resolutions = new bool;
+            *resolutions = true;
+            resolutions_size = 1;
+	}
+	else
+            for(int i=0; i<TMITREE_MAX_HEIGHT; i++)
+                if(resolutions[i])
+                    resolutions_size = std::max(resolutions_size, i+1);
+
+	BDV_HDF5addSetups(file_descr,height,width,depth,volume->getVXL_V(),volume->getVXL_H(),volume->getVXL_D(),
+										resolutions,resolutions_size,channels,block_height,block_width,block_depth);
+
+	BDV_HDF5addTimepoint(file_descr);
+
+	//BDV_HDF5close(file_descr);
+
+	//ALLOCATING  the MEMORY SPACE for image buffer
+    z_max_res = powInt(2,resolutions_size-1);
+
+	// the following check does not make sense for Fiji_HDF5 format
+	//if ( z_max_res > block_depth/2 ) {
+	//	char err_msg[STATIC_STRINGS_SIZE];
+	//	sprintf(err_msg, "in generateTilesVaa3DRaw(...): too much resolutions(%d): too much slices (%lld) in the buffer \n", resolutions_size, z_max_res);
+	//	throw IOException(err_msg);
+	//}
+	z_ratio=depth/z_max_res;
+
+	//allocated even if not used
+	ubuffer = new uint8 *[channels];
+	memset(ubuffer,0,channels*sizeof(uint8));
+	org_channels = channels; // save for checks
+
+	// z must begin from D0 (absolute index into the volume) since it is used to compute tha file names (containing the absolute position along D)
+	for(sint64 z = this->D0, z_parts = 1; z < this->D1; z += z_max_res, z_parts++)
+	{
+		// fill one slice block
+		if ( internal_rep == REAL_INTERNAL_REP )
+            rbuffer = volume->loadSubvolume_to_real32(V0,V1,H0,H1,(int)(z-D0),(z-D0+z_max_res <= D1) ? (int)(z-D0+z_max_res) : D1);
+		else { // internal_rep == UINT8_INTERNAL_REP
+            ubuffer[0] = volume->loadSubvolume_to_UINT8(V0,V1,H0,H1,(int)(z-D0),(z-D0+z_max_res <= D1) ? (int)(z-D0+z_max_res) : D1,&channels,iim::NATIVE_RTYPE);
+			if ( org_channels != channels ) {
+				char err_msg[STATIC_STRINGS_SIZE];
+				sprintf(err_msg,"The volume contains images with a different number of channels (%d,%d)", org_channels, channels);
+                throw IOException(err_msg);
+			}
+		
+			for (int i=1; i<channels; i++ ) { // WARNING: assume 1-byte pixels
+				// offsets have to be computed taking into account that buffer size along D may be different
+				// WARNING: the offset must be of tipe sint64 
+				ubuffer[i] = ubuffer[i-1] + (height * width * ((z_parts<=z_ratio) ? z_max_res : (depth%z_max_res)) * bytes_chan);
+			}
+		}
+		// WARNING: should check that buffer has been actually allocated
+
+		//updating the progress bar
+		if(show_progress_bar)
+		{	
+			sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((uint32)(z-D0)),((uint32)(z-D0+z_max_res-1)),(uint32)depth);
+                        imProgressBar::getInstance()->update(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
+                        imProgressBar::getInstance()->show();
+		}
+
+		//saving current buffer data at selected resolutions and in multitile format
+		for(int i=0; i< resolutions_size; i++)
+		{
+			// HDF5 crea i gruppi relativi a questa risoluzione in ciascun setup del time point corrente
+
+			if(show_progress_bar)
+			{
+                sprintf(progressBarMsg, "Generating resolution %d of %d",i+1,std::max(resolutions_size, resolutions_size));
+                                imProgressBar::getInstance()->updateInfo(progressBarMsg);
+                                imProgressBar::getInstance()->show();
+			}
+
+			//buffer size along D is different when the remainder of the subdivision by z_max_res is considered
+			sint64 z_size = (z_parts<=z_ratio) ? z_max_res : (depth%z_max_res);
+
+			//halvesampling resolution if current resolution is not the deepest one
+			if(i!=0) {
+				if ( internal_rep == REAL_INTERNAL_REP )
+                    VirtualVolume::halveSample(rbuffer,(int)height/(powInt(2,i-1)),(int)width/(powInt(2,i-1)),(int)z_size/(powInt(2,i-1)),method);
+				else // internal_rep == UINT8_INTERNAL_REP
+                    VirtualVolume::halveSample_UINT8(ubuffer,(int)height/(powInt(2,i-1)),(int)width/(powInt(2,i-1)),(int)z_size/(powInt(2,i-1)),channels,method,bytes_chan);
+			}
+			
+			//saving at current resolution if it has been selected and iff buffer is at least 1 voxel (Z) deep
+            if(resolutions[i] && (z_size/(powInt(2,i))) > 0)
+			{
+				if(show_progress_bar)
+				{
+					sprintf(progressBarMsg, "Saving to disc resolution %d",i+1);
+                                        imProgressBar::getInstance()->updateInfo(progressBarMsg);
+                                        imProgressBar::getInstance()->show();
+				}
+
+				//std::stringstream  res_name;
+				//res_name << i;
+
+				for ( int c=0; c<channels; c++ ) {
+
+					//storing in 'base_path' the absolute path of the directory that will contain all stacks
+					//std::stringstream base_path;
+					// ELIMINARE? base_path << file_path[i].str().c_str() << chans_dir[c].c_str() << "/";
+
+					// HDF5 scrive il canale corrente nel buffer nel gruppo corrispondente al time point e alla risoluzione correnti 
+					if ( internal_rep == REAL_INTERNAL_REP )
+						throw iim::IOException(iim::strprintf("updating already existing files not supported yet").c_str(),__iim__current__function__);
+					else { // internal_rep == UINT8_INTERNAL_REP
+						buf_dims[1] = height/(powInt(2,i)); //((i==0) ? powInt(2,i) : powInt(2,i-1));
+						buf_dims[2] = width/(powInt(2,i)); //((i==0) ? powInt(2,i) : powInt(2,i-1));
+						buf_dims[0] = z_size/(powInt(2,i)); //((i==0) ? powInt(2,i) : powInt(2,i-1));
+						// start
+						hyperslab_descr[0] = 0; // [0][0]
+						hyperslab_descr[1] = 0; // [0][1]
+						hyperslab_descr[2] = 0; // [0][2]
+						// stride
+						hyperslab_descr[3] = 1;  // [1][0]
+						hyperslab_descr[4] = 1;  // [1][1]
+						hyperslab_descr[5] = 1;  // [1][2]
+						// count
+						hyperslab_descr[6] = buf_dims[0]; //height/(powInt(2,i)); // [2][0]
+						hyperslab_descr[7] = buf_dims[1]; //width/(powInt(2,i));  // [2][1]
+						hyperslab_descr[8] = buf_dims[2]; //z_size/(powInt(2,i)); // [2][2]
+						// block
+						hyperslab_descr[9]  = 1; // [3][0]
+						hyperslab_descr[10] = 1; // [3][1]
+						hyperslab_descr[11] = 1; // [3][2]
+						BDV_HDF5writeHyperslab(file_descr,ubuffer[c],buf_dims,hyperslab_descr,i,c);
+					}
+
+				}
+			}
+		}
+
+		//releasing allocated memory
+		if ( internal_rep == REAL_INTERNAL_REP )
+			delete rbuffer;
+		else // internal_rep == UINT8_INTERNAL_REP
+			delete ubuffer[0]; // other buffer pointers are only offsets
+	}
+
+	// ubuffer allocated anyway
+	delete ubuffer;
+
+	// deallocate memory
+ //   for(int res_i=0; res_i< resolutions_size; res_i++)
+	//{
+	//	for(int stack_row = 0; stack_row < n_stacks_V[res_i]; stack_row++)
+	//	{
+	//		for(int stack_col = 0; stack_col < n_stacks_H[res_i]; stack_col++)
+	//		{
+	//			delete[] stacks_height[res_i][stack_row][stack_col];
+	//			delete[] stacks_width [res_i][stack_row][stack_col];
+	//			delete[] stacks_depth [res_i][stack_row][stack_col];
+	//		}
+	//		delete[] stacks_height[res_i][stack_row];
+	//		delete[] stacks_width [res_i][stack_row];
+	//		delete[] stacks_depth [res_i][stack_row];
+	//	}
+	//	delete[] stacks_height[res_i];
+	//	delete[] stacks_width[res_i]; 
+	//	delete[] stacks_depth[res_i]; 
+	//}
+
+	//delete[] chans_dir;
+
+	delete hyperslab_descr;
+	delete buf_dims;
+
+	BDV_HDF5close(file_descr);
+
+}
+
+
 // unified access point for volume conversion (@ADDED by Alessandro on 2014-02-24)
 void VolumeConverter::convertTo(
     std::string output_path,                        // path where to save the converted volume
@@ -2508,5 +2770,4 @@ void VolumeConverter::convertTo(
     }
 }
 
-# endif
 

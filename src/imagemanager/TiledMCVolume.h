@@ -84,6 +84,7 @@ class TiledMCVolume : public iim::VirtualVolume
         iim::axis   getAXS_1(){return reference_system.first;}
         iim::axis   getAXS_2(){return reference_system.second;}
         iim::axis   getAXS_3(){return reference_system.third;}
+        TiledVolume** getVolumes(){return vol_ch;}
 
         // returns a unique ID that identifies the volume format
         std::string getPrintableFormat(){return iim::TILED_MC_FORMAT;}
