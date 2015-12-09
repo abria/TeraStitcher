@@ -2765,6 +2765,8 @@ void VolumeConverter::convertTo(
             generateTilesVaa3DRaw(output_path, resolutions, block_height, block_width, block_depth, method, true, "Tiff3D", output_bitdepth);
         else if(output_format.compare(iim::TILED_MC_TIF3D_FORMAT) == 0)
             generateTilesVaa3DRawMC(output_path, resolutions, block_height, block_width, block_depth, method, true, "Tiff3D", output_bitdepth);
+        else if(output_format.compare(iim::BDV_HDF5_FORMAT) == 0)
+            generateTilesBDV_HDF5(output_path,resolutions, block_height,block_width,block_depth,method, true,"Tiff3D",output_bitdepth);
         else
             throw iim::IOException(strprintf("Output format \"%s\" not supported", output_format.c_str()).c_str());
     }
