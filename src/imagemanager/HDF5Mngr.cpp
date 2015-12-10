@@ -26,6 +26,8 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2015-12-10. Giulio. @ADDED conditional compilation to exclude HDF5 dependent code
+* 2015-12-09. Giulio. @RELEASED first working version
 * 2015-11-17. Giulio. @CREATED 
 */
 
@@ -34,7 +36,11 @@
 #include <stdlib.h> // needed by clang: defines size_t
 #include <sstream>
 
+#define ENABLE_BDV_HDF5
+
+#ifdef ENABLE_BDV_HDF5
 #include "hdf5.h"
+#endif
 
 #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
 #include <QElapsedTimer>
@@ -42,6 +48,8 @@
 #include "COperation.h"
 #endif
 
+
+#ifdef ENABLE_BDV_HDF5
 
 #define HDF5_SUFFIX   "h5"
 
@@ -783,29 +791,50 @@ hid_t *BDV_HDF5_fdescr_t::getDATASETS_ID ( int tp, int r ) {
 void readSubvol ( int V0, int V1, int H0, int H1, int D0, int D1, int setup, unsigned char *buf ) {
 }
 
+#endif // ENABLE_BDV_HDF5
+
 
 /****************************************************************************
 * HDF5 Manager implementation
 ****************************************************************************/
 
 void BDV_HDF5init ( std::string fname, void *&descr, int vxl_nbytes ) throw (iim::IOException) {
+#ifdef ENABLE_BDV_HDF5
 	BDV_HDF5_fdescr_t *int_descr = new BDV_HDF5_fdescr_t(fname.c_str(),vxl_nbytes);
 	descr = int_descr;
+#else
+	throw iim::IOException(iim::strprintf(
+			"Support to BDV_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "
+			"in ""3rdparty/libs"" directory and set the ""ENABLED_BDV_HDF5"" checkbox before configuring CMake project").c_str(),__iim__current__function__);
+#endif
 }
 
 
 int BDV_HDF5n_resolutions ( void *descr ) { 
+#ifdef ENABLE_BDV_HDF5
 	return ((BDV_HDF5_fdescr_t *) descr)->getN_RES();
+#else
+	throw iim::IOException(iim::strprintf(
+			"Support to BDV_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "
+			"in ""3rdparty/libs"" directory and set the ""ENABLED_BDV_HDF5"" checkbox before configuring CMake project").c_str(),__iim__current__function__);
+#endif
 }
 
 
 void BDV_HDF5close ( void *descr ) {
+#ifdef ENABLE_BDV_HDF5
 	delete (BDV_HDF5_fdescr_t *) descr;
+#else
+	throw iim::IOException(iim::strprintf(
+			"Support to BDV_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "
+			"in ""3rdparty/libs"" directory and set the ""ENABLED_BDV_HDF5"" checkbox before configuring CMake project").c_str(),__iim__current__function__);
+#endif
 }
 
 
 void BDV_HDF5addSetups ( void *file_descr, iim::sint64 height, iim::sint64 width, iim::sint64 depth, 
 				 float vxlszV, float vxlszH, float vxlszD, bool *res, int res_size, int chans, int block_height, int block_width, int block_depth ) {
+#ifdef ENABLE_BDV_HDF5
 
 	BDV_HDF5_fdescr_t *int_descr = (BDV_HDF5_fdescr_t *) file_descr;
 
@@ -822,23 +851,40 @@ void BDV_HDF5addSetups ( void *file_descr, iim::sint64 height, iim::sint64 width
 							height/iim::powInt(2,r),width/iim::powInt(2,r),depth/iim::powInt(2,r),block_height, block_width, block_depth) != r )
 					throw iim::IOException(iim::strprintf("cannot add resolution %d",r).c_str(),__iim__current__function__);
 	}
+#else
+	throw iim::IOException(iim::strprintf(
+			"Support to BDV_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "
+			"in ""3rdparty/libs"" directory and set the ""ENABLED_BDV_HDF5"" checkbox before configuring CMake project").c_str(),__iim__current__function__);
+#endif
 }
 
 
 void BDV_HDF5addTimepoint ( void *file_descr, int tp ) {
+#ifdef ENABLE_BDV_HDF5
 	BDV_HDF5_fdescr_t *int_descr = (BDV_HDF5_fdescr_t *) file_descr;
 
 	if ( int_descr->addTimePoint(tp) != tp )
 		throw iim::IOException(iim::strprintf("cannot add time point %d",tp).c_str(),__iim__current__function__);
+#else
+	throw iim::IOException(iim::strprintf(
+			"Support to BDV_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "
+			"in ""3rdparty/libs"" directory and set the ""ENABLED_BDV_HDF5"" checkbox before configuring CMake project").c_str(),__iim__current__function__);
+#endif
 }
 
 
 void BDV_HDF5writeHyperslab ( void *file_descr, iim::uint8 *buf, iim::sint64 *dims_buf, iim::sint64 *hl, int r, int s, int tp ) {
+#ifdef ENABLE_BDV_HDF5
 	BDV_HDF5_fdescr_t *int_descr = (BDV_HDF5_fdescr_t *) file_descr;
 
 	if ( int_descr->writeHyperslab(tp,s,r,buf,(hsize_t *)dims_buf,(hsize_t *)hl) )
 		throw iim::IOException(iim::strprintf("cannot add hyperslab: buffer size=(%d,%d,%d), hyperslab=[offset=(%d,%d,%d), stride=(%d,%d,%d), size=(%d,%d,%d), block=(%d,%d,%d)]",
 									dims_buf[0],dims_buf[1],dims_buf[2],hl[0],hl[1],hl[2],hl[3],hl[4],hl[5],hl[6],hl[7],hl[8],hl[9],hl[10],hl[11]).c_str(),__iim__current__function__);
+#else
+	throw iim::IOException(iim::strprintf(
+			"Support to BDV_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "
+			"in ""3rdparty/libs"" directory and set the ""ENABLED_BDV_HDF5"" checkbox before configuring CMake project").c_str(),__iim__current__function__);
+#endif
 }
 
 
@@ -848,6 +894,7 @@ void BDV_HDF5getVolumeInfo ( void *descr, int tp, int res, void *&volume_descr,
 								float &ORG_V, float &ORG_H, float &ORG_D, 
 								iim::uint32 &DIM_V, iim::uint32 &DIM_H, iim::uint32 &DIM_D,
 							    int &DIM_C, int &BYTESxCHAN, int &DIM_T, int &t0, int &t1 ) {
+#ifdef ENABLE_BDV_HDF5
 	
 	BDV_HDF5_fdescr_t *int_descr = (BDV_HDF5_fdescr_t *) descr;
 	BDV_volume_descr_t *int_volume_descr = new BDV_volume_descr_t;
@@ -876,10 +923,16 @@ void BDV_HDF5getVolumeInfo ( void *descr, int tp, int res, void *&volume_descr,
 	int_volume_descr->datasets_id = int_descr->getDATASETS_ID(tp,res);
 
 	volume_descr = int_volume_descr;
+#else
+	throw iim::IOException(iim::strprintf(
+			"Support to BDV_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "
+			"in ""3rdparty/libs"" directory and set the ""ENABLED_BDV_HDF5"" checkbox before configuring CMake project").c_str(),__iim__current__function__);
+#endif
 }
 
 
 void BDV_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0, int D1, int setup, iim::uint8 *buf ) {
+#ifdef ENABLE_BDV_HDF5
 
 	BDV_volume_descr_t *int_volume_descr = (BDV_volume_descr_t *) descr;
 	
@@ -927,12 +980,23 @@ void BDV_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0,
 
 	H5Sclose(bufspace_id);
 	H5Sclose(filespace_id);
+#else
+	throw iim::IOException(iim::strprintf(
+			"Support to BDV_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "
+			"in ""3rdparty/libs"" directory and set the ""ENABLED_BDV_HDF5"" checkbox before configuring CMake project").c_str(),__iim__current__function__);
+#endif
 }
 
 void BDV_HDF5closeVolume ( void *descr ) {
+#ifdef ENABLE_BDV_HDF5
 	BDV_volume_descr_t *int_volume_descr = (BDV_volume_descr_t *) descr;
 	if ( int_volume_descr->datasets_id )
 		delete int_volume_descr->datasets_id;
 	delete (BDV_volume_descr_t *) descr;
+#else
+	throw iim::IOException(iim::strprintf(
+			"Support to BDV_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "
+			"in ""3rdparty/libs"" directory and set the ""ENABLED_BDV_HDF5"" checkbox before configuring CMake project").c_str(),__iim__current__function__);
+#endif
 }
 

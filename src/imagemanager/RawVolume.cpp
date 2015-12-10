@@ -22,6 +22,13 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+*******************
+* 2015-12-10. Giulio.     @ADDED support for single Tiff 3D volumes 
+*/
+
 # include "RawVolume.h"
 #include "VirtualFmtMngr.h"
 #include "iomanager.config.h"
@@ -109,7 +116,7 @@ void RawVolume::init ( ) throw (IOException)
 	}
 	// fhandle must remain opened since it is a private member of RawVolume 
     // @FIXED by Alessandro on 2014-03-29: fhandle MUST BE CLOSED, otherwise it is not possible to open more than 1000 files
-    closeRawFile(fhandle);
+    fmtMngr->closeFile(fhandle);
     fhandle = 0;
 
 	DIM_V = (uint32) sz[1]; // in raw format first dimension is horizontal
