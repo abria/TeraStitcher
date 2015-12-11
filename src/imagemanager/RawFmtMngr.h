@@ -275,10 +275,6 @@ char *copyRawFileBlock2Buffer ( char *filename, int sV0, int sV1, int sH0, int s
  * stridex:       number of pixels of the 3D buffer along x (H) dimension
  * stridexy:      number of pixels in one slice of the 3D buffer (plane xy or VH)
  * stridexyz:     number of pixels in one channel of the 3D buffer (volume xyz or VHD)
- * 
- * WARNING: current implementation assumes that datatype is 1-byte pixels and that 
- * the endianess of the machine is the same as that of the machine that generated the
- * data in 'filename'
  */
 
 char *streamer_open ( Streamer_Descr_t *streamer );

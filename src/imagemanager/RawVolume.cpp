@@ -235,7 +235,7 @@ uint8 *RawVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, 
 								sbv_width*sbv_height,
 								sbv_width*sbv_height*sbv_depth) ) != 0 ) {
 		char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"RawVolume::init: error in loading metadata - %s",internal_msg);
+		sprintf(err_msg,"RawVolume::init: error in copying file block to buffer - %s",internal_msg);
         throw IOException(err_msg);
 	}
 
