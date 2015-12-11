@@ -1,6 +1,6 @@
 # Top-Level CmakeLists.txt to build TeraStitcher
 project( TeraStitcher )
-cmake_minimum_required(VERSION 2.7)
+cmake_minimum_required(VERSION 3.1)
 
 # include cmake scripts
 include(cmake/utils.cmake)
@@ -30,6 +30,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	warnings_disable(CMAKE_CXX_FLAGS /wd4290) # vs2012: can't properly handle exceptions
 	warnings_disable(CMAKE_CXX_FLAGS /wd4996) # vs2012: complains about unsafe standard C++ functions
 endif()
+
 
 # build modules
 add_subdirectory( 3rdparty/zlib )

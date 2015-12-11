@@ -36,8 +36,6 @@
 #include <stdlib.h> // needed by clang: defines size_t
 #include <sstream>
 
-#define ENABLE_BDV_HDF5
-
 #ifdef ENABLE_BDV_HDF5
 #include "hdf5.h"
 #endif
