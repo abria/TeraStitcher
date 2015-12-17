@@ -39,7 +39,7 @@
 
 #include "VolumeConverter.h"
 #include "../imagemanager/IM_config.h"
-#include "../imagemanager/ProgressBar.h"
+#include "../imagemanager/imProgressBar.h"
 #include "iomanager.config.h"
 #include <math.h>
 #include <string>

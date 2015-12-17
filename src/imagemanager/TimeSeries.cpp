@@ -7,7 +7,7 @@
 #include <list>
 #include <typeinfo>
 #include "TimeSeries.h"
-#include "ProgressBar.h"
+#include "imProgressBar.h"
 
 TimeSeries::TimeSeries(const char *rootDir, std::string frames_format /* = "" */) throw (iim::IOException) : iim::VirtualVolume(rootDir)
 {

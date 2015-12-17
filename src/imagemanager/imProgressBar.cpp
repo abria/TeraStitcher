@@ -22,7 +22,7 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
-#include "ProgressBar.h"
+#include "imProgressBar.h"
 #include <iostream>
 #include <string>
 #include <stdio.h>
