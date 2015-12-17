@@ -11,28 +11,41 @@ include_directories (${CMAKE_BINARY_DIR}/3rdparty/zlib)
 include_directories (${CMAKE_SOURCE_DIR}/3rdparty/libtiff)
 include_directories (${CMAKE_BINARY_DIR}/3rdparty/libtiff)
 
+# add STATIC library from all .h and .cpp files
+file(GLOB imagemanager_headers *.h)
+file(GLOB imagemanager_sources *.cpp)
+add_library(imagemanager STATIC ${imagemanager_headers} ${imagemanager_sources})
 
 # check HDF5 option
 option (WITH_HDF5 "Support to HDF5" OFF) 
 if(WITH_HDF5)
 	message(STATUS "Checking HDF5")
 	find_package (HDF5 NAMES hdf5 COMPONENTS C static)
+	
 	if(HDF5_FOUND)
+	
+		# include HDF5 headers
 		INCLUDE_DIRECTORIES (${HDF5_INCLUDE_DIR})
-		message(STATUS "Checking HDF5 ... OK!")
+		
+		# enable HDF5-dependent code
 		add_definitions(-DENABLE_BDV_HDF5)
+		
 		# override hdf5 target properties to remove target zlib-target that causes conflicts with zlib already present in this project
 		set_target_properties(${HDF5_C_STATIC_LIBRARY} PROPERTIES INTERFACE_LINK_LIBRARIES "szip-static")
-		add_dependencies(${HDF5_C_STATIC_LIBRARY} zlib)
+		
+		# link to HDF5
+		target_link_libraries(imagemanager ${HDF5_C_STATIC_LIBRARY})
+		
+		# on UNIX, link to additional zlib dependencies
+		if(UNIX AND (CMAKE_COMPILER_IS_GNUCXX OR CV_ICC))
+		  target_link_libraries(imagemanager dl z)
+		endif()
+	
+		# OK
+		message(STATUS "Checking HDF5 ... OK!")
+		
 	else(HDF5_FOUND)
 		message(FATAL_ERROR "Checking HDF5 ... error!!!")
-		#message(FATAL_ERROR "Checking HDF5")
+		
 	endif(HDF5_FOUND)
 endif(WITH_HDF5)
-
-# add STATIC library from the all .h and .cpp files
-file(GLOB imagemanager_headers *.h)
-file(GLOB imagemanager_sources *.cpp)
-add_library(imagemanager STATIC ${imagemanager_headers} ${imagemanager_sources})
-target_link_libraries(imagemanager ${HDF5_C_STATIC_LIBRARY})
-
