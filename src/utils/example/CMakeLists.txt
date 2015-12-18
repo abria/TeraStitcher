@@ -16,8 +16,8 @@ file(GLOB example_sources *.cpp)
 add_executable(example_utility ${example_headers} ${example_sources})
 
 # link the executable to the other modules 
-target_link_libraries(example_utility stitcher )
 target_link_libraries(example_utility volumemanager )
+target_link_libraries(example_utility stitcher )
 target_link_libraries(example_utility crossmips )
 target_link_libraries(example_utility iomanager )
 target_link_libraries(example_utility tinyxml )
