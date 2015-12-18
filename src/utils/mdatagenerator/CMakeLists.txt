@@ -7,7 +7,7 @@ include_directories (${TeraStitcher_SOURCE_DIR}/iomanager)
 # add 3rd party modules to include path
 include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty/tclap)
 
-link_directories(${TeraStitcher_SOURCE_DIR}/3rdparty/libs)
+#link_directories(${TeraStitcher_SOURCE_DIR}/3rdparty/libs)
 
 # Adds executable called mdatagenerator (mdatagenerator under Linux, mdatagenerator.exe under Windows) from the all .h and .cpp files
 file(GLOB mdatagenerator_headers *.h)

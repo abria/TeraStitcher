@@ -8,7 +8,7 @@ include_directories (${TeraStitcher_SOURCE_DIR}/tinyxml)
 # add 3rd party modules to include path
 include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty/tclap)
 
-link_directories(${TeraStitcher_SOURCE_DIR}/3rdparty/libs)
+#link_directories(${TeraStitcher_SOURCE_DIR}/3rdparty/libs)
 
 # Adds executable called mergedisplacements (mergedisplacements under Linux, mergedisplacements.exe under Windows) from the all .h and .cpp files
 file(GLOB mergedisplacements_headers *.h)
