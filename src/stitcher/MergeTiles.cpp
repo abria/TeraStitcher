@@ -66,7 +66,7 @@
 #include "../imagemanager/TiledVolume.h"
 
 
-#include "../iomanager/ProgressBar.h"
+#include "imProgressBar.h"
 
 #include "resumer.h" // GI_141029: added stop and resume facility
 
@@ -173,9 +173,9 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 
 	if(show_progress_bar)
 	{
-		ProgressBar::instance()->start("Multiresolution tile merging");
-		ProgressBar::instance()->update(0,"Initializing...");
-		ProgressBar::instance()->show();
+		iim::imProgressBar::instance()->start("Multiresolution tile merging");
+		iim::imProgressBar::instance()->update(0,"Initializing...");
+		iim::imProgressBar::instance()->show();
 	}
 
 	//initializing <StackRestorer> object if restoring is enabled
@@ -465,8 +465,8 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 			if(show_progress_bar)
 			{	
 				sprintf(progressBarMsg, "Merging slice %d of %d",((uint32)(z-D0+k+1)),(uint32)depth);
-                                ProgressBar::instance()->update(((float)(z-D0+k+1)*100/(float)depth), progressBarMsg);
-                                ProgressBar::instance()->show();
+                                iim::imProgressBar::instance()->update(((float)(z-D0+k+1)*100/(float)depth), progressBarMsg);
+                                iim::imProgressBar::instance()->show();
 			}
 
 			//looping on all stripes
@@ -580,8 +580,8 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 			if(show_progress_bar)
 			{
 				sprintf(progressBarMsg, "Generating resolution %d of %d",i+1,ISR_MAX(resolutions_size, resolutions_size));
-                                ProgressBar::instance()->updateInfo(progressBarMsg);
-                                ProgressBar::instance()->show();
+                                iim::imProgressBar::instance()->updateInfo(progressBarMsg);
+                                iim::imProgressBar::instance()->show();
 			}
 
 			// check if current block is changed
@@ -630,8 +630,8 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 				if(show_progress_bar)
 				{
 					sprintf(progressBarMsg, "Saving to disc resolution %d",i+1);
-                                        ProgressBar::instance()->updateInfo(progressBarMsg);
-                                        ProgressBar::instance()->show();
+                                        iim::imProgressBar::instance()->updateInfo(progressBarMsg);
+                                        iim::imProgressBar::instance()->show();
 				}
 
 				//storing in 'base_path' the absolute path of the directory that will contain all stacks

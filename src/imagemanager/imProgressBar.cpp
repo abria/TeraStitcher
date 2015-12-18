@@ -33,10 +33,14 @@
 #include "PMain.h"
 #endif
 
+#ifdef _VAA3D_PLUGIN_MODE
+#include "../../presentation/PMain.h"
+#endif
+
 
 /**********************************************************************************
 * Singleton design pattern: this class can have one instance only,  which must be
-* instantiated by calling static method "istance(...)"
+* instantiated by calling static method "instance(...)"
 ***********************************************************************************/
 iim::imProgressBar* iim::imProgressBar::uniqueInstance = 0;
 iim::imProgressBar* iim::imProgressBar::instance()
@@ -81,6 +85,11 @@ void iim::imProgressBar::start(const char *new_operation_desc, bool toConverter 
     else
         teramanager::PMain::getInstance()->emitProgressBarChanged(progress_value_int, 0, 0, message_level_1);
     #endif
+
+	#ifdef _VAA3D_PLUGIN_MODE
+		int progress_value_int = (int) progress_value;
+		terastitcher::PMain::instance()->emitProgressBarChanged(progress_value_int, 0, 0, new_operation_desc);
+	#endif
 }
 
 void iim::imProgressBar::update(float new_progress_value, const char* new_progress_info)
@@ -109,7 +118,10 @@ void iim::imProgressBar::show(bool toConverter /* = true */)
         teramanager::PConverter::instance()->emitProgressBarChanged(progress_value_int, minutes_remaining, seconds_remaining%60, message_level_1);
     else
         teramanager::PMain::getInstance()->emitProgressBarChanged(progress_value_int, minutes_remaining, seconds_remaining%60, message_level_1);
-    #else
+	#elif _VAA3D_PLUGIN_MODE
+		int progress_value_int = (int) progress_value;
+		terastitcher::PMain::instance()->emitProgressBarChanged(progress_value_int, minutes_remaining, seconds_remaining%60);    
+	#else
     int dummy = system_CLEAR();
     printf("OPERATION:\t%s\n",this->message_level_1); // 140427_IANNELLO
     printf("PHASE:\t\t%s\n",this->message_level_2); // 140427_IANNELLO

@@ -46,7 +46,7 @@
 //#include <highgui.h>
 #include <list>
 #include <fstream>
-#include "ProgressBar.h"
+#include "imProgressBar.h"
 
 using namespace std;
 using namespace iim;

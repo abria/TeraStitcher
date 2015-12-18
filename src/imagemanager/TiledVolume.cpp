@@ -55,7 +55,7 @@
 
 #include <list>
 #include <fstream>
-#include "ProgressBar.h"
+#include "imProgressBar.h"
 
 #include "IOPluginAPI.h" // 2015-03-03. Giulio.
 

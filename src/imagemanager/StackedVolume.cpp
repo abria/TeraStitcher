@@ -52,7 +52,7 @@
 // Giulio_CV #include <highgui.h>
 #include <list>
 #include <fstream>
-#include "ProgressBar.h"
+#include "imProgressBar.h"
 
 #include "IOPluginAPI.h" // 2014-11-26. Giulio.
 
