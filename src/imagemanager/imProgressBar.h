@@ -37,7 +37,7 @@ class iim::imProgressBar
         * Singleton design pattern: this class can have one instance only,  which must be
         * instantiated by calling static method "istance(...)"
         **********************************************************************************/
-        static imProgressBar* uniqueInstance;
+        //static imProgressBar* uniqueInstance;
         imProgressBar();
 
         char message_level_1[1000];     // main operation
@@ -54,12 +54,16 @@ class iim::imProgressBar
         * Singleton design pattern: this class can have one instance only,  which must be
         * instantiated by calling static method "instance(...)"
         ***********************************************************************************/
-        static imProgressBar* instance();
+        static imProgressBar* instance()
+		{
+			static imProgressBar* uniqueInstance = new imProgressBar();
+			return uniqueInstance;
+		}
         static imProgressBar* getInstance()
         {
-            if(uniqueInstance)
+            /*if(uniqueInstance)
                 return uniqueInstance;
-            else
+            else*/
                 return instance();
         }
         ~imProgressBar(){}

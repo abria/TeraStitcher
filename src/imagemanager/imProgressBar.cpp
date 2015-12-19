@@ -42,14 +42,14 @@
 * Singleton design pattern: this class can have one instance only,  which must be
 * instantiated by calling static method "instance(...)"
 ***********************************************************************************/
-iim::imProgressBar* iim::imProgressBar::uniqueInstance = 0;
-iim::imProgressBar* iim::imProgressBar::instance()
+//iim::imProgressBar* iim::imProgressBar::uniqueInstance = 0;
+/*iim::imProgressBar* iim::imProgressBar::instance()
 {
     if (uniqueInstance == 0)
         uniqueInstance = new imProgressBar();
     uniqueInstance = new imProgressBar();
     return uniqueInstance;
-}
+}*/
 
 iim::imProgressBar::imProgressBar()
 {
