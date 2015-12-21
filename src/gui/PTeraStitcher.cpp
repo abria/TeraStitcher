@@ -206,7 +206,7 @@ PTeraStitcher::PTeraStitcher(QWidget *parent) : QWidget(parent)
     tabImport->preview_button->installEventFilter(this);
 
     //window attributes
-    setWindowTitle(tr("TeraStitcher plugin v") + terastitcher::version.c_str());
+    setWindowTitle(tr("TeraStitcher v") + (terastitcher::version + " (with Qt " + ts::qtversion + ")").c_str());
     setWindowFlags(Qt::WindowStaysOnTopHint);
     setFixedSize(800, 600);
 //    setFixedSize(1024, 768);
