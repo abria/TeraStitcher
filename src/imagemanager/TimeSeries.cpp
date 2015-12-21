@@ -7,7 +7,7 @@
 #include <list>
 #include <typeinfo>
 #include "TimeSeries.h"
-#include "imProgressBar.h"
+#include "ProgressBar.h"
 
 TimeSeries::TimeSeries(const char *rootDir, std::string frames_format /* = "" */) throw (iim::IOException) : iim::VirtualVolume(rootDir)
 {
@@ -260,9 +260,9 @@ iim::uint8 * TimeSeries::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, i
     // initialize progress bar
     if(t1 - t0 > 0)
     {
-        iim::imProgressBar::getInstance()->start("5D data loading from disk", false);
-        iim::imProgressBar::getInstance()->update(0,"Initializing...");
-        iim::imProgressBar::getInstance()->show(false);
+        ts::ProgressBar::getInstance()->start("5D data loading from disk");
+        ts::ProgressBar::getInstance()->setProgressValue(0,"Initializing...");
+        ts::ProgressBar::getInstance()->display();
     }
 
     // compute subvol dimension
@@ -281,9 +281,8 @@ iim::uint8 * TimeSeries::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, i
     {
         if(t1 - t0 > 0)
         {
-            iim::imProgressBar::getInstance()->update( (static_cast<float>(t) / (t1-t0))*100, iim::strprintf("Loading time frame %d/%d", t, t1-t0).c_str());
-            iim::imProgressBar::getInstance()->setMessage(1, iim::strprintf("Loading time frame %d/%d", t, t1-t0).c_str());
-            iim::imProgressBar::getInstance()->show(false);
+            ts::ProgressBar::getInstance()->setProgressValue( (static_cast<float>(t) / (t1-t0))*100, iim::strprintf("Loading time frame %d/%d", t, t1-t0).c_str());
+            ts::ProgressBar::getInstance()->display();
         }
 
         iim::uint8* temp_data = frames[t+t0]->loadSubvolume_to_UINT8(V0, V1, H0, H1, D0, D1);

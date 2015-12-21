@@ -40,7 +40,7 @@
 #include "volumemanager.config.h"
 #include "IOPluginAPI.h"
 #include "S_config.h"
-#include "GUI_config.h"
+#include "config.h"
 #include <tclap/CmdLine.h>
 #include <sstream>
 
@@ -56,7 +56,7 @@ TeraStitcherCLI::TeraStitcherCLI(void)
 void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 {
 	//command line object definition
-	TCLAP::CmdLine cmd(getHelpText(), '=', TERASTITCHER_VERSION);
+	TCLAP::CmdLine cmd(getHelpText(), '=', terastitcher::version);
 
 	//argument objects definitions
 	TCLAP::SwitchArg p_stitch("S","stitch","Stitch a volume by executing the entire pipeline (steps 1-6).",false);
@@ -101,7 +101,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::ValueArg<int> p_search_radius_H("","sH","Displacements search radius along H (in pixels).",false,S_DISPL_SEARCH_RADIUS_DEF,"integer");
 	TCLAP::ValueArg<int> p_search_radius_D("","sD","Displacements search radius along D (in pixels).",false,S_DISPL_SEARCH_RADIUS_DEF,"integer");
 	TCLAP::ValueArg<int> p_subvol_dim_D("","subvoldim","Number of slices per subvolume partition used in the pairwise displacements computation step.",false,S_SUBVOL_DIM_D_DEFAULT,"integer");
-	TCLAP::ValueArg<float> p_reliability_threshold("","threshold","Reliability threshold. Values are in [0.0, 1.0] where 0 = unreliable, 1.0 = totally reliable.",false,CLI_DEF_REL_THRESHOLD,"real");
+	TCLAP::ValueArg<float> p_reliability_threshold("","threshold","Reliability threshold. Values are in [0.0, 1.0] where 0 = unreliable, 1.0 = totally reliable. Default is 0.7.",false,0.7,"real");
 	TCLAP::ValueArg<int> p_slice_height("","sliceheight","Desired slice height of merged tiles (in pixels).",false,-1,"integer");
 	TCLAP::ValueArg<int> p_slice_width("","slicewidth","Desired slice width of merged tiles (in pixels).",false,-1,"integer");
 	TCLAP::ValueArg<int> p_slice_depth("","slicedepth","Desired block depth of merged tiles (in pixels).",false,-1,"integer");
@@ -585,7 +585,7 @@ void TeraStitcherCLI::checkParams() throw (iom::exception)
 string TeraStitcherCLI::getHelpText()
 {
 	stringstream helptext;
-	helptext << "TeraStitcher " TERASTITCHER_VERSION "\n";
+	helptext << "TeraStitcher " << terastitcher::version << "\n";
 	helptext << "  developed at University Campus Bio-Medico of Rome by:\n";
 	helptext << "   -\tAlessandro Bria (email: a.bria@unicas.it)                            ";
 	helptext << "    \tPhD student at Departement of Electrical and Information Engineering";

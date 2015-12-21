@@ -66,7 +66,7 @@
 #include "../imagemanager/TiledVolume.h"
 
 
-#include "imProgressBar.h"
+#include "ProgressBar.h"
 
 #include "resumer.h" // GI_141029: added stop and resume facility
 
@@ -173,9 +173,9 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 
 	if(show_progress_bar)
 	{
-		iim::imProgressBar::instance()->start("Multiresolution tile merging");
-		iim::imProgressBar::instance()->update(0,"Initializing...");
-		iim::imProgressBar::instance()->show();
+		ts::ProgressBar::instance()->start("Multiresolution tile merging");
+		ts::ProgressBar::instance()->setProgressValue(0,"Initializing...");
+		ts::ProgressBar::instance()->display();
 	}
 
 	//initializing <StackRestorer> object if restoring is enabled
@@ -465,8 +465,8 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 			if(show_progress_bar)
 			{	
 				sprintf(progressBarMsg, "Merging slice %d of %d",((uint32)(z-D0+k+1)),(uint32)depth);
-                                iim::imProgressBar::instance()->update(((float)(z-D0+k+1)*100/(float)depth), progressBarMsg);
-                                iim::imProgressBar::instance()->show();
+                                ts::ProgressBar::instance()->setProgressValue(((float)(z-D0+k+1)*100/(float)depth), progressBarMsg);
+                                ts::ProgressBar::instance()->display();
 			}
 
 			//looping on all stripes
@@ -580,8 +580,8 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 			if(show_progress_bar)
 			{
 				sprintf(progressBarMsg, "Generating resolution %d of %d",i+1,ISR_MAX(resolutions_size, resolutions_size));
-                                iim::imProgressBar::instance()->updateInfo(progressBarMsg);
-                                iim::imProgressBar::instance()->show();
+                                ts::ProgressBar::instance()->setProgressInfo(progressBarMsg);
+                                ts::ProgressBar::instance()->display();
 			}
 
 			// check if current block is changed
@@ -630,8 +630,8 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 				if(show_progress_bar)
 				{
 					sprintf(progressBarMsg, "Saving to disc resolution %d",i+1);
-                                        iim::imProgressBar::instance()->updateInfo(progressBarMsg);
-                                        iim::imProgressBar::instance()->show();
+                                        ts::ProgressBar::instance()->setProgressInfo(progressBarMsg);
+                                        ts::ProgressBar::instance()->display();
 				}
 
 				//storing in 'base_path' the absolute path of the directory that will contain all stacks

@@ -44,6 +44,7 @@
 #include "vmStackedVolume.h"
 #include "vmBlockVolume.h"
 #include "IOPluginAPI.h"
+#include "ProgressBar.h"
 
 using namespace std;
 
@@ -147,6 +148,9 @@ int main(int argc, char** argv)
 		cli.readParams(argc, argv);
 		cli.checkParams();
 		string defaultOutputFileName = "null";
+
+		// redirect progress bar output to command line
+		terastitcher::ProgressBar::instance()->setToGUI(false);
 
 		// perform simple tasks
 		if(cli.pluginsinfo)

@@ -6,6 +6,7 @@ include_directories (${TeraStitcher_SOURCE_DIR}/tinyxml)
 include_directories (${TeraStitcher_SOURCE_DIR}/volumemanager)
 include_directories (${TeraStitcher_SOURCE_DIR}/crossmips)
 include_directories (${TeraStitcher_SOURCE_DIR}/stitcher)
+include_directories (${TeraStitcher_SOURCE_DIR}/common)
 
 # add 3rd party modules to include path
 include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty)
@@ -21,3 +22,4 @@ target_link_libraries(example_utility stitcher )
 target_link_libraries(example_utility crossmips )
 target_link_libraries(example_utility iomanager )
 target_link_libraries(example_utility tinyxml )
+target_link_libraries(example_utility common )

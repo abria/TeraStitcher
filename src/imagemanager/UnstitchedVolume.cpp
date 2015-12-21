@@ -46,7 +46,7 @@
 
 #include <list>
 #include <fstream>
-#include "imProgressBar.h"
+#include "ProgressBar.h"
 
 using namespace std;
 using namespace iim;

@@ -54,7 +54,7 @@
 #include <list>
 #include <ctime>
 
-#include "imProgressBar.h"
+#include "ProgressBar.h"
 #include "S_config.h"
 #include "PDAlgo.h"
 #include "TPAlgo.h"
@@ -194,12 +194,12 @@ throw (iom::exception)
 		stk_rst = new StackRestorer(volume, n_subvols);
 
 	//initializing the progress bar
-    iim::imProgressBar::instance();
+    ts::ProgressBar::instance();
 	if(show_progress_bar)
 	{
-		iim::imProgressBar::instance()->start("Pairwise displacement computation");
-		iim::imProgressBar::instance()->update(0,"Initializing...");
-		iim::imProgressBar::instance()->show();
+		ts::ProgressBar::instance()->start("Pairwise displacement computation");
+		ts::ProgressBar::instance()->setProgressValue(0,"Initializing...");
+		ts::ProgressBar::instance()->display();
 		displ_computations = n_subvols*(2*(row1-row0+1)*(col1-col0+1)-((row1-row0+1)+(col1-col0+1)));
 		displ_computations_idx = 1;
 	}
@@ -237,8 +237,8 @@ throw (iom::exception)
 					if(show_progress_bar)
 					{
 						sprintf(buffer, "Displacement computation %d of %d", displ_computations_idx, displ_computations);
-						iim::imProgressBar::instance()->update((100.0f/displ_computations)*displ_computations_idx, buffer);
-						iim::imProgressBar::instance()->show();
+						ts::ProgressBar::instance()->setProgressValue((100.0f/displ_computations)*displ_computations_idx, buffer);
+						ts::ProgressBar::instance()->display();
 					}
 
 					// 2014-09-09. @ADDED sparse tile support: incomplete or empty substacks are not processed.
@@ -272,8 +272,8 @@ throw (iom::exception)
 					if(show_progress_bar)
 					{
 						sprintf(buffer, "Displacement computation %d of %d", displ_computations_idx, displ_computations);
-						iim::imProgressBar::instance()->update((100.0f/displ_computations)*displ_computations_idx, buffer);
-						iim::imProgressBar::instance()->show();
+						ts::ProgressBar::instance()->setProgressValue((100.0f/displ_computations)*displ_computations_idx, buffer);
+						ts::ProgressBar::instance()->display();
 					}
 
 					// 2014-09-09. @ADDED sparse tile support: incomplete or empty substacks are not processed.
@@ -335,8 +335,8 @@ throw (iom::exception)
 
 	if(show_progress_bar)
 	{
-		iim::imProgressBar::instance()->update(100, "Ended!");
-		iim::imProgressBar::instance()->show();
+		ts::ProgressBar::instance()->setProgressValue(100, "Ended!");
+		ts::ProgressBar::instance()->display();
 	}
 }
 
@@ -808,12 +808,12 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 
 	//initializing the progress bar
 	char progressBarMsg[200];
-        iim::imProgressBar::instance();
+        ts::ProgressBar::instance();
 	if(show_progress_bar)
 	{
-		iim::imProgressBar::instance()->start("Multiresolution tile merging");
-		iim::imProgressBar::instance()->update(0,"Initializing...");
-		iim::imProgressBar::instance()->show();
+		ts::ProgressBar::instance()->start("Multiresolution tile merging");
+		ts::ProgressBar::instance()->setProgressValue(0,"Initializing...");
+		ts::ProgressBar::instance()->display();
 	}
 
 	//initializing <StackRestorer> object if restoring is enabled
@@ -1012,8 +1012,8 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 			if(show_progress_bar)
 			{	
 				sprintf(progressBarMsg, "Merging slice %d of %d",((uint32)(z-D0+k+1)),(uint32)depth);
-                                iim::imProgressBar::instance()->update(((float)(z-D0+k+1)*100/(float)depth), progressBarMsg);
-                                iim::imProgressBar::instance()->show();
+                                ts::ProgressBar::instance()->setProgressValue(((float)(z-D0+k+1)*100/(float)depth), progressBarMsg);
+                                ts::ProgressBar::instance()->display();
 			}
 
 			//looping on all stripes
@@ -1127,8 +1127,8 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 			if(show_progress_bar)
 			{
 				sprintf(progressBarMsg, "Generating resolution %d of %d",i+1,ISR_MAX(resolutions_size, resolutions_size));
-                                iim::imProgressBar::instance()->updateInfo(progressBarMsg);
-                                iim::imProgressBar::instance()->show();
+                                ts::ProgressBar::instance()->setProgressInfo(progressBarMsg);
+                                ts::ProgressBar::instance()->display();
 			}
 
 			//buffer size along D is different when the remainder of the subdivision by z_max_res is considered
@@ -1144,8 +1144,8 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 				if(show_progress_bar)
 				{
 					sprintf(progressBarMsg, "Saving to disc resolution %d",i+1);
-                                        iim::imProgressBar::instance()->updateInfo(progressBarMsg);
-                                        iim::imProgressBar::instance()->show();
+                                        ts::ProgressBar::instance()->setProgressInfo(progressBarMsg);
+                                        ts::ProgressBar::instance()->display();
 				}
 
 				//storing in 'base_path' the absolute path of the directory that will contain all stacks

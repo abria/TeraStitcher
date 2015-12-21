@@ -1,6 +1,6 @@
 # Top-Level CmakeLists.txt to build TeraStitcher
 project( TeraStitcher )
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
 
 # include cmake scripts
 include(cmake/utils.cmake)
@@ -26,11 +26,19 @@ endif(NOT EXECUTABLE_OUTPUT_PATH)
 #endif()
 
 # disable annoying warnings on MSVC compilers
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 	warnings_disable(CMAKE_CXX_FLAGS /wd4290) # vs2012: can't properly handle exceptions
 	warnings_disable(CMAKE_CXX_FLAGS /wd4996) # vs2012: complains about unsafe standard C++ functions
 endif()
 
+
+# check GUI option
+option (WITH_GUI "Build Qt-based GUI" OFF) 
+if(WITH_GUI)
+	message(STATUS "Include ./gui ...")
+	add_subdirectory( gui )	
+	message(STATUS "Include ./gui ... OK!")
+endif(WITH_GUI)
 
 # build modules
 add_subdirectory( 3rdparty/zlib )
@@ -41,6 +49,7 @@ add_subdirectory( iomanager )
 add_subdirectory( crossmips )
 add_subdirectory( volumemanager )
 add_subdirectory( stitcher )
+add_subdirectory( common )
 add_subdirectory( ui )
 
 # build user-selectable modules

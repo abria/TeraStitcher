@@ -10,6 +10,7 @@ include_directories (${TeraStitcher_SOURCE_DIR}/iomanager)
 include_directories (${TeraStitcher_SOURCE_DIR}/tinyxml)
 include_directories (${TeraStitcher_SOURCE_DIR}/volumemanager)
 include_directories (${TeraStitcher_SOURCE_DIR}/crossmips)
+include_directories (${TeraStitcher_SOURCE_DIR}/common)
 
 #disabling annoying warnings
 warnings_disable(CMAKE_CXX_FLAGS /wd4290) # vs2012: can't properly handle exceptions

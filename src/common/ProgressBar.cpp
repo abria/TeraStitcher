@@ -22,80 +22,65 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
-#include "imProgressBar.h"
+#include "ProgressBar.h"
+#include "QProgressSender.h"
 #include <iostream>
 #include <string>
 #include <stdio.h>
 #include <cstdlib>
+#include "IM_config.h"
 
-#ifdef _VAA3D_TERAFLY_PLUGIN_MODE
-#include "PConverter.h"
-#include "PMain.h"
-#endif
-
-#ifdef _VAA3D_PLUGIN_MODE
-#include "../../presentation/PMain.h"
-#endif
-
+ts::ProgressBar::ProgressBar() { resetMembers(); }
 
 /**********************************************************************************
 * Singleton design pattern: this class can have one instance only,  which must be
 * instantiated by calling static method "instance(...)"
 ***********************************************************************************/
-//iim::imProgressBar* iim::imProgressBar::uniqueInstance = 0;
-/*iim::imProgressBar* iim::imProgressBar::instance()
+ts::ProgressBar* ts::ProgressBar::instance()
 {
-    if (uniqueInstance == 0)
-        uniqueInstance = new imProgressBar();
-    uniqueInstance = new imProgressBar();
-    return uniqueInstance;
-}*/
-
-iim::imProgressBar::imProgressBar()
+	static ProgressBar* uniqueInstance = new ProgressBar();
+	return uniqueInstance;
+}
+ts::ProgressBar* ts::ProgressBar::getInstance()
 {
-    reset();
+	return instance();
 }
 
-
-void iim::imProgressBar::reset()
+void ts::ProgressBar::resetMembers()
 {
-    strcpy(this->message_level_1, "");
-    strcpy(this->message_level_2, "");
-    strcpy(this->message_level_3, "");
+    if(!op_info.empty())
+		op_info.clear();
+	if(!phase_info.empty())
+		phase_info.clear();
     progress_value=0;
     proctime = 0;
     minutes_remaining = 0;
     seconds_remaining = 0;
+	toGUI = false;
 }
 
 
-void iim::imProgressBar::start(const char *new_operation_desc, bool toConverter /* = true */)
+void ts::ProgressBar::start(const std::string & new_operation_desc)
 {
-    strcpy(this->message_level_2, new_operation_desc);
-    this->progress_value=0;
-    strcpy(this->message_level_3, "");
+    op_info = new_operation_desc;
+    progress_value=0;
     proctime = -TIME(0);
     minutes_remaining = 0;
     seconds_remaining = 0;
 
-    #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
-    int progress_value_int = (int) progress_value;
-    if(toConverter)
-        teramanager::PConverter::instance()->emitProgressBarChanged(progress_value_int, 0, 0, new_operation_desc);
-    else
-        teramanager::PMain::getInstance()->emitProgressBarChanged(progress_value_int, 0, 0, message_level_1);
-    #endif
-
-	#ifdef _VAA3D_PLUGIN_MODE
+    #ifdef WITH_QT
+	if(toGUI)
+	{
 		int progress_value_int = (int) progress_value;
-		terastitcher::PMain::instance()->emitProgressBarChanged(progress_value_int, 0, 0, new_operation_desc);
-	#endif
+		QProgressSender::instance()->sendProgressBarChanged(progress_value_int, 0, 0, op_info);
+	}
+    #endif
 }
 
-void iim::imProgressBar::update(float new_progress_value, const char* new_progress_info)
+void ts::ProgressBar::setProgressValue(float new_progress_value, const std::string &  new_phase_info)
 {
     progress_value=new_progress_value;
-    strcpy(message_level_3,new_progress_info);
+    phase_info = new_phase_info;
 
     if(new_progress_value!=0)
     {
@@ -105,44 +90,35 @@ void iim::imProgressBar::update(float new_progress_value, const char* new_progre
 }
 
 
-void iim::imProgressBar::updateInfo(const char* new_progress_info)
+void ts::ProgressBar::setProgressInfo(const std::string & new_phase_info)
 {
-    strcpy(message_level_3,new_progress_info);
+    phase_info = new_phase_info;
 }
 
-void iim::imProgressBar::show(bool toConverter /* = true */)
-{
-    #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
-    int progress_value_int = (int) (progress_value+0.5f);
-    if(toConverter)
-        teramanager::PConverter::instance()->emitProgressBarChanged(progress_value_int, minutes_remaining, seconds_remaining%60, message_level_1);
-    else
-        teramanager::PMain::getInstance()->emitProgressBarChanged(progress_value_int, minutes_remaining, seconds_remaining%60, message_level_1);
-	#elif _VAA3D_PLUGIN_MODE
-		int progress_value_int = (int) progress_value;
-		terastitcher::PMain::instance()->emitProgressBarChanged(progress_value_int, minutes_remaining, seconds_remaining%60);    
-	#else
-    int dummy = system_CLEAR();
-    printf("OPERATION:\t%s\n",this->message_level_1); // 140427_IANNELLO
-    printf("PHASE:\t\t%s\n",this->message_level_2); // 140427_IANNELLO
-    printf("TIME REMAINING:\t%d minutes and %d seconds\n", minutes_remaining, seconds_remaining%60);
-    printf("PROGRESS:\t");
-    printf("%d%%\t",(int)(progress_value));
-    for(int i=1; i<=progress_value; i++)
-            printf("*");
-    for(int i=(int)progress_value; i<100; i++)
-            printf(":");
-    printf("\n\n");
-    #endif
-}
-
-
-void iim::imProgressBar::setMessage(int level, const char* message)
-{
-    if(level == 1)
-        strcpy(message_level_1,message);
-    else if(level == 2)
-        strcpy(message_level_2,message);
-    else if(level == 3)
-        strcpy(message_level_3,message);
+void ts::ProgressBar::display()
+{   
+	if(toGUI)
+	{
+#ifdef WITH_QT
+		int progress_value_int = (int) (progress_value);
+		if(op_info.empty())
+			QProgressSender::instance()->sendProgressBarChanged(progress_value_int, minutes_remaining, seconds_remaining%60, phase_info);   
+		else
+			QProgressSender::instance()->sendProgressBarChanged(progress_value_int, minutes_remaining, seconds_remaining%60, (op_info + ": " + phase_info)); 
+#endif
+	}
+	if(!toGUI)
+	{
+		int dummy = system_CLEAR();
+		printf("OPERATION:\t%s\n",op_info.c_str()); // 140427_IANNELLO
+		printf("PHASE:\t\t%s\n",phase_info.c_str()); // 140427_IANNELLO
+		printf("TIME REMAINING:\t%d minutes and %d seconds\n", minutes_remaining, seconds_remaining%60);
+		printf("PROGRESS:\t");
+		printf("%d%%\t",(int)(progress_value));
+		for(int i=1; i<=progress_value; i++)
+				printf("*");
+		for(int i=(int)progress_value; i<100; i++)
+				printf(":");
+		printf("\n\n");
+	}
 }
