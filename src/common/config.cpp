@@ -13,8 +13,8 @@ namespace terastitcher
     *    PARAMETERS    *
     ********************
     ---------------------------------------------------------------------------------------------------------------------------*/
-    std::string version = "1.9.45";
-    int DEBUG = LEV_MAX;                    //debug level
+    std::string version = "1.9.5";
+    int DEBUG = NO_DEBUG;                    //debug level
 #ifdef WITH_QT
 	std::string qtversion = QT_VERSION_STR;
 #else	

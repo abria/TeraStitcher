@@ -4,6 +4,7 @@
 #ifdef WITH_QT
 #include <QWidget>
 #include "config.h"
+#include "ProgressBar.h"
 
 namespace terastitcher
 {
@@ -25,6 +26,7 @@ namespace terastitcher
 			* instantiated by calling static method "instance(...)"
 			***********************************************************************************/
 			static QProgressSender* instance();
+			friend class ProgressBar;
 
 		signals:
 
