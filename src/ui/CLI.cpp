@@ -56,7 +56,7 @@ TeraStitcherCLI::TeraStitcherCLI(void)
 void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 {
 	//command line object definition
-	TCLAP::CmdLine cmd(getHelpText(), '=', terastitcher::version);
+	TCLAP::CmdLine cmd(getHelpText(), '=', terastitcher::version + (ts::qtversion.empty() ? "" : " (with Qt " + ts::qtversion + ")"));
 
 	//argument objects definitions
 	TCLAP::SwitchArg p_stitch("S","stitch","Stitch a volume by executing the entire pipeline (steps 1-6).",false);
@@ -585,7 +585,7 @@ void TeraStitcherCLI::checkParams() throw (iom::exception)
 string TeraStitcherCLI::getHelpText()
 {
 	stringstream helptext;
-	helptext << "TeraStitcher " << terastitcher::version << "\n";
+	helptext << "TeraStitcher " << terastitcher::version << (ts::qtversion.empty() ? "\n" : " (with Qt " + ts::qtversion + ")\n");
 	helptext << "  developed at University Campus Bio-Medico of Rome by:\n";
 	helptext << "   -\tAlessandro Bria (email: a.bria@unicas.it)                            ";
 	helptext << "    \tPhD student at Departement of Electrical and Information Engineering";

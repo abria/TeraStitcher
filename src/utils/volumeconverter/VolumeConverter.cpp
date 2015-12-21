@@ -38,8 +38,8 @@
 */
 
 #include "VolumeConverter.h"
-#include "../imagemanager/IM_config.h"
-#include "../imagemanager/imProgressBar.h"
+#include "IM_config.h"
+#include "ProgressBar.h"
 #include "iomanager.config.h"
 #include <math.h>
 #include <string>
@@ -57,17 +57,17 @@
 * StackedVolume: bidimensional matrix of 3D stacks stored in a hierarchical structure of directories
 *
 *******************************************************************************************************/
-#include "../imagemanager/SimpleVolume.h"
-#include "../imagemanager/SimpleVolumeRaw.h"
-#include "../imagemanager/RawVolume.h"
-#include "../imagemanager/TiledVolume.h"
-#include "../imagemanager/TiledMCVolume.h"
-#include "../imagemanager/StackedVolume.h"
-#include "../imagemanager/TimeSeries.h"
+#include "SimpleVolume.h"
+#include "SimpleVolumeRaw.h"
+#include "RawVolume.h"
+#include "TiledVolume.h"
+#include "TiledMCVolume.h"
+#include "StackedVolume.h"
+#include "TimeSeries.h"
 /******************************************************************************************************/
 
-#include "../imagemanager/Tiff3DMngr.h"
-#include "../imagemanager/HDF5Mngr.h"
+#include "Tiff3DMngr.h"
+#include "HDF5Mngr.h"
 
 #include <limits>
 #include <list>
@@ -217,9 +217,9 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 	char progressBarMsg[200];
 	if(show_progress_bar)
 	{
-       imProgressBar::getInstance()->start("Multiresolution tile generation");
-       imProgressBar::getInstance()->update(0,"Initializing...");
-       imProgressBar::getInstance()->show();
+       ts::ProgressBar::getInstance()->start("Multiresolution tile generation");
+       ts::ProgressBar::getInstance()->setProgressValue(0,"Initializing...");
+       ts::ProgressBar::getInstance()->display();
 	}
 
 	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
@@ -345,8 +345,8 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 		if(show_progress_bar)
 		{	
 			sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((uint32)(z-D0)),((uint32)(z-D0+z_max_res-1)),(uint32)depth);
-                        imProgressBar::getInstance()->update(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
-                        imProgressBar::getInstance()->show();
+                        ts::ProgressBar::getInstance()->setProgressValue(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
+                        ts::ProgressBar::getInstance()->display();
 		}
 
 		//saving current buffer data at selected resolutions and in multitile format
@@ -355,8 +355,8 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 			if(show_progress_bar)
 			{
                 sprintf(progressBarMsg, "Generating resolution %d of %d",i+1,std::max(resolutions_size, resolutions_size));
-                                imProgressBar::getInstance()->updateInfo(progressBarMsg);
-                                imProgressBar::getInstance()->show();
+                                ts::ProgressBar::getInstance()->setProgressInfo(progressBarMsg);
+                                ts::ProgressBar::getInstance()->display();
 			}
 
 			//buffer size along D is different when the remainder of the subdivision by z_max_res is considered
@@ -376,8 +376,8 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 				if(show_progress_bar)
 				{
 					sprintf(progressBarMsg, "Saving to disc resolution %d",i+1);
-                                        imProgressBar::getInstance()->updateInfo(progressBarMsg);
-                                        imProgressBar::getInstance()->show();
+                                        ts::ProgressBar::getInstance()->setProgressInfo(progressBarMsg);
+                                        ts::ProgressBar::getInstance()->display();
 				}
 
 				//storing in 'base_path' the absolute path of the directory that will contain all stacks
@@ -635,9 +635,9 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 	char progressBarMsg[200];
 	if(show_progress_bar)
 	{
-                   imProgressBar::getInstance()->start("Multiresolution tile generation");
-                   imProgressBar::getInstance()->update(0,"Initializing...");
-                   imProgressBar::getInstance()->show();
+		ts::ProgressBar::getInstance()->start("Multiresolution tile generation");
+		ts::ProgressBar::getInstance()->setProgressValue(0,"Initializing...");
+		ts::ProgressBar::getInstance()->display();
 	}
 
 	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
@@ -823,8 +823,8 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 		if(show_progress_bar)
 		{	
 			sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((uint32)(z-D0)),((uint32)(z-D0+z_max_res-1)),(uint32)depth);
-                        imProgressBar::getInstance()->update(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
-                        imProgressBar::getInstance()->show();
+                        ts::ProgressBar::getInstance()->setProgressValue(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
+                        ts::ProgressBar::getInstance()->display();
 		}
 
 		//saving current buffer data at selected resolutions and in multitile format
@@ -833,8 +833,8 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 			if(show_progress_bar)
 			{
                 sprintf(progressBarMsg, "Generating resolution %d of %d",i+1,std::max(resolutions_size, resolutions_size));
-                                imProgressBar::getInstance()->updateInfo(progressBarMsg);
-                                imProgressBar::getInstance()->show();
+                                ts::ProgressBar::getInstance()->setProgressInfo(progressBarMsg);
+                                ts::ProgressBar::getInstance()->display();
 			}
 
 			// check if current block is changed
@@ -874,8 +874,8 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 				if(show_progress_bar)
 				{
 					sprintf(progressBarMsg, "Saving to disc resolution %d",i+1);
-                                        imProgressBar::getInstance()->updateInfo(progressBarMsg);
-                                        imProgressBar::getInstance()->show();
+                                        ts::ProgressBar::getInstance()->setProgressInfo(progressBarMsg);
+                                        ts::ProgressBar::getInstance()->display();
 				}
 
 				//storing in 'base_path' the absolute path of the directory that will contain all stacks
@@ -1319,9 +1319,9 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 	char progressBarMsg[200];
 	if(show_progress_bar)
 	{
-                   imProgressBar::getInstance()->start("Multiresolution tile generation");
-                   imProgressBar::getInstance()->update(0,"Initializing...");
-                   imProgressBar::getInstance()->show();
+        ts::ProgressBar::getInstance()->start("Multiresolution tile generation");
+        ts::ProgressBar::getInstance()->setProgressInfo(0,"Initializing...");
+        ts::ProgressBar::getInstance()->display();
 	}
 
 	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
@@ -1506,8 +1506,8 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 		if(show_progress_bar)
 		{	
 			sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((uint32)(z-D0)),((uint32)(z-D0+z_max_res-1)),(uint32)depth);
-                        imProgressBar::getInstance()->update(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
-                        imProgressBar::getInstance()->show();
+                        ts::ProgressBar::getInstance()->setProgressValue(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
+                        ts::ProgressBar::getInstance()->display();
 		}
 
 		//saving current buffer data at selected resolutions and in multitile format
@@ -1516,8 +1516,8 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 			if(show_progress_bar)
 			{
                 sprintf(progressBarMsg, "Generating resolution %d of %d",i+1,std::max(resolutions_size, resolutions_size));
-                                imProgressBar::getInstance()->updateInfo(progressBarMsg);
-                                imProgressBar::getInstance()->show();
+                                ts::ProgressBar::getInstance()->setProgressInfo(progressBarMsg);
+                                ts::ProgressBar::getInstance()->display();
 			}
 
  			// check if current block is changed
@@ -1557,8 +1557,8 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 				if(show_progress_bar)
 				{
 					sprintf(progressBarMsg, "Saving to disc resolution %d",i+1);
-                                        imProgressBar::getInstance()->updateInfo(progressBarMsg);
-                                        imProgressBar::getInstance()->show();
+                                        ts::ProgressBar::getInstance()->setProgressInfo(progressBarMsg);
+                                        ts::ProgressBar::getInstance()->display();
 				}
 
 				for ( int c=0; c<channels; c++ ) {
@@ -1918,9 +1918,9 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 	char progressBarMsg[200];
 	if(show_progress_bar)
 	{
-       imProgressBar::getInstance()->start("Multiresolution tile generation");
-       imProgressBar::getInstance()->update(0,"Initializing...");
-       imProgressBar::getInstance()->show();
+       ts::ProgressBar::getInstance()->start("Multiresolution tile generation");
+       ts::ProgressBar::getInstance()->setProgressValue(0,"Initializing...");
+       ts::ProgressBar::getInstance()->display();
 	}
 
 	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
@@ -2112,8 +2112,8 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 		if(show_progress_bar)
 		{	
 			sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((uint32)(z-D0)),((uint32)(z-D0+z_max_res-1)),(uint32)depth);
-                        imProgressBar::getInstance()->update(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
-                        imProgressBar::getInstance()->show();
+                        ts::ProgressBar::getInstance()->setProgressValue(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
+                        ts::ProgressBar::getInstance()->display();
 		}
 
 		//saving current buffer data at selected resolutions and in multitile format
@@ -2122,8 +2122,8 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 			if(show_progress_bar)
 			{
                 sprintf(progressBarMsg, "Generating resolution %d of %d",i+1,std::max(resolutions_size, resolutions_size));
-                                imProgressBar::getInstance()->updateInfo(progressBarMsg);
-                                imProgressBar::getInstance()->show();
+                                ts::ProgressBar::getInstance()->setProgressInfo(progressBarMsg);
+                                ts::ProgressBar::getInstance()->display();
 			}
 
 			// check if current block is changed
@@ -2163,8 +2163,8 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 				if(show_progress_bar)
 				{
 					sprintf(progressBarMsg, "Saving to disc resolution %d",i+1);
-                                        imProgressBar::getInstance()->updateInfo(progressBarMsg);
-                                        imProgressBar::getInstance()->show();
+                                        ts::ProgressBar::getInstance()->setProgressInfo(progressBarMsg);
+                                        ts::ProgressBar::getInstance()->display();
 				}
 
 				for ( int c=0; c<channels; c++ ) {
@@ -2502,9 +2502,9 @@ void VolumeConverter::generateTilesBDV_HDF5 ( std::string output_path, bool* res
 	char progressBarMsg[200];
 	if(show_progress_bar)
 	{
-       imProgressBar::getInstance()->start("Multiresolution tile generation");
-       imProgressBar::getInstance()->update(0,"Initializing...");
-       imProgressBar::getInstance()->show();
+       ts::ProgressBar::getInstance()->start("Multiresolution tile generation");
+       ts::ProgressBar::getInstance()->setProgressValue(0,"Initializing...");
+       ts::ProgressBar::getInstance()->display();
 	}
 
 	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
@@ -2595,8 +2595,8 @@ void VolumeConverter::generateTilesBDV_HDF5 ( std::string output_path, bool* res
 		if(show_progress_bar)
 		{	
 			sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((uint32)(z-D0)),((uint32)(z-D0+z_max_res-1)),(uint32)depth);
-                        imProgressBar::getInstance()->update(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
-                        imProgressBar::getInstance()->show();
+                        ts::ProgressBar::getInstance()->setProgressValue(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
+                        ts::ProgressBar::getInstance()->display();
 		}
 
 		//saving current buffer data at selected resolutions and in multitile format
@@ -2607,8 +2607,8 @@ void VolumeConverter::generateTilesBDV_HDF5 ( std::string output_path, bool* res
 			if(show_progress_bar)
 			{
                 sprintf(progressBarMsg, "Generating resolution %d of %d",i+1,std::max(resolutions_size, resolutions_size));
-                                imProgressBar::getInstance()->updateInfo(progressBarMsg);
-                                imProgressBar::getInstance()->show();
+                                ts::ProgressBar::getInstance()->setProgressInfo(progressBarMsg);
+                                ts::ProgressBar::getInstance()->display();
 			}
 
 			//buffer size along D is different when the remainder of the subdivision by z_max_res is considered
@@ -2628,8 +2628,8 @@ void VolumeConverter::generateTilesBDV_HDF5 ( std::string output_path, bool* res
 				if(show_progress_bar)
 				{
 					sprintf(progressBarMsg, "Saving to disc resolution %d",i+1);
-                                        imProgressBar::getInstance()->updateInfo(progressBarMsg);
-                                        imProgressBar::getInstance()->show();
+                                        ts::ProgressBar::getInstance()->setProgressInfo(progressBarMsg);
+                                        ts::ProgressBar::getInstance()->display();
 				}
 
 				//std::stringstream  res_name;
@@ -2735,7 +2735,7 @@ void VolumeConverter::convertTo(
     {
         for(int t=0; t<volume->getDIM_T(); t++)
         {
-            imProgressBar::instance()->setMessage(1, strprintf("Converting time frame %d/%d", t+1, volume->getDIM_T()).c_str());
+            ts::ProgressBar::instance()->setProgressInfo(strprintf("Converting time frame %d/%d", t+1, volume->getDIM_T()).c_str());
             volume->setActiveFrames(t,t);
             std::string frame_dir = iim::TIME_FRAME_PREFIX + strprintf("%06d", t);
             if(output_format.compare(iim::STACKED_FORMAT) == 0)
@@ -2751,7 +2751,7 @@ void VolumeConverter::convertTo(
             else
                 throw iim::IOException(strprintf("Output format \"%s\" not supported", output_format.c_str()).c_str());
         }
-        imProgressBar::instance()->reset();
+        ts::ProgressBar::instance()->resetMembers();
     }
     else
     {

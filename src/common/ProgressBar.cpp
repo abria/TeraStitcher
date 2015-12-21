@@ -77,7 +77,7 @@ void ts::ProgressBar::start(const std::string & new_operation_desc)
     #endif
 }
 
-void ts::ProgressBar::setProgressValue(float new_progress_value, const std::string &  new_phase_info)
+void ts::ProgressBar::setProgressValue(float new_progress_value, std::string new_phase_info)
 {
     progress_value=new_progress_value;
     phase_info = new_phase_info;
@@ -90,7 +90,7 @@ void ts::ProgressBar::setProgressValue(float new_progress_value, const std::stri
 }
 
 
-void ts::ProgressBar::setProgressInfo(const std::string & new_phase_info)
+void ts::ProgressBar::setProgressInfo(std::string new_phase_info)
 {
     phase_info = new_phase_info;
 }

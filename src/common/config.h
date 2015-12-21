@@ -25,8 +25,9 @@ namespace terastitcher
     *    PARAMETERS    *
     ********************
     ---------------------------------------------------------------------------------------------------------------------------*/
-    extern std::string version;
+    extern std::string version;					//TeraStitcher version
     extern int DEBUG;							//debug level of current module
+	extern std::string qtversion;				//Qt version (if used)
     /*-------------------------------------------------------------------------------------------------------------------------*/
 
 	

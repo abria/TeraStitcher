@@ -61,8 +61,8 @@ namespace terastitcher
 
 
 			void start(const std::string & new_operation_desc);
-			void setProgressValue(float new_progress_value, const std::string & new_phase_info);
-			void setProgressInfo(const std::string &  new_phase_info);
+			void setProgressValue(float new_progress_value, std::string new_phase_info);
+			void setProgressInfo(std::string new_phase_info);
 			void display();
 			void resetMembers();
 			void setToGUI(bool _toGUI){toGUI = _toGUI;}
