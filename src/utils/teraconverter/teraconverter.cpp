@@ -79,6 +79,7 @@ int main ( int argc, char *argv[] ) {
 		VolumeConverter vc;
 		
 		vc.setSrcVolume(cli.src_root_dir.c_str(),cli.src_format.c_str(),cli.dst_format.c_str());
+		vc.setSubVolume(cli.V0,cli.V1,cli.H0,cli.H1,cli.D0,cli.D1);
 
 		if ( cli.outFmt == "Tiff2DStck" )
 			vc.generateTiles(cli.dst_root_dir.c_str(),cli.resolutions,

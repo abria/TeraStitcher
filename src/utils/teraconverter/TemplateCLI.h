@@ -53,6 +53,14 @@ class TemplateCLI
 
 		string outFmt;
 
+		// vertices defining the subvolume to be converted
+		int V0;
+		int V1;
+		int H0;
+		int H1;
+		int D0;
+		int D1;
+
 		//constructor - deconstructor
 		TemplateCLI(void);					//set default params
 		~TemplateCLI(void){};

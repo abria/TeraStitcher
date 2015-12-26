@@ -121,6 +121,14 @@ class VolumeConverter
         void setSrcVolume(const char* _root_dir, const char* _fmt = iim::STACKED_FORMAT.c_str(),
                           const char* _out_fmt = REAL_REPRESENTATION, bool time_series = false) throw (iim::IOException);
 
+		/*************************************************************************************************************
+		* Method to set the subvolume to be converted
+		* _V0 ... _D1: vertices defining the subvolume to be converted
+		*
+		* default values correspond to the whole volume
+		*************************************************************************************************************/
+        void setSubVolume(int _V0 = -1, int _V1 = -1, int _H0 = -1, int _H1 = -1, int _D0 = -1, int _D1 = -1 ) throw (iim::IOException);
+
         // unified access point for volume conversion (@ADDED by Alessandro on 2014-02-24)
         void convertTo(
             std::string output_path,                    // path where to save the converted volume

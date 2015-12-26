@@ -124,9 +124,22 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
          * \param v - An optional visitor.  You probably should not
          * use this unless you have a very good reason.
          */
+	TCLAP::ValueArg<int> p_V0("","V0","First V vertex (included).",false,-1,"unsigned");
+	TCLAP::ValueArg<int> p_V1("","V1","Last V vertex (excluded).",false,-1,"unsigned");
+	TCLAP::ValueArg<int> p_H0("","H0","First H vertex (included).",false,-1,"unsigned");
+	TCLAP::ValueArg<int> p_H1("","H1","Last H vertex (excluded).",false,-1,"unsigned");
+	TCLAP::ValueArg<int> p_D0("","D0","First D vertex (included).",false,-1,"unsigned");
+	TCLAP::ValueArg<int> p_D1("","D1","Last D vertex (excluded).",false,-1,"unsigned");
 
 
 	//argument objects must be inserted using LIFO policy (last inserted, first shown)
+	cmd.add(p_D1);
+	cmd.add(p_D0);
+	cmd.add(p_H1);
+	cmd.add(p_H0);
+	cmd.add(p_V1);
+	cmd.add(p_V0);
+
 	cmd.add(p_hide_progress_bar);
 	cmd.add(p_outFmt);
 	cmd.add(p_halving_method);
@@ -227,6 +240,13 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	this->outFmt = p_outFmt.getValue();
 	this->show_progress_bar = !p_hide_progress_bar.getValue();
+
+	this->V0  = p_V0.getValue();
+	this->V1  = p_V1.getValue();
+	this->H0  = p_H0.getValue();
+	this->H1  = p_H1.getValue();
+	this->D0  = p_D0.getValue();
+	this->D1  = p_D1.getValue();
 }
 
 //checks parameters correctness

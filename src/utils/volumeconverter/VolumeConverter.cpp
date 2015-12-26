@@ -25,6 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-12-20. Giulio.     @FIXED file name generation (scale of some absolute coordinates was in 1 um and not in 0.1 um 
+* 2015-12-19. Giulio.     @ADDED Subvolume conversion (setSubVolume method, changes to mergeTilesVaa3DRaw)
 * 2015-06-12. Giulio.     @FIXED the right output reference system is set in all cases at the end of the merge algorithm (the case MC input volume was not properly handled)
 * 2015-04-14. Alessandro. @FIXED misleading usage of 'VirtualVolume::instance' w/o format argument in 'setSrcVolume'
 * 2015-04-14. Alessandro. @FIXED bug-crash when the volume has not been imported correctly in setSrcVolume.
@@ -146,6 +148,20 @@ void VolumeConverter::setSrcVolume(const char* _root_dir, const char* _fmt, cons
 	V1 = volume->getDIM_V(); 
 	H1 = volume->getDIM_H();
 	D1 = volume->getDIM_D();
+}
+
+
+void VolumeConverter::setSubVolume(int _V0, int _V1, int _H0, int _H1, int _D0, int _D1 ) throw (iim::IOException) {
+	if ( volume ) {
+		V0 = _V0 == -1 ? 0 : _V0;
+		H0 = _H0 == -1 ? 0 : _H0;
+		D0 = _D0 == -1 ? 0 : _D0;
+		V1 = _V1 == -1 ? volume->getDIM_V() : _V1; 
+		H1 = _H1 == -1 ? volume->getDIM_H() : _H1;
+		D1 = _D1 == -1 ? volume->getDIM_D() : _D1;
+	}
+	else
+		throw iim::IOException(iim::strprintf("volume is not set").c_str(),__iim__current__function__);
 }
 
 
@@ -433,8 +449,9 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 							std::stringstream abs_pos_z;
 							abs_pos_z.width(6);
 							abs_pos_z.fill('0');
+							// 2015-12-20. Giulio. @FIXED file name generation (scale of some absolute coordinates was in 1 um and not in 0.1 um
 							abs_pos_z << (int)(this->getMultiresABS_D(i) + // all stacks start at the same D position
-                                                (powInt(2,i)*buffer_z+z) * volume->getVXL_D());
+                                                (powInt(2,i)*buffer_z + z) * volume->getVXL_D() * 10);
 							img_path << H_DIR_path.str() << "/" 
 										<< this->getMultiresABS_V_string(i,start_height) << "_" 
 										<< this->getMultiresABS_H_string(i,start_width) << "_"
@@ -799,7 +816,9 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 		if ( internal_rep == REAL_INTERNAL_REP )
             rbuffer = volume->loadSubvolume_to_real32(V0,V1,H0,H1,(int)(z-D0),(z-D0+z_max_res <= D1) ? (int)(z-D0+z_max_res) : D1);
 		else { // internal_rep == UINT8_INTERNAL_REP
-            ubuffer[0] = volume->loadSubvolume_to_UINT8(V0,V1,H0,H1,(int)(z-D0),(z-D0+z_max_res <= D1) ? (int)(z-D0+z_max_res) : D1,&channels,iim::NATIVE_RTYPE);
+            // 2015-12-19. Giulio. @ADDED Subvolume conversion     
+			//ubuffer[0] = volume->loadSubvolume_to_UINT8(V0,V1,H0,H1,(int)(z-D0),(z-D0+z_max_res <= D1) ? (int)(z-D0+z_max_res) : D1,&channels,iim::NATIVE_RTYPE);
+            ubuffer[0] = volume->loadSubvolume_to_UINT8(V0,V1,H0,H1,(int)z,(z+z_max_res <= D1) ? (int)(z+z_max_res) : D1,&channels,iim::NATIVE_RTYPE);
 			if ( org_channels != channels ) {
 				char err_msg[STATIC_STRINGS_SIZE];
 				sprintf(err_msg,"The volume contains images with a different number of channels (%d,%d)", org_channels, channels);
@@ -849,9 +868,13 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 			std::stringstream abs_pos_z;
 			abs_pos_z.width(6);
 			abs_pos_z.fill('0');
+			// 2015-12-19. Giulio. @ADDED Subvolume conversion
+			// 2015-12-20. Giulio. @FIXED file name generation (scale of some absolute coordinates was in 1 um and not in 0.1 um
 			abs_pos_z << (int)(this->getMultiresABS_D(i) + // all stacks start at the same D position
- 								- D0 * volume->getVXL_D() * 10 + // WARNING: D0 is counted twice,both in getMultiresABS_D and in slice_start
-                               (powInt(2,i)*slice_start[i]) * volume->getVXL_D());
+                                (powInt(2,i)*slice_start[i]) * volume->getVXL_D() * 10);
+			//abs_pos_z << (int)(this->getMultiresABS_D(i) + // all stacks start at the same D position
+ 			//					- D0 * volume->getVXL_D() * 10 + // WARNING: D0 is counted twice,both in getMultiresABS_D and in slice_start
+			//                  (powInt(2,i)*slice_start[i]) * volume->getVXL_D());
 
 			//compute the number of slice of previous groups at resolution i
 			//note that z_parts in the number and not an index (starts from 1)
@@ -960,8 +983,9 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 									std::stringstream abs_pos_z_temp;
 									abs_pos_z_temp.width(6);
 									abs_pos_z_temp.fill('0');
+									// 2015-12-20. Giulio. @FIXED file name generation (scale of some absolute coordinates was in 1 um and not in 0.1 um
 									abs_pos_z_temp << (int)(this->getMultiresABS_D(i) + // all stacks start at the same D position
-                                        (powInt(2,i)*(slice_start_temp)) * volume->getVXL_D());
+                                        (powInt(2,i)*(slice_start_temp)) * volume->getVXL_D() * 10);
 
 									std::stringstream img_path_temp;
 									img_path_temp << H_DIR_path.str() << "/" 
@@ -1027,8 +1051,9 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
  								std::stringstream abs_pos_z_next;
 								abs_pos_z_next.width(6);
 								abs_pos_z_next.fill('0');
+								// 2015-12-20. Giulio. @FIXED file name generation (scale of some absolute coordinates was in 1 um and not in 0.1 um
 								abs_pos_z_next << (int)(this->getMultiresABS_D(i) + // all stacks start at the same D position
-                                        (powInt(2,i)*(slice_end[i]+1)) * volume->getVXL_D());
+                                        (powInt(2,i)*(slice_end[i]+1)) * volume->getVXL_D() * 10);
 								img_path.str("");
 								img_path << partial_img_path.str() << abs_pos_z_next.str();
 
@@ -1199,10 +1224,10 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 **************************************************************************************************************/
 int VolumeConverter::getMultiresABS_V(int res, int REL_V)
 {
-	if(volume->getVXL_V() > 0)
-        return volume->getABS_V( V0 + REL_V*pow(2.0f,res) )*10;
-	else
-        return volume->getABS_V( V0 - 1 + REL_V*pow(2.0f,res))*10 + volume->getVXL_V()*pow(2.0f,res)*10;
+	//if(volume->getVXL_V() > 0)
+        return volume->getABS_V( V0 + REL_V*pow(2.0f,res) ) * 10;
+	//else
+	//	return volume->getABS_V( V0 - 1 + REL_V*pow(2.0f,res))*10 + volume->getVXL_V()*pow(2.0f,res)*10;
 }
 std::string VolumeConverter::getMultiresABS_V_string(int res, int REL_V)	
 {
@@ -1214,10 +1239,10 @@ std::string VolumeConverter::getMultiresABS_V_string(int res, int REL_V)
 }
 int VolumeConverter::getMultiresABS_H(int res, int REL_H)
 {
-	if(volume->getVXL_H() > 0)
+	//if(volume->getVXL_H() > 0)
         return volume->getABS_H( H0 + REL_H*pow(2.0f,res) )*10;
-	else
-        return volume->getABS_H( H0 - 1 + REL_H*pow(2.0f,res))*10  + volume->getVXL_H()*pow(2.0f,res)*10;
+	//else
+	//	return volume->getABS_H( H0 - 1 + REL_H*pow(2.0f,res))*10  + volume->getVXL_H()*pow(2.0f,res)*10;
 }
 std::string VolumeConverter::getMultiresABS_H_string(int res, int REL_H)	
 {
@@ -1229,10 +1254,11 @@ std::string VolumeConverter::getMultiresABS_H_string(int res, int REL_H)
 }
 int VolumeConverter::getMultiresABS_D(int res)
 {
-	if(volume->getVXL_D() > 0)
-        return volume->getABS_D(D0);
-	else
-        return volume->getABS_D((int)(D0 - 1 + volume->getVXL_D()*pow(2.0f,res)*10.0f));
+	// 2015-12-20. Giulio. @FIXED file name generation (scale of some absolute coordinates was in 1 um and not in 0.1 um
+	//if(volume->getVXL_D() > 0)
+        return volume->getABS_D(D0)*10;
+	//else
+	//	return volume->getABS_D((int)(D0 - 1 + volume->getVXL_D()*pow(2.0f,res)*10.0f));
 }
 
 
@@ -1532,9 +1558,13 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 			std::stringstream abs_pos_z;
 			abs_pos_z.width(6);
 			abs_pos_z.fill('0');
+			// 2015-12-19. Giulio. @ADDED Subvolume conversion 
+			// 2015-12-20. Giulio. @FIXED file name generation (scale of some absolute coordinates was in 1 um and not in 0.1 um
 			abs_pos_z << (int)(this->getMultiresABS_D(i) + // all stacks start at the same D position
-								- D0 * volume->getVXL_D() * 10 + // WARNING: D0 is counted twice,both in getMultiresABS_D and in slice_start
-								(POW_INT(2,i)*slice_start[i]) * volume->getVXL_D());
+                                (powInt(2,i)*slice_start[i]) * volume->getVXL_D() * 10);
+			//abs_pos_z << (int)(this->getMultiresABS_D(i) + // all stacks start at the same D position
+			//					- D0 * volume->getVXL_D() * 10 + // WARNING: D0 is counted twice,both in getMultiresABS_D and in slice_start
+			//					(POW_INT(2,i)*slice_start[i]) * volume->getVXL_D());
 
 			//compute the number of slice of previous groups at resolution i
 			//note that z_parts in the number and not an index (starts from 1)
@@ -1633,8 +1663,9 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 										std::stringstream abs_pos_z_temp;
 										abs_pos_z_temp.width(6);
 										abs_pos_z_temp.fill('0');
+										// 2015-12-20. Giulio. @FIXED file name generation (scale of some absolute coordinates was in 1 um and not in 0.1 um
 										abs_pos_z_temp << (int)(this->getMultiresABS_D(i) + // all stacks start at the same D position
-											(POW_INT(2,i)*(slice_start_temp)) * volume->getVXL_D());
+											(POW_INT(2,i)*(slice_start_temp)) * volume->getVXL_D() * 10);
 
 										std::stringstream img_path_temp;
 										img_path_temp << H_DIR_path.str() << "/" 
@@ -1695,8 +1726,9 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
  									std::stringstream abs_pos_z_next;
 									abs_pos_z_next.width(6);
 									abs_pos_z_next.fill('0');
+									// 2015-12-20. Giulio. @FIXED file name generation (scale of some absolute coordinates was in 1 um and not in 0.1 um
 									abs_pos_z_next << (int)(this->getMultiresABS_D(i) + // all stacks start at the same D position
-											(powInt(2,i)*(slice_end[i]+1)) * volume->getVXL_D());
+											(powInt(2,i)*(slice_end[i]+1)) * volume->getVXL_D() * 10);
 									img_path.str("");
 									img_path << partial_img_path.str() << abs_pos_z_next.str();
 
@@ -2138,9 +2170,13 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 			std::stringstream abs_pos_z;
 			abs_pos_z.width(6);
 			abs_pos_z.fill('0');
+			// 2015-12-19. Giulio. @ADDED Subvolume conversion 
+			// 2015-12-20. Giulio. @FIXED file name generation (scale of some absolute coordinates was in 1 um and not in 0.1 um
 			abs_pos_z << (int)(this->getMultiresABS_D(i) + // all stacks start at the same D position
-								- D0 * volume->getVXL_D() * 10 + // WARNING: D0 is counted twice,both in getMultiresABS_D and in slice_start
-                                (powInt(2,i)*slice_start[i]) * volume->getVXL_D());
+                                (powInt(2,i)*slice_start[i]) * volume->getVXL_D() * 10);
+			//abs_pos_z << (int)(this->getMultiresABS_D(i) + // all stacks start at the same D position
+			//					- D0 * volume->getVXL_D() * 10 + // WARNING: D0 is counted twice,both in getMultiresABS_D and in slice_start
+			//					(powInt(2,i)*slice_start[i]) * volume->getVXL_D());
 
 			//compute the number of slice of previous groups at resolution i
 			//note that z_parts in the number and not an index (starts from 1)
@@ -2239,8 +2275,9 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 										std::stringstream abs_pos_z_temp;
 										abs_pos_z_temp.width(6);
 										abs_pos_z_temp.fill('0');
+										// 2015-12-20. Giulio. @FIXED file name generation (scale of some absolute coordinates was in 1 um and not in 0.1 um
 										abs_pos_z_temp << (int)(this->getMultiresABS_D(i) + // all stacks start at the same D position
-                                            (powInt(2,i)*(slice_start_temp)) * volume->getVXL_D());
+                                            (powInt(2,i)*(slice_start_temp)) * volume->getVXL_D() * 10);
 
 										std::stringstream img_path_temp;
 										img_path_temp << H_DIR_path.str() << "/" 
@@ -2301,8 +2338,9 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
  									std::stringstream abs_pos_z_next;
 									abs_pos_z_next.width(6);
 									abs_pos_z_next.fill('0');
+									// 2015-12-20. Giulio. @FIXED file name generation (scale of some absolute coordinates was in 1 um and not in 0.1 um
 									abs_pos_z_next << (int)(this->getMultiresABS_D(i) + // all stacks start at the same D position
-                                            (powInt(2,i)*(slice_end[i]+1)) * volume->getVXL_D());
+                                            (powInt(2,i)*(slice_end[i]+1)) * volume->getVXL_D() * 10);
 									img_path.str("");
 									img_path << partial_img_path.str() << abs_pos_z_next.str();
 
