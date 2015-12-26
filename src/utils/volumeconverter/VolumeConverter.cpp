@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-12-26. Giulio.     @FIXED subvolume vertices are set to default values if exceed volume dimensions
 * 2015-12-20. Giulio.     @FIXED file name generation (scale of some absolute coordinates was in 1 um and not in 0.1 um 
 * 2015-12-19. Giulio.     @ADDED Subvolume conversion (setSubVolume method, changes to mergeTilesVaa3DRaw)
 * 2015-06-12. Giulio.     @FIXED the right output reference system is set in all cases at the end of the merge algorithm (the case MC input volume was not properly handled)
@@ -153,12 +154,12 @@ void VolumeConverter::setSrcVolume(const char* _root_dir, const char* _fmt, cons
 
 void VolumeConverter::setSubVolume(int _V0, int _V1, int _H0, int _H1, int _D0, int _D1 ) throw (iim::IOException) {
 	if ( volume ) {
-		V0 = _V0 == -1 ? 0 : _V0;
-		H0 = _H0 == -1 ? 0 : _H0;
-		D0 = _D0 == -1 ? 0 : _D0;
-		V1 = _V1 == -1 ? volume->getDIM_V() : _V1; 
-		H1 = _H1 == -1 ? volume->getDIM_H() : _H1;
-		D1 = _D1 == -1 ? volume->getDIM_D() : _D1;
+		V0 = _V0 == -1 ? 0 : std::max<int>(_V0,0);
+		H0 = _H0 == -1 ? 0 : std::max<int>(_H0,0);
+		D0 = _D0 == -1 ? 0 : std::max<int>(_D0,0);
+		V1 = _V1 == -1 ? volume->getDIM_V() : std::min<int>(_V1,volume->getDIM_V()); 
+		H1 = _H1 == -1 ? volume->getDIM_H() : std::min<int>(_H1,volume->getDIM_H());
+		D1 = _D1 == -1 ? volume->getDIM_D() : std::min<int>(_D1,volume->getDIM_D());
 	}
 	else
 		throw iim::IOException(iim::strprintf("volume is not set").c_str(),__iim__current__function__);
