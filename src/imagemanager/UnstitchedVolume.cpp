@@ -25,6 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-12-28. Giulio.     @ADDED 'internal_loadSubvolume_to_real32' now check the ret_type parameter to determine voxel depth to be returned 
+* 2015-12-28. Giulio.     @FIXED 'internal_loadSubvolume_to_real32' did not check the ret_type parameter to determine voxel depth to be returned 
 * 2015-03-13. Giulio.     @FIXED a bug in 'internal_loadSubvolume_to_real32': MEC must be divided by VXL (and not multiplied)
 * 2015-03-13. Giulio.     @FIXED a bug in 'internal_loadSubvolume_to_real32': getWIDTH -> getHEIGHT in computing tiles' row indices
 * 2015-02-28. Giulio.     @ADDED management of multi-channel, multi-bytes per channel images: currently supported up to three channels 8 or 16 bits per channel
@@ -517,9 +519,15 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 
 	int VV0, VV1, HH0, HH1, DD0, DD1;
 	
-	// check on ret_type must be included: currently always returns native type
+    if ( (ret_type != iim::NATIVE_RTYPE) && (ret_type != iim::DEF_IMG_DEPTH) ) {
+		// return type should be converted, but not to 8 bits per channel
+        throw iim::IOException(iom::strprintf("non supported return type (%d bits) - native type is %d bits", ret_type, 8*this->BYTESxCHAN), __iim__current__function__); 
+	}
 
-	 //initializations
+	// reduction factor to be applied to the loaded buffer
+    int red_factor = (ret_type == iim::NATIVE_RTYPE) ? 1 : ((8 * this->BYTESxCHAN) / ret_type);
+
+	//initializations
     V0 = V0 < 0 ? 0 : V0;
     H0 = H0 < 0 ? 0 : H0;
     D0 = D0 < 0 ? 0 : D0;
@@ -546,7 +554,7 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 	sint64 sbv_height = V1 - V0;
 	sint64 sbv_depth = D1 - D0;
 
-    uint8 *subvol = new uint8[sbv_width * sbv_height * sbv_depth * DIM_C * BYTESxCHAN];
+    uint8 *subvol = new uint8[sbv_width * sbv_height * sbv_depth * DIM_C * (BYTESxCHAN/red_factor)];
 
 	int i, j, k, c;
 	real32 *ptr_s_xy;
@@ -574,23 +582,62 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 	}
 	else if ( BYTESxCHAN == 2 ) {
 
-		uint16  *ptr_d = (uint16 *) subvol;
-		for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
-			for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
-				for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
-					*ptr_d = uint16(*ptr_s * 65535.0F);
-
-		for ( c=1; c<DIM_C; c++ ) { // more than one channel
-			delete []buf;
-			iom::CHANS = c==1 ? iom::G : iom::B; // only two more channels are currently supported
-			// loads next channel
-			buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1);
-			// append next channel to the subvolume buffer
+		if ( red_factor == 1 ) {
+			uint16  *ptr_d = (uint16 *) subvol;
 			for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
 				for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
 					for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
 						*ptr_d = uint16(*ptr_s * 65535.0F);
+
+			for ( c=1; c<DIM_C; c++ ) { // more than one channel
+				delete []buf;
+				iom::CHANS = c==1 ? iom::G : iom::B; // only two more channels are currently supported
+				// loads next channel
+				buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1);
+				// append next channels to the subvolume buffer
+				for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
+					for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
+						for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
+							*ptr_d = uint16(*ptr_s * 65535.0F);
+			}
 		}
+		// 2015-12-28. Giulio. @ADDED conversion from 16 to 8 bits depth
+		else if ( red_factor == 2 ) { 
+			uint8  *ptr_d = subvol; // WARNING: assumes that red_factor = 2 (see check on ret_type)
+			// find maximum value in channel R
+			real32 valmax = 0;
+			for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
+				for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
+					for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_s++ )
+						if (*ptr_s > valmax )
+							valmax = *ptr_s;
+			// normalize and convert to required depth
+			for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
+				for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
+					for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
+						*ptr_d = uint8((*ptr_s/valmax) * 255.0F);
+
+			for ( c=1; c<DIM_C; c++ ) { // more than one channel
+				delete []buf;
+				iom::CHANS = c==1 ? iom::G : iom::B; // only two more channels are currently supported
+				// loads next channel
+				buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1);
+				// append next channels to the subvolume buffer
+				// find maximum value in channel c
+				for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
+					for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
+						for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_s++ )
+							if (*ptr_s > valmax )
+								valmax = *ptr_s;
+				// normalize and convert to required depth
+				for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
+					for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
+						for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
+							*ptr_d = uint8((*ptr_s/valmax) * 255.0F);
+			}
+		}
+		else 
+  			throw iim::IOException(iom::strprintf("%d wrong reduction factor (%d) for 16 bits images", red_factor), __iim__current__function__);
 	}
 	else
   		throw iim::IOException(iom::strprintf("%d bits depth not currently supported", BYTESxCHAN*8), __iim__current__function__);

@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2015-12-29. Giulio. @ADDED red_factor parameter to 'BDV_HDF5getSubVolume'
 * 2015-11-17. Giulio. @CREATED 
 */
 
@@ -106,7 +107,7 @@ void BDV_HDF5getVolumeInfo ( void *descr, int tp, int res, void *&volume_descr,
 							    int &DIM_C, int &BYTESxCHAN, int &DIM_T, int &t0, int &t1 );
 
 
-void BDV_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0, int D1, int setup, iim::uint8 *buf );
+void BDV_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0, int D1, int setup, iim::uint8 *buf, int red_factor = 1 );
 /* must copy a subvolume into buffer buf; voxels have to be converted to 8-bit if needed
  */
 

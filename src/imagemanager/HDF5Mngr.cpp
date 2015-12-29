@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2015-12-29. Giulio. @ADDED support for extracting 16 bits subvolumed 
 * 2015-12-10. Giulio. @ADDED conditional compilation to exclude HDF5 dependent code
 * 2015-12-09. Giulio. @RELEASED first working version
 * 2015-11-17. Giulio. @CREATED 
@@ -929,7 +930,7 @@ void BDV_HDF5getVolumeInfo ( void *descr, int tp, int res, void *&volume_descr,
 }
 
 
-void BDV_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0, int D1, int setup, iim::uint8 *buf ) {
+void BDV_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0, int D1, int setup, iim::uint8 *buf, int red_factor ) {
 #ifdef ENABLE_BDV_HDF5
 
 	BDV_volume_descr_t *int_volume_descr = (BDV_volume_descr_t *) descr;
@@ -966,14 +967,22 @@ void BDV_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0,
 		status = H5Dread(int_volume_descr->datasets_id[setup],int_volume_descr->vxl_type,bufspace_id,filespace_id,H5P_DEFAULT,buf);
 	}
 	else if ( int_volume_descr->vxl_nbytes == 2 ) {
-		iim::sint64 sbv_ch_dim = dims_buf[0] * dims_buf[1] * dims_buf[2];
-		iim::uint8 *tempbuf = new iim::uint8[2 * sbv_ch_dim];
-		status = H5Dread(int_volume_descr->datasets_id[setup],int_volume_descr->vxl_type,bufspace_id,filespace_id,H5P_DEFAULT,tempbuf);
+		
+		if ( red_factor == 1 ) /* 2015-12-29. Giulio. @ADDED no conversion from 16 to 8 bits depth */ { 
+			status = H5Dread(int_volume_descr->datasets_id[setup],int_volume_descr->vxl_type,bufspace_id,filespace_id,H5P_DEFAULT,buf);
+		}
+		else if ( red_factor == 2 ) { 
+			iim::sint64 sbv_ch_dim = dims_buf[0] * dims_buf[1] * dims_buf[2];
+			iim::uint8 *tempbuf = new iim::uint8[red_factor * sbv_ch_dim];
+			status = H5Dread(int_volume_descr->datasets_id[setup],int_volume_descr->vxl_type,bufspace_id,filespace_id,H5P_DEFAULT,tempbuf);
 
-		// convert to 8 bit and copy to buf
-		char *err_rawfmt;
-		if ( (err_rawfmt = convert2depth8bits(int_volume_descr->vxl_nbytes, sbv_ch_dim, 1, tempbuf, buf)) != 0 )
-			throw iim::IOException(iim::strprintf("cannot convert buffer from %d bits to 8 bits (%s)",8*int_volume_descr->vxl_nbytes,err_rawfmt).c_str(),__iim__current__function__);
+			// convert to 8 bit and copy to buf
+			char *err_rawfmt;
+			if ( (err_rawfmt = convert2depth8bits(int_volume_descr->vxl_nbytes, sbv_ch_dim, 1, tempbuf, buf)) != 0 )
+				throw iim::IOException(iim::strprintf("cannot convert buffer from %d bits to 8 bits (%s)",8*int_volume_descr->vxl_nbytes,err_rawfmt).c_str(),__iim__current__function__);
+		}
+		else 
+  			throw iim::IOException(iim::strprintf("%d wrong reduction factor (%d) for 16 bits images", red_factor), __iim__current__function__);
 	}
 
 	H5Sclose(bufspace_id);

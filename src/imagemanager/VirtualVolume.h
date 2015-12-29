@@ -100,7 +100,7 @@ public:
 
     /* @ADDED by Giulio on 2015-12-06:
      * loads given subvolume in a 1-D array of iim::uint8 
-     * data is returned in interna Vaa3D representation, i.e. voxels are stored as one 3D matrix per channel in C-like ordering
+     * data is returned in internal Vaa3D representation, i.e. voxels are stored as one 3D matrix per channel in C-like ordering
      * (dimension order is: H,V,D,channel)
      * 
      * V0-D1:    indices that define the subvolume; index intervals are open at right (e.g. [V0,V1))

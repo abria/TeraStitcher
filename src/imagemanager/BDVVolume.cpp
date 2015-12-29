@@ -25,6 +25,9 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-12-29. Giulio.     @ADDED 'loadSubvolume_to_UINT8' now check the ret_type parameter to determine voxel depth to be returned 
+* 2015-12-29. Giulio.     @FIXED 'loadSubvolume_to_UINT8' did not check the ret_type parameter to determine voxel depth to be returned 
+* 2015-12-29. Giulio.     @FIXED active channel management in 'loadSubvolume_to_UINT8'
 * 2015-11-30. Giulio.     @CREATED
 */
 
@@ -150,22 +153,13 @@ uint8* BDVVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, 
 {
     /**/iim::debug(iim::LEV3, strprintf("V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d, *channels=%d, ret_type=%d", V0, V1, H0, H1, D0, D1, channels ? *channels : -1, ret_type).c_str(), __iim__current__function__);
 
-    //checking for non implemented features
-	//if( this->BYTESxCHAN != 1 ) {
-	//	char err_msg[STATIC_STRINGS_SIZE];
-	//	sprintf(err_msg,"BDVVolume::loadSubvolume_to_UINT8: invalid number of bytes per channel (%d)",this->BYTESxCHAN); 
-	//	throw iim::IOException(err_msg);
-	//}
-
-    //if ( (ret_type == iim::DEF_IMG_DEPTH) && ((8 * this->BYTESxCHAN) != iim::DEF_IMG_DEPTH)  ) {
-		// does not support depth conversion: 
-		// return type is 8 bits, but native depth is not 8 bits
-    if ( (ret_type != iim::NATIVE_RTYPE) && (ret_type != iim::DEF_IMG_DEPTH) ) {
+     if ( (ret_type != iim::NATIVE_RTYPE) && (ret_type != iim::DEF_IMG_DEPTH) ) {
 		// return type should be converted, but not to 8 bits per channel
-		char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"RawVolume::loadSubvolume_to_UINT8: non supported return type (%d bits) - native type is %d bits",ret_type, 8*this->BYTESxCHAN); 
-        throw IOException(err_msg);
+        throw iim::IOException(iim::strprintf("non supported return type (%d bits) - native type is %d bits", ret_type, 8*this->BYTESxCHAN), __iim__current__function__); 
 	}
+
+	// reduction factor to be applied to the loaded buffer
+    int red_factor = (ret_type == iim::NATIVE_RTYPE) ? 1 : ((8 * this->BYTESxCHAN) / ret_type);
 
 	//char *err_rawfmt;
 
@@ -179,24 +173,20 @@ uint8* BDVVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, 
 
     //checking that the interval is valid
     if(V1-V0 <=0 || H1-H0 <= 0 || D1-D0 <= 0)
-        throw IOException("in BDVVolume::loadSubvolume_to_UINT8: invalid subvolume intervals");
+        throw IOException(iim::strprintf("in BDVVolume::loadSubvolume_to_UINT8: invalid subvolume intervals"), __iim__current__function__);
 
     //computing dimensions
     sint64 sbv_height = V1 - V0;
     sint64 sbv_width  = H1 - H0;
     sint64 sbv_depth  = D1 - D0;
 
-	sint64 sbv_ch_dim = sbv_height * sbv_width * sbv_depth;
+	sint64 sbv_ch_dim = sbv_height * sbv_width * sbv_depth  * (BYTESxCHAN/red_factor);
 
-	// check on ret_type must be included: currently always returns 8-bits buffers
-	
-    uint8 *subvol   = new uint8[n_active*sbv_ch_dim];
+    uint8 *subvol   = new uint8[n_active * sbv_ch_dim];
 	//uint8 *subvol_ch;
 
 	for ( int c=0; c<n_active; c++ ) {
-		BDV_HDF5getSubVolume(HDF5_descr,V0,V1,H0,H1,D0,D1,c,(subvol + c*sbv_ch_dim));
-		//memcpy(subvol + c*sbv_ch_dim, subvol_ch, sbv_ch_dim*sizeof(uint8));
-		//delete[] subvol_ch;
+		BDV_HDF5getSubVolume(HDF5_descr,V0,V1,H0,H1,D0,D1,active[c],(subvol + c*sbv_ch_dim),red_factor); // 2015-12-29 Giulio. @FIXED active channels management
 	}
 
 	//returning outputs
