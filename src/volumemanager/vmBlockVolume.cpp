@@ -36,7 +36,7 @@
 * 2014-11-06. Giulio.     @ADDED saved reference system into XML file
 * 2014-09-20. Alessandro. @ADDED overwrite_mdata flag to the XML-based constructor.
 * 2014-09-10. Alessandro. @ADDED 'volume_format' attribute to <TeraStitcher> XML node
-* 2014-09-10. Alessandro. @ADDED plugin creation/registration functions to make 'StackedVolume' a volume format plugin.
+* 2014-09-10. Alessandro. @ADDED plugin creation/registration functions to make 'BlockVolume' a volume format plugin.
 * 2014-09-09. Alessandro. @FIXED. Added default reference system if volume is imported from xml.
 * 2014-09-09. Alessandro. @FIXED both 'init()' and 'initFromXML()' methods to deal with empty stacks. Added call of 'normalize_stacks_attributes()' method.
 * 2014-09-05. Alessandro. @ADDED 'normalize_stacks_attributes()' method to normalize stacks attributes (width, height, etc.)
@@ -74,7 +74,7 @@ using namespace std;
 using namespace iom;
 using namespace vm;
 
-// 2014-09-10. Alessandro. @ADDED plugin creation/registration functions to make 'StackedVolume' a volume format plugin.
+// 2014-09-10. Alessandro. @ADDED plugin creation/registration functions to make 'BlockVolume' a volume format plugin.
 const std::string BlockVolume::id = "TiledXY|3Dseries";
 const std::string BlockVolume::creator_id1 = volumemanager::VirtualVolumeFactory::registerPluginCreatorXML(&createFromXML, BlockVolume::id);
 const std::string BlockVolume::creator_id2 = volumemanager::VirtualVolumeFactory::registerPluginCreatorData(&createFromData, BlockVolume::id);
@@ -114,7 +114,7 @@ BlockVolume::BlockVolume(const char* _stacks_dir, vm::ref_sys _reference_system,
 			{
 				if(BLOCKS[i][j]->getDEPTH() != N_SLICES)
 				{
-					throw iom::exception(iom::strprintf("in BlockVolume::StackedVolume(): unequal number of slices detected. Stack \"%s\" has %d, stack \"%s\" has %d. "
+					throw iom::exception(iom::strprintf("in BlockVolume::BlockVolume(): unequal number of slices detected. Stack \"%s\" has %d, stack \"%s\" has %d. "
 						"Please activate the sparse data option if stacks are not complete",
 						BLOCKS[0][0]->getDIR_NAME(), BLOCKS[0][0]->getDEPTH(), BLOCKS[i][j]->getDIR_NAME(), BLOCKS[i][j]->getDEPTH()).c_str());
 				}
@@ -170,7 +170,7 @@ BlockVolume::BlockVolume(const char *xml_filepath, bool overwrite_mdata) throw (
 			{
 				if(BLOCKS[i][j]->getDEPTH() != N_SLICES)
 				{
-					throw iom::exception(iom::strprintf("in BlockVolume::StackedVolume(): unequal number of slices detected. Stack \"%s\" has %d, stack \"%s\" has %d. "
+					throw iom::exception(iom::strprintf("in BlockVolume::BlockVolume(): unequal number of slices detected. Stack \"%s\" has %d, stack \"%s\" has %d. "
 						"Please activate the sparse data option if stacks are not complete",
 						BLOCKS[0][0]->getDIR_NAME(), BLOCKS[0][0]->getDEPTH(), BLOCKS[i][j]->getDIR_NAME(), BLOCKS[i][j]->getDEPTH()).c_str());
 				}
@@ -387,7 +387,7 @@ void BlockVolume::applyReferenceSystem(vm::ref_sys reference_system, float VXL_1
 		else {
 			// 2014-09-01. Alessandro. @FIXED: check that this tile has a slice at z=0. Otherwise it's not possible to compute the origin.
 			if(BLOCKS[0][0]->isComplete(0,0) == false)
-				throw iom::exception(vm::strprintf("in StackedVolume::applyReferenceSystem(): cannot compute origin. Tile (0,0) [%s] has no slice at z=0", BLOCKS[0][0]->getDIR_NAME()).c_str());
+				throw iom::exception(vm::strprintf("in BlockVolume::applyReferenceSystem(): cannot compute origin. Tile (0,0) [%s] has no slice at z=0", BLOCKS[0][0]->getDIR_NAME()).c_str());
 
 			extractCoordinates(BLOCKS[0][0], 0, &computed_ORG_1, &computed_ORG_2, &computed_ORG_3);
 			ORG_D = computed_ORG_3/10000.0F;
@@ -433,7 +433,7 @@ void BlockVolume::applyReferenceSystem(vm::ref_sys reference_system, float VXL_1
 		else {
 			// 2014-09-01. Alessandro. @FIXED: check that this tile has a slice at z=0. Otherwise it's not possible to compute the origin.
 			if(BLOCKS[0][0]->isComplete(0,0) == false)
-				throw iom::exception(vm::strprintf("in StackedVolume::applyReferenceSystem(): cannot compute origin. Tile (0,0) [%s] has no slice at z=0", BLOCKS[0][0]->getDIR_NAME()).c_str());
+				throw iom::exception(vm::strprintf("in BlockVolume::applyReferenceSystem(): cannot compute origin. Tile (0,0) [%s] has no slice at z=0", BLOCKS[0][0]->getDIR_NAME()).c_str());
 
 			extractCoordinates(BLOCKS[0][0], 0, &computed_ORG_1, &computed_ORG_2, &computed_ORG_3);
 			ORG_D = computed_ORG_3/10000.0F;
@@ -888,7 +888,7 @@ void BlockVolume::loadXML(const char *xml_filepath) throw (iom::exception)
 	// 2014-09-10. Alessandro. @ADDED 'volume_format' attribute to <TeraStitcher> XML node
 	const char *volformat = hRoot.ToElement()->Attribute("volume_format");
 	if(volformat && strcmp(volformat, id.c_str()) != 0)
-		throw iom::exception(vm::strprintf("in StackedVolume::initFromXML(): unsupported volume_format = \"%s\" (current format is \"%s\")", volformat, id.c_str()).c_str());
+		throw iom::exception(vm::strprintf("in BlockVolume::initFromXML(): unsupported volume_format = \"%s\" (current format is \"%s\")", volformat, id.c_str()).c_str());
 
 	//reading fields and checking coherence with metadata previously read from VM_BIN_METADATA_FILE_NAME
 	TiXmlElement * pelem = hRoot.FirstChildElement("stacks_dir").Element();
@@ -983,7 +983,7 @@ void BlockVolume::initFromXML(const char *xml_filepath) throw (iom::exception)
 	// 2014-09-10. Alessandro. @ADDED 'volume_format' attribute to <TeraStitcher> XML node
 	const char *volformat = hRoot.ToElement()->Attribute("volume_format");
 	if(volformat && strcmp(volformat, id.c_str()) != 0)
-		throw iom::exception(vm::strprintf("in StackedVolume::initFromXML(): unsupported volume_format = \"%s\" (current format is \"%s\")", volformat, id.c_str()).c_str());
+		throw iom::exception(vm::strprintf("in BlockVolume::initFromXML(): unsupported volume_format = \"%s\" (current format is \"%s\")", volformat, id.c_str()).c_str());
 
 	//reading fields
 	TiXmlElement * pelem = hRoot.FirstChildElement("stacks_dir").Element();
