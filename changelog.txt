@@ -14,8 +14,8 @@ ties names are:
 TeraStitcher version 1.9.45
 March 8th, 2016
 --------------------------------------------------------------------------------------------
+- New: added Qt-based graphical user interface
 - Dev: updated version
-- test
 
 
 TeraStitcher version 1.9.2
