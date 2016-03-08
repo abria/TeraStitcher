@@ -15,6 +15,7 @@ TeraStitcher version 1.9.45
 March 8th, 2016
 --------------------------------------------------------------------------------------------
 - Dev: updated version
+- test
 
 
 TeraStitcher version 1.9.2
