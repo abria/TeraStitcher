@@ -361,7 +361,7 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 		//updating the progress bar
 		if(show_progress_bar)
 		{	
-			sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((uint32)(z-D0)),((uint32)(z-D0+z_max_res-1)),(uint32)depth);
+            sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res-1)),(iim::uint32)depth);
                         ts::ProgressBar::getInstance()->setProgressValue(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
                         ts::ProgressBar::getInstance()->display();
 		}
@@ -836,13 +836,13 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 
         // 2015-01-30. Alessandro. @ADDED performance (time) measurement in 'generateTilesVaa3DRaw()' method.
         #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
-        TERAFLY_TIME_STOP(ConverterLoadBlockOperation, itm::ALL_COMPS, teramanager::strprintf("converter: loaded image block x(%d-%d), y(%d-%d), z(%d-%d)",H0, H1, V0, V1, ((uint32)(z-D0)),((uint32)(z-D0+z_max_res-1))))
+        TERAFLY_TIME_STOP(ConverterLoadBlockOperation, itm::ALL_COMPS, teramanager::strprintf("converter: loaded image block x(%d-%d), y(%d-%d), z(%d-%d)",H0, H1, V0, V1, ((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res-1))))
         #endif
 
 		//updating the progress bar
 		if(show_progress_bar)
 		{	
-			sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((uint32)(z-D0)),((uint32)(z-D0+z_max_res-1)),(uint32)depth);
+            sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res-1)),(iim::uint32)depth);
                         ts::ProgressBar::getInstance()->setProgressValue(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
                         ts::ProgressBar::getInstance()->display();
 		}
@@ -1112,7 +1112,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 
                         // 2015-01-30. Alessandro. @ADDED performance (time) measurement in 'generateTilesVaa3DRaw()' method.
                         #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
-                        TERAFLY_TIME_STOP(ConverterWriteBlockOperation, itm::ALL_COMPS, teramanager::strprintf("converter: written multiresolution image block x(%d-%d), y(%d-%d), z(%d-%d)",start_width, end_width, start_height, end_height, ((uint32)(z-D0)),((uint32)(z-D0+z_max_res-1))))
+                        TERAFLY_TIME_STOP(ConverterWriteBlockOperation, itm::ALL_COMPS, teramanager::strprintf("converter: written multiresolution image block x(%d-%d), y(%d-%d), z(%d-%d)",start_width, end_width, start_height, end_height, ((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res-1))))
                         #endif
 					}
 					start_height += stacks_height[i][stack_row][0][0]; // WARNING TO BE CHECKED FOR CORRECTNESS
@@ -1532,7 +1532,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 		//updating the progress bar
 		if(show_progress_bar)
 		{	
-			sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((uint32)(z-D0)),((uint32)(z-D0+z_max_res-1)),(uint32)depth);
+            sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res-1)),(iim::uint32)depth);
                         ts::ProgressBar::getInstance()->setProgressValue(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
                         ts::ProgressBar::getInstance()->display();
 		}
@@ -2144,7 +2144,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 		//updating the progress bar
 		if(show_progress_bar)
 		{	
-			sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((uint32)(z-D0)),((uint32)(z-D0+z_max_res-1)),(uint32)depth);
+            sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res-1)),(iim::uint32)depth);
                         ts::ProgressBar::getInstance()->setProgressValue(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
                         ts::ProgressBar::getInstance()->display();
 		}
@@ -2633,7 +2633,7 @@ void VolumeConverter::generateTilesBDV_HDF5 ( std::string output_path, bool* res
 		//updating the progress bar
 		if(show_progress_bar)
 		{	
-			sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((uint32)(z-D0)),((uint32)(z-D0+z_max_res-1)),(uint32)depth);
+            sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res-1)),(iim::uint32)depth);
                         ts::ProgressBar::getInstance()->setProgressValue(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
                         ts::ProgressBar::getInstance()->display();
 		}
