@@ -41,6 +41,7 @@
 #include <algorithm>
 
 #include "IM_config.h"
+#include "iomanager.config.h"
 
 class iim::VirtualVolume {
 
@@ -287,7 +288,7 @@ public:
 
     // tries to automatically detect the volume format and returns the imported volume if succeeds (otherwise returns 0)
     // WARNING: all metadata files (if needed by that format) are assumed to be present. Otherwise, that format will be skipped.
-    static VirtualVolume* instance(const char* path) throw (iim::IOException);
+    static VirtualVolume* instance(const char* path) throw (iim::IOException, iom::exception);
 
 	// should be used to instantiate BDV HDF5 volumes
     static VirtualVolume* instance(const char* fname, int res, void *descr) throw (iim::IOException);
@@ -296,7 +297,7 @@ public:
     // WARNING: no assumption is made on metadata files, which are possibly (re-)generated using the additional informations provided.
     static VirtualVolume* instance(const char* path, std::string format,
                                    iim::axis AXS_1 = iim::axis_invalid, iim::axis AXS_2 = iim::axis_invalid, iim::axis AXS_3 = iim::axis_invalid,
-                                   float VXL_1=0.0f, float VXL_2=0.0f, float VXL_3=0.0f) throw (iim::IOException);
+                                   float VXL_1=0.0f, float VXL_2=0.0f, float VXL_3=0.0f) throw (iim::IOException, iom::exception);
 
     // 2015-04-14. Alessandro. @ADDED 'instance_format' method with inputs = {path, format}.
     static VirtualVolume* instance_format(const char* path, std::string format) throw (iim::IOException);

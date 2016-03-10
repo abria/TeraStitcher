@@ -948,7 +948,7 @@ VirtualVolume* VirtualVolume::instance_format(const char* path, std::string form
 
 // tries to automatically detect the volume format and returns the imported volume if succeeds (otherwise returns 0)
 // WARNING: all metadata files (if needed by that format) are assumed to be present. Otherwise, that format will be skipped.
-VirtualVolume* VirtualVolume::instance(const char* path) throw (IOException)
+VirtualVolume* VirtualVolume::instance(const char* path) throw (IOException, iom::exception)
 {
     /**/iim::debug(iim::LEV3, strprintf("path = \"%s\"", path).c_str(), __iim__current__function__);
 
@@ -1063,27 +1063,12 @@ VirtualVolume* VirtualVolume::instance(const char* path) throw (IOException)
     // try all file formats
     else if(isFile(path))
     {
-        try
-        {
+        if(iim::hasEnding(path, ".raw") || iim::hasEnding(path, ".v3draw") || iim::hasEnding(path, ".RAW") || iim::hasEnding(path, ".V3DRAW") )
             volume = new RawVolume(path);
-        }
-        catch(IOException &ex)
-        {
-            debug(LEV3, strprintf("Cannot import <RawVolume> at \"%s\": %s", path, ex.what()).c_str(),__iim__current__function__);
-			try 
-			{
-				volume = new UnstitchedVolume(path);
-			}
-			catch(IOException &ex) 
-			{
-				debug(LEV3, strprintf("Cannot import <UnstitchedVolume> at \"%s\": %s", path, ex.what()).c_str(),__iim__current__function__);
-				// does not try BVDVolume because this volume should be created using the next "instance" method
-			}
-        }
-        catch(...)
-        {
-            debug(LEV3, strprintf("generic error occurred when importing volume at \"%s\"", path).c_str(),__iim__current__function__);
-        }
+        else if(iim::hasEnding(path, ".xml") || iim::hasEnding(path, ".XML"))
+            volume = new UnstitchedVolume(path);
+        else
+            throw IOException(strprintf("Unsupported file extensions for \"%s\"", path).c_str(),__iim__current__function__);
     }
     else
         throw IOException(strprintf("Path = \"%s\" does not exist", path), __iim__current__function__);
@@ -1104,7 +1089,7 @@ VirtualVolume* VirtualVolume::instance(const char* fname, int res, void *descr) 
 // WARNING: no assumption is made on metadata files, which are possibly (re-)generated using the additional informations provided.
 VirtualVolume* VirtualVolume::instance(const char* path, std::string format,
                                        iim::axis AXS_1, iim::axis AXS_2, iim::axis AXS_3, /* = iim::axis_invalid */
-                                       float VXL_1 /* = 0 */, float VXL_2 /* = 0 */, float VXL_3 /* = 0 */) throw (iim::IOException)
+                                       float VXL_1 /* = 0 */, float VXL_2 /* = 0 */, float VXL_3 /* = 0 */) throw (iim::IOException, iom::exception)
 {
     /**/iim::debug(iim::LEV3, strprintf("path = \"%s\", format = %s, AXS_1 = %s, AXS_2 = %s, AXS_3 = %s, VXL_1 = %.2f, VXL_2 = %.2f, VXL_3 = %.2f",
                                         path, format.c_str(), axis_to_str(AXS_1), axis_to_str(AXS_2), axis_to_str(AXS_3),
