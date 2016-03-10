@@ -270,6 +270,25 @@ namespace IconImageManager
         return ss >> result ? result : 0;
     }
 
+    // functions to swap 2-bytes and 4-bytes words
+    inline void swap2bytes(void *targetp)
+    {
+        unsigned char * tp = (unsigned char *)targetp;
+        unsigned char a = *tp;
+        *tp = *(tp+1);
+        *(tp+1) = a;
+    }
+    inline void swap4bytes(void *targetp)
+    {
+        unsigned char * tp = (unsigned char *)targetp;
+        unsigned char a = *tp;
+        *tp = *(tp+3);
+        *(tp+3) = a;
+        a = *(tp+1);
+        *(tp+1) = *(tp+2);
+        *(tp+2) = a;
+    }
+
     //time computation
 //    #ifdef _WIN32
 //    inline double getTimeSeconds(){

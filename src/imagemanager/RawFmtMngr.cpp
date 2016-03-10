@@ -205,29 +205,6 @@ char checkMachineEndian()
 }
 
 
-/* functions to swap 2-bytes and 4-bytes words */
-
-static
-void swap2bytes(void *targetp)
-{
-    unsigned char * tp = (unsigned char *)targetp;
-    unsigned char a = *tp;
-    *tp = *(tp+1);
-    *(tp+1) = a;
-}
-
-static
-void swap4bytes(void *targetp)
-{
-    unsigned char * tp = (unsigned char *)targetp;
-    unsigned char a = *tp;
-    *tp = *(tp+3);
-    *(tp+3) = a;
-    a = *(tp+1);
-    *(tp+1) = *(tp+2);
-    *(tp+2) = a;
-}
-
 /* This function opens 2-4D image stack from raw data and returns metadata contained in the header
  * assuming that sz elements are stored as 4-bytes integers.
  * The input parameters sz, and datatype should be empty, especially the pointer "sz". 
@@ -291,7 +268,7 @@ char *loadMetadata ( char * filename, V3DLONG * &sz, int &datatype, int &b_swap,
 	short int dcode = 0;
 	dummy = fread(&dcode, 2, 1, fid); /* because I have already checked the file size to be bigger than the header, no need to check the number of actual bytes read. */
 	if (b_swap)
-		swap2bytes((void *)&dcode);
+        iim::swap2bytes((void *)&dcode);
 
 	switch (dcode)
 	{
@@ -324,7 +301,7 @@ char *loadMetadata ( char * filename, V3DLONG * &sz, int &datatype, int &b_swap,
 	}
 	if (b_swap) {
 		for (i=0;i<4;i++) 
-			swap4bytes((void *)(mysz+i));
+            iim::swap4bytes((void *)(mysz+i));
 	}
 
 	if (sz) {delete []sz; sz=0;}
@@ -424,7 +401,7 @@ char *loadRaw2Metadata ( char * filename, V3DLONG * &sz, int &datatype, int &b_s
 	short int dcode = 0;
 	dummy = (int)fread(&dcode, 2, 1, fid); /* because I have already checked the file size to be bigger than the header, no need to check the number of actual bytes read. */
 	if (b_swap)
-		swap2bytes((void *)&dcode);
+        iim::swap2bytes((void *)&dcode);
 
 	switch (dcode)
 	{
@@ -466,7 +443,7 @@ char *loadRaw2Metadata ( char * filename, V3DLONG * &sz, int &datatype, int &b_s
 	memcpy(mysz,sz_2bytes,2*4); // save bytes in case it is a 4 byte file
 	if (b_swap) {
 		for (i=0;i<4;i++) 
-			swap2bytes((void *)(sz_2bytes+i));
+            iim::swap2bytes((void *)(sz_2bytes+i));
 	}
 	totalUnit = 1;
 	for (i=0;i<4;i++) {
@@ -491,7 +468,7 @@ char *loadRaw2Metadata ( char * filename, V3DLONG * &sz, int &datatype, int &b_s
 		}
 		if (b_swap) {
 			for (i=0;i<4;i++) 
-				swap4bytes((void *)(mysz+i));
+                iim::swap4bytes((void *)(mysz+i));
 		}
 		totalUnit = 1;
 		for (i=0;i<4;i++) {
@@ -589,14 +566,14 @@ char *loadRaw2SubStack ( void *fhandle, unsigned char *img, V3DLONG *sz,
 		{
 			for (i=0;i<total; i++)
 			{
-				swap2bytes((void *)(img+i*unitSize));
+                iim::swap2bytes((void *)(img+i*unitSize));
 			}
 		}
 		else if (unitSize==4)
 		{
 			for (i=0;i<total; i++)
 			{
-				swap4bytes((void *)(img+i*unitSize));
+                iim::swap4bytes((void *)(img+i*unitSize));
 			}
 		}
 	}
@@ -718,7 +695,7 @@ char *loadRaw2WholeStack ( char * filename, unsigned char * & img, V3DLONG * & s
 	short int dcode = 0;
 	dummy = (int)fread(&dcode, 2, 1, fid); /* because I have already checked the file size to be bigger than the header, no need to check the number of actual bytes read. */
 	if (b_swap)
-		swap2bytes((void *)&dcode);
+        iim::swap2bytes((void *)&dcode);
 
 	switch (dcode)
 	{
@@ -753,10 +730,10 @@ char *loadRaw2WholeStack ( char * filename, unsigned char * & img, V3DLONG * & s
 	{
 		for (i=0;i<4;i++)
 		{
-			//swap2bytes((void *)(mysz+i));
+            //iim::swap2bytes((void *)(mysz+i));
 			if (b_VERBOSE_PRINT)
 				printf("mysz raw read unit[%ld]: [%d] ", i, mysz[i]);
-			swap4bytes((void *)(mysz+i));
+            iim::swap4bytes((void *)(mysz+i));
 			if (b_VERBOSE_PRINT)
 				printf("swap unit: [%d][%0x] \n", mysz[i], mysz[i]);
 		}
@@ -832,14 +809,14 @@ char *loadRaw2WholeStack ( char * filename, unsigned char * & img, V3DLONG * & s
 		{
 			for (i=0;i<totalUnit; i++)
 			{
-				swap2bytes((void *)(img+i*unitSize));
+                iim::swap2bytes((void *)(img+i*unitSize));
 			}
 		}
 		else if (unitSize==4)
 		{
 			for (i=0;i<totalUnit; i++)
 			{
-				swap4bytes((void *)(img+i*unitSize));
+                iim::swap4bytes((void *)(img+i*unitSize));
 			}
 		}
 	}
@@ -903,7 +880,7 @@ char *saveWholeStack2Raw(const char *filename, unsigned char *img, V3DLONG *sz, 
 		return ((char *)"Unrecognized data type code.\n");
 	}
 
-	//if (b_swap) swap2bytes((void *)&dcode);
+    //if (b_swap) iim::swap2bytes((void *)&dcode);
 	nwrite = fwrite(&dcode, 2, 1, fid); /* because I have already checked the file size to be bigger than the header, no need to check the number of actual bytes read. */
 	if (nwrite!=1)
 	{
@@ -991,7 +968,7 @@ char *initRawFile(char *filename, const V3DLONG *sz, int datatype) {
 		return ((char *)"Unrecognized data type code.\n");
 	}
 
-	//if (b_swap) swap2bytes((void *)&dcode);
+    //if (b_swap) iim::swap2bytes((void *)&dcode);
 	nwrite = fwrite(&dcode, 2, 1, fid); /* because I have already checked the file size to be bigger than the header, no need to check the number of actual bytes read. */
 	if (nwrite!=1)
 	{
@@ -1163,14 +1140,14 @@ char *copyRawFileBlock2Buffer ( char *filename, int sV0, int sV1, int sH0, int s
 					{
 						for (i=0;i<tmpw; i++)
 						{
-							swap2bytes((void *)(buftmp_j+i*unitSize));
+                            iim::swap2bytes((void *)(buftmp_j+i*unitSize));
 						}
 					}
 					else if (unitSize==4)
 					{
 						for (i=0;i<tmpw; i++)
 						{
-							swap4bytes((void *)(buftmp_j+i*unitSize));
+                            iim::swap4bytes((void *)(buftmp_j+i*unitSize));
 						}
 					}
 				}

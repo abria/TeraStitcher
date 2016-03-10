@@ -39,37 +39,13 @@
 #include <stdlib.h> // needed by clang: defines size_t
 #include <string.h>
 #include "tiffio.h"
+#include "IM_config.h"
 
 #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
 #include <QElapsedTimer>
 #include "PLog.h"
 #include "COperation.h"
 #endif
-
-
-
-
-static
-void swap2bytes(void *targetp)
-{
-    unsigned char * tp = (unsigned char *)targetp;
-    unsigned char a = *tp;
-    *tp = *(tp+1);
-    *(tp+1) = a;
-}
-
-static
-void swap4bytes(void *targetp)
-{
-    unsigned char * tp = (unsigned char *)targetp;
-    unsigned char a = *tp;
-    *tp = *(tp+3);
-    *(tp+3) = a;
-    a = *(tp+1);
-    *(tp+1) = *(tp+2);
-    *(tp+2) = a;
-}
-
 
 char *loadTiff3D2Metadata ( char * filename, unsigned int &sz0, unsigned int  &sz1, unsigned int  &sz2, unsigned int  &sz3, int &datatype, int &b_swap, void * &fhandle, int &header_len ) {
 
@@ -538,14 +514,14 @@ char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int i
 		{
 			for (i=0;i<total; i++)
 			{
-				swap2bytes((void *)(img+2*i));
+                iim::swap2bytes((void *)(img+2*i));
 			}
 		}
 		else if (bpp/8 == 4)
 		{
 			for (i=0;i<total; i++)
 			{
-				swap4bytes((void *)(img+4*i));
+                iim::swap4bytes((void *)(img+4*i));
 			}
 		}
 	}
