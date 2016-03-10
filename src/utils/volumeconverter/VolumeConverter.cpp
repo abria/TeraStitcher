@@ -211,10 +211,10 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 	//LOCAL VARIABLES
     sint64 height, width, depth;	//height, width and depth of the whole volume that covers all stacks
     real32* rbuffer;			//buffer where temporary image data are stored (REAL_INTERNAL_REP)
-	uint8** ubuffer;			//array of buffers where temporary image data of channels are stored (UINT8_INTERNAL_REP)
+    iim::uint8** ubuffer;			//array of buffers where temporary image data of channels are stored (UINT8_INTERNAL_REP)
 	int bytes_chan = volume->getBYTESxCHAN();
-	//uint8*  ubuffer_ch2;	    //buffer temporary image data of channel 1 are stored (UINT8_INTERNAL_REP)
-	//uint8*  ubuffer_ch3;	    //buffer temporary image data of channel 1 are stored (UINT8_INTERNAL_REP)
+    //iim::uint8*  ubuffer_ch2;	    //buffer temporary image data of channel 1 are stored (UINT8_INTERNAL_REP)
+    //iim::uint8*  ubuffer_ch3;	    //buffer temporary image data of channel 1 are stored (UINT8_INTERNAL_REP)
 	int org_channels = 0;       //store the number of channels read the first time (for checking purposes)
 	int supported_channels;     //channels to be supported (stacks of tiffs 2D only supports 1 or 3 channels)
     // real32* stripe_up=NULL;		//will contain up-stripe and down-stripe computed by calling 'getStripe' method (unused)
@@ -328,8 +328,8 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 	//allocated even if not used
 	org_channels = channels; // save for checks
 	supported_channels = (channels>1) ? 3 : 1; // only 1 or 3 channels supported if output format is stacks of tiffs 2D
-	ubuffer = new uint8 *[supported_channels];
-	memset(ubuffer,0,supported_channels*sizeof(uint8 *)); // initializes to null pointers
+    ubuffer = new iim::uint8 *[supported_channels];
+    memset(ubuffer,0,supported_channels*sizeof(iim::uint8 *)); // initializes to null pointers
 
 	for(sint64 z = this->D0, z_parts = 1; z < this->D1; z += z_max_res, z_parts++)
 	{
@@ -467,8 +467,8 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 								if ( channels == 1 )
 									VirtualVolume::saveImage_from_UINT8(img_path.str(), 
                                         ubuffer[0] + buffer_z*(height/powInt(2,i))*(width/powInt(2,i)), // adds the stride
-										(uint8 *) 0,
-										(uint8 *) 0,
+                                        (iim::uint8 *) 0,
+                                        (iim::uint8 *) 0,
                                         (int)height/(powInt(2,i)),(int)width/(powInt(2,i)),
 										start_height,end_height,start_width,end_width, 
 										saved_img_format, saved_img_depth);
@@ -476,7 +476,7 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 									VirtualVolume::saveImage_from_UINT8(img_path.str(), 
                                         ubuffer[0] + buffer_z*(height/powInt(2,i))*(width/powInt(2,i))*bytes_chan, // stride to be added for slice buffer_z
                                         ubuffer[1] + buffer_z*(height/powInt(2,i))*(width/powInt(2,i))*bytes_chan, // stride to be added for slice buffer_z
-										(uint8 *) 0,
+                                        (iim::uint8 *) 0,
                                         (int)height/(powInt(2,i)),(int)width/(powInt(2,i)),
 										start_height,end_height,start_width,end_width, 
 										saved_img_format, saved_img_depth);
@@ -603,10 +603,10 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 	//LOCAL VARIABLES
     sint64 height, width, depth;	//height, width and depth of the whole volume that covers all stacks
     real32* rbuffer;			//buffer where temporary image data are stored (REAL_INTERNAL_REP)
-	uint8** ubuffer;			//array of buffers where temporary image data of channels are stored (UINT8_INTERNAL_REP)
+    iim::uint8** ubuffer;			//array of buffers where temporary image data of channels are stored (UINT8_INTERNAL_REP)
 	int bytes_chan = volume->getBYTESxCHAN();
-	//uint8*  ubuffer_ch2;	    //buffer temporary image data of channel 1 are stored (UINT8_INTERNAL_REP)
-	//uint8*  ubuffer_ch3;	    //buffer temporary image data of channel 1 are stored (UINT8_INTERNAL_REP)
+    //iim::uint8*  ubuffer_ch2;	    //buffer temporary image data of channel 1 are stored (UINT8_INTERNAL_REP)
+    //iim::uint8*  ubuffer_ch3;	    //buffer temporary image data of channel 1 are stored (UINT8_INTERNAL_REP)
 	int org_channels = 0;       //store the number of channels read the first time (for checking purposes)
     //real32* stripe_up=NULL;		//will contain up-stripe and down-stripe computed by calling 'getStripe' method (unused)
 	sint64 z_ratio, z_max_res;
@@ -671,7 +671,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 	depth = this->D1-this->D0;
 
 	// code for testing
-	//uint8 *temp = volume->loadSubvolume_to_UINT8(
+    //iim::uint8 *temp = volume->loadSubvolume_to_UINT8(
 	//	10,height-10,10,width-10,10,depth-10,
 	//	&channels);
 
@@ -778,8 +778,8 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 	z_ratio=depth/z_max_res;
 
 	//allocated even if not used
-	ubuffer = new uint8 *[channels];
-	memset(ubuffer,0,channels*sizeof(uint8 *));
+    ubuffer = new iim::uint8 *[channels];
+    memset(ubuffer,0,channels*sizeof(iim::uint8 *));
 	org_channels = channels; // save for checks
 
 	FILE *fhandle;
@@ -1294,10 +1294,10 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 	//LOCAL VARIABLES
     sint64 height, width, depth;	//height, width and depth of the whole volume that covers all stacks
     real32* rbuffer;			//buffer where temporary image data are stored (REAL_INTERNAL_REP)
-	uint8** ubuffer;			//array of buffers where temporary image data of channels are stored (UINT8_INTERNAL_REP)
+    iim::uint8** ubuffer;			//array of buffers where temporary image data of channels are stored (UINT8_INTERNAL_REP)
 	int bytes_chan = volume->getBYTESxCHAN();
-	//uint8*  ubuffer_ch2;	    //buffer temporary image data of channel 1 are stored (UINT8_INTERNAL_REP)
-	//uint8*  ubuffer_ch3;	    //buffer temporary image data of channel 1 are stored (UINT8_INTERNAL_REP)
+    //iim::uint8*  ubuffer_ch2;	    //buffer temporary image data of channel 1 are stored (UINT8_INTERNAL_REP)
+    //iim::uint8*  ubuffer_ch3;	    //buffer temporary image data of channel 1 are stored (UINT8_INTERNAL_REP)
 	int org_channels = 0;       //store the number of channels read the first time (for checking purposes)
     //real32* stripe_up=NULL;		//will contain up-stripe and down-stripe computed by calling 'getStripe' method (unused)
 	sint64 z_ratio, z_max_res;
@@ -1364,7 +1364,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 	depth = this->D1-this->D0;
 
 	// code for testing
-	//uint8 *temp = volume->loadSubvolume_to_UINT8(
+    //iim::uint8 *temp = volume->loadSubvolume_to_UINT8(
 	//	10,height-10,10,width-10,10,depth-10,
 	//	&channels);
 
@@ -1495,8 +1495,8 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 	z_ratio=depth/z_max_res;
 
 	//allocated even if not used
-	ubuffer = new uint8 *[channels];
-	memset(ubuffer,0,channels*sizeof(uint8));
+    ubuffer = new iim::uint8 *[channels];
+    memset(ubuffer,0,channels*sizeof(iim::uint8));
 	org_channels = channels; // save for checks
 
 	//slice_start and slice_end of current block depend on the resolution
@@ -1899,10 +1899,10 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 	//LOCAL VARIABLES
     sint64 height, width, depth;	//height, width and depth of the whole volume that covers all stacks
     real32* rbuffer;			//buffer where temporary image data are stored (REAL_INTERNAL_REP)
-	uint8** ubuffer;			//array of buffers where temporary image data of channels are stored (UINT8_INTERNAL_REP)
+    iim::uint8** ubuffer;			//array of buffers where temporary image data of channels are stored (UINT8_INTERNAL_REP)
 	int bytes_chan = volume->getBYTESxCHAN();
-	//uint8*  ubuffer_ch2;	    //buffer temporary image data of channel 1 are stored (UINT8_INTERNAL_REP)
-	//uint8*  ubuffer_ch3;	    //buffer temporary image data of channel 1 are stored (UINT8_INTERNAL_REP)
+    //iim::uint8*  ubuffer_ch2;	    //buffer temporary image data of channel 1 are stored (UINT8_INTERNAL_REP)
+    //iim::uint8*  ubuffer_ch3;	    //buffer temporary image data of channel 1 are stored (UINT8_INTERNAL_REP)
 	int org_channels = 0;       //store the number of channels read the first time (for checking purposes)
     //real32* stripe_up=NULL;		//will contain up-stripe and down-stripe computed by calling 'getStripe' method (unused)
 	sint64 z_ratio, z_max_res;
@@ -1969,7 +1969,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 	depth = this->D1-this->D0;
 
 	// code for testing
-	//uint8 *temp = volume->loadSubvolume_to_UINT8(
+    //iim::uint8 *temp = volume->loadSubvolume_to_UINT8(
 	//	10,height-10,10,width-10,10,depth-10,
 	//	&channels);
 
@@ -2107,8 +2107,8 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 	z_ratio=depth/z_max_res;
 
 	//allocated even if not used
-	ubuffer = new uint8 *[channels];
-	memset(ubuffer,0,channels*sizeof(uint8));
+    ubuffer = new iim::uint8 *[channels];
+    memset(ubuffer,0,channels*sizeof(iim::uint8));
 	org_channels = channels; // save for checks
 
 	//slice_start and slice_end of current block depend on the resolution
@@ -2516,7 +2516,7 @@ void VolumeConverter::generateTilesBDV_HDF5 ( std::string output_path, bool* res
 	//LOCAL VARIABLES
     sint64 height, width, depth;	//height, width and depth of the whole volume that covers all stacks
     real32* rbuffer;			//buffer where temporary image data are stored (REAL_INTERNAL_REP)
-	uint8** ubuffer;			//array of buffers where temporary image data of channels are stored (UINT8_INTERNAL_REP)
+    iim::uint8** ubuffer;			//array of buffers where temporary image data of channels are stored (UINT8_INTERNAL_REP)
 	int bytes_chan = volume->getBYTESxCHAN();
 	int org_channels = 0;       //store the number of channels read the first time (for checking purposes)
 	sint64 z_ratio, z_max_res;
@@ -2559,7 +2559,7 @@ void VolumeConverter::generateTilesBDV_HDF5 ( std::string output_path, bool* res
 	depth = this->D1-this->D0;
 
 	// code for testing
-	//uint8 *temp = volume->loadSubvolume_to_UINT8(
+    //iim::uint8 *temp = volume->loadSubvolume_to_UINT8(
 	//	10,height-10,10,width-10,10,depth-10,
 	//	&channels);
 
@@ -2604,8 +2604,8 @@ void VolumeConverter::generateTilesBDV_HDF5 ( std::string output_path, bool* res
 	z_ratio=depth/z_max_res;
 
 	//allocated even if not used
-	ubuffer = new uint8 *[channels];
-	memset(ubuffer,0,channels*sizeof(uint8));
+    ubuffer = new iim::uint8 *[channels];
+    memset(ubuffer,0,channels*sizeof(iim::uint8));
 	org_channels = channels; // save for checks
 
 	// z must begin from D0 (absolute index into the volume) since it is used to compute tha file names (containing the absolute position along D)
