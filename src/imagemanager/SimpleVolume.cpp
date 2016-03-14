@@ -386,11 +386,12 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
                         catch(...){throw IOException("in SimpleVolume::loadSubvolume_to_UINT8: unable to allocate memory");}
                     }
                     //otherwise checking that all the other slices have the same bitdepth of the first one
-					else {
-						if (channels != sbv_channels || cols != sbv_width || rows != sbv_height)
-                            throw IOException(std::string("Image depth mismatch at slice at \"").append(slice_fullpath).append("\": all slices must have the same bitdepth").c_str());
+                    else
+                    {
+                        if (channels != sbv_channels)
+                            throw iim::IOException(iim::strprintf("TIFF 2D series channel mismatch: slice at \"%s\" has %d channels, but the first slice has %d channels", slice_fullpath, sbv_channels, channels));
                         if (bytes_x_chan != sbv_bytes_chan)
-                            throw IOException(std::string("Image bytes per channel mismatch at slice at \"").append(slice_fullpath).append("\": all slices must have the same bitdepth").c_str());
+                            throw iim::IOException(iim::strprintf("TIFF 2D series bytes per channel mismatch: slice at \"%s\" has %d, but the first slice has %d", slice_fullpath, bytes_x_chan, sbv_bytes_chan));
 					}
 
 					//computing offsets
