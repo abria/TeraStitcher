@@ -101,8 +101,9 @@ namespace volumemanager
     ---------------------------------------------------------------------------------------------------------------------------*/
 	extern std::string VOLUME_INPUT_FORMAT_PLUGIN;	// plugin to manage the input volume format
 	extern std::string VOLUME_OUTPUT_FORMAT_PLUGIN;	// plugin to manage the output volume format
-    extern std::string IMG_FILTER_REGEX;    // regular expression used to filter image filenames when the volume is imported
-    extern bool SPARSE_DATA;                // flag to turn on/off sparse data support
+    extern std::string IMG_FILTER_REGEX;            // regular expression used to filter image filenames when the volume is imported
+    extern bool SPARSE_DATA;                        // flag to turn on/off sparse data support
+    extern std::string VERSION;                     // version of current module
     /*-------------------------------------------------------------------------------------------------------------------------*/
 
 

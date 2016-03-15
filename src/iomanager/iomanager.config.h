@@ -96,6 +96,7 @@ namespace iomanager
     *    PARAMETERS    *
     ********************
     ---------------------------------------------------------------------------------------------------------------------------*/
+    extern std::string VERSION;             // version of current module
     extern int DEBUG;                       // debug level of current module
     extern bool TIME_CALC;                  // whether to enable time measurements
     extern channel CHANS;					// channel to be loaded (default is ALL)

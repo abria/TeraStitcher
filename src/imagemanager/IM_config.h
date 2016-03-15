@@ -104,7 +104,6 @@ namespace IconImageManager
     *    CONSTANTS     *
     ********************
     ---------------------------------------------------------------------------------------------------------------------------*/
-    const std::string VERSION = "1.0.0";                        // version of current module
     const std::string MDATA_BIN_FILE_NAME  = "mdata.bin";       // name of binary metadata file
     const int         MDATA_BIN_FILE_VERSION = 2;               // version of binary metadata file
     const std::string MC_MDATA_BIN_FILE_NAME = "cmap.bin";      // name of binary metadata file for multichannel volumes
@@ -145,7 +144,8 @@ namespace IconImageManager
     extern std::string DEBUG_FILE_PATH;                         // filepath where to save debug information
     extern bool ADD_NOISE_TO_TIME_SERIES;                       // whether to mark individual frames of a time series with increasing gaussian noise
     extern int CHANNEL_SELECTION;								// channel to be used when image must be converted to an intensity image (default is ALL)
-   /*-------------------------------------------------------------------------------------------------------------------------*/
+    extern std::string VERSION;                                 // version of current module
+    /*-------------------------------------------------------------------------------------------------------------------------*/
 
 
     /*******************

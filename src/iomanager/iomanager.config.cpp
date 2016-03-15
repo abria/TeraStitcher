@@ -41,6 +41,7 @@ namespace iomanager
     *    PARAMETERS    *
     ********************
     ---------------------------------------------------------------------------------------------------------------------------*/
+    std::string VERSION = "1.1.0";          // version of current module
     int DEBUG = NO_DEBUG;					// debug level
     bool TIME_CALC = true;					// whether to enable time measurements
     channel CHANS = ALL;					// channel to be loaded (default is ALL)

@@ -28,6 +28,13 @@
 #ifndef S_CONFIG_H
 #define S_CONFIG_H
 
+#include <string>
+
+namespace stitcher
+{
+    const std::string version = "1.1.0";
+}
+
 #define S_VERBOSE 0
 #define S_PI 3.14159265
 #define S_STATIC_STRINGS_SIZE 3000
