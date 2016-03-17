@@ -121,6 +121,17 @@ public:
     int     getDIM_V() {return DIM_V;}
     int     getDIM_H() {return DIM_H;}
     int     getDIM_D() {return DIM_D;}
+    int     getDIM(iim::axis dir) throw (iim::IOException)
+    {
+        if(dir == iim::vertical || dir == iim::inv_vertical)
+            return DIM_V;
+        else if(dir == iim::horizontal || dir == iim::inv_horizontal)
+            return DIM_H;
+        else if(dir == iim::depth || dir == iim::inv_depth)
+            return DIM_D;
+        else
+            throw iim::IOException("VirtualVolume::getDIM(): axis invalid");
+    }
     int     getABS_V(int ABS_PIXEL_V) {return iim::round( ORG_V * 1000 + ABS_PIXEL_V*this->getVXL_V());}
     int     getABS_H(int ABS_PIXEL_H) {return iim::round( ORG_H * 1000 + ABS_PIXEL_H*this->getVXL_H());}
     int     getABS_D(int ABS_PIXEL_D) {return iim::round( ORG_D * 1000 + ABS_PIXEL_D*this->getVXL_D());}
