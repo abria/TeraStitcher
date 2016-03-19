@@ -140,6 +140,8 @@ public:
     float   getVXL_D() {return VXL_D;}
     int     getDIM_C() {return DIM_C;}
     int     getDIM_T() {return DIM_T;}  //@ADDED by Alessandro on 2014-02-18
+    int     getT0()    {return t0;}
+    int     getT1()    {return t1;}
     int     getBYTESxCHAN() {return BYTESxCHAN;}
     char*   getROOT_DIR() {return this->root_dir;}
     virtual float   getMVoxels(){return (DIM_V/1024.0f)*(DIM_H/1024.0f)*DIM_D*DIM_T;} // can be overriden
