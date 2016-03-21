@@ -131,7 +131,7 @@ char *loadTiff3D2Metadata ( char * filename, unsigned int &sz0, unsigned int  &s
 
     // 2015-01-30. Alessandro. @ADDED performance (time) measurement in all most time-consuming methods.
     #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
-    TERAFLY_TIME_STOP(TiffLoadMetadata, itm::IO, itm::strprintf("successfully loaded metadata from file \"%s\"", filename))
+    TERAFLY_TIME_STOP(TiffLoadMetadata, tf::IO, tf::strprintf("successfully loaded metadata from file \"%s\"", filename))
     #endif
 
 	return ((char *) 0);
@@ -214,7 +214,7 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 
     // 2015-01-30. Alessandro. @ADDED performance (time) measurement in all most time-consuming methods.
     #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
-    TERAFLY_TIME_STOP(TiffInitData, itm::CPU, itm::strprintf("generated fake data for 3D tiff \"%s\"", completeFilename))
+    TERAFLY_TIME_STOP(TiffInitData, tf::CPU, tf::strprintf("generated fake data for 3D tiff \"%s\"", completeFilename))
     TERAFLY_TIME_RESTART(TiffInitData)
     #endif
 
@@ -299,7 +299,7 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 
     // 2015-01-30. Alessandro. @ADDED performance (time) measurement in all most time-consuming methods.
     #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
-    TERAFLY_TIME_STOP(TiffInitData, itm::IO, itm::strprintf("written initialized 3D tiff \"%s\"", completeFilename))
+    TERAFLY_TIME_STOP(TiffInitData, tf::IO, tf::strprintf("written initialized 3D tiff \"%s\"", completeFilename))
     #endif
 
 	return (char *) 0;
@@ -350,7 +350,7 @@ char *appendSlice2Tiff3DFile ( char *filename, int slice, unsigned char *img, un
 
     // 2015-01-30. Alessandro. @ADDED performance (time) measurement in all most time-consuming methods.
     #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
-    TERAFLY_TIME_STOP(TiffAppendData, itm::IO, itm::strprintf("appended slice %d x %d to 3D tiff \"%s\"", img_width, img_height, filename))
+    TERAFLY_TIME_STOP(TiffAppendData, tf::IO, tf::strprintf("appended slice %d x %d to 3D tiff \"%s\"", img_width, img_height, filename))
     #endif
 
 	return (char *) 0;
@@ -409,7 +409,7 @@ char *readTiff3DFile2Buffer ( char *filename, unsigned char *img, unsigned int i
 
     // 2015-01-30. Alessandro. @ADDED performance (time) measurement in all most time-consuming methods.
     #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
-    TERAFLY_TIME_STOP(TiffLoadData, itm::IO, itm::strprintf("loaded block x(%d), y(%d), z(%d-%d) from 3D tiff \"%s\"", img_width, img_height, first, last, filename))
+    TERAFLY_TIME_STOP(TiffLoadData, tf::IO, tf::strprintf("loaded block x(%d), y(%d), z(%d-%d) from 3D tiff \"%s\"", img_width, img_height, first, last, filename))
     #endif
 
 	return err_msg;

@@ -836,7 +836,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 
         // 2015-01-30. Alessandro. @ADDED performance (time) measurement in 'generateTilesVaa3DRaw()' method.
         #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
-        TERAFLY_TIME_STOP(ConverterLoadBlockOperation, itm::ALL_COMPS, teramanager::strprintf("converter: loaded image block x(%d-%d), y(%d-%d), z(%d-%d)",H0, H1, V0, V1, ((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res-1))))
+        TERAFLY_TIME_STOP(ConverterLoadBlockOperation, tf::ALL_COMPS, terafly::strprintf("converter: loaded image block x(%d-%d), y(%d-%d), z(%d-%d)",H0, H1, V0, V1, ((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res-1))))
         #endif
 
 		//updating the progress bar
@@ -1112,7 +1112,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 
                         // 2015-01-30. Alessandro. @ADDED performance (time) measurement in 'generateTilesVaa3DRaw()' method.
                         #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
-                        TERAFLY_TIME_STOP(ConverterWriteBlockOperation, itm::ALL_COMPS, teramanager::strprintf("converter: written multiresolution image block x(%d-%d), y(%d-%d), z(%d-%d)",start_width, end_width, start_height, end_height, ((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res-1))))
+                        TERAFLY_TIME_STOP(ConverterWriteBlockOperation, tf::ALL_COMPS, terafly::strprintf("converter: written multiresolution image block x(%d-%d), y(%d-%d), z(%d-%d)",start_width, end_width, start_height, end_height, ((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res-1))))
                         #endif
 					}
 					start_height += stacks_height[i][stack_row][0][0]; // WARNING TO BE CHECKED FOR CORRECTNESS
