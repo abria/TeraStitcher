@@ -31,6 +31,7 @@
 #include "TemplateCLI.h"
 #include "IM_config.h"
 #include "StackedVolume.h"
+#include "config.h"
 
 #include <CmdLine.h>
 #include <sstream>
@@ -47,7 +48,7 @@ TemplateCLI::TemplateCLI(void)
 void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 {
 	//command line object definition
-	TCLAP::CmdLine cmd(getHelpText(), '=', "2.2.0");
+	TCLAP::CmdLine cmd(getHelpText(), '=', "2.2.1");
 		/**
 		 * Command line constructor. Defines how the arguments will be
 		 * parsed.
@@ -101,29 +102,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::ValueArg<string> p_halving_method("","halve","Halving method (mean/max, default: mean).",false,"mean","unsigned");
 	TCLAP::ValueArg<std::string> p_outFmt("f","outFmt","Output format (Tiff2DStck/Vaa3DRaw/Tiff3D/Vaa3DRawMC/Tiff3DMC/Fiji_HDF5, default: Tiff2DStck).",false,"Tiff2DStck","string");
  	TCLAP::SwitchArg p_hide_progress_bar("","noprogressbar","Disables progress bar and estimated time remaining", false);
-      /**
-         * Labeled ValueArg constructor.
-         * You could conceivably call this constructor with a blank flag, 
-         * but that would make you a bad person.  It would also cause
-         * an exception to be thrown.   If you want an unlabeled argument, 
-         * use the other constructor.
-         * \param flag - The one character flag that identifies this
-         * argument on the command line.
-         * \param name - A one word name for the argument.  Can be
-         * used as a long flag on the command line.
-         * \param desc - A description of what the argument is for or
-         * does.
-         * \param req - Whether the argument is required on the command
-         * line.
-         * \param value - The default value assigned to this argument if it
-         * is not present on the command line.
-         * \param typeDesc - A short, human readable description of the
-         * type that this object expects.  This is used in the generation
-         * of the USAGE statement.  The goal is to be helpful to the end user
-         * of the program.
-         * \param v - An optional visitor.  You probably should not
-         * use this unless you have a very good reason.
-         */
+	TCLAP::SwitchArg p_verbose("","verbose","set verbosity to maximum level (to be activated ONLY for debugging)");
 	TCLAP::ValueArg<int> p_V0("","V0","First V vertex (included).",false,-1,"unsigned");
 	TCLAP::ValueArg<int> p_V1("","V1","Last V vertex (excluded).",false,-1,"unsigned");
 	TCLAP::ValueArg<int> p_H0("","H0","First H vertex (included).",false,-1,"unsigned");
@@ -140,6 +119,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_V1);
 	cmd.add(p_V0);
 
+	cmd.add(p_verbose);
 	cmd.add(p_hide_progress_bar);
 	cmd.add(p_outFmt);
 	cmd.add(p_halving_method);
@@ -247,6 +227,13 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	this->H1  = p_H1.getValue();
 	this->D0  = p_D0.getValue();
 	this->D1  = p_D1.getValue();
+
+	if(p_verbose.getValue())
+	{
+		terastitcher::DEBUG = terastitcher::LEV_MAX;
+		iim::DEBUG = iim::LEV_MAX;
+		iom::DEBUG = iom::LEV_MAX;
+	}
 }
 
 //checks parameters correctness
@@ -263,7 +250,7 @@ void TemplateCLI::checkParams() throw (iom::exception)
 string TemplateCLI::getHelpText()
 {
 	stringstream helptext;
-	helptext << "TeraConverter v2.2.0\n";
+	helptext << "TeraConverter v2.2.1\n";
 	return helptext.str();
 }
 
