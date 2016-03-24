@@ -981,7 +981,7 @@ iim::uint8* TiledVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, i
     if ( (ret_type != iim::NATIVE_RTYPE) && (ret_type != iim::DEF_IMG_DEPTH) ) {
 		// return type should be converted, but not to 8 bits per channel
         char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"RawVolume::loadSubvolume_to_UINT8: non supported return type (%d bits) - native type is %d bits",ret_type, 8*this->BYTESxCHAN); 
+		sprintf(err_msg,"TiledVolume::loadSubvolume_to_UINT8: non supported return type (%d bits) - native type is %d bits",ret_type, 8*this->BYTESxCHAN); 
         throw IOException(err_msg);
 	}
 

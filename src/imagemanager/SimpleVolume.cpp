@@ -25,10 +25,11 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-03-24. Giulio.     @ADDED 16 bit support.
 * 2015-04-15. Alessandro. @ADDED definition for default constructor.
 * 2015-02-27. Alessandro. @ADDED automated selection of IO plugin if not provided.
-* 2014-11-27 Giulio. @FIXED   eliminated part of the dipendences from OpenCV and restored the corresponding code
-* 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
+* 2014-11-27 Giulio.      @FIXED   eliminated part of the dipendences from OpenCV and restored the corresponding code
+* 2014-11-22 Giulio.      @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
 */
 
 #include "SimpleVolume.h"
@@ -43,6 +44,7 @@
 // Giulio_CV #include <cv.h>
 // Giulio_CV #include <highgui.h>
 #include "Tiff3DMngr.h"
+#include "RawFmtMngr.h"
 
 #include "IOPluginAPI.h" // 2014-11-26. Giulio.
 
@@ -282,12 +284,24 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
         throw IOException(err_msg);
 	}
 
-    if ( (ret_type == iim::DEF_IMG_DEPTH) && ((8 * this->BYTESxCHAN) != iim::DEF_IMG_DEPTH)  ) {
-		// return type is 8 bits, but native depth is not 8 bits
-		char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"SimpleVolume::loadSubvolume_to_UINT8: non supported return type (%d bits) - native type is %d bits",ret_type, 8*this->BYTESxCHAN); 
+	// if ( (ret_type == iim::DEF_IMG_DEPTH) && ((8 * this->BYTESxCHAN) != iim::DEF_IMG_DEPTH)  ) {
+	//	// return type is 8 bits, but native depth is not 8 bits
+	//	char err_msg[STATIC_STRINGS_SIZE];
+	//	sprintf(err_msg,"SimpleVolume::loadSubvolume_to_UINT8: non supported return type (%d bits) - native type is %d bits",ret_type, 8*this->BYTESxCHAN); 
+	//		throw IOException(err_msg);
+	//}
+
+    if ( (ret_type != iim::NATIVE_RTYPE) && (ret_type != iim::DEF_IMG_DEPTH) ) {
+		// return type should be converted, but not to 8 bits per channel
+        char err_msg[STATIC_STRINGS_SIZE];
+		sprintf(err_msg,"SimpleVolumeRaw::loadSubvolume_to_UINT8: non supported return type (%d bits) - native type is %d bits",ret_type, 8*this->BYTESxCHAN); 
         throw IOException(err_msg);
 	}
+
+	// reduction factor to be applied to the loaded buffer
+    int red_factor = (ret_type == iim::NATIVE_RTYPE) ? 1 : ((8 * this->BYTESxCHAN) / ret_type);
+
+	char *err_rawfmt;
 
 	//initializations
 	V0 = (V0 == -1 ? 0	     : V0);
@@ -459,6 +473,15 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
 
     if(channels)
         *channels = (int)sbv_channels;
+
+	if ( red_factor > 1 ) { // the buffer has to be reduced
+
+		if ( (err_rawfmt = convert2depth8bits(red_factor,(sbv_height*sbv_width*sbv_depth),sbv_channels,subvol)) != 0  ) {
+            char err_msg[STATIC_STRINGS_SIZE];
+			sprintf(err_msg,"SimpleVolumeRaw::loadSubvolume_to_UINT8: %s", err_rawfmt);
+            throw IOException(err_msg);
+		}
+	}
 
 	return subvol;
 }

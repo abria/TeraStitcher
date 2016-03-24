@@ -59,6 +59,11 @@ class UnstitchedVolume : public iim::VirtualVolume
 		stripe_2Dcoords  *stripesCoords;
 		stripe_2Dcorners *stripesCorners;
 
+		// offests of indices in the unstitched volume
+		int V0_offs;
+		int H0_offs;
+		int D0_offs;
+
 
 		//***OBJECT PRIVATE METHODS****
 		UnstitchedVolume(void);

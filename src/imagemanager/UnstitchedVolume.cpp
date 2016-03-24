@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-03-23. Giulio.     @FIXED 'internal_loadSubvolume_to_real32' bug on the idetification of the tiles involved in the subvolume extraction 
 * 2015-12-28. Giulio.     @ADDED 'internal_loadSubvolume_to_real32' now check the ret_type parameter to determine voxel depth to be returned 
 * 2015-12-28. Giulio.     @FIXED 'internal_loadSubvolume_to_real32' did not check the ret_type parameter to determine voxel depth to be returned 
 * 2015-03-13. Giulio.     @FIXED a bug in 'internal_loadSubvolume_to_real32': MEC must be divided by VXL (and not multiplied)
@@ -96,6 +97,11 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir)  throw (IOException)
 	DIM_T = 1;
 
  	stitcher->computeVolumeDims(false);
+
+	// 2016-03-23. Giulio.     @ADDED offsets of unstitched volume with respect to nominal origin (0,0,0) 
+	V0_offs = stitcher->V0;
+	H0_offs = stitcher->H0;
+	D0_offs = stitcher->D0;
 
 	DIM_V = stitcher->V1 - stitcher->V0;
 	DIM_H = stitcher->H1 - stitcher->H0;
@@ -191,32 +197,47 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 
 	// compute which tiles have to be loaded
 	int vxl_i;
+	int tile_offset;
 
+	// 2016-03-23. Giulio.     @FIXED the way tile indices are found 
 	row_start = 0;
-	vxl_i = (int) floor( volume->getMEC_V() / volume->getVXL_V() );
-	while ( vxl_i < V0 ) {
+	tile_offset = (int) floor( volume->getMEC_V() / volume->getVXL_V() );
+	//vxl_i = (int) floor( volume->getMEC_V() / volume->getVXL_V() ); // size the first time and offset the next ones
+	vxl_i = volume->getSTACKS()[0][0]->getHEIGHT();
+	while ( vxl_i < V0 && row_start < (volume->getN_ROWS()-1) ) { // row_start must be a valid tile index
 		row_start++;
-		vxl_i += volume->getSTACKS()[row_start][0]->getHEIGHT();
+		//vxl_i += volume->getSTACKS()[row_start][0]->getHEIGHT(); // size the first time and offset the next ones
+		vxl_i += tile_offset;
 	}
 	row_end   = row_start;
-	while ( vxl_i < V1 ) {
+	while ( vxl_i < V1 && row_end < (volume->getN_ROWS()-1) ) {
 		row_end++;
-		vxl_i += volume->getSTACKS()[row_end][0]->getHEIGHT();
+		// vxl_i += volume->getSTACKS()[row_end][0]->getHEIGHT(); // size the first time and offset the next ones
+		vxl_i += tile_offset;
 	}
 
 	col_start = 0;
-	vxl_i = (int) floor( volume->getMEC_H() / volume->getVXL_H());
-	while ( vxl_i < H0 ) {
+	tile_offset = (int) floor( volume->getMEC_H() / volume->getVXL_H() );
+	//vxl_i = (int) floor( volume->getMEC_H() / volume->getVXL_H()); // size the first time and offset the next ones
+	vxl_i = volume->getSTACKS()[0][0]->getWIDTH();
+	while ( vxl_i < H0 && col_start < (volume->getN_COLS()-1) ) {
 		col_start++;
-		vxl_i += volume->getSTACKS()[0][col_start]->getWIDTH();
+		//vxl_i += volume->getSTACKS()[0][col_start]->getWIDTH();
+		vxl_i += tile_offset;
 	}
 	col_end   = col_start;
-	while ( vxl_i < H1 ) {
+	while ( vxl_i < H1 && col_end < (volume->getN_COLS()-1) ) {
 		col_end++;
-		vxl_i += volume->getSTACKS()[0][col_end]->getWIDTH();
+		//vxl_i += volume->getSTACKS()[0][col_end]->getWIDTH();
+		vxl_i += tile_offset;
 	}
 
-	stitcher->computeVolumeDims(false,row_start,row_end,col_start,col_end,D0,D1);
+	stitcher->computeVolumeDims(false,row_start,row_end,col_start,col_end,D0+D0_offs,D1+D0_offs); // map D indices from stitched to unstitched volume
+
+	/* WARNING: it is possible that selected tiles do not contain all the subvolume requested 
+	 * a check between indices on unstitched volume (data members of stitcher) and indices on stitched volume (method input parameters)
+	 * should be done and 'computeVolumeDims' possibly re-executed with diferent input parameters
+	 */
 
 	V0 = stitcher->V0;
 	V1 = stitcher->V1;
@@ -447,12 +468,13 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 		delete stripe_down;
 	}
 
-	VV0 = V0;
-	VV1 = V1;
-	HH0 = H0;
-	HH1 = H1;
-	DD0 = D0;
-	DD1 = D1;
+	// 2016-03-23. Giulio.     @ADDED map back from indices on unstitched to indices on stitched volumes
+	VV0 = V0 - V0_offs;
+	VV1 = V1 - V0_offs;
+	HH0 = H0 - H0_offs;
+	HH1 = H1 - H0_offs;
+	DD0 = D0 - D0_offs;
+	DD1 = D1 - D0_offs;
 
 	return buffer;
 }
