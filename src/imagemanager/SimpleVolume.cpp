@@ -294,7 +294,7 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
     if ( (ret_type != iim::NATIVE_RTYPE) && (ret_type != iim::DEF_IMG_DEPTH) ) {
 		// return type should be converted, but not to 8 bits per channel
         char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"SimpleVolumeRaw::loadSubvolume_to_UINT8: non supported return type (%d bits) - native type is %d bits",ret_type, 8*this->BYTESxCHAN); 
+		sprintf(err_msg,"SimpleVolume::loadSubvolume_to_UINT8: non supported return type (%d bits) - native type is %d bits",ret_type, 8*this->BYTESxCHAN); 
         throw IOException(err_msg);
 	}
 
@@ -389,9 +389,9 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
                         sbv_channels = channels; // Giulio_Cv slice->nChannels;
 						sbv_bytes_chan = bytes_x_chan; // Giulio_Cv slice->depth / 8;
                         if(sbv_channels != 1 && sbv_channels != 3)
-                            throw IOException(std::string("Unsupported number of channels at \"").append(slice_fullpath).append("\". Only 1 and 3-channels images are supported").c_str());
+                            throw IOException(std::string("in SimpleVolume::loadSubvolume_to_UINT8: Unsupported number of channels at \"").append(slice_fullpath).append("\". Only 1 and 3-channels images are supported").c_str());
                         if(sbv_bytes_chan != this->BYTESxCHAN)
-                            throw IOException(std::string("Wrong number of bits per channel\"").c_str());
+                            throw IOException(std::string("in SimpleVolume::loadSubvolume_to_UINT8: Wrong number of bits per channel\"").c_str());
 
                         try
                         {
@@ -403,9 +403,9 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
                     else
                     {
                         if (channels != sbv_channels)
-                            throw iim::IOException(iim::strprintf("TIFF 2D series channel mismatch: slice at \"%s\" has %d channels, but the first slice has %d channels", slice_fullpath, sbv_channels, channels));
+                            throw iim::IOException(iim::strprintf("in SimpleVolume::loadSubvolume_to_UINT8: TIFF 2D series channel mismatch: slice at \"%s\" has %d channels, but the first slice has %d channels", slice_fullpath, sbv_channels, channels));
                         if (bytes_x_chan != sbv_bytes_chan)
-                            throw iim::IOException(iim::strprintf("TIFF 2D series bytes per channel mismatch: slice at \"%s\" has %d, but the first slice has %d", slice_fullpath, bytes_x_chan, sbv_bytes_chan));
+                            throw iim::IOException(iim::strprintf("in SimpleVolume::loadSubvolume_to_UINT8: TIFF 2D series bytes per channel mismatch: slice at \"%s\" has %d, but the first slice has %d", slice_fullpath, bytes_x_chan, sbv_bytes_chan));
 					}
 
 					//computing offsets
@@ -478,7 +478,7 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
 
 		if ( (err_rawfmt = convert2depth8bits(red_factor,(sbv_height*sbv_width*sbv_depth),sbv_channels,subvol)) != 0  ) {
             char err_msg[STATIC_STRINGS_SIZE];
-			sprintf(err_msg,"SimpleVolumeRaw::loadSubvolume_to_UINT8: %s", err_rawfmt);
+			sprintf(err_msg,"in SimpleVolume::loadSubvolume_to_UINT8: %s", err_rawfmt);
             throw IOException(err_msg);
 		}
 	}

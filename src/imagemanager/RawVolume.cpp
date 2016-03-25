@@ -29,9 +29,10 @@
 * 2015-12-10. Giulio.     @ADDED support for single Tiff 3D volumes 
 */
 
-# include "RawVolume.h"
+#include "RawVolume.h"
 #include "VirtualFmtMngr.h"
 #include "iomanager.config.h"
+#include "RawFmtMngr.h"
 
 # include <stdio.h>
 
@@ -173,16 +174,28 @@ uint8 *RawVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, 
     //checking for non implemented features
 	if( this->BYTESxCHAN > 2 ) {
 		char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"RawVolume::loadSubvolume_to_UINT8: invalid number of bytes per channel (%d)",this->BYTESxCHAN); 
+		sprintf(err_msg,"in RawVolume::loadSubvolume_to_UINT8: invalid number of bytes per channel (%d)",this->BYTESxCHAN); 
         throw IOException(err_msg);
 	}
 
-    if ( (ret_type == iim::DEF_IMG_DEPTH) && ((8 * this->BYTESxCHAN) != iim::DEF_IMG_DEPTH)  ) {
-		// return type is 8 bits, but native depth is not 8 bits
-		char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"RawVolume::loadSubvolume_to_UINT8: non supported return type (%d bits) - native type is %d bits",ret_type, 8*this->BYTESxCHAN); 
+//     if ( (ret_type == iim::DEF_IMG_DEPTH) && ((8 * this->BYTESxCHAN) != iim::DEF_IMG_DEPTH)  ) {
+// 		// return type is 8 bits, but native depth is not 8 bits
+// 		char err_msg[STATIC_STRINGS_SIZE];
+// 		sprintf(err_msg,"RawVolume::loadSubvolume_to_UINT8: non supported return type (%d bits) - native type is %d bits",ret_type, 8*this->BYTESxCHAN); 
+//         throw IOException(err_msg);
+// 	}
+
+    if ( (ret_type != iim::NATIVE_RTYPE) && (ret_type != iim::DEF_IMG_DEPTH) ) {
+		// return type should be converted, but not to 8 bits per channel
+        char err_msg[STATIC_STRINGS_SIZE];
+		sprintf(err_msg,"in RawVolume::loadSubvolume_to_UINT8: non supported return type (%d bits) - native type is %d bits",ret_type, 8*this->BYTESxCHAN); 
         throw IOException(err_msg);
 	}
+
+	// reduction factor to be applied to the loaded buffer
+    int red_factor = (ret_type == iim::NATIVE_RTYPE) ? 1 : ((8 * this->BYTESxCHAN) / ret_type);
+
+	char *err_rawfmt;
 
 	// check #channels
 	//if ( CHANS == 1 )
@@ -235,7 +248,7 @@ uint8 *RawVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, 
 								sbv_width*sbv_height,
 								sbv_width*sbv_height*sbv_depth) ) != 0 ) {
 		char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"RawVolume::init: error in copying file block to buffer - %s",internal_msg);
+		sprintf(err_msg,"in RawVolume::init: error in copying file block to buffer - %s",internal_msg);
         throw IOException(err_msg);
 	}
 
@@ -243,6 +256,15 @@ uint8 *RawVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, 
     //closeRawFile(fhandle);
  	// @CHANGED by Giulio on 2015-12-07: support to Tiff3D assumes that the file has been closed by copyFileBlock2Buffer
    fhandle = 0;
+
+	if ( red_factor > 1 ) { // the buffer has to be reduced
+
+		if ( (err_rawfmt = convert2depth8bits(red_factor,(sbv_height*sbv_width*sbv_depth),*channels,subvol)) != 0  ) {
+            char err_msg[STATIC_STRINGS_SIZE];
+			sprintf(err_msg,"in RawVolume::loadSubvolume_to_UINT8: %s", err_rawfmt);
+            throw IOException(err_msg);
+		}
+	}
 
 	return subvol;
 }
@@ -263,7 +285,7 @@ char *get_path ( const char *_file_name ) throw (IOException) {
 		tPtr = strstr(path_buffer+strlen(path_buffer)-suf_lens[i]-1,suffixes[i]);
 	if ( !tPtr ) {
 		char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"RawVolume::get_path: unknown suffix of source file");
+		sprintf(err_msg,"in RawVolume::get_path: unknown suffix of source file");
         throw IOException(err_msg);
 	}
 	tPtr--;

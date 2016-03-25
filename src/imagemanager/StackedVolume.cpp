@@ -996,7 +996,7 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
     if ( (ret_type != iim::NATIVE_RTYPE) && (ret_type != iim::DEF_IMG_DEPTH) ) {
 		// return type should be converted, but not to 8 bits per channel
         char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"RawVolume::loadSubvolume_to_UINT8: non supported return type (%d bits) - native type is %d bits",ret_type, 8*this->BYTESxCHAN); 
+		sprintf(err_msg,"in StackedVolume::loadSubvolume_to_UINT8: non supported return type (%d bits) - native type is %d bits",ret_type, 8*this->BYTESxCHAN); 
         throw IOException(err_msg);
 	}
 
@@ -1077,10 +1077,10 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
                         sbv_channels = DIM_C; // Giulio_CV slice->nChannels;
 
 						if(sbv_channels != 1 && sbv_channels != 3)
-                            throw IOException(std::string("Unsupported number of channels at \"").append(slice_fullpath).append("\". Only 1 and 3-channels images are supported").c_str());
+                            throw IOException(std::string("in StackedVolume::loadSubvolume_to_UINT8:Unsupported number of channels at \"").append(slice_fullpath).append("\". Only 1 and 3-channels images are supported").c_str());
 
 						if ( sbv_channels >1 && !(iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved()) ) {
-							throw iom::exception("the plugin do not store channels in interleaved mode: more than one channel not supported yet.");
+							throw iom::exception("in StackedVolume::loadSubvolume_to_UINT8:the plugin do not store channels in interleaved mode: more than one channel not supported yet.");
 						}
 
                         try
@@ -1142,7 +1142,7 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
                         }
                     }
                     else
-                        throw IOException(std::string("Unsupported number of channels at \"").append(slice_fullpath).append("\". Only 1 and 3-channels images are supported").c_str());
+                        throw IOException(std::string("in StackedVolume::loadSubvolume_to_UINT8: Unsupported number of channels at \"").append(slice_fullpath).append("\". Only 1 and 3-channels images are supported").c_str());
 
                     delete []slice; // Giulio_CV cvReleaseImage(&slice);
                 }
@@ -1157,7 +1157,7 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
 		char *err_rawfmt;
 		if ( (err_rawfmt = convert2depth8bits(red_factor,(sbv_height*sbv_width*sbv_depth),sbv_channels,subvol)) != 0 ) {
             char err_msg[STATIC_STRINGS_SIZE];
-			sprintf(err_msg,"StackedVolume::loadSubvolume_to_UINT8: %s", err_rawfmt);
+			sprintf(err_msg,"in StackedVolume::loadSubvolume_to_UINT8: %s", err_rawfmt);
             throw IOException(err_msg);
 		}
 	}

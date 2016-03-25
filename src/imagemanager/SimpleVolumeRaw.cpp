@@ -262,7 +262,7 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
     //checking for non implemented features
 	if( this->BYTESxCHAN > 2 ) {
 		char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"SimpleVolumeRaw::loadSubvolume_to_UINT8: invalid number of bytes per channel (%d)",this->BYTESxCHAN); 
+		sprintf(err_msg,"in SimpleVolumeRaw::loadSubvolume_to_UINT8: invalid number of bytes per channel (%d)",this->BYTESxCHAN); 
         throw IOException(err_msg);
 	}
 
@@ -276,7 +276,7 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
     if ( (ret_type != iim::NATIVE_RTYPE) && (ret_type != iim::DEF_IMG_DEPTH) ) {
 		// return type should be converted, but not to 8 bits per channel
         char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"SimpleVolumeRaw::loadSubvolume_to_UINT8: non supported return type (%d bits) - native type is %d bits",ret_type, 8*this->BYTESxCHAN); 
+		sprintf(err_msg,"in SimpleVolumeRaw::loadSubvolume_to_UINT8: non supported return type (%d bits) - native type is %d bits",ret_type, 8*this->BYTESxCHAN); 
         throw IOException(err_msg);
 	}
 
@@ -384,7 +384,7 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
                     //otherwise checking that all the other slices have the same bitdepth of the first one
 					else if(sz[3] != sbv_channels) {
 						if ( sz ) delete[] sz;
-                        throw IOException(std::string("Image depth mismatch at slice at \"").append(slice_fullpath).append("\": all slices must have the same bitdepth").c_str());
+                        throw IOException(std::string("in SimpleVolumeRaw::loadSubvolume_to_UINT8: Image depth mismatch at slice at \"").append(slice_fullpath).append("\": all slices must have the same bitdepth").c_str());
 					}
 
 					//computing offsets
@@ -428,7 +428,7 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
 
 		if ( (err_rawfmt = convert2depth8bits(red_factor,(sbv_height*sbv_width*sbv_depth),sbv_channels,subvol)) != 0  ) {
             char err_msg[STATIC_STRINGS_SIZE];
-			sprintf(err_msg,"SimpleVolumeRaw::loadSubvolume_to_UINT8: %s", err_rawfmt);
+			sprintf(err_msg,"in SimpleVolumeRaw::loadSubvolume_to_UINT8: %s", err_rawfmt);
             throw IOException(err_msg);
 		}
 	}

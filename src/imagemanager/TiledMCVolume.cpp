@@ -842,7 +842,7 @@ uint8* TiledMCVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
     if ( (ret_type != iim::NATIVE_RTYPE) && (ret_type != iim::DEF_IMG_DEPTH) ) {
 		// return type should be converted, but not to 8 bits per channel
 		char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"RawVolume::loadSubvolume_to_UINT8: non supported return type (%d bits) - native type is %d bits",ret_type, 8*this->BYTESxCHAN); 
+		sprintf(err_msg,"in TiledMCVolume::loadSubvolume_to_UINT8: non supported return type (%d bits) - native type is %d bits",ret_type, 8*this->BYTESxCHAN); 
         throw IOException(err_msg);
 	}
 
@@ -910,7 +910,7 @@ void *TiledMCVolume::streamedLoadSubvolume_open ( int steps, uint8 *buf, int V0,
     //checking for non implemented features
 	if( this->BYTESxCHAN != 1 ) {
 		char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"TiledMCVolume::streamedLoadSubvolume_open: invalid number of bytes per channel (%d)",this->BYTESxCHAN); 
+		sprintf(err_msg,"in TiledMCVolume::streamedLoadSubvolume_open: invalid number of bytes per channel (%d)",this->BYTESxCHAN); 
         throw IOException(err_msg);
 	}
 

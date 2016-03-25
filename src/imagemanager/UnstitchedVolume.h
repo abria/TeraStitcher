@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-03-23. Giulio.     @ADDED  offsets of unstitched volume with respect to nominal origin (0,0,0)
 * 2015-02-18. Giulio.     @CREATED  
 */
 
