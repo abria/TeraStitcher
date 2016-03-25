@@ -1063,7 +1063,14 @@ VirtualVolume* VirtualVolume::instance(const char* path) throw (IOException, iom
     // try all file formats
     else if(isFile(path))
     {
-        if(iim::hasEnding(path, ".raw") || iim::hasEnding(path, ".v3draw") || iim::hasEnding(path, ".RAW") || iim::hasEnding(path, ".V3DRAW") )
+        if(     iim::hasEnding(path, ".raw") ||
+                iim::hasEnding(path, ".v3draw") ||
+                iim::hasEnding(path, ".RAW") ||
+                iim::hasEnding(path, ".V3DRAW") ||
+                iim::hasEnding(path, ".tif") ||
+                iim::hasEnding(path, ".tiff") ||
+                iim::hasEnding(path, ".TIF") ||
+                iim::hasEnding(path, ".TIFF"))
             volume = new RawVolume(path);
         else if(iim::hasEnding(path, ".xml") || iim::hasEnding(path, ".XML"))
             volume = new UnstitchedVolume(path);
