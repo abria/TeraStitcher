@@ -32,7 +32,7 @@ namespace IconImageManager
     *    PARAMETERS    *
     ********************
     ---------------------------------------------------------------------------------------------------------------------------*/
-    std::string VERSION = "1.1.0";          // version of current module
+    std::string VERSION = "1.1.1";          // version of current module
     int DEBUG = NO_DEBUG;					//debug level
     bool DEBUG_TO_FILE = false;             //whether debug messages should be printed on the screen or to a file (default: screen)
     std::string DEBUG_FILE_PATH = "/home/alex/Scrivania/iim_debug.log";   //filepath where to save debug information
