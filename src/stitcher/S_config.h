@@ -32,7 +32,7 @@
 
 namespace stitcher
 {
-    const std::string version = "1.1.0";
+    const std::string version = "1.1.1";
 }
 
 #define S_VERBOSE 0

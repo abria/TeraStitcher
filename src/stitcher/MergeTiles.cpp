@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-03-28  Giulio.     @FIXED wrong assignment in exchanging axes of reference system
 * 2015-08-28. Giulio.     @FIXED reference system of the generated image has always V as a first axis and H as a second axis
 * 2015-08-26. Giulio.     @ADDED stop and resume facility in par mode
 * 2015-08-16. Giulio.     @ADDED the 'isotropi' parameter (flag) to all methods and the halve_pow2 array to control the halving at different resolutions
@@ -829,7 +830,7 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 		if ( reference.first == iim::horizontal || reference.first == iim::inv_horizontal ) {
 			iim::axis temp = reference.first;
 			reference.first = reference.second;
-			reference.second = reference.first;
+			reference.second = temp; // 2016-03-28 Giulio. @FIXED wrong assignment in exchanging axes of reference system
 		}
 		for(int res_i=0; res_i< resolutions_size; res_i++)
 		{
@@ -1197,7 +1198,7 @@ void StackStitcher::mdataGenerator (std::string output_path, int block_height, i
 		if ( reference.first == iim::horizontal || reference.first == iim::inv_horizontal ) {
 			iim::axis temp = reference.first;
 			reference.first = reference.second;
-			reference.second = reference.first;
+			reference.second = temp; // 2016-03-28 Giulio. @FIXED wrong assignment in exchanging axes of reference system
 		}
 		for(int res_i=0; res_i< resolutions_size; res_i++)
 		{

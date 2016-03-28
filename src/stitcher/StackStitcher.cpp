@@ -1259,7 +1259,7 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 		if ( reference.first == iim::horizontal || reference.first == iim::inv_horizontal ) {
 			iim::axis temp = reference.first;
 			reference.first = reference.second;
-			reference.second = reference.first;
+			reference.second = temp;
 		}
 		for(int res_i=0; res_i< resolutions_size; res_i++) {
 			if(resolutions[res_i])
