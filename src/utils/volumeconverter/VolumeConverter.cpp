@@ -539,10 +539,10 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 	std::string save_imin_plugin = iom::IMIN_PLUGIN; // save current input plugin
 	try {
 		// test if it is a 2D plugin
-		bool temp = iom::IOPluginFactory::getPlugin2D(iom::IMOUT_PLUGIN)->isChansInterleaved();
+		bool temp = iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved();
 	}
 	catch(iom::exception & ex){
-		if ( strstr(ex.what(),"2D I/O plugin") ) // it is not a 2D plugin
+		if ( strstr(ex.what(),"it is not a 2D I/O plugin") ) // it is not a 2D plugin
 		// change input plugin
 		iom::IMIN_PLUGIN = "tiff2D";
 	}
