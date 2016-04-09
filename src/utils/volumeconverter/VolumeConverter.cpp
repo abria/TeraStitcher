@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-04-09. Giulio.     @FIXED added check in 'generateTiles' to avoid an exception when metadata for the output StackedVolume are created (when the input plugin is 3D)
 * 2015-12-26. Giulio.     @FIXED subvolume vertices are set to default values if exceed volume dimensions
 * 2015-12-20. Giulio.     @FIXED file name generation (scale of some absolute coordinates was in 1 um and not in 0.1 um 
 * 2015-12-19. Giulio.     @ADDED Subvolume conversion (setSubVolume method, changes to mergeTilesVaa3DRaw)
@@ -78,6 +79,9 @@
 #include <sstream>
 #include <cstdio>
 #include "resumer.h"
+
+// 2016--04-09 Giulio.
+#include "IOPluginAPI.h" 
 
 using namespace iim;
 
@@ -530,6 +534,19 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 			}
 		}
 	}
+
+	// 2016-04-09. Giulio. @FIXED If input volume is 3D the input plugin cannot be used to generate the meta data file.
+	std::string save_imin_plugin = iom::IMIN_PLUGIN; // save current input plugin
+	try {
+		// test if it is a 2D plugin
+		bool temp = iom::IOPluginFactory::getPlugin2D(iom::IMOUT_PLUGIN)->isChansInterleaved();
+	}
+	catch(iom::exception & ex){
+		if ( strstr(ex.what(),"2D I/O plugin") ) // it is not a 2D plugin
+		// change input plugin
+		iom::IMIN_PLUGIN = "tiff2D";
+	}
+
 	for(int res_i=0; res_i< resolutions_size; res_i++) {
 		if(resolutions[res_i])
         {
@@ -545,7 +562,8 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 //							volume->getVXL_H()*(res_i+1),volume->getVXL_D()*(res_i+1));
         }
 	}
-
+	// restore input plugin
+	iom::IMIN_PLUGIN = save_imin_plugin;
 
 	// ubuffer allocated anyway
 	delete ubuffer;
@@ -2546,11 +2564,11 @@ void VolumeConverter::generateTilesBDV_HDF5 ( std::string output_path, bool* res
        ts::ProgressBar::getInstance()->display();
 	}
 
-	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
-	if(iom::IMOUT_PLUGIN.compare("empty") == 0)
-	{
-		iom::IMOUT_PLUGIN = "tiff3D";
-	}
+	// 2016-04-09. Giulio. @COMMENTED not needed if the output is HDF5.
+	//if(iom::IMOUT_PLUGIN.compare("empty") == 0)
+	//{
+	//	iom::IMOUT_PLUGIN = "tiff3D";
+	//}
 
 	//computing dimensions of volume to be stitched
 	//this->computeVolumeDims(exclude_nonstitchable_stacks, _ROW_START, _ROW_END, _COL_START, _COL_END, _D0, _D1);

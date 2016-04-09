@@ -1079,8 +1079,13 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
 						if(sbv_channels != 1 && sbv_channels != 3)
                             throw IOException(std::string("in StackedVolume::loadSubvolume_to_UINT8:Unsupported number of channels at \"").append(slice_fullpath).append("\". Only 1 and 3-channels images are supported").c_str());
 
+						// 2016-04-09 Giulio. @ADDED to debug error on wrong 2D plugin
+						if ( iom::IMIN_PLUGIN.compare("empty") == 0 || iom::IMIN_PLUGIN.compare("tiff3D") == 0 ) {
+							throw iom::exception("in StackedVolume::loadSubvolume_to_UINT8: wrong input plugin (%s).",iom::IMIN_PLUGIN.c_str());
+						}
+
 						if ( sbv_channels >1 && !(iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved()) ) {
-							throw iom::exception("in StackedVolume::loadSubvolume_to_UINT8:the plugin do not store channels in interleaved mode: more than one channel not supported yet.");
+							throw iom::exception("in StackedVolume::loadSubvolume_to_UINT8: the plugin do not store channels in interleaved mode: more than one channel not supported yet.");
 						}
 
                         try

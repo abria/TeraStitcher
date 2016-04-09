@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-04-07. Giulio.     @MODIFIED moved default constructor among private methods and declared VirtualVolume a friend class 
 * 2016-03-23. Giulio.     @ADDED  offsets of unstitched volume with respect to nominal origin (0,0,0)
 * 2015-02-18. Giulio.     @CREATED  
 */
@@ -115,6 +116,10 @@ class UnstitchedVolume : public iim::VirtualVolume
         //loads given subvolume in a 1-D array of iim::uint8 while releasing stacks slices memory when they are no longer needed
         iim::uint8 *loadSubvolume_to_UINT8(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1,
                                                    int *channels=0, int ret_type=iim::DEF_IMG_DEPTH) throw (iim::IOException);
+
+    	// needed to enable the detection by the factory of volume format through use of the default constructor
+        friend class iim::VirtualVolume; 
+
 };
 
 #endif //_UNSTITCHED_VOLUME_H

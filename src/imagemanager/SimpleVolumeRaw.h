@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-04-07. Giulio.     @MODIFIED moved default constructor among private methods and declared VirtualVolume a friend class 
 */
 
 # ifndef _SIMPLE_VOLUME_RAW_H
@@ -42,6 +43,8 @@ class SimpleVolumeRaw : public iim::VirtualVolume
         iim::uint16 N_ROWS, N_COLS;		//dimensions (in stacks) of stacks matrix along VH axes
         StackRaw ***STACKS;			//2-D array of <Stack*>
 
+        SimpleVolumeRaw(void);
+
         void init ( ) throw (iim::IOException);
 
         // iannello returns the number of channels of images composing the volume
@@ -50,7 +53,7 @@ class SimpleVolumeRaw : public iim::VirtualVolume
     public:
 
         SimpleVolumeRaw(const char* _root_dir)  throw (iim::IOException);
-        SimpleVolumeRaw(void);
+
         ~SimpleVolumeRaw(void);
 
         // returns a unique ID that identifies the volume format
@@ -69,7 +72,9 @@ class SimpleVolumeRaw : public iim::VirtualVolume
         iim::uint8 *loadSubvolume_to_UINT8(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1,
                                                    int *channels=0, int ret_type=iim::DEF_IMG_DEPTH) throw (iim::IOException);
     
-        friend class iim::VirtualVolume;
+    	// needed to enable the detection by the factory of volume format through use of the default constructor
+        friend class iim::VirtualVolume; 
+
 };		
 
 # endif // _SIMPLE_VOLUME

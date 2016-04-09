@@ -151,7 +151,8 @@ class TiledMCVolume : public iim::VirtualVolume
 		 */
          iim::uint8 *streamedLoadSubvolume_close ( void *stream_descr, bool return_buffer=true );
     
-         friend class iim::VirtualVolume;
+    	// needed to enable the detection by the factory of volume format through use of the default constructor
+        friend class iim::VirtualVolume; 
 
 };
 

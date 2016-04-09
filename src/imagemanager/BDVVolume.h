@@ -93,7 +93,8 @@ class BDVVolume : public iim::VirtualVolume
         iim::uint8 *loadSubvolume_to_UINT8(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1,
                                                    int *channels=0, int ret_type=iim::DEF_IMG_DEPTH) throw (iim::IOException);
 
-         friend class iim::VirtualVolume;
+    	// needed to enable the detection by the factory of volume format through use of the default constructor
+        friend class iim::VirtualVolume; 
 
 };
 

@@ -253,8 +253,12 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
         sprintf(buffer,"in saveImage_from_UINT8(..., img_depth=%d, ...): unsupported bit depth for multi-channels images\n",img_depth);
         throw IOException(buffer);
     }
+	// 2016-04-09 Giulio. @ADDED to debug error on wrong 2D plugin
+	if ( iom::IMOUT_PLUGIN.compare("empty") == 0 || iom::IMOUT_PLUGIN.compare("tiff3D") == 0 ) {
+		throw iom::exception("in saveImage_from_UINT8(...): wrong input plugin (%s).",iom::IMIN_PLUGIN.c_str());
+	}
 	if ( nchannels >1 && !(iom::IOPluginFactory::getPlugin2D(iom::IMOUT_PLUGIN)->isChansInterleaved()) ) {
-		throw iom::exception("the plugin do not store channels in interleaved mode: more than one channel not supported yet.");
+		throw iom::exception("in saveImage_from_UINT8(...): the plugin do not store channels in interleaved mode: more than one channel not supported yet.");
 	}
 
     //converting raw data into tif image data
@@ -497,7 +501,7 @@ void VirtualVolume::saveImage_from_UINT8_to_Vaa3DRaw (int slice, std::string img
     //checking parameters correctness
     if(!(start_height>=0 && end_height>start_height && end_height<raw_img_height && start_width>=0 && end_width>start_width && end_width<raw_img_width))
     {
-        sprintf(buffer,"in saveImage_from_UINT8(..., raw_img_height=%d, raw_img_width=%d, start_height=%d, end_height%d, start_width=%d, end_width=%d): invalid image portion\n",
+        sprintf(buffer,"in VirtualVolume::saveImage_from_UINT8_to_Vaa3DRaw(..., raw_img_height=%d, raw_img_width=%d, start_height=%d, end_height%d, start_width=%d, end_width=%d): invalid image portion\n",
                 raw_img_height, raw_img_width, start_height, end_height, start_width, end_width);
         throw IOException(buffer);
     }
@@ -515,7 +519,7 @@ void VirtualVolume::saveImage_from_UINT8_to_Vaa3DRaw (int slice, std::string img
 
 	if(img_depth != 8 && img_depth != 16 && n_chans == 1)
 	{
-		sprintf(buffer,"in saveImage_from_UINT8(..., img_depth=%d, ...): unsupported bit depth\n",img_depth);
+		sprintf(buffer,"in VirtualVolume::saveImage_from_UINT8_to_Vaa3DRaw(..., img_depth=%d, ...): unsupported bit depth\n",img_depth);
         throw IOException(buffer);
 	}
 	img_bytes_per_chan = (img_depth == 8) ? 1 : 2;
@@ -590,19 +594,19 @@ void VirtualVolume::saveImage_from_UINT8_to_Tiff3D (int slice, std::string img_p
     //checking parameters correctness
     if(!(start_height>=0 && end_height>start_height && end_height<raw_img_height && start_width>=0 && end_width>start_width && end_width<raw_img_width))
     {
-        sprintf(buffer,"in saveImage_from_UINT8(..., raw_img_height=%d, raw_img_width=%d, start_height=%d, end_height%d, start_width=%d, end_width=%d): invalid image portion\n",
+        sprintf(buffer,"in VirtualVolume::saveImage_from_UINT8_to_Tiff3D(..., raw_img_height=%d, raw_img_width=%d, start_height=%d, end_height%d, start_width=%d, end_width=%d): invalid image portion\n",
                 raw_img_height, raw_img_width, start_height, end_height, start_width, end_width);
         throw IOException(buffer);
     }
 
 	if(img_depth != 8 && img_depth != 16 && n_chans == 1)
 	{
-		sprintf(buffer,"in saveImage_from_UINT8(..., img_depth=%d, ...): unsupported bit depth\n",img_depth);
+		sprintf(buffer,"in VirtualVolume::saveImage_from_UINT8_to_Tiff3D(..., img_depth=%d, ...): unsupported bit depth\n",img_depth);
         throw IOException(buffer);
 	}
 
 	if ( n_chans >1 && !(iom::IOPluginFactory::getPlugin3D(iom::IMOUT_PLUGIN)->isChansInterleaved()) ) {
-		throw iom::exception("the 3D plugin do not store channels in interleaved mode: more than one channel not supported yet.");
+		throw iom::exception("in VirtualVolume::saveImage_from_UINT8_to_Tiff3D: the 3D plugin do not store channels in interleaved mode: more than one channel not supported yet.");
 	}
 
 	img_bytes_per_chan = (img_depth == 8) ? 1 : 2;
@@ -652,14 +656,14 @@ void VirtualVolume::saveImage_from_UINT8_to_Tiff3D (int slice, std::string img_p
 	//	((err_tiff_fmt = appendSlice2Tiff3DFile(buffer,slice,(unsigned char *)imageData,(int)img_width,(int)img_height)) != 0) : 
 	//	((err_tiff_fmt = appendSlice2Tiff3DFile(fhandle,slice,(unsigned char *)imageData,(int)img_width,(int)img_height,temp_n_chans,img_depth,n_pages)) != 0) ) {
 	//	char err_msg[STATIC_STRINGS_SIZE];
-	//	sprintf(err_msg,"VirtualVolume::saveImage_from_UINT8_to_Tiff3D: error in saving slice %d (%lld x %lld) in file %s (appendSlice2Tiff3DFile: %s)",slice,img_width,img_height,buffer,err_tiff_fmt);
+	//	sprintf(err_msg,"in VirtualVolume::saveImage_from_UINT8_to_Tiff3D: error in saving slice %d (%lld x %lld) in file %s (appendSlice2Tiff3DFile: %s)",slice,img_width,img_height,buffer,err_tiff_fmt);
 	//		throw IOException(err_msg);
 	//};
 	if ( do_open )
 		iom::IOPluginFactory::getPlugin3D(iom::IMOUT_PLUGIN)->appendSlice(buffer,(unsigned char *)imageData,(int)img_height,(int)img_width,img_bytes_per_chan,temp_n_chans,-1,-1,-1,-1,slice);
 	else if ( ((err_tiff_fmt = appendSlice2Tiff3DFile(fhandle,slice,(unsigned char *)imageData,(int)img_width,(int)img_height,temp_n_chans,img_depth,n_pages)) != 0) ) {
 		char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"VirtualVolume::saveImage_from_UINT8_to_Tiff3D: error in saving slice %d (%lld x %lld) in file %s (appendSlice2Tiff3DFile: %s)", slice,img_width,img_height,buffer,err_tiff_fmt);
+		sprintf(err_msg,"in VirtualVolume::saveImage_from_UINT8_to_Tiff3D: error in saving slice %d (%lld x %lld) in file %s (appendSlice2Tiff3DFile: %s)", slice,img_width,img_height,buffer,err_tiff_fmt);
         throw IOException(err_msg);
 	};
 

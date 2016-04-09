@@ -137,7 +137,8 @@ class iim::StackedVolume : public iim::VirtualVolume
 		//releases allocated memory of stacks
 		void releaseStacks(int first_file=-1, int last_file=-1);
     
-        friend class iim::VirtualVolume;
+    	// needed to enable the detection by the factory of volume format through use of the default constructor
+        friend class iim::VirtualVolume; 
 
 };
 

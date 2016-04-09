@@ -86,11 +86,16 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::ValueArg<float> p_vxl_size_H("","szH","Voxel horizontal size (default=1.0).",false,(float)1.0,"real");
 	TCLAP::ValueArg<float> p_vxl_size_D("","szD","Voxel depth size (default=1.0).",false,(float)1.0,"real");
 	string temp = "Source format (\"" + 
-		iim::STACKED_FORMAT + "\"/\"" + 
-		iim::TILED_FORMAT + "\"/\"" + 
-		iim::TILED_TIF3D_FORMAT  + "\"/\"" + 
 		iim::TILED_MC_FORMAT + "\"/\"" + 
-		iim::TILED_MC_TIF3D_FORMAT  + "\")"; 
+		iim::TILED_FORMAT + "\"/\"" + 
+		iim::STACKED_FORMAT + "\"/\"" + 
+		iim::SIMPLE_FORMAT + "\"/\"" + 
+		iim::SIMPLE_RAW_FORMAT + "\"/\"" + 
+		iim::RAW_FORMAT + "\"/\"" + 
+		iim::TIF3D_FORMAT + "\"/\"" + 
+		iim::TILED_TIF3D_FORMAT  + "\"/\"" +
+		iim::TILED_MC_TIF3D_FORMAT  + "\"/\"" +
+		iim::UNST_TIF3D_FORMAT  + "\")";
 	TCLAP::ValueArg<string> p_src_format("","sfmt",temp.c_str(),true,"","string");
 
         /**
@@ -188,8 +193,21 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		 p_src_format.getValue() != iim::TILED_MC_FORMAT &&
 		 p_src_format.getValue() != iim::TIF3D_FORMAT  && 
 		 p_src_format.getValue() != iim::TILED_TIF3D_FORMAT  && 
-		 p_src_format.getValue() != iim::TILED_MC_TIF3D_FORMAT ) {
-		sprintf(errMsg, "Unknown source format!\nAllowed formats are:\n\tStacked / Simple / SimpeRaw / Raw / Tiled / TiledMC");
+		 p_src_format.getValue() != iim::TILED_MC_TIF3D_FORMAT  && 
+		 p_src_format.getValue() != iim::UNST_TIF3D_FORMAT ) {
+		temp = "Unknown source format!\nAllowed formats are:\n\t\"" + 
+			iim::TILED_MC_FORMAT + "\"/\"" + 
+			iim::TILED_FORMAT + "\"/\"" + 
+			iim::STACKED_FORMAT + "\"/\"" + 
+			iim::SIMPLE_FORMAT + "\"/\"" + 
+			iim::SIMPLE_RAW_FORMAT + "\"/\"" + 
+			iim::RAW_FORMAT + "\"/\"" + 
+			iim::TIF3D_FORMAT + "\"/\"" + 
+			iim::TILED_TIF3D_FORMAT  + "\"/\"" +
+			iim::TILED_MC_TIF3D_FORMAT  + "\"/\"" +
+			iim::UNST_TIF3D_FORMAT  + "\"";
+		//sprintf(errMsg, "Unknown source format!\nAllowed formats are:\n\tStacked / Simple / SimpeRaw / Raw / Tiled / TiledMC");
+		sprintf(errMsg, "%s", temp.c_str());
 		throw iom::exception(errMsg);
 	}
 
