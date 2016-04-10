@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-04-10. Giulio.     @ADDED the input plugin is saved before callin the TiledVolume constructor in 'generateTilesVaa3D  methods
 * 2016-04-09. Giulio.     @FIXED added check in 'generateTiles' to avoid an exception when metadata for the output StackedVolume are created (when the input plugin is 3D)
 * 2015-12-26. Giulio.     @FIXED subvolume vertices are set to default values if exceed volume dimensions
 * 2015-12-20. Giulio.     @FIXED file name generation (scale of some absolute coordinates was in 1 um and not in 0.1 um 
@@ -543,8 +544,8 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 	}
 	catch(iom::exception & ex){
 		if ( strstr(ex.what(),"it is not a 2D I/O plugin") ) // it is not a 2D plugin
-		// change input plugin
-		iom::IMIN_PLUGIN = "tiff2D";
+		// reset input plugin so the StackedVolume constructor set it correctly
+		iom::IMIN_PLUGIN = "empty";
 	}
 
 	for(int res_i=0; res_i< resolutions_size; res_i++) {
@@ -1178,6 +1179,10 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 			}
 		}
 	}
+
+	// 2016-04-10. Giulio. @ADDED the TiledVolume constructor may change the input plugin if it is wrong
+	std::string save_imin_plugin = iom::IMIN_PLUGIN; // save current input plugin
+
     for(int res_i=0; res_i< resolutions_size; res_i++)
 	{
         if(resolutions[res_i])
@@ -1206,6 +1211,8 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
         }
 	}
 
+	// restore input plugin
+	iom::IMIN_PLUGIN = save_imin_plugin;
 
 	// ubuffer allocated anyway
 	delete ubuffer;
@@ -1845,6 +1852,10 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 			}
 		}
 	}
+
+	// 2016-04-10. Giulio. @ADDED the TiledVolume constructor may change the input plugin if it is wrong
+	std::string save_imin_plugin = iom::IMIN_PLUGIN; // save current input plugin
+
 	for ( int c=0; c<channels; c++ ) {
 		for(int res_i=0; res_i< resolutions_size; res_i++)
 		{
@@ -1865,6 +1876,8 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 		}
 	}
 
+	// restore input plugin
+	iom::IMIN_PLUGIN = save_imin_plugin;
 
 	// ubuffer allocated anyway
 	delete ubuffer;
@@ -2456,6 +2469,10 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 			}
 		}
 	}
+
+	// 2016-04-10. Giulio. @ADDED the TiledVolume constructor may change the input plugin if it is wrong
+	std::string save_imin_plugin = iom::IMIN_PLUGIN; // save current input plugin
+
 	for(int res_i=0; res_i< resolutions_size; res_i++) {
 
 		if(resolutions[res_i]) {
@@ -2480,6 +2497,8 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 		}
 	}
 
+	// restore input plugin
+	iom::IMIN_PLUGIN = save_imin_plugin;
 
 	// ubuffer allocated anyway
 	delete ubuffer;

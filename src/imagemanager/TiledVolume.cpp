@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-04-10. Giulio.     @FIXED the set of the right input plugin when input volume contains TIFF 3D files (in init or load, not in the constructor)
 * 2015-04-15. Alessandro. @FIXED bad/missing exception handling in loadSubvolume_to_UINT8.
 * 2015-04-15. Alessandro. @ADDED definition for default constructor.
 * 2015-04-06. Giulio.     @CHANGED Modified prunt method: printing stacks information is now off by default
@@ -79,8 +80,12 @@ TiledVolume::TiledVolume(const char* _root_dir)  throw (IOException)
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir=%s", _root_dir).c_str(), __iim__current__function__);
 
+	// 2016-04-10. Giulio. @REMOVED because a check is done in both init and load methods and the right input plugin is set
 	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
-	iom::IMIN_PLUGIN = "tiff3D";
+	//if(iom::IMIN_PLUGIN.compare("empty") == 0)
+	//{
+	//	iom::IMIN_PLUGIN = "tiff3D";
+	//}
 
 	//DIM_V = DIM_H = DIM_D = 0;
 	VXL_1 = VXL_2 = VXL_3 = 0;
@@ -113,8 +118,12 @@ TiledVolume::TiledVolume(const char* _root_dir, ref_sys _reference_system, float
     /**/iim::debug(iim::LEV3, strprintf("_root_dir=%s, ref_sys reference_system={%d,%d,%d}, VXL_1=%.4f, VXL_2=%.4f, VXL_3=%.4f",
                                         _root_dir, _reference_system.first, _reference_system.second, _reference_system.third, _VXL_1, _VXL_2, _VXL_3).c_str(), __iim__current__function__);
 
+	// 2016-04-10. Giulio. @REMOVED because a check is done in both init and load methods and the right input plugin is set
 	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
-	iom::IMIN_PLUGIN = "tiff3D";
+	//if(iom::IMIN_PLUGIN.compare("empty") == 0)
+	//{
+	//	iom::IMIN_PLUGIN = "tiff3D";
+	//}
 
 	//DIM_V = DIM_H = DIM_D = 0;
 	VXL_1 = VXL_2 = VXL_3 = 0;
@@ -402,7 +411,7 @@ void TiledVolume::load(char* metadata_filepath) throw (IOException)
 	if ( ffmt == "Tiff3D" )
 	{
 		// 2015-02-27. Alessandro. @ADDED automated selection of IO plugin if not provided.
-		if(iom::IMIN_PLUGIN.compare("empty") == 0)
+		if(iom::IMIN_PLUGIN.compare("tiff3D") != 0)
 			iom::IMIN_PLUGIN = "tiff3D";
 		fmtMngr = new Tiff3DFmtMngr();
 	}
@@ -514,7 +523,7 @@ void TiledVolume::init() throw (IOException)
 	if ( ffmt == "Tiff3D" )
 	{
 		// 2015-02-27. Alessandro. @ADDED automated selection of IO plugin if not provided.
-		if(iom::IMIN_PLUGIN.compare("empty") == 0)
+		if(iom::IMIN_PLUGIN.compare("tiff3D") != 0)
 			iom::IMIN_PLUGIN = "tiff3D";
 		fmtMngr = new Tiff3DFmtMngr();
 	}
