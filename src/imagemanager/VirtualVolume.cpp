@@ -255,7 +255,7 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
     }
 	// 2016-04-09 Giulio. @ADDED to debug error on wrong 2D plugin
 	if ( iom::IMOUT_PLUGIN.compare("empty") == 0 || iom::IMOUT_PLUGIN.compare("tiff3D") == 0 ) {
-		throw iom::exception("in saveImage_from_UINT8(...): wrong input plugin (%s).",iom::IMIN_PLUGIN.c_str());
+		throw iom::exception(iom::strprintf("wrong input plugin (%s).",iom::IMOUT_PLUGIN.c_str()), __iom__current__function__);
 	}
 	if ( nchannels >1 && !(iom::IOPluginFactory::getPlugin2D(iom::IMOUT_PLUGIN)->isChansInterleaved()) ) {
 		throw iom::exception("in saveImage_from_UINT8(...): the plugin do not store channels in interleaved mode: more than one channel not supported yet.");
