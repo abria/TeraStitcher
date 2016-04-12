@@ -119,7 +119,7 @@ class VolumeConverter
 		* of original image are two, the third RGB channel (Blue channel) is set to all zero
 		*************************************************************************************************************/
         void setSrcVolume(const char* _root_dir, const char* _fmt = iim::STACKED_FORMAT.c_str(),
-                          const char* _out_fmt = REAL_REPRESENTATION, bool time_series = false) throw (iim::IOException);
+                          const char* _out_fmt = REAL_REPRESENTATION, bool time_series = false) throw (iim::IOException, iom::exception);
 
 		/*************************************************************************************************************
 		* Method to set the subvolume to be converted
@@ -140,7 +140,7 @@ class VolumeConverter
             int block_width  = -1,                      // tile's width  (for tiled formats)
             int block_depth  = -1,                      // tile's depth  (for tiled formats)
             int method = HALVE_BY_MEAN                  // downsampling method
-        ) throw (iim::IOException);
+        ) throw (iim::IOException, iom::exception);
 
 		/*************************************************************************************************************
 		* Method to be called for tile generation. <> parameters are mandatory, while [] are optional.
@@ -161,7 +161,7 @@ class VolumeConverter
 		void generateTiles(std::string output_path, bool* resolutions = NULL, 
 			int slice_height = -1, int slice_width = -1, int method = HALVE_BY_MEAN, bool show_progress_bar = true, 
             const char* saved_img_format = iim::DEF_IMG_FORMAT.c_str(), int saved_img_depth = iim::NUL_IMG_DEPTH,
-            std::string frame_dir = "")	throw (iim::IOException);
+            std::string frame_dir = "")	throw (iim::IOException, iom::exception);
 		
 
 		/*************************************************************************************************************
@@ -185,7 +185,7 @@ class VolumeConverter
 		void generateTilesVaa3DRaw(std::string output_path, bool* resolutions = NULL, 
 			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool show_progress_bar = true, 
             const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,
-            std::string frame_dir = "")	throw (iim::IOException);
+            std::string frame_dir = "")	throw (iim::IOException, iom::exception);
 		
 
         /*************************************************************************************************************
@@ -236,7 +236,7 @@ class VolumeConverter
 		void generateTilesVaa3DRawMC ( std::string output_path, bool* resolutions = NULL, 
 			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool show_progress_bar = true, 
             const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,
-            std::string frame_dir = "")	throw (iim::IOException);
+            std::string frame_dir = "")	throw (iim::IOException, iom::exception);
 
       /*************************************************************************************************************
         * NEW FORMAT SUPPORTING BDV HDF5 custom format
@@ -261,7 +261,7 @@ class VolumeConverter
 		void generateTilesBDV_HDF5 ( std::string output_path, bool* resolutions = NULL, 
 			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool show_progress_bar = true, 
             const char* saved_img_format = "h5", int saved_img_depth = iim::NUL_IMG_DEPTH,
-            std::string frame_dir = "")	throw (iim::IOException);
+            std::string frame_dir = "")	throw (iim::IOException, iom::exception);
 
 };
 

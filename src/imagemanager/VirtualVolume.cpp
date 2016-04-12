@@ -93,7 +93,7 @@ VirtualVolume::VirtualVolume(void)
 **************************************************************************************************************/
 void VirtualVolume::saveImage(std::string img_path, real32* raw_img, int raw_img_height, int  raw_img_width,
 							 int start_height, int end_height, int start_width, int end_width, 
-                             const char* img_format, int img_depth) throw (IOException)
+                             const char* img_format, int img_depth) throw (IOException, iom::exception)
 {
     /**/iim::debug(iim::LEV3, strprintf("img_path=%s, raw_img_height=%d, raw_img_width=%d, start_height=%d, end_height=%d, start_width=%d, end_width=%d",
                                         img_path.c_str(), raw_img_height, raw_img_width, start_height, end_height, start_width, end_width).c_str(), __iim__current__function__);
@@ -195,7 +195,7 @@ void VirtualVolume::saveImage(std::string img_path, real32* raw_img, int raw_img
 **************************************************************************************************************/
 void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, uint8* raw_ch2, uint8* raw_ch3, 
                            int raw_img_height, int raw_img_width, int start_height, int end_height, int start_width,
-                           int end_width, const char* img_format, int img_depth ) throw (IOException)
+                           int end_width, const char* img_format, int img_depth ) throw (IOException, iom::exception)
 {
     /**/iim::debug(iim::LEV3, strprintf("img_path=%s, raw_img_height=%d, raw_img_width=%d, start_height=%d, end_height=%d, start_width=%d, end_width=%d, img_format=%s, img_depth=%d",
                                         img_path.c_str(), raw_img_height, raw_img_width, start_height, end_height, start_width, end_width, img_format, img_depth).c_str(), __iim__current__function__);
@@ -373,7 +373,7 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
 void VirtualVolume::saveImage_to_Vaa3DRaw(int slice, std::string img_path, real32* raw_img, int raw_img_height, int  raw_img_width,
 						 int start_height, int end_height, int start_width, int end_width, 
 						 const char* img_format, int img_depth
-                         ) throw (IOException)
+                         ) throw (IOException, iom::exception)
 {
     /**/iim::debug(iim::LEV3, strprintf("img_path=%s, raw_img_height=%d, raw_img_width=%d, start_height=%d, end_height=%d, start_width=%d, end_width=%d", img_path.c_str(), raw_img_height, raw_img_width, start_height, end_height, start_width, end_width).c_str(), __iim__current__function__);
 
@@ -476,7 +476,7 @@ void VirtualVolume::saveImage_to_Vaa3DRaw(int slice, std::string img_path, real3
 **************************************************************************************************************/
 void VirtualVolume::saveImage_from_UINT8_to_Vaa3DRaw (int slice, std::string img_path, uint8** raw_ch, int n_chans, sint64 offset, 
                        int raw_img_height, int raw_img_width, int start_height, int end_height, int start_width,
-                       int end_width, const char* img_format, int img_depth ) throw (IOException)
+                       int end_width, const char* img_format, int img_depth ) throw (IOException, iom::exception)
 {
     /**/iim::debug(iim::LEV3, strprintf("img_path=%s, raw_img_height=%d, raw_img_width=%d, start_height=%d, end_height=%d, start_width=%d, end_width=%d", img_path.c_str(), raw_img_height, raw_img_width, start_height, end_height, start_width, end_width).c_str(), __iim__current__function__);
 
@@ -568,7 +568,7 @@ void VirtualVolume::saveImage_from_UINT8_to_Vaa3DRaw (int slice, std::string img
 **************************************************************************************************************/
 void VirtualVolume::saveImage_from_UINT8_to_Tiff3D (int slice, std::string img_path, uint8** raw_ch, int n_chans, sint64 offset, 
                        int raw_img_height, int raw_img_width, int start_height, int end_height, int start_width,
-                       int end_width, const char* img_format, int img_depth, void *fhandle, int n_pages, bool do_open ) throw (IOException)
+                       int end_width, const char* img_format, int img_depth, void *fhandle, int n_pages, bool do_open ) throw (IOException, iom::exception)
 {
     /**/iim::debug(iim::LEV3, strprintf("img_path=%s, raw_img_height=%d, raw_img_width=%d, start_height=%d, end_height=%d, start_width=%d, end_width=%d", img_path.c_str(), raw_img_height, raw_img_width, start_height, end_height, start_width, end_width).c_str(), __iim__current__function__);
 
@@ -908,7 +908,7 @@ void VirtualVolume::halveSample_UINT8 ( uint8** img, int height, int width, int 
 }
 
 // 2014-04-14. Alessandro. @ADDED 'instance_format' method with inputs = {path, format}.
-VirtualVolume* VirtualVolume::instance_format(const char* path, std::string format) throw (iim::IOException)
+VirtualVolume* VirtualVolume::instance_format(const char* path, std::string format) throw (iim::IOException, iom::exception)
 {
     /**/iim::debug(iim::LEV3, strprintf("path = \"%s\", format = \"%s\"", path, format.c_str()).c_str(), __iim__current__function__);
     

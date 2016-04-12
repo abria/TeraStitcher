@@ -184,7 +184,7 @@ public:
     static void saveImage(std::string img_path,   iim::real32* raw_img,       int raw_img_height,   int   raw_img_width,
                               int start_height = 0,   int end_height = - 1,  int start_width = 0,  int end_width = - 1,
                               const char* img_format = iim::DEF_IMG_FORMAT.c_str(),    int img_depth = iim::DEF_IMG_DEPTH		 )
-                                                                                                   throw (iim::IOException);
+                                                                                                   throw (iim::IOException, iom::exception);
 
     /*************************************************************************************************************
     * Save image method from iim::uint8 raw data. <> parameters are mandatory, while [] are optional.
@@ -211,7 +211,7 @@ public:
                                       iim::uint8* raw_ch1, iim::uint8* raw_ch2, iim::uint8* raw_ch3,
 									  int raw_img_height, int raw_img_width,
                                       int start_height=0, int end_height =-1, int start_width=0, int end_width=-1,
-                                      const char* img_format = iim::DEF_IMG_FORMAT.c_str(), int img_depth = iim::DEF_IMG_DEPTH ) throw (iim::IOException);
+                                      const char* img_format = iim::DEF_IMG_FORMAT.c_str(), int img_depth = iim::DEF_IMG_DEPTH ) throw (iim::IOException, iom::exception);
 
 
  	/*************************************************************************************************************
@@ -228,7 +228,7 @@ public:
                               int start_height = 0, int end_height = - 1, int start_width = 0, int end_width = - 1,
                               const char* img_format = iim::DEF_IMG_FORMAT.c_str(), int img_depth = iim::DEF_IMG_DEPTH
 							  )
-                                                                                                   throw (iim::IOException);
+                                                                                                   throw (iim::IOException, iom::exception);
 
    /*************************************************************************************************************
     * Save image method from iim::uint8 raw data to Vaa3D raw format. <> parameters are mandatory, while [] are optional.
@@ -248,7 +248,7 @@ public:
                                       iim::uint8** raw_ch, int n_chans, iim::sint64 offset,
 									  int raw_img_height, int raw_img_width,
                                       int start_height=0, int end_height =-1, int start_width=0, int end_width=-1,
-                                      const char* img_format = iim::DEF_IMG_FORMAT.c_str(), int img_depth = iim::DEF_IMG_DEPTH ) throw (iim::IOException);
+                                      const char* img_format = iim::DEF_IMG_FORMAT.c_str(), int img_depth = iim::DEF_IMG_DEPTH ) throw (iim::IOException, iom::exception);
 
 
 
@@ -277,7 +277,7 @@ public:
 									  int raw_img_height, int raw_img_width,
                                       int start_height=0, int end_height =-1, int start_width=0, int end_width=-1,
                                       const char* img_format = iim::DEF_IMG_FORMAT.c_str(), int img_depth = iim::DEF_IMG_DEPTH, 
-									  void *fhandle = 0, int n_pages = -1, bool do_open = true ) throw (iim::IOException);
+                                      void *fhandle = 0, int n_pages = -1, bool do_open = true ) throw (iim::IOException, iom::exception);
 
 	/*************************************************************************************************************
 	* Performs downsampling at a halved frequency on the given 3D image.  The given image is overwritten in order
@@ -313,7 +313,7 @@ public:
                                    float VXL_1=0.0f, float VXL_2=0.0f, float VXL_3=0.0f) throw (iim::IOException, iom::exception);
 
     // 2015-04-14. Alessandro. @ADDED 'instance_format' method with inputs = {path, format}.
-    static VirtualVolume* instance_format(const char* path, std::string format) throw (iim::IOException);
+    static VirtualVolume* instance_format(const char* path, std::string format) throw (iim::IOException, iom::exception);
     
     // checks whether the volume stored in "path" can be imported directly (i.e., w/o additional metadata provided by the user)
     static bool isDirectlyImportable(const char* path)

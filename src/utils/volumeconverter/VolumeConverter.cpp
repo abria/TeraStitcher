@@ -103,7 +103,7 @@ VolumeConverter::~VolumeConverter()
 }
 
 
-void VolumeConverter::setSrcVolume(const char* _root_dir, const char* _fmt, const char* _out_fmt, bool time_series /* = false */) throw (IOException)
+void VolumeConverter::setSrcVolume(const char* _root_dir, const char* _fmt, const char* _out_fmt, bool time_series /* = false */) throw (IOException, iom::exception)
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir = %s, _fmt = %s, _out_fmt = %s, time_series = %s",
                                          _root_dir, _fmt, _out_fmt, time_series ? "true" : "false").c_str(), __iim__current__function__);
@@ -188,7 +188,7 @@ void VolumeConverter::setSubVolume(int _V0, int _V1, int _H0, int _H1, int _D0, 
 **************************************************************************************************************/
 void VolumeConverter::generateTiles(std::string output_path, bool* resolutions, 
 				int slice_height, int slice_width, int method, bool show_progress_bar, const char* saved_img_format, 
-                int saved_img_depth, std::string frame_dir)	throw (IOException)
+                int saved_img_depth, std::string frame_dir)	throw (IOException, iom::exception)
 {
     printf("in VolumeConverter::generateTiles(path = \"%s\", resolutions = ", output_path.c_str());
     for(int i=0; i< TMITREE_MAX_HEIGHT; i++)
@@ -601,7 +601,7 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resolutions, 
 				int block_height, int block_width, int block_depth, int method, 
 				bool show_progress_bar, const char* saved_img_format, 
-                int saved_img_depth, std::string frame_dir)	throw (IOException)
+                int saved_img_depth, std::string frame_dir)	throw (IOException, iom::exception)
 {
     printf("in VolumeConverter::generateTilesVaa3DRaw(path = \"%s\", resolutions = ", output_path.c_str());
     for(int i=0; i< TMITREE_MAX_HEIGHT; i++)
@@ -1909,7 +1909,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* resolutions, 
 				int block_height, int block_width, int block_depth, int method, 
 				bool show_progress_bar, const char* saved_img_format, 
-                int saved_img_depth, std::string frame_dir )	throw (IOException)
+                int saved_img_depth, std::string frame_dir )	throw (IOException, iom::exception)
 {
     printf("in VolumeConverter::generateTilesVaa3DRawMC(path = \"%s\", resolutions = ", output_path.c_str());
     for(int i=0; i< TMITREE_MAX_HEIGHT; i++)
@@ -2532,7 +2532,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 void VolumeConverter::generateTilesBDV_HDF5 ( std::string output_path, bool* resolutions, 
 				int block_height, int block_width, int block_depth, int method, 
 				bool show_progress_bar, const char* saved_img_format, 
-                int saved_img_depth, std::string frame_dir )	throw (IOException)
+                int saved_img_depth, std::string frame_dir )	throw (IOException, iom::exception)
 {
     printf("in VolumeConverter::generateTilesBDV_HDF5(path = \"%s\", resolutions = ", output_path.c_str());
     for(int i=0; i< TMITREE_MAX_HEIGHT; i++)
@@ -2798,7 +2798,7 @@ void VolumeConverter::convertTo(
     int block_width  /*= -1*/,                      // tile's width  (for tiled formats)
     int block_depth  /*= -1*/,                      // tile's depth  (for tiled formats)
     int method /*=HALVE_BY_MEAN*/                   // downsampling method
-) throw (iim::IOException)
+) throw (iim::IOException, iom::exception)
 {
     printf("in VolumeConverter::convertTo(output_path = \"%s\", output_format = \"%s\", output_bitdepth = %d, isTimeSeries = %s, resolutions = ",
            output_path.c_str(), output_format.c_str(), output_bitdepth, isTimeSeries ? "true" : "false");
