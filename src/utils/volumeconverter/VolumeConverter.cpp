@@ -1311,7 +1311,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 		
 	if ( saved_img_depth != (volume->getBYTESxCHAN() * 8) ) {
 		char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"VolumeConverter::generateTilesVaa3DRaw: mismatch between bits per channel of source (%d) and destination (%d)",
+		sprintf(err_msg,"VolumeConverter::generateTilesVaa3DRawMC: mismatch between bits per channel of source (%d) and destination (%d)",
 			volume->getBYTESxCHAN() * 8, saved_img_depth);
 		throw IOExcpetion(err_msg);
 	}
@@ -1332,10 +1332,11 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
     int ***stacks_height[S_MAX_MULTIRES];   //array of matrices of tiles dimensions at i-th resolution
 	int ***stacks_width[S_MAX_MULTIRES];	
 	int ***stacks_depth[S_MAX_MULTIRES];
-	std::string *chans_dir;
-	std::string resolution_dir;
     std::stringstream file_path[S_MAX_MULTIRES];                            //array of root directory name at i-th resolution
 	int resolutions_size = 0;
+
+	std::string *chans_dir;
+	std::string resolution_dir;
 
 	/* DEFINITIONS OF VARIABILES THAT MANAGE TILES (BLOCKS) ALONG D-direction
 	 * In the following the term 'group' means the groups of slices that are 
@@ -1672,13 +1673,13 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 											datatype = 1;
 										else {
                                             char err_msg[STATIC_STRINGS_SIZE];
-											sprintf(err_msg, "in generateTilesVaa3DRaw(...): unknown image depth (%d)", saved_img_depth);
+											sprintf(err_msg, "in generateTilesVaa3DRawMC(...): unknown image depth (%d)", saved_img_depth);
 											throw IOExcpetion(err_msg);
 										}
 									}
 									else {
                                         char err_msg[STATIC_STRINGS_SIZE];
-										sprintf(err_msg, "in generateTilesVaa3DRaw(...): unknown internal representation (%d)", internal_rep);
+										sprintf(err_msg, "in generateTilesVaa3DRawMC(...): unknown internal representation (%d)", internal_rep);
 										throw IOExcpetion(err_msg);
 									}
 
@@ -1922,7 +1923,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 		
 	if ( saved_img_depth != (volume->getBYTESxCHAN() * 8) ) {
 		char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"VolumeConverter::generateTilesVaa3DRaw: mismatch between bits per channel of source (%d) and destination (%d)",
+		sprintf(err_msg,"VolumeConverter::generateTilesVaa3DRawMC: mismatch between bits per channel of source (%d) and destination (%d)",
 			volume->getBYTESxCHAN() * 8, saved_img_depth);
         throw IOException(err_msg);
 	}
@@ -1943,10 +1944,11 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
     int ***stacks_height[TMITREE_MAX_HEIGHT];   //array of matrices of tiles dimensions at i-th resolution
     int ***stacks_width[TMITREE_MAX_HEIGHT];
     int ***stacks_depth[TMITREE_MAX_HEIGHT];
-	std::string *chans_dir;
-	std::string resolution_dir;
     std::stringstream file_path[TMITREE_MAX_HEIGHT];                            //array of root directory name at i-th resolution
 	int resolutions_size = 0;
+
+	std::string *chans_dir;
+	std::string resolution_dir;
 
 	/* DEFINITIONS OF VARIABILES THAT MANAGE TILES (BLOCKS) ALONG D-direction
 	 * In the following the term 'group' means the groups of slices that are 
@@ -2290,13 +2292,13 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 											datatype = 1;
 										else {
                                             char err_msg[STATIC_STRINGS_SIZE];
-											sprintf(err_msg, "in generateTilesVaa3DRaw(...): unknown image depth (%d)", saved_img_depth);
+											sprintf(err_msg, "in generateTilesVaa3DRawMC(...): unknown image depth (%d)", saved_img_depth);
                                             throw IOException(err_msg);
 										}
 									}
 									else {
                                         char err_msg[STATIC_STRINGS_SIZE];
-										sprintf(err_msg, "in generateTilesVaa3DRaw(...): unknown internal representation (%d)", internal_rep);
+										sprintf(err_msg, "in generateTilesVaa3DRawMC(...): unknown internal representation (%d)", internal_rep);
                                         throw IOException(err_msg);
 									}
 

@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-04-15. Giluio.     @FIXED in 'saveImage_from_UINT8' offset must not be doubled when color depth is 16 bits
 * 2015-12-10. Giluio.     @FIXED added several volume creation alternatives in "instance" methods to include new formats 
 * 2015-04-15. Alessandro. @ADDED 'instance_format' method with inputs = {path, format}.
 * 2015-04-15. Alessandro. @ADDED definition for default constructor.
@@ -309,7 +310,9 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
         }
         else // img->depth == 16
         {
-            int img_data_step = img_width * nchannels * 2;
+            //int img_data_step = img_width * nchannels * 2;
+            // 2016-04-15. Giulio. @FIXED offset is applied to uint16 pointers: is must not be doubled
+            int img_data_step = img_width * nchannels;
             for(int i = 0; i <img_height; i++)
             {
                 uint16* row_data_16bit = ((uint16*)img) + i*img_data_step;
@@ -326,7 +329,7 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
 
     //saving image
 	// Giulio_CV try{
-		// Giulio_CV cvSaveImage(buffer, img);
+	// Giulio_CV cvSaveImage(buffer, img);
 
 	char *err_tiff_fmt;
 
@@ -886,7 +889,7 @@ void VirtualVolume::halveSample_UINT8 ( uint8** img, int height, int width, int 
 						if ( B > A ) A = B;
 
 						//computing mean
-                        img[c][z*(width/2)*(height/2) + i*(width/2) + j] = (uint8) iim::round(A);
+                        img[c][z*(width/2)*(height/2) + i*(width/2) + j] = (uint16) iim::round(A);
 					}
 				}
 			}
