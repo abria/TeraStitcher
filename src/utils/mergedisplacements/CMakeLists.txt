@@ -14,6 +14,9 @@ file(GLOB mergedisplacements_headers *.h)
 file(GLOB mergedisplacements_sources *.cpp)
 add_executable(mergedisplacements ${mergedisplacements_headers} ${mergedisplacements_sources})
 
+# add executable to install target
+install (TARGETS mergedisplacements DESTINATION bin/utils)
+
 # link the executable to the other modules. 
 target_link_libraries(mergedisplacements iomanager )
 target_link_libraries(mergedisplacements tinyxml )

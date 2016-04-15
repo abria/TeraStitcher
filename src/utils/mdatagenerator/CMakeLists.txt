@@ -13,6 +13,9 @@ file(GLOB mdatagenerator_headers *.h)
 file(GLOB mdatagenerator_sources *.cpp)
 add_executable(mdatagenerator ${mdatagenerator_headers} ${mdatagenerator_sources})
 
+# add executable to install target
+install (TARGETS mdatagenerator DESTINATION bin/utils)
+
 # link the executable to the other modules. 
 target_link_libraries(mdatagenerator imagemanager )
 target_link_libraries(mdatagenerator iomanager )

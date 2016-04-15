@@ -17,6 +17,9 @@ file(GLOB UI_headers *.h)
 file(GLOB UI_sources *.cpp)
 add_executable(terastitcher ${UI_headers} ${UI_sources})
 
+# add executable to install target
+install (TARGETS terastitcher DESTINATION bin)
+
 # link the executable to the other modules 
 target_link_libraries(terastitcher stitcher )
 target_link_libraries(terastitcher volumemanager )

@@ -13,6 +13,9 @@ file(GLOB subvolextractor_headers *.h)
 file(GLOB subvolextractor_sources *.cpp)
 add_executable(subvolextractor ${subvolextractor_headers} ${subvolextractor_sources})
 
+# add executable to install target
+install (TARGETS subvolextractor DESTINATION bin/utils)
+
 # link the executable to the other modules. 
 target_link_libraries(subvolextractor imagemanager )
 target_link_libraries(subvolextractor iomanager )

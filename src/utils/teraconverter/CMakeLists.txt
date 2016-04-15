@@ -15,6 +15,9 @@ file(GLOB teraconverter_headers *.h)
 file(GLOB teraconverter_sources *.cpp)
 add_executable(teraconverter ${teraconverter_headers} ${teraconverter_sources})
 
+# add executable to install target
+install (TARGETS teraconverter DESTINATION bin/utils)
+
 # link the executable to the other modules. 
 target_link_libraries(teraconverter volumeconverter )
 target_link_libraries(teraconverter imagemanager )

@@ -16,6 +16,9 @@ file(GLOB example_headers *.h)
 file(GLOB example_sources *.cpp)
 add_executable(example_utility ${example_headers} ${example_sources})
 
+# add executable to install target
+install (TARGETS example_utility DESTINATION bin/utils)
+
 # link the executable to the other modules 
 target_link_libraries(example_utility volumemanager )
 target_link_libraries(example_utility stitcher )

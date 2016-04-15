@@ -41,6 +41,21 @@ if(NOT WITH_QT4 AND NOT WITH_QT5)
 	message(FATAL_ERROR "Please select at least one Qt library (Qt4 or Qt5)")
 endif(NOT WITH_QT4 AND NOT WITH_QT5)
 
+# add executable to install target, including dependencies (Qt libraries)
+SET(APPS "\${CMAKE_INSTALL_PREFIX}/bin/terastitcher-gui")
+IF(WIN32)
+  SET(APPS "\${CMAKE_INSTALL_PREFIX}/bin/terastitcher-gui.exe")
+ENDIF(WIN32)
+INSTALL(TARGETS terastitcher-gui 
+    BUNDLE DESTINATION . COMPONENT Runtime
+    RUNTIME DESTINATION bin COMPONENT Runtime
+    )
+SET(DIRS ${QT_LIBRARY_DIRS})
+INSTALL(CODE "
+    include(BundleUtilities)
+    fixup_bundle( \"${APPS}\" \"\" \"${DIRS}\" )
+    " COMPONENT Runtime)
+
 #target internal dependencies
 target_link_libraries(terastitcher-gui imagemanager )
 target_link_libraries(terastitcher-gui iomanager )

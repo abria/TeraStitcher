@@ -2,6 +2,9 @@
 project( TeraStitcher )
 cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
 
+# include TeraStitcher software version
+include(version.cmake)
+
 # include cmake scripts
 include(cmake/utils.cmake)
 
@@ -67,3 +70,7 @@ FOREACH(subdir ${SUBDIRS})
 		message(STATUS "Include ./utils/" "${subdir} ... OK!")
 	endif(WITH_UTILITY_MODULE_${subdir})
 ENDFOREACH()
+
+# set CPack
+include (${CMAKE_CURRENT_SOURCE_DIR}/cpack/options.cmake)
+include (CPack )
