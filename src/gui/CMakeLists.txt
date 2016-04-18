@@ -113,11 +113,11 @@ endif()
 # so we just copy the (symlink-resolved) Qt libs in the installation folder
 if(UNIX AND NOT APPLE)
 	FOREACH(qt_lib_file ${qt_lib_files})
-		get_filename_component(qt_lib_real_file "${qt_lib_file}" REALPATH)
-		install(FILES ${qt_lib_real_file} DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME ${qt_lib_file})
-		message(STATUS "Qt lib " ${qt_lib_real_file} " will be installated to " ${CMAKE_INSTALL_BINDIR}/${qt_lib_file})
-	ENDFOREACH
-	
+		get_filename_component(qt_lib_real_file ${qt_lib_file} REALPATH)
+		get_filename_component(qt_lib_fname "${qt_lib_file}" NAME)
+		install(FILES ${qt_lib_real_file} DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME ${qt_lib_fname})
+		message(STATUS "Qt lib " ${qt_lib_real_file} " will be installed to " ${CMAKE_INSTALL_BINDIR} " and renamed to " ${qt_lib_fname})
+	ENDFOREACH()
 	# also copy a launch script that sets LD_LIBRARY_PATH to local path
 	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/osinstall/start_terastitcher.sh DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
