@@ -13,7 +13,9 @@ elseif(WITH_QT4)
 else()
 	set(CPACK_PACKAGE_NAME "TeraStitcher-standalone")
 endif()
-set (CPACK_PACKAGING_INSTALL_PREFIX "/usr/local")
+if(UNIX AND NOT APPLE)
+	set (CPACK_PACKAGE_INSTALL_DIRECTORY "/usr/local")
+endif()
 set (CPACK_BUNDLE_NAME TeraStitcher)
 string (CONCAT DESKTOP_LINK_NAME 
 	"TeraStitcher " 
