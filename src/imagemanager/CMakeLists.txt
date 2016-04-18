@@ -11,6 +11,7 @@ include_directories (${CMAKE_SOURCE_DIR}/3rdparty/zlib)
 include_directories (${CMAKE_BINARY_DIR}/3rdparty/zlib)
 include_directories (${CMAKE_SOURCE_DIR}/3rdparty/libtiff)
 include_directories (${CMAKE_BINARY_DIR}/3rdparty/libtiff)
+include_directories (${TeraStitcher_SOURCE_DIR}/3rdparty/tinyxml)
 
 # add STATIC library from all .h and .cpp files
 file(GLOB imagemanager_headers *.h)

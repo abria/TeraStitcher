@@ -11,6 +11,13 @@ ties names are:
 - Rem: a feature no longer available
 
 ============================================================================================
+TeraStitcher version 1.9.6
+April 18th, 2016
+--------------------------------------------------------------------------------------------
+- Fix: I/O bug fixes
+- Dev: added CMake + CPack packing which produces standalone drag-and-droppable packages
+
+
 TeraStitcher version 1.9.45
 March 8th, 2016
 --------------------------------------------------------------------------------------------

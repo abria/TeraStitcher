@@ -14,7 +14,7 @@ file(GLOB subvolextractor_sources *.cpp)
 add_executable(subvolextractor ${subvolextractor_headers} ${subvolextractor_sources})
 
 # add executable to install target
-install (TARGETS subvolextractor DESTINATION bin/utils)
+install (TARGETS subvolextractor RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # link the executable to the other modules. 
 target_link_libraries(subvolextractor imagemanager )

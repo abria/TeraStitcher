@@ -5,6 +5,13 @@ A tool for fast automatic 3D-stitching of teravoxel-sized
 microscopy images (BMC Bioinformatics 2012, 13:316)
 
 ===========================================================
+
+Before using this software, you MUST accept the LICENSE.txt
+
+Documentation,  help and  other info  are available on  our 
+Github wiki at http://abria.github.io/TeraStitcher/.
+
+===========================================================
 Contributors
 
 - Alessandro Bria (email: a.bria@unicas.it).

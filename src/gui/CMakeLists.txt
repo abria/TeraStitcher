@@ -1,62 +1,82 @@
-# CMakeLists.txt in GUI dir
-
 # add used modules to include path
 include_directories (${TeraStitcher_SOURCE_DIR}/iomanager)
 include_directories (${TeraStitcher_SOURCE_DIR}/imagemanager)
-include_directories (${TeraStitcher_SOURCE_DIR}/tinyxml)
 include_directories (${TeraStitcher_SOURCE_DIR}/volumemanager)
 include_directories (${TeraStitcher_SOURCE_DIR}/crossmips)
 include_directories (${TeraStitcher_SOURCE_DIR}/stitcher)
 include_directories (${TeraStitcher_SOURCE_DIR}/common)
 
+
 # add 3rd party modules to include path
 include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty)
 include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty/tclap)
+include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty/tinyxml)
 
 
-# add executable from the all .h and .cpp files
-file(GLOB GUI_headers *.h)
-file(GLOB GUI_sources *.cpp)
+# collect source files
+file(GLOB terastitcher_gui_sources *.h *.cpp *.qrc)
 
-# set CMake 3.* automoc on, so that CMake automatically determines the source files that need moc pre-processing
+
+# enable CMake 3.* Meta-Object Compiler (MOC) and Resource Collection Compiler (RCC) 
 set(CMAKE_AUTOMOC ON)
-
-# set CMake 3.* autorcc on, so that CMake automatically determines the source files that need rcc pre-processing
 set(CMAKE_AUTORCC ON)
 
-# check for either Qt5 or Qt4
-option (WITH_QT5 "With QT5" OFF) 
+
+# create option to link Qt4 or Qt5 (default)
+option (WITH_QT5 "With Qt5" ON) 
+option (WITH_QT4 "With Qt4" OFF) 
+
+
+# find the Qt components we need and store them in qt_lib_files
+# so that we can copy the libs in the installation folder (linux)
 if(WITH_QT5)
 	find_package(Qt5Widgets REQUIRED)
-	add_executable(terastitcher-gui ${GUI_headers} ${GUI_sources} icons.qrc)
-	target_link_libraries(terastitcher-gui Qt5::Widgets)
-endif(WITH_QT5)
-option (WITH_QT4 "With QT4" OFF) 
+	get_target_property(tmp Qt5::Widgets LOCATION)
+	LIST(APPEND qt_lib_files ${tmp})
+	get_target_property(tmp Qt5::Core LOCATION)
+	LIST(APPEND qt_lib_files ${tmp})
+	get_target_property(tmp Qt5::Gui LOCATION)
+	LIST(APPEND qt_lib_files ${tmp})
+endif()
 if(WITH_QT4)
 	find_package(Qt4 REQUIRED)
-	add_executable(terastitcher-gui ${GUI_headers} ${GUI_sources} icons.qrc)
-	target_link_libraries(terastitcher-gui Qt4::QtGui)
-endif(WITH_QT4)
+	get_target_property(tmp Qt4::QtGui LOCATION)
+	LIST(APPEND qt_lib_files ${tmp})
+	get_target_property(tmp Qt4::QtCore LOCATION)
+	LIST(APPEND qt_lib_files ${tmp})
+endif()
 if(NOT WITH_QT4 AND NOT WITH_QT5)
 	message(FATAL_ERROR "Please select at least one Qt library (Qt4 or Qt5)")
-endif(NOT WITH_QT4 AND NOT WITH_QT5)
+else()
+	FOREACH(qt_lib_file ${qt_lib_files})
+		message(STATUS "Detected Qt lib " ${qt_lib_file}) 
+	ENDFOREACH()
+endif()
 
-# add executable to install target, including dependencies (Qt libraries)
-SET(APPS "\${CMAKE_INSTALL_PREFIX}/bin/terastitcher-gui")
-IF(WIN32)
-  SET(APPS "\${CMAKE_INSTALL_PREFIX}/bin/terastitcher-gui.exe")
-ENDIF(WIN32)
-INSTALL(TARGETS terastitcher-gui 
-    BUNDLE DESTINATION . COMPONENT Runtime
-    RUNTIME DESTINATION bin COMPONENT Runtime
-    )
-SET(DIRS ${QT_LIBRARY_DIRS})
-INSTALL(CODE "
-    include(BundleUtilities)
-    fixup_bundle( \"${APPS}\" \"\" \"${DIRS}\" )
-    " COMPONENT Runtime)
 
-#target internal dependencies
+# set platform-specific bundle icons
+if(APPLE)
+  list(APPEND terastitcher_gui_sources icons/terastitcher.icns)
+  set_source_files_properties(icons/terastitcher.icns PROPERTIES
+    MACOSX_PACKAGE_LOCATION Resources)
+elseif(UNIX)
+  install(FILES "icons/terastitcher.desktop" DESTINATION "${INSTALL_XDG_APPS_DIR}")
+  install(FILES "icons/terastitcher.png" DESTINATION "${INSTALL_XDG_ICON_DIR}")
+elseif(WIN32)
+  list(APPEND terastitcher_gui_sources icons/terastitcher.rc)
+endif()
+
+
+# add executable and link Qt components
+add_executable(terastitcher-gui WIN32 MACOSX_BUNDLE ${terastitcher_gui_sources})
+if(WITH_QT5)
+	target_link_libraries(terastitcher-gui Qt5::Widgets)
+endif()
+if(WITH_QT4)
+	target_link_libraries(terastitcher-gui Qt4::QtGui)
+endif()
+
+# link to internal dependencies
 target_link_libraries(terastitcher-gui imagemanager )
 target_link_libraries(terastitcher-gui iomanager )
 target_link_libraries(terastitcher-gui volumemanager )
@@ -64,3 +84,39 @@ target_link_libraries(terastitcher-gui tinyxml )
 target_link_libraries(terastitcher-gui stitcher )
 target_link_libraries(terastitcher-gui crossmips )
 target_link_libraries(terastitcher-gui common )
+
+# installation
+install(TARGETS terastitcher-gui
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR}
+  )
+
+# make sure bundle is standalone and it can be drag-and-dropped
+if(APPLE)
+  set_target_properties(terastitcher-gui PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/osinstall/Info.plist)
+endif()
+if((APPLE OR WIN32))
+  set(pfx ${CMAKE_INSTALL_BINDIR}/)
+  set(sfx "")
+  if(APPLE)
+    set(sfx ".app")
+  elseif(WIN32)
+    set(sfx ".exe")
+  endif()
+
+  get_target_property(output_name terastitcher-gui NAME)
+  set(exe "${pfx}${output_name}${sfx}")
+
+  include(InstallRequiredSystemLibraries)
+  include(DeployQt5)
+  install_qt5_executable(${exe})
+endif()
+
+# DeployQt5 does not support Linux
+# so we just copy the Qt libs in the installation folder
+if(UNIX AND NOT APPLE)
+	install(FILES 
+	${CMAKE_CURRENT_SOURCE_DIR}/osinstall/start_terastitcher.sh
+	${qt_lib_files} 
+	DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()

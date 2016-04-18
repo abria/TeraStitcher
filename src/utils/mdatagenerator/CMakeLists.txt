@@ -14,7 +14,7 @@ file(GLOB mdatagenerator_sources *.cpp)
 add_executable(mdatagenerator ${mdatagenerator_headers} ${mdatagenerator_sources})
 
 # add executable to install target
-install (TARGETS mdatagenerator DESTINATION bin/utils)
+install (TARGETS mdatagenerator RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # link the executable to the other modules. 
 target_link_libraries(mdatagenerator imagemanager )

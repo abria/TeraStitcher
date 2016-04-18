@@ -16,7 +16,7 @@ file(GLOB teraconverter_sources *.cpp)
 add_executable(teraconverter ${teraconverter_headers} ${teraconverter_sources})
 
 # add executable to install target
-install (TARGETS teraconverter DESTINATION bin/utils)
+install (TARGETS teraconverter RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # link the executable to the other modules. 
 target_link_libraries(teraconverter volumeconverter )
