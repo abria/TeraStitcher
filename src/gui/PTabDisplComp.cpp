@@ -164,8 +164,8 @@ PTabDisplComp::PTabDisplComp(QMyTabWidget* _container, int _tab_index) : QWidget
     tmp->setSpacing(6);
     basicpanel_layout->addLayout(tmp,                0,1,1,11);
     basicpanel_layout->addWidget(algorithm_label,    1,0,1,1);
-    algorithm_cbox->setFixedWidth(150);
-    channel_selection->setFixedWidth(150);
+    //algorithm_cbox->setFixedWidth(150);
+    //channel_selection->setFixedWidth(150);
     basicpanel_layout->addWidget(algorithm_cbox,     1,1,1,2);
     basicpanel_layout->addWidget(subvoldims_label,   2,0,1,1);
     basicpanel_layout->addWidget(subvoldims_sbox,    2,1,1,2);
@@ -191,7 +191,7 @@ PTabDisplComp::PTabDisplComp(QMyTabWidget* _container, int _tab_index) : QWidget
     QGridLayout* advancedpanel_layout = new QGridLayout();
     advancedpanel_layout->addWidget(stackrowstbp_label,     0,0,1,1);
     stackrowstbp_label->setFixedWidth(200);
-    startrow_sbox->setFixedWidth(150);
+   // startrow_sbox->setFixedWidth(150);
     advancedpanel_layout->addWidget(startrow_sbox,          0,1,1,3);
     advancedpanel_layout->addWidget(to_label_1,             0,4,1,1);
     advancedpanel_layout->addWidget(endrow_sbox,            0,5,1,3);

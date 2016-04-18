@@ -12,15 +12,12 @@ QHelpBox::QHelpBox(QWidget *_parent) : QWidget(_parent)
                            "");
     helpBox->setWordWrap(true);
 
-    #ifdef Q_WS_WIN
+  
     QFont tinyFont = QApplication::font();
-    tinyFont.setPointSize(8);
+	#if defined Q_OS_WIN
+    tinyFont.setPointSize(7);
+	#endif
     helpBox->setFont(tinyFont);
-    #else
-    QFont tinyFont = QApplication::font();
-    tinyFont.setPointSize(9);
-    helpBox->setFont(tinyFont);
-    #endif
 
     QPixmap pixmap(":/icons/help.png");
     helpIcon = new QLabel();

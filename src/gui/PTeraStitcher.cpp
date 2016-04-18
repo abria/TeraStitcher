@@ -177,18 +177,18 @@ PTeraStitcher::PTeraStitcher(QWidget *parent) : QWidget(parent)
     bottomBar->addWidget(progressBar, 1,0,1,18);
     bottomBar->addWidget(startButton, 1,18,1,1);
     bottomBar->addWidget(stopButton, 1,19,1,1);
-    bottomBar->setContentsMargins(5,0,5,5);
+    //bottomBar->setContentsMargins(5,0,5,5);
     QVBoxLayout* layout = new QVBoxLayout();
     layout->addWidget(menuBar, 0);
     layout->addWidget(tabs, 1);
-    helpBox->setFixedHeight(55);
+    helpBox->setFixedHeight(100);
     QGridLayout *helpBoxLayout = new QGridLayout();
     helpBoxLayout->addWidget(helpBox, 0, 0);
-    helpBoxLayout->setContentsMargins(5,5,5,0);
+    //helpBoxLayout->setContentsMargins(5,5,5,0);
     layout->addLayout(helpBoxLayout);
     layout->addLayout(bottomBar, 0);
     layout->setSpacing(0);
-    layout->setContentsMargins(0,0,0,0);
+    //layout->setContentsMargins(0,0,0,0);
     setLayout(layout);
 
     // signals and slots
@@ -208,7 +208,8 @@ PTeraStitcher::PTeraStitcher(QWidget *parent) : QWidget(parent)
     //window attributes
     setWindowTitle(tr("TeraStitcher v") + (terastitcher::version + " (with Qt " + ts::qtversion + ")").c_str());
     setWindowFlags(Qt::WindowStaysOnTopHint);
-    setFixedSize(800, 600);
+	//resize(1024, 768);
+//    setFixedSize(800, 600);
 //    setFixedSize(1024, 768);
     show();
     move(QApplication::desktop()->screen()->rect().center() - rect().center());

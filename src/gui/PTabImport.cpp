@@ -65,21 +65,26 @@ PTabImport::PTabImport(QMyTabWidget* _container, int _tab_index) : QWidget(), co
     #endif
 
     //import form widgets
+#ifdef Q_OS_MAC
+	QFont smallFont;
+#else
+	QFont smallFont("", 8);
+#endif
     import_form = new QGroupBox("Import form");
     path_field    = new QPrefixSuffixLineEdit("Volume/XML path: ");
-    path_field->setFont(QFont("", 8));
+    path_field->setFont(smallFont);
     path_field->setTextMargins(5,0,0,0);
     voldir_button       = new QPushButton("Import from dir...");
     projfile_button     = new QPushButton("Open XML...");
     regex_field = new QPrefixSuffixLineEdit(  "Image name regex: ");
-    regex_field->setFont(QFont("", 8));
+    regex_field->setFont(smallFont);
     regex_field->setTextMargins(5,0,0,0);
     connect(regex_field, SIGNAL(textChanged(QString)), this, SLOT(regexFieldChanged()));
     regex_field->installEventFilter(this);
     rescan_checkbox = new QCheckBox("(Re-)scan all files");
-    rescan_checkbox->setFont(QFont("", 8));
+    rescan_checkbox->setFont(smallFont);
     imin_plugin_cbox = new QComboBox();
-    imin_plugin_cbox->setFont(QFont("", 8));
+    imin_plugin_cbox->setFont(smallFont);
     std::vector<std::string> ioplugins = iom::IOPluginFactory::registeredPluginsList();
     imin_plugin_cbox->addItem("--- I/O plugin: ---");
     for(int i=0; i<ioplugins.size(); i++)
@@ -102,7 +107,7 @@ PTabImport::PTabImport(QMyTabWidget* _container, int _tab_index) : QWidget(), co
     axs1_field->lineEdit()->setAlignment(Qt::AlignCenter);
     for(int i = 0; i < axs1_field->count(); i++)
         axs1_field->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);
-    axs1_field->setFont(QFont("", 8));
+    axs1_field->setFont(smallFont);
     axs2_field = new QComboBox();
     axs2_field->addItem("--- second axis ---");
     axs2_field->addItem("X");
@@ -116,9 +121,9 @@ PTabImport::PTabImport(QMyTabWidget* _container, int _tab_index) : QWidget(), co
     axs2_field->lineEdit()->setAlignment(Qt::AlignCenter);
     for(int i = 0; i < axs2_field->count(); i++)
         axs2_field->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);
-    axs2_field->setFont(QFont("", 8));
+    axs2_field->setFont(smallFont);
     axs3_field = new QComboBox();
-    axs3_field->setFont(QFont("", 8));
+    axs3_field->setFont(smallFont);
     axs3_field->addItem("--- third axis ---");
     axs3_field->addItem("X");
     axs3_field->addItem("-X");
@@ -134,15 +139,15 @@ PTabImport::PTabImport(QMyTabWidget* _container, int _tab_index) : QWidget(), co
     vxl1_field = new QDoubleSpinBox();
     vxl1_field->setAlignment(Qt::AlignCenter);
     vxl1_field->setPrefix(QString("voxel (").append(QChar(0x03BC)).append("m): "));
-    vxl1_field->setFont(QFont("", 8));
+    vxl1_field->setFont(smallFont);
     vxl2_field = new QDoubleSpinBox();
     vxl2_field->setPrefix(QString("voxel (").append(QChar(0x03BC)).append("m): "));
     vxl2_field->setAlignment(Qt::AlignCenter);
-    vxl2_field->setFont(QFont("", 8));
+    vxl2_field->setFont(QFont(smallFont));
     vxl3_field = new QDoubleSpinBox();
     vxl3_field->setPrefix(QString("voxel (").append(QChar(0x03BC)).append("m): "));
     vxl3_field->setAlignment(Qt::AlignCenter);
-    vxl3_field->setFont(QFont("", 8));
+    vxl3_field->setFont(smallFont);
     axs1_field->setVisible(false);
     axs2_field->setVisible(false);
     axs3_field->setVisible(false);
@@ -150,7 +155,7 @@ PTabImport::PTabImport(QMyTabWidget* _container, int _tab_index) : QWidget(), co
     vxl2_field->setVisible(false);
     vxl3_field->setVisible(false);
     vol_format_cbox = new QComboBox();
-    vol_format_cbox->setFont(QFont("", 8));
+    vol_format_cbox->setFont(smallFont);
     vol_format_cbox->setEditable(true);
     vol_format_cbox->lineEdit()->setReadOnly(true);
     vol_format_cbox->lineEdit()->setAlignment(Qt::AlignCenter);
@@ -162,7 +167,7 @@ PTabImport::PTabImport(QMyTabWidget* _container, int _tab_index) : QWidget(), co
         vol_format_cbox->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);
 //    vol_format_cbox->setVisible(false);
     sparsedata_checkbox = new QCheckBox("Sparse data");
-    sparsedata_checkbox->setFont(QFont("", 8));
+    sparsedata_checkbox->setFont(smallFont);
 //    sparsedata_checkbox->setVisible(false);
 
     //info panel widgets
@@ -260,16 +265,16 @@ PTabImport::PTabImport(QMyTabWidget* _container, int _tab_index) : QWidget(), co
     // import form
     // import form: row 1
     QHBoxLayout* import_row_1 = new QHBoxLayout();
-    path_field->setFixedWidth(430);
+    path_field->setFixedWidth(490);
     import_row_1->addWidget(path_field);
-    voldir_button->setFixedWidth(170);
+    voldir_button->setFixedWidth(230);
     import_row_1->addWidget(voldir_button);
     import_row_1->addWidget(projfile_button, 1);
     // import form: row 2
     QHBoxLayout* import_row_2 = new QHBoxLayout();
-    regex_field->setFixedWidth(430);
+    regex_field->setFixedWidth(490);
     import_row_2->addWidget(regex_field);
-    imin_plugin_cbox->setFixedWidth(170);
+    imin_plugin_cbox->setFixedWidth(230);
     import_row_2->addWidget(imin_plugin_cbox);
     import_row_2->addWidget(rescan_checkbox, 1);
     // import form - reimport panel
@@ -285,9 +290,9 @@ PTabImport::PTabImport(QMyTabWidget* _container, int _tab_index) : QWidget(), co
     axes_layout->addWidget(axs2_field, 1);
     axes_layout->addWidget(axs3_field, 1);
     axes_row->setLayout(axes_layout);
-    axes_row->setFixedWidth(430);
+    axes_row->setFixedWidth(490);
     reimport_panel_layout_row1->addWidget(axes_row);
-    vol_format_cbox->setFixedWidth(170);
+    vol_format_cbox->setFixedWidth(230);
     reimport_panel_layout_row1->addWidget(vol_format_cbox);
     reimport_panel_layout_row1->addWidget(sparsedata_checkbox, 1);
     reimport_panel_layout->addLayout(reimport_panel_layout_row1);
@@ -300,7 +305,7 @@ PTabImport::PTabImport(QMyTabWidget* _container, int _tab_index) : QWidget(), co
     voxel_layout->addWidget(vxl2_field, 1);
     voxel_layout->addWidget(vxl3_field, 1);
     voxel_row->setLayout(voxel_layout);
-    voxel_row->setFixedWidth(430);
+    voxel_row->setFixedWidth(490);
     reimport_panel_layout_row2->addWidget(voxel_row);
     reimport_panel_layout_row2->addStretch(1);
     reimport_panel_layout->addLayout(reimport_panel_layout_row2);
@@ -317,7 +322,7 @@ PTabImport::PTabImport(QMyTabWidget* _container, int _tab_index) : QWidget(), co
     //info panel
     QGridLayout* info_panel_layout = new QGridLayout();
     info_panel_layout->addWidget(volumedir_label,       0,0,1,1);
-    volumedir_label->setFixedWidth(200);
+    volumedir_label->setFixedWidth(230);
     info_panel_layout->addWidget(volumedir_field,       0,1,1,11);
     info_panel_layout->addWidget(volume_dims_label,     1,0,1,1);
     info_panel_layout->addWidget(nrows_field,           1,1,1,3);
@@ -349,8 +354,8 @@ PTabImport::PTabImport(QMyTabWidget* _container, int _tab_index) : QWidget(), co
     info_panel_layout->addWidget(slice_spinbox,         6,1,1,3);
 
     QHBoxLayout* slice_format_layout = new QHBoxLayout();
-//    channel_selection->setFixedWidth(80);
-//    imgdepth_cbox->setFixedWidth(80);
+    //channel_selection->setFixedWidth(80);
+   // imgdepth_cbox->setFixedWidth(80);
     slice_format_layout->addWidget(channel_selection, 1);
     slice_format_layout->addSpacing(10);
     slice_format_layout->addWidget(imgdepth_cbox, 1);

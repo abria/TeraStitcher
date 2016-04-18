@@ -65,23 +65,31 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     printf("TeraStitcher plugin [thread %d] >> PTabMergeTiles created\n", this->thread()->currentThreadId());
     #endif
 
+#if defined Q_OS_MAC
+	QFont smallFont;
+#elif defined Q_OS_WIN
+	QFont smallFont("", 7);
+#else 
+	QFont smallFont("", 8);
+#endif
+
     //basic panel widgets
     basic_panel = new QWidget();
     savedir_label = new QLabel("Save to:");
     savedir_field = new QLineEdit();
-    savedir_field->setFont(QFont("",8));
+    savedir_field->setFont(smallFont);
     browse_button = new QPushButton("...");
     resolutions_label = new QLabel(QString("Resolution (X ").append(QChar(0x00D7)).append(" Y ").append(QChar(0x00D7)).append(" Z)"));
-    resolutions_label->setFont(QFont("",8));
+    resolutions_label->setFont(smallFont);
     resolutions_label->setAlignment(Qt::AlignCenter);
     resolutions_size_label = new QLabel("Size (GVoxels)");
-    resolutions_size_label->setFont(QFont("",8));
+    resolutions_size_label->setFont(smallFont);
     resolutions_size_label->setAlignment(Qt::AlignCenter);
     resolutions_save_label = new QLabel("Save to disk");
-    resolutions_save_label->setFont(QFont("",8));
+    resolutions_save_label->setFont(smallFont);
     resolutions_save_label->setAlignment(Qt::AlignCenter);
     resolutions_view_label = new QLabel("Open");
-    resolutions_view_label->setFont(QFont("",8));
+    resolutions_view_label->setFont(smallFont);
     resolutions_view_label->setAlignment(Qt::AlignCenter);
     outputs_label      = new QLabel("Outputs:");
     outputs_label->setAlignment(Qt::AlignVCenter);
@@ -102,7 +110,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     }
     volumeformat_label      = new QLabel("Format:");
     vol_format_cbox = new QComboBox();
-    vol_format_cbox->setFont(QFont("", 8));
+    vol_format_cbox->setFont(smallFont);
     vol_format_cbox->setEditable(true);
     vol_format_cbox->lineEdit()->setReadOnly(true);
     vol_format_cbox->lineEdit()->setAlignment(Qt::AlignCenter);
@@ -117,7 +125,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     PTeraStitcher::setEnabledComboBoxItem(vol_format_cbox, 0, false);
 
     imout_plugin_cbox = new QComboBox();
-    imout_plugin_cbox->setFont(QFont("", 8));
+    imout_plugin_cbox->setFont(smallFont);
     std::vector<std::string> ioplugins = iom::IOPluginFactory::registeredPluginsList();
     imout_plugin_cbox->addItem("--- I/O plugin: ---");
     for(int i=0; i<ioplugins.size(); i++)
@@ -135,25 +143,25 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     block_height_field->setMaximum(4096);
     block_height_field->setValue(512);
     block_height_field->setSuffix(" (height)");
-    block_height_field->setFont(QFont("", 9));
+    block_height_field->setFont(smallFont);
     block_width_field        = new QSpinBox();
     block_width_field->setAlignment(Qt::AlignCenter);
     block_width_field->setMinimum(-1);
     block_width_field->setMaximum(4096);
     block_width_field->setValue(512);
     block_width_field->setSuffix(" (width)");
-    block_width_field->setFont(QFont("", 9));
+    block_width_field->setFont(smallFont);
     block_depth_field        = new QSpinBox();
     block_depth_field->setAlignment(Qt::AlignCenter);
     block_depth_field->setMinimum(-1);
     block_depth_field->setMaximum(1024);
     block_depth_field->setValue(256);
     block_depth_field->setSuffix(" (depth)");
-    block_depth_field->setFont(QFont("", 9));
+    block_depth_field->setFont(smallFont);
     memocc_field = new QLineEdit();
     memocc_field->setReadOnly(true);
     memocc_field->setAlignment(Qt::AlignLeft);
-    memocc_field->setFont(QFont("", 9));
+    memocc_field->setFont(smallFont);
     memocc_field->setStyleSheet("background-color: #ACDCA5");
     memocc_field->setTextMargins(5,0,0,0);
     showAdvancedButton = new QPushButton(QString("Advanced options ").append(QChar(0x00BB)), this);
@@ -166,42 +174,42 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     row0_field->setAlignment(Qt::AlignCenter);
     row0_field->setMinimum(-1);
     row0_field->setValue(-1);
-    row0_field->setFont(QFont("", 9));
+    row0_field->setFont(smallFont);
     row0_field->setPrefix("[");
     row1_field = new QSpinBox();
     row1_field->setAlignment(Qt::AlignCenter);
     row1_field->setMinimum(-1);
     row1_field->setValue(-1);
-    row1_field->setFont(QFont("", 9));
+    row1_field->setFont(smallFont);
     row1_field->setSuffix("]");
     col0_field = new QSpinBox();
     col0_field->setAlignment(Qt::AlignCenter);
     col0_field->setMinimum(-1);
     col0_field->setValue(-1);
-    col0_field->setFont(QFont("", 9));
+    col0_field->setFont(smallFont);
     col0_field->setPrefix("[");
     col1_field = new QSpinBox();
     col1_field->setAlignment(Qt::AlignCenter);
     col1_field->setMinimum(-1);
     col1_field->setValue(-1);
-    col1_field->setFont(QFont("", 9));
+    col1_field->setFont(smallFont);
     col1_field->setSuffix("]");
     slice0_field = new QSpinBox();
     slice0_field->setAlignment(Qt::AlignCenter);
     slice0_field->setMinimum(-1);
     slice0_field->setMaximum(-1);
     slice0_field->setValue(-1);
-    slice0_field->setFont(QFont("", 9));
+    slice0_field->setFont(smallFont);
     slice0_field->setPrefix("[");
     slice1_field = new QSpinBox();
     slice1_field->setAlignment(Qt::AlignCenter);
     slice1_field->setMinimum(-1);
     slice1_field->setMaximum(-1);
     slice1_field->setValue(-1);
-    slice1_field->setFont(QFont("", 9));
+    slice1_field->setFont(smallFont);
     slice1_field->setSuffix("]");
     excludenonstitchables_cbox = new QCheckBox("stitchables only");
-    excludenonstitchables_cbox->setFont(QFont("", 9));
+    excludenonstitchables_cbox->setFont(smallFont);
     blendingalgo_label = new QLabel("Blending:");
     blendingalbo_cbox = new QComboBox();
     blendingalbo_cbox->insertItem(0, "No Blending");
@@ -213,9 +221,9 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     for(int i = 0; i < blendingalbo_cbox->count(); i++)
         blendingalbo_cbox->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);
     blendingalbo_cbox->setCurrentIndex(1);
-    blendingalbo_cbox->setFont(QFont("", 9));
+    blendingalbo_cbox->setFont(smallFont);
     restoreSPIM_label = new QLabel("remove SPIM artifacts: ");
-    restoreSPIM_label->setFont(QFont("", 9));
+    restoreSPIM_label->setFont(smallFont);
     restoreSPIM_cbox = new QComboBox();
     restoreSPIM_cbox->insertItem(0, "None");
     restoreSPIM_cbox->insertItem(1, "Zebrated pattern (Y)");
@@ -226,7 +234,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     restoreSPIM_cbox->lineEdit()->setAlignment(Qt::AlignCenter);
     for(int i = 0; i < restoreSPIM_cbox->count(); i++)
         restoreSPIM_cbox->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);
-    restoreSPIM_cbox->setFont(QFont("", 9));
+    restoreSPIM_cbox->setFont(smallFont);
     imgformat_label = new QLabel("");
     img_format_cbox = new QComboBox();
     img_format_cbox->insertItem(0, "tif");
@@ -242,7 +250,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     img_format_cbox->insertItem(10, "ppm");
     img_format_cbox->insertItem(11, "sr");
     img_format_cbox->insertItem(12, "ras");
-    img_format_cbox->setFont(QFont("", 9));
+    img_format_cbox->setFont(smallFont);
     img_format_cbox->setEditable(true);
     img_format_cbox->lineEdit()->setReadOnly(true);
     img_format_cbox->lineEdit()->setAlignment(Qt::AlignCenter);
@@ -251,7 +259,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     imgdepth_cbox = new QComboBox();
     imgdepth_cbox->insertItem(0, "8 bits");
     imgdepth_cbox->insertItem(1, "16 bits");
-    imgdepth_cbox->setFont(QFont("", 9));
+    imgdepth_cbox->setFont(smallFont);
     imgdepth_cbox->setEditable(true);
     imgdepth_cbox->lineEdit()->setReadOnly(true);
     imgdepth_cbox->lineEdit()->setAlignment(Qt::AlignCenter);
@@ -262,7 +270,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     channel_selection->addItem("channel R");
     channel_selection->addItem("channel G");
     channel_selection->addItem("channel B");
-    channel_selection->setFont(QFont("", 8));
+    channel_selection->setFont(smallFont);
     channel_selection->setEditable(true);
     channel_selection->lineEdit()->setReadOnly(true);
     channel_selection->lineEdit()->setAlignment(Qt::AlignCenter);
@@ -304,9 +312,9 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     basic_panel_row_2->addWidget(outputs_label,                 1,      0,   S_MAX_MULTIRES, 1);
     for(int i=0; i<S_MAX_MULTIRES; i++)
     {
-        resolutions_fields[i]->setFont(QFont("", 9));
+        resolutions_fields[i]->setFont(smallFont);
         resolutions_fields[i]->setFixedWidth(200);
-        resolutions_sizes[i]->setFont(QFont("", 9));
+        resolutions_sizes[i]->setFont(smallFont);
         resolutions_sizes[i]->setFixedWidth(120);
         basic_panel_row_2->addWidget(resolutions_fields[i],     1+i,    1,  1, 6);
         basic_panel_row_2->addWidget(resolutions_sizes[i],      1+i,    7,  1, 3);
@@ -368,11 +376,11 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     selection_label->setFixedWidth(left_margin);
     advancedpanel_row1->addWidget(selection_label);
     QLabel* rowLabel = new QLabel(" (rows)");
-    rowLabel->setFont(QFont("", 8));
+    rowLabel->setFont(smallFont);
     QLabel* colLabel = new QLabel(" (cols)");
-    colLabel->setFont(QFont("", 8));
+    colLabel->setFont(smallFont);
     QLabel* sliceLabel = new QLabel(" (slices)");
-    sliceLabel->setFont(QFont("", 8));
+    sliceLabel->setFont(smallFont);
     rowLabel->setFixedWidth(60);
     colLabel->setFixedWidth(60);
     sliceLabel->setFixedWidth(60);
