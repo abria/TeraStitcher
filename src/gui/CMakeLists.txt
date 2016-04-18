@@ -32,30 +32,21 @@ option (WITH_QT4 "With Qt4" OFF)
 if(WITH_QT5)
 	find_package(Qt5Widgets REQUIRED)
 	get_target_property(tmp Qt5::Widgets LOCATION)
-	get_filename_component(tmp "${tmp}" REALPATH)
 	LIST(APPEND qt_lib_files ${tmp})
 	get_target_property(tmp Qt5::Core LOCATION)
-	get_filename_component(tmp "${tmp}" REALPATH)
 	LIST(APPEND qt_lib_files ${tmp})
 	get_target_property(tmp Qt5::Gui LOCATION)
-	get_filename_component(tmp "${tmp}" REALPATH)
 	LIST(APPEND qt_lib_files ${tmp})
 endif()
 if(WITH_QT4)
 	find_package(Qt4 REQUIRED)
 	get_target_property(tmp Qt4::QtGui LOCATION)
-	get_filename_component(tmp "${tmp}" REALPATH)
 	LIST(APPEND qt_lib_files ${tmp})
 	get_target_property(tmp Qt4::QtCore LOCATION)
-	get_filename_component(tmp "${tmp}" REALPATH)
 	LIST(APPEND qt_lib_files ${tmp})
 endif()
 if(NOT WITH_QT4 AND NOT WITH_QT5)
 	message(FATAL_ERROR "Please select at least one Qt library (Qt4 or Qt5)")
-else()
-	FOREACH(qt_lib_file ${qt_lib_files})
-		message(STATUS "Detected Qt lib file at " ${qt_lib_file}) 
-	ENDFOREACH()
 endif()
 
 
@@ -119,10 +110,14 @@ if((APPLE OR WIN32))
 endif()
 
 # DeployQt5 does not support Linux
-# so we just copy the Qt libs in the installation folder
+# so we just copy the (symlink-resolved) Qt libs in the installation folder
 if(UNIX AND NOT APPLE)
-	install(FILES 
-	${CMAKE_CURRENT_SOURCE_DIR}/osinstall/start_terastitcher.sh
-	${qt_lib_files} 
-	DESTINATION ${CMAKE_INSTALL_BINDIR})
+	FOREACH(qt_lib_file ${qt_lib_files})
+		get_filename_component(qt_lib_real_file "${qt_lib_file}" REALPATH)
+		install(FILES ${qt_lib_real_file} DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME ${qt_lib_file})
+		message(STATUS "Qt lib " ${qt_lib_real_file} " will be installated to " ${CMAKE_INSTALL_BINDIR}/${qt_lib_file})
+	ENDFOREACH
+	
+	# also copy a launch script that sets LD_LIBRARY_PATH to local path
+	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/osinstall/start_terastitcher.sh DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
