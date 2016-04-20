@@ -1142,6 +1142,8 @@ VirtualVolume* VirtualVolume::instance(const char* path, std::string format,
             volume = new SimpleVolumeRaw(path);
         else if(format.compare(SIMPLE_FORMAT) == 0)
             volume = new SimpleVolume(path);
+        else if(format.compare(TIME_SERIES) == 0)
+            volume = new TimeSeries(path);
         else
             throw IOException(strprintf("in VirtualVolume::instance(): Unsupported format \"%s\" for path \"%s\" which is a directory", format.c_str(), path), __iim__current__function__);
     }
