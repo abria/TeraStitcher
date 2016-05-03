@@ -53,6 +53,138 @@ using namespace std;
 using namespace iim;
 
 
+
+bool initResumer ( const char *out_fmt, const char *output_path, int resolutions_size, bool* resolutions, 
+				   int slice_height, int slice_width, int method, const char* saved_img_format, int saved_img_depth, FILE *&fhandle ) throw (iim::IOException) {
+	size_t  str_len;
+	char resumer_filepath[STATIC_STRINGS_SIZE];
+	char err_msg[STATIC_STRINGS_SIZE];
+
+	sprintf(resumer_filepath, "%s/%s", output_path, RESUMER_STATUS_FILE_NAME);
+    if ( iim::isFile(resumer_filepath) ) {
+		if ( (fhandle = fopen(resumer_filepath,"rb")) == 0 ) {
+			sprintf(err_msg, "in initResumer: file %s cannot be opened for reading",output_path);
+            throw IOException(err_msg);
+		}
+		else {
+			char _out_fmt[STATIC_STRINGS_SIZE];
+			char _output_path[STATIC_STRINGS_SIZE];
+			int  _resolutions_size;
+            bool _resolutions[TMITREE_MAX_HEIGHT];
+			int  _slice_height;
+			int  _slice_width;
+			int  _method;
+			char _saved_img_format[STATIC_STRINGS_SIZE];
+			int  _saved_img_depth;
+			int dummy;
+
+			rewind(fhandle);
+			dummy = fread(&str_len,sizeof(size_t),1,fhandle);
+			dummy = fread(_out_fmt,sizeof(char),str_len,fhandle);
+			if ( strcmp(out_fmt,_out_fmt) ) {
+				fclose(fhandle);
+				sprintf(err_msg, "in initResumer: saved format of output image (%s) differ from requested format (%s)", 
+					_out_fmt,out_fmt);
+                throw IOException(err_msg);
+			}
+
+			dummy = fread(&str_len,sizeof(size_t),1,fhandle);
+			dummy = fread(_output_path,sizeof(char),str_len,fhandle);
+			dummy = fread(&_resolutions_size,sizeof(int),1,fhandle);
+			dummy = fread(&_resolutions,sizeof(bool),_resolutions_size,fhandle);
+			dummy = fread(&_slice_height,sizeof(int),1,fhandle);
+			dummy = fread(&_slice_width,sizeof(int),1,fhandle);
+			dummy = fread(&_method,sizeof(int),1,fhandle);
+			dummy = fread(&str_len,sizeof(size_t),1,fhandle);
+			dummy = fread(_saved_img_format,sizeof(char),str_len,fhandle);
+			dummy = fread(&_saved_img_depth,sizeof(int),1,fhandle);
+			
+			if ( strcmp(output_path,_output_path) ||
+				 slice_height!=_slice_height || slice_width!=_slice_width ||
+				 strcmp(saved_img_format,_saved_img_format) || saved_img_depth!=_saved_img_depth ) {
+				fclose(fhandle);
+				sprintf(err_msg, "in initResumer: saved parameters differ from current parameters (%s vs. %s)", 
+					_out_fmt,out_fmt);
+                throw IOException(err_msg);
+			}
+
+			bool res_err = true;
+			int i;
+			if ( resolutions_size==_resolutions_size ) {
+				for ( i=0, res_err=false; i<resolutions_size && !res_err; i++ )
+					res_err = (resolutions[i] != _resolutions[i]);
+			}
+
+			if ( res_err ) {
+				fclose(fhandle);
+				sprintf(err_msg, "in initResumer: saved resolutions differ from requested resoolutions (%s vs. %s)", 
+					_out_fmt,out_fmt);
+                throw IOException(err_msg);
+			}
+
+		}
+
+		int headerSize = ftell(fhandle);
+		fseek(fhandle, 0, SEEK_END);
+		int fileSize = ftell(fhandle);
+		fseek(fhandle, fileSize-RECORD_LENGTH(resolutions_size), SEEK_SET);
+
+		return true;
+	}
+	else {
+		if ( (fhandle = fopen(resumer_filepath,"ab")) == 0 ) {
+			sprintf(err_msg, "in initResumer: file %s cannot be opened for append",output_path);
+            throw IOException(err_msg);
+		}
+		else {
+			str_len = strlen(out_fmt) + 1;
+			fwrite(&str_len,sizeof(size_t),1,fhandle);
+			fwrite(out_fmt,sizeof(char),str_len,fhandle);
+			str_len = strlen(output_path) + 1;
+			fwrite(&str_len,sizeof(size_t),1,fhandle);
+			fwrite(output_path,sizeof(char),str_len,fhandle);
+			fwrite(&resolutions_size,sizeof(int),1,fhandle);
+			fwrite(resolutions,sizeof(bool),resolutions_size,fhandle);
+			fwrite(&slice_height,sizeof(int),1,fhandle);
+			fwrite(&slice_width,sizeof(int),1,fhandle);
+			fwrite(&method,sizeof(int),1,fhandle);
+			str_len = strlen(saved_img_format) + 1;
+			fwrite(&str_len,sizeof(size_t),1,fhandle);
+			fwrite(saved_img_format,sizeof(char),str_len,fhandle);
+			fwrite(&saved_img_depth,sizeof(int),1,fhandle);
+			fflush(fhandle);
+		}
+		return false;
+	}
+}
+
+
+void readResumerState ( FILE *&fhandle, const char *output_path, int &resolutions_size, iim::sint64 &z, iim::sint64 &z_parts ) throw (iim::IOException) {
+	int dummy = fread(&resolutions_size,sizeof(int),1,fhandle);
+	dummy = fread(&z,sizeof(sint64),1,fhandle);
+	dummy = fread(&z_parts,sizeof(sint64),1,fhandle);
+
+	fclose(fhandle);
+
+	char resumer_filepath[STATIC_STRINGS_SIZE];
+	sprintf(resumer_filepath, "%s/%s", output_path, RESUMER_STATUS_FILE_NAME);
+	if ( (fhandle = fopen(resumer_filepath,"ab")) == 0 ) {
+		char err_msg[STATIC_STRINGS_SIZE];
+		sprintf(err_msg, "in initResumer: the resume state file cannot be re-opened in append mode");
+        throw IOException(err_msg);
+	}
+}
+
+
+void saveResumerState ( FILE *fhandle, int resolutions_size, iim::sint64 z, iim::sint64 z_parts ) throw (iim::IOException) {
+	fwrite(&resolutions_size,sizeof(int),1,fhandle);
+	fwrite(&z,sizeof(sint64),1,fhandle);
+	fwrite(&z_parts,sizeof(sint64),1,fhandle);
+	fflush(fhandle);
+}
+
+
+
 bool initResumer ( const char *out_fmt, const char *output_path, int resolutions_size, bool* resolutions, 
 				   int block_height, int block_width, int block_depth, int method, 
                    const char* saved_img_format, int saved_img_depth, FILE *&fhandle ) throw (IOException)

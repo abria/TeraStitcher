@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-05-03. Giulio.     @FIXED 'internal_loadSubvolume_to_real32' checks to guarantee that merging is performed also at the border of the subvolume
 * 2016-03-23. Giulio.     @FIXED 'internal_loadSubvolume_to_real32' bug on the idetification of the tiles involved in the subvolume extraction 
 * 2015-12-28. Giulio.     @ADDED 'internal_loadSubvolume_to_real32' now check the ret_type parameter to determine voxel depth to be returned 
 * 2015-12-28. Giulio.     @FIXED 'internal_loadSubvolume_to_real32' did not check the ret_type parameter to determine voxel depth to be returned 
@@ -55,7 +56,7 @@ using namespace std;
 using namespace iim;
 
 
-UnstitchedVolume::UnstitchedVolume(const char* _root_dir)  throw (IOException)
+UnstitchedVolume::UnstitchedVolume(const char* _root_dir, int _blending_algo)  throw (IOException)
 : VirtualVolume(_root_dir) 
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir=%s", _root_dir).c_str(), __iim__current__function__);
@@ -102,6 +103,8 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir)  throw (IOException)
 	V0_offs = stitcher->V0;
 	H0_offs = stitcher->H0;
 	D0_offs = stitcher->D0;
+
+	blending_algo = _blending_algo;
 
 	DIM_V = stitcher->V1 - stitcher->V0;
 	DIM_H = stitcher->H1 - stitcher->H0;
@@ -232,6 +235,50 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 		vxl_i += tile_offset;
 	}
 
+	// check if tiles have to be extended to guarantee that merging is performed ate the border of the subvolume
+	bool found_start, found_end;
+	int i;
+
+	// check along the row_start and row_end rows
+	bool changed_row_start = false;
+	bool changed_row_end   = false;
+	found_start = (row_start == 0) ? true : false;
+	found_end   = (row_end == volume->getN_ROWS()-1) ? true : false;
+	i = col_start;
+	while ( i<=col_end && !(found_start && found_end) ) {
+		if ( !found_start && ((volume->getSTACKS()[row_start-1][i]->getABS_V() + volume->getSTACKS()[0][0]->getHEIGHT()) >= V0 ) ) {
+			// there is a tile in (row_start-1)-th row that overlaps with the subvolume
+			row_start--;
+			changed_row_start = true; // remember that row_start has been decremented
+			found_start = true;
+		}
+		else if ( !found_end  && (volume->getSTACKS()[row_end+1][i]->getABS_V() < V1 ) ) {
+			// there is a tile in (row_start+1)-th row that overlaps with the subvolume
+			row_end++;
+			changed_row_end = true; // remember that row_end has been incremented
+			found_end = true;
+		}
+		i++;
+	}
+
+	// check along the col_start and col_end columns
+	found_start = (col_start == 0) ? true : false;
+	found_end   = (col_end == volume->getN_COLS()-1) ? true : false;
+	i = changed_row_start ? row_start+1 : row_start; // only originally determied rows have to be checked
+	while ( i<=(changed_row_end ? row_end-1 : row_end) && !(found_start && found_end) ) {
+		if ( !found_start && ((volume->getSTACKS()[i][col_start-1]->getABS_H() + volume->getSTACKS()[0][0]->getWIDTH()) >= H0 ) ) {
+			// there is a tile in (col_start-1)-th column that overlaps with the subvolume
+			col_start--;
+			found_start = true;
+		}
+		else if ( !found_end  && (volume->getSTACKS()[i][col_end+1]->getABS_H() < H1 ) ) {
+			// there is a tile in (col_start+1)-th column that overlaps with the subvolume
+			col_end++;
+			found_end = true;
+		}
+		i++;
+	}
+
 	stitcher->computeVolumeDims(false,row_start,row_end,col_start,col_end,D0+D0_offs,D1+D0_offs); // map D indices from stitched to unstitched volume
 
 	/* WARNING: it is possible that selected tiles do not contain all the subvolume requested 
@@ -352,7 +399,6 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 	double delta_angle;							//angle step
 
 	iom::real_t (*blending)(double& angle, iom::real_t& pixel1, iom::real_t& pixel2);
-	int blending_algo = S_SINUSOIDAL_BLENDING;
 
 	//retrieving blending function
 	if(blending_algo == S_SINUSOIDAL_BLENDING)

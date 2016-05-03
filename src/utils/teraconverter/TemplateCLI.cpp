@@ -25,30 +25,35 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-04-13  Giulio.     @ADDED options for parallelizing teraconverter
 * 2015-02-10. Giulio.     @CHANGED changed how the resolutions parameter works (resolutions can be chosen individually)
 */
 
 #include "TemplateCLI.h"
 #include "IM_config.h"
 #include "StackedVolume.h"
+#include "../../stitcher/S_config.h"
 #include "config.h"
+#include "../../volumemanager/volumemanager.config.h"
+#include "IOPluginAPI.h"
 
 #include <CmdLine.h>
 #include <sstream>
+
 
 TemplateCLI::TemplateCLI(void)
 {
 	// we use TCLAP default values to initialize most parameters (see readParams)
 
 	// initialize other parameters that are not provided in the command line
-	;
+	this->tm_blending = S_SINUSOIDAL_BLENDING;
 }
 
 //reads options and parameters from command line
 void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 {
 	//command line object definition
-	TCLAP::CmdLine cmd(getHelpText(), '=', "2.2.1");
+	TCLAP::CmdLine cmd(getHelpText(), '=', "2.2.2");
 		/**
 		 * Command line constructor. Defines how the arguments will be
 		 * parsed.
@@ -77,9 +82,13 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		 * \param v - An optional visitor.  You probably should not
 		 * use this unless you have a very good reason.
 		 */
+	TCLAP::SwitchArg p_parallel("","parallel","Does not perform side-effect operations during the merge step. Use this flag when more merge steps are launched in parallel",false);
+	TCLAP::SwitchArg p_isotropic("","isotropic","Generate lowest resolution with voxels as much isotropic as possible. Use this flag when the high resolution image has highy anistropic voxels",false);
+	TCLAP::SwitchArg p_makedirs("","makedirs","Creates the mdata.bin file of the output volume.", false);
+	TCLAP::SwitchArg p_metadata("","metadata","Creates the directory hierarchy.", false);
 
 	TCLAP::ValueArg<std::string> p_src_root_dir("s","src","Source file / root directory path.",true,"","string");
-	TCLAP::ValueArg<std::string> p_dst_root_dir("d","dst","Destination root directory path.",true,"","string");
+	TCLAP::ValueArg<std::string> p_dst_root_dir("d","dst","Destination root directory path.",false,"","string");
 	TCLAP::ValueArg<int> p_slice_depth("","depth","Slice depth.",false,-1,"unsigned");
 	TCLAP::ValueArg<int> p_slice_height("","height","Slice height.",false,-1,"unsigned");
 	TCLAP::ValueArg<int> p_slice_width("","width","Slice width.",false,-1,"unsigned");
@@ -96,11 +105,12 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		iim::TILED_MC_TIF3D_FORMAT  + "\"/\"" +
 		iim::UNST_TIF3D_FORMAT  + "\")";
 	TCLAP::ValueArg<string> p_src_format("","sfmt",temp.c_str(),true,"","string");
-	TCLAP::ValueArg<string> p_dst_format("","dfmt","Destination format (intensity/graylevel/RGB).",true,"","string");
+	TCLAP::ValueArg<string> p_dst_format("","dfmt","Destination format: (RGB (default)/intensity/graylevel.",false,"RGB","string");
  	//TCLAP::ValueArg<int> p_n_resolutions("","res","Number of resolutions.",true,2,"unsigned");
-	TCLAP::ValueArg<std::string> p_resolutions("","resolutions","Resolutions to be produced. Possible values are [[i]...]             where i = 0,..,5 and 2^i is the subsampling factor.",false,"0","string");
+	TCLAP::ValueArg<std::string> p_resolutions("","resolutions","Resolutions to be produced. Possible values are [[i]...] where i = 0,..,5 and 2^i is the subsampling factor.",false,"0","string");
 	TCLAP::ValueArg<string> p_halving_method("","halve","Halving method (mean/max, default: mean).",false,"mean","unsigned");
 	TCLAP::ValueArg<std::string> p_outFmt("f","outFmt","Output format (Tiff2DStck/Vaa3DRaw/Tiff3D/Vaa3DRawMC/Tiff3DMC/Fiji_HDF5, default: Tiff2DStck).",false,"Tiff2DStck","string");
+	TCLAP::ValueArg<std::string> p_infofile_path("","info","File path of the info log file to be saved.",false,"","string");
  	TCLAP::SwitchArg p_hide_progress_bar("","noprogressbar","Disables progress bar and estimated time remaining", false);
 	TCLAP::SwitchArg p_verbose("","verbose","set verbosity to maximum level (to be activated ONLY for debugging)");
 	TCLAP::ValueArg<int> p_V0("","V0","First V vertex (included).",false,-1,"unsigned");
@@ -110,8 +120,31 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::ValueArg<int> p_D0("","D0","First D vertex (included).",false,-1,"unsigned");
 	TCLAP::ValueArg<int> p_D1("","D1","Last D vertex (excluded).",false,-1,"unsigned");
 
+	TCLAP::MultiArg<std::string> p_algo("","algorithm","Forces the use of the given algorithm.",false,"string");
+	//TCLAP::SwitchArg p_pluginsinfo("p","pluginsinfo","Display plugins informations",false);
+	TCLAP::ValueArg<std::string> p_vol_in_plugin("","volin_plugin",iom::strprintf("Plugin that manages the input volume format/organization. Available plugins are: {%s}. Default is \"%s\".", iom::IOPluginFactory::registeredPlugins().c_str(), vm::VOLUME_INPUT_FORMAT_PLUGIN.c_str()),false,vm::VOLUME_INPUT_FORMAT_PLUGIN,"string");
+	TCLAP::ValueArg<std::string> p_vol_out_plugin("","volout_plugin",iom::strprintf("Plugin that manages the output volume format/organization. Available plugins are: {%s}. Default is \"%s\".", iom::IOPluginFactory::registeredPlugins().c_str(), vm::VOLUME_OUTPUT_FORMAT_PLUGIN.c_str()),false,vm::VOLUME_OUTPUT_FORMAT_PLUGIN,"string");
+	TCLAP::ValueArg<std::string> p_im_in_plugin("","imin_plugin",iom::strprintf("Plugin that manages the input image format. Available plugins are: {%s}. Default is \"auto\".", iom::IOPluginFactory::registeredPlugins().c_str()), false, "auto","string");
+	TCLAP::ValueArg<std::string> p_im_in_plugin_params("","imin_plugin_params","A series of parameters \"param1=val,param2=val,...\" to configure the input image plugin (see --pluginsinfo for the list of accepted parameters)", false, "","string");
+	TCLAP::ValueArg<std::string> p_im_out_plugin("","imout_plugin",iom::strprintf("Plugin that manages the output image format. Available plugins are: {%s}. Default is \"auto\".", iom::IOPluginFactory::registeredPlugins().c_str()), false, "auto","string");
+	TCLAP::ValueArg<std::string> p_im_out_plugin_params("","imout_plugin_params","A series of parameters \"param1=val,param2=val,...\" to configure the output image plugin (see --pluginsinfo for the list of accepted parameters)", false, "","string");
+
 
 	//argument objects must be inserted using LIFO policy (last inserted, first shown)
+	cmd.add(p_im_out_plugin_params);
+	cmd.add(p_im_out_plugin);
+	cmd.add(p_im_in_plugin_params);
+	cmd.add(p_im_in_plugin);
+	cmd.add(p_vol_out_plugin);
+	cmd.add(p_vol_in_plugin);
+	//cmd.add(p_pluginsinfo);
+	cmd.add(p_algo);
+
+	cmd.add(p_metadata);
+    cmd.add(p_makedirs);
+	cmd.add(p_parallel);
+	cmd.add(p_isotropic);
+
 	cmd.add(p_D1);
 	cmd.add(p_D0);
 	cmd.add(p_H1);
@@ -121,6 +154,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	cmd.add(p_verbose);
 	cmd.add(p_hide_progress_bar);
+	cmd.add(p_infofile_path);
 	cmd.add(p_outFmt);
 	cmd.add(p_halving_method);
 	//cmd.add(p_highest_resolution);
@@ -146,6 +180,11 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	int i;
 
 	/* Checking parameter consistency */
+	if ( p_infofile_path.getValue() == "" && p_dst_root_dir.getValue() == "" ) {
+		sprintf(errMsg, "Missing destination directory (option -d)");
+		throw iom::exception(errMsg);
+	}
+
 	if ( p_src_format.getValue() != iim::STACKED_FORMAT && 
 		 p_src_format.getValue() != iim::SIMPLE_FORMAT  && 
 		 p_src_format.getValue() != iim::SIMPLE_RAW_FORMAT  && 
@@ -192,15 +231,77 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		throw iom::exception(errMsg);
 	}
 
-	//importing parameters not set yet
+	if ( p_outFmt.getValue() == "Fiji_HDF5" && (p_makedirs.isSet() || p_metadata.isSet() || p_parallel.isSet()) ) {
+		sprintf(errMsg, "makedirs, parallel, metadata options are not allowed with Fiji_HDF5 output format");
+		throw iom::exception(errMsg);
+	}
 
-	this->src_root_dir = p_src_root_dir.getValue();
-	this->dst_root_dir = p_dst_root_dir.getValue();
-	this->slice_depth  = p_slice_depth.getValue();
-	this->slice_height = p_slice_height.getValue();
-	this->slice_width  = p_slice_width.getValue();
-	this->src_format   = p_src_format.getValue();
-	this->dst_format   = p_dst_format.getValue();
+	//checking that parallel-related options have been correctly selected
+	if(p_makedirs.isSet() && (p_metadata.isSet() || p_parallel.isSet()) )
+		throw iom::exception("parallel or metadata options cannot be set with makedirs option. See --help for usage.");
+
+	if(p_parallel.isSet() && p_metadata.isSet() )
+		throw iom::exception("metadata option cannot be set with parallel option. See --help for usage.");
+
+	//importing parameters not set yet
+	this->src_root_dir  = p_src_root_dir.getValue();
+	this->dst_root_dir  = p_dst_root_dir.getValue();
+	this->slice_depth   = p_slice_depth.getValue();
+	this->slice_height  = p_slice_height.getValue();
+	this->slice_width   = p_slice_width.getValue();
+	this->src_format    = p_src_format.getValue();
+	this->dst_format    = p_dst_format.getValue();
+    this->metaData      = p_metadata.getValue();
+    this->makeDirs      = p_makedirs.getValue();
+	this->parallel      = p_parallel.getValue();
+	this->isotropic     = p_isotropic.getValue();
+	this->infofile_path = p_infofile_path.getValue();
+
+	//the [algorithm] parameter is multi-arguments
+	vector<string> algorithms = p_algo.getValue();
+	for(int i = 0; i < algorithms.size(); i++) {
+		if(algorithms[i].compare(S_NO_BLENDING_NAME) == 0)
+			this->tm_blending = S_NO_BLENDING;
+		else if(algorithms[i].compare(S_SINUSOIDAL_BLENDING_NAME) == 0)
+			this->tm_blending = S_SINUSOIDAL_BLENDING;
+		else if(algorithms[i].compare(S_SHOW_STACK_MARGIN_NAME) == 0)
+			this->tm_blending = S_SHOW_STACK_MARGIN;
+		else
+		{
+			sprintf(errMsg, "Invalid argument \"%s\" for parameter --%s! Allowed values are:\n-\"%s\"\n-\"%s\"\n",	algorithms[i].c_str(), p_algo.getName().c_str(), S_NO_BLENDING_NAME, S_SINUSOIDAL_BLENDING_NAME);
+			throw iom::exception(errMsg);
+		}
+	}
+
+	//this->pluginsinfo = p_pluginsinfo.getValue();
+
+	//importing parameters
+// 	vm::VOLUME_INPUT_FORMAT_PLUGIN = p_vol_in_plugin.getValue();
+// 	vm::VOLUME_OUTPUT_FORMAT_PLUGIN = p_vol_out_plugin.getValue();
+
+	// 2014-09-29. Alessandro. @ADDED automated selection of IO plugin if not provided.
+// 	if(p_im_in_plugin.getValue().compare("auto") == 0)
+// 	{
+// 		if(vm::VOLUME_INPUT_FORMAT_PLUGIN.compare("TiledXY|2Dseries") == 0)
+// 			iom::IMIN_PLUGIN = "tiff2D";
+// 		else if(vm::VOLUME_INPUT_FORMAT_PLUGIN.compare("TiledXY|3Dseries") == 0)
+// 			iom::IMIN_PLUGIN = "tiff3D";
+// 	}
+// 	else
+// 		iom::IMIN_PLUGIN = p_im_in_plugin.getValue();
+// 	iom::IMIN_PLUGIN_PARAMS = p_im_in_plugin_params.getValue();
+
+	// 2014-09-29. Alessandro. @ADDED automated selection of IO plugin if not provided.
+// 	if(p_im_out_plugin.getValue().compare("auto") == 0)
+// 	{
+// 		if(p_vol_out_plugin.getValue().compare("TiledXY|2Dseries") == 0)
+// 			iom::IMOUT_PLUGIN = "tiff2D";
+// 		else if(p_vol_out_plugin.getValue().compare("TiledXY|3Dseries") == 0)
+// 			iom::IMOUT_PLUGIN = "tiff3D";
+// 	}
+// 	else
+// 		iom::IMOUT_PLUGIN = p_im_in_plugin.getValue();
+// 	iom::IMOUT_PLUGIN_PARAMS = p_im_out_plugin_params.getValue();
 
 	//this->resolutions[0] = p_highest_resolution.getValue() ? 1 : 0;
 	//for ( i=1; i<p_n_resolutions.getValue(); i++ )

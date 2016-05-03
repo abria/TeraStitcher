@@ -22,6 +22,12 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2016-04-13  Giulio.     @ADDED methods to manage parallelization
+*/
+
 #ifndef VOLUME_CONVERTER_H
 #define VOLUME_CONVERTER_H
 
@@ -159,9 +165,9 @@ class VolumeConverter
 		* [saved_img_depth]		: determines saved images bitdepth (16 or 8).
 		**************************************************************************************************************/
 		void generateTiles(std::string output_path, bool* resolutions = NULL, 
-			int slice_height = -1, int slice_width = -1, int method = HALVE_BY_MEAN, bool show_progress_bar = true, 
-            const char* saved_img_format = iim::DEF_IMG_FORMAT.c_str(), int saved_img_depth = iim::NUL_IMG_DEPTH,
-            std::string frame_dir = "")	throw (iim::IOException, iom::exception);
+			int slice_height = -1, int slice_width = -1, int method = HALVE_BY_MEAN, bool isotropic = false, 
+            bool show_progress_bar = true, const char* saved_img_format = iim::DEF_IMG_FORMAT.c_str(), 
+            int saved_img_depth = iim::NUL_IMG_DEPTH, std::string frame_dir = "", bool par_mode = false)	throw (iim::IOException, iom::exception);
 		
 
 		/*************************************************************************************************************
@@ -183,9 +189,9 @@ class VolumeConverter
 		*                         if it is a null string the image does not belong to a time serie (default)
 		**************************************************************************************************************/
 		void generateTilesVaa3DRaw(std::string output_path, bool* resolutions = NULL, 
-			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool show_progress_bar = true, 
-            const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,
-            std::string frame_dir = "")	throw (iim::IOException, iom::exception);
+			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool isotropic=false, 
+            bool show_progress_bar = true, const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,
+            std::string frame_dir = "", bool par_mode=false) throw (iim::IOException, iom::exception);
 		
 
         /*************************************************************************************************************
@@ -234,9 +240,9 @@ class VolumeConverter
 		* [saved_img_depth]		: determines saved images bitdepth (16 or 8).
 		**************************************************************************************************************/
 		void generateTilesVaa3DRawMC ( std::string output_path, bool* resolutions = NULL, 
-			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool show_progress_bar = true, 
-            const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,
-            std::string frame_dir = "")	throw (iim::IOException, iom::exception);
+			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool isotropic=false, 
+			bool show_progress_bar = true, const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,
+ 			std::string frame_dir = "", bool par_mode=false)	throw (iim::IOException, iom::exception);
 
       /*************************************************************************************************************
         * NEW FORMAT SUPPORTING BDV HDF5 custom format
@@ -263,6 +269,16 @@ class VolumeConverter
             const char* saved_img_format = "h5", int saved_img_depth = iim::NUL_IMG_DEPTH,
             std::string frame_dir = "")	throw (iim::IOException, iom::exception);
 
+
+		void createDirectoryHierarchy(std::string output_path, bool* resolutions = NULL, 
+			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool isotropic=false, 
+            bool show_progress_bar = true, const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,
+            std::string frame_dir = "", bool par_mode=false) throw (iim::IOException, iom::exception);
+		
+		void mdataGenerator(std::string output_path, bool* resolutions = NULL, 
+			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool isotropic=false, 
+            bool show_progress_bar = true, const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,
+            std::string frame_dir = "", bool par_mode=false) throw (iim::IOException, iom::exception);	
 };
 
 #endif

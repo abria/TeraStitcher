@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-04-13  Giulio.     @CHANGED minor changed while parallelizing teraconverter
 * 2016-03-28  Giulio.     @FIXED wrong assignment in exchanging axes of reference system
 * 2015-08-28. Giulio.     @FIXED reference system of the generated image has always V as a first axis and H as a second axis
 * 2015-08-26. Giulio.     @ADDED stop and resume facility in par mode
@@ -297,7 +298,12 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
         if(resolutions[res_i] == true && !test_mode)
         {
 			if ( par_mode ) { // 2015-08-14. Giulio. uses the depth of the whole volume to generate the directory name
-				file_path[res_i]<<output_path<<"/RES("<<height/POW_INT(2,res_i)<<"x"<<width/POW_INT(2,res_i)<<"x"<<(volume->getN_SLICES())/POW_INT(2,halve_pow2[res_i])<<")"; 
+				// file_path[res_i]<<output_path<<"/RES("<<height/POW_INT(2,res_i)<<"x"<<width/POW_INT(2,res_i)<<"x"<<(volume->getN_SLICES())/POW_INT(2,halve_pow2[res_i])<<")";
+				// 2016-04-14. Giulio. @CHANGED whole_depth should be used in place of getN_SLICES, but I did not remember why getN_SLICES was used here
+				if ( whole_depth != volume->getN_SLICES() ) {
+					printf("in StackStitcher::mergeTilesVaa3DRaw(...): mismatch between whole depth (%lld) and n_slices (%d)\n", whole_depth, volume->getN_SLICES());
+				}
+				file_path[res_i]<<output_path<<"/RES("<<height/POW_INT(2,res_i)<<"x"<<width/POW_INT(2,res_i)<<"x"<<whole_depth/POW_INT(2,halve_pow2[res_i])<<")"; 
 			}
 			else { 
 				//creating directory that will contain image data at current resolution

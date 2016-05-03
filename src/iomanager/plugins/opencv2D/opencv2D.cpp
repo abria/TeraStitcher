@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-04-29. Giulio.     @FIXED many bugs in the implementation of readData and writeData using uint8 buffers
 * 2015-01-02. Giulio.     @IMPLEMENTED new plugins interface
 */
 
@@ -43,7 +44,7 @@ TERASTITCHER_REGISTER_IO_PLUGIN_2D(opencv2D)
 std::string iomanager::opencv2D::desc()
 {
 	return	"******************************************************\n"
-			"* opencv2D v.1.0                                     *\n"
+			"* opencv2D v.1.1                                     *\n"
 			"******************************************************\n"
 			"*                                                    *\n"
 			"* 2D image-based I/O plugin that uses the OpenCV li- *\n"
@@ -158,7 +159,19 @@ throw (iom::exception)
 
 	// load image
 	cv::Mat image;
-	image = cv::imread(img_path, CV_LOAD_IMAGE_ANYCOLOR);                             // load individual channels
+
+	/* 2016-04-29. Giulio. Images have to read as they are and then converted to RGB if required
+	 */
+	//image = cv::imread(img_path, CV_LOAD_IMAGE_ANYCOLOR);                             // load individual channels
+	image = cv::imread(img_path);
+	//printf("---> elenSize  = %d \n", image.elemSize());
+	//printf("---> elemSize1 = %d \n", image.elemSize1());
+	//printf("---> type      = %d \n", image.type());
+	//printf("---> depth     = %d \n", image.depth());
+	//printf("---> channels  = %d \n", image.channels());
+	//printf("---> step1     = %d \n", image.step1());
+	//printf("---> stride    = %d \n", image.ptr<uint8>(1)-image.ptr<uint8>(0));
+
 	if(!image.data)
 		throw iom::exception(iom::strprintf("unable to open image \"%s\". Possible unsupported format or it isn't an image.\nSupported formats are BMP, DIB, JPEG, JPG, JPE, PNG, PBM, PGM, PPM, SR, RAS, TIFF, TIF", img_path.c_str()), __iom__current__function__);
 
@@ -184,11 +197,42 @@ throw (iom::exception)
 			}
 		}
 		else
-			throw iom::exception("unsupported image depth", __iom__current__function__);
+			throw iom::exception(iom::strprintf("unsupported image depth (%d)", image.depth()), __iom__current__function__);
+	}
+	else if ( image.channels() == 3 ) {
+		if(image.depth() == CV_8U)
+		{
+			unsigned char *data_ptr = data;
+			for(int i=0; i<image.rows; i++)
+			{
+				uint8* img_data = image.ptr<uint8>(i);
+				for(int j=0; j<image.cols; j++, data_ptr+=3) {
+					*data_ptr     = img_data[3*j+2];
+					*(data_ptr+1) = img_data[3*j+1];
+					*(data_ptr+2) = img_data[3*j];
+				}
+			}
+		}
+		else if (image.depth() == CV_16U)
+		{
+			uint16 *data_ptr = (uint16 *) data;
+			for(int i=0; i<image.rows; i++)
+			{
+				uint16* img_data = image.ptr<uint16>(i);
+				for(int j=0; j<image.cols; j++, data_ptr++) {
+					*data_ptr     = img_data[3*j+2];
+					*(data_ptr+1) = img_data[3*j+1];
+					*(data_ptr+2) = img_data[3*j];
+				}
+			}
+		}
+		else
+			throw iom::exception(iom::strprintf("unsupported image depth (%d)", image.depth()), __iom__current__function__);
 	}
 	else {
 		// must convert BGR to RGB
-		throw iom::exception("conversion fron BGR (OpenCV) to RGB not supported yet.", __iom__current__function__);
+		//throw iom::exception("conversion fron BGR (OpenCV) to RGB not supported yet.", __iom__current__function__);
+		throw iom::exception("conversion from 2 channels or more than 3 channels not supported.", __iom__current__function__);
 	}
 	
 	return 0;
@@ -242,7 +286,8 @@ throw (iom::exception)
 			{
 				uint8* img_data = image.ptr<uint8>(i);
 				for(int j = 0; j < ROI_width; j++)
-					img_data[j] = static_cast<uint8>(raw_img[(i+y0)*img_width+j+x0] * 255.0f + 0.5f);
+					//img_data[j] = static_cast<uint8>(raw_img[(i+y0)*img_width+j+x0] * 255.0f + 0.5f);
+					img_data[j] = raw_img[(i+y0)*img_width+j+x0];
 			}
 		}
 		else

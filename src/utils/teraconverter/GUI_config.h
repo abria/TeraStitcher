@@ -26,6 +26,6 @@
 #define GUI_CONFIG_H
 
 //DEFAULT CLI PARAMETERS
-# include "S_config.h" // contains parameter S_MAX_MULTIRES
+# include "../../stitcher/S_config.h" // contains parameter S_MAX_MULTIRES
 
 #endif

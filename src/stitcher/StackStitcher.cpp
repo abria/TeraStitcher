@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-04-29. Giulio.     @ADDED input plugin substitution before metadata genration (restored afterwards)
 * 2015-08-28. Giulio.     @FIXED reference system of the generated image has always V as a first axis and H as a second axis
 * 2015-08-16. Giulio.     @ADDED method for halvesampling only V and H dimensions
 * 2015-07-12. Giulio.     @ADDED a halving method parameter to MergeTilesVaa3DRaw
@@ -1261,6 +1262,12 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 			reference.first = reference.second;
 			reference.second = temp;
 		}
+
+		// 2016-04-29. Giulio. @FIXED If input volume is 3D the input plugin cannot be used to generate the meta data file.
+		std::string save_imin_plugin = iom::IMIN_PLUGIN; // save current input plugin
+		// 2016-04-29. Giulio. @ADDED Now the generated image should be read: use the output plugin
+		iom::IMIN_PLUGIN = iom::IMOUT_PLUGIN;
+
 		for(int res_i=0; res_i< resolutions_size; res_i++) {
 			if(resolutions[res_i])
         	{
@@ -1283,6 +1290,8 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 
         	}
         }
+		// 2016-04-29. Giulio. @ADDED restore input plugin
+		iom::IMIN_PLUGIN = save_imin_plugin;
 	}
 
 
@@ -1383,7 +1392,7 @@ void StackStitcher::halveSample(iom::real_t* img, int height, int width, int dep
 	}
 	else {
 		char buffer[S_STATIC_STRINGS_SIZE];
-		sprintf(buffer,"in halveSample(...): invalid halving method\n");
+		sprintf(buffer,"in StackStitcher::halveSample(...): invalid halving method\n");
         throw iom::exception(buffer);
 	}
 	#ifdef S_TIME_CALC
@@ -1454,7 +1463,7 @@ void StackStitcher::halveSample2D(iom::real_t* img, int height, int width, int d
 	}
 	else {
 		char buffer[S_STATIC_STRINGS_SIZE];
-		sprintf(buffer,"in halveSample(...): invalid halving method\n");
+		sprintf(buffer,"in StackStitcher::halveSample2D(...): invalid halving method\n");
         throw iom::exception(buffer);
 	}
 	#ifdef S_TIME_CALC

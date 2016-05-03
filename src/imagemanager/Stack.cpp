@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-04-29. Giulio.    @FIXED used input plugin in place of tiff2d (fixed) in 'init'
 * 2015-04-14 Alessandro. @FIXED folder image scan: Only .tif/.TIF/.tiff/.TIFF files have to be included in the image list.
 * 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
 */
@@ -261,7 +262,7 @@ void Stack::init() throw (IOException)
     {
         tmp = entry_lev3->d_name;
         if(tmp.compare(".") != 0 && tmp.compare("..") != 0 &&
-           (tmp.find(".tif") != string::npos || tmp.find(".TIF") != string::npos) )
+           (tmp.find(".tif") != string::npos || tmp.find(".TIF") != string::npos || tmp.find(".jpg") != string::npos ) ) // 2016-04-29. Giulio. experimentally allowed .jpg suffix 
             entries_lev3.push_back(tmp);
     }
     entries_lev3.sort();
@@ -307,7 +308,9 @@ void Stack::init() throw (IOException)
 
     try
     {
-        iomanager::IOPluginFactory::getPlugin2D("tiff2D")->readMetadata(slice_fullpath, img_width, img_height,	 img_depth, img_chans, params);
+        //iomanager::IOPluginFactory::getPlugin2D("tiff2D")->readMetadata(slice_fullpath, img_width, img_height,	 img_depth, img_chans, params);
+		// 2016-04-29. Giulio.  @FIXED the input plugin used instead of a fixed one (tiff2D)
+        iomanager::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->readMetadata(slice_fullpath, img_width, img_height, img_depth, img_chans, params);
     }
     catch (iom::exception & ex)
     {

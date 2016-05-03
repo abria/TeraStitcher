@@ -335,7 +335,29 @@ namespace IconImageManager
     }
     #endif
 
-    // check-and-makedir
+     //remove dir
+    #ifdef _WIN32
+    #include <errno.h>
+    inline bool remove_dir(const char* arg){
+        bool done = _rmdir(arg) == 0;
+        bool result = done;
+        return result;
+    }
+    #else
+    inline bool remove_dir(const char* arg){
+        //bool done = rmdir(arg) == 0;
+        //bool result = done;
+        //return result;
+        if(system(strprintf("rmdir \"%s\"", arg).c_str())!=0) {
+            fprintf(stderr,"Can't remove directory \"%s\"\n", arg);
+            return 0;
+        }
+        else
+        	return 1;
+    }
+    #endif
+
+	// check-and-makedir
     inline bool check_and_make_dir(const char *dirname){
         if(isDirectory(dirname))
             return true;

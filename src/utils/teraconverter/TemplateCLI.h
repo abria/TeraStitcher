@@ -22,6 +22,12 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2016-04-13  Giulio.     @ADDED options for parallelizing teraconverter
+*/
+
 #ifndef _TEMPLATE_COMMAND_LINE_INTERFACE_H
 #define _TEMPLATE_COMMAND_LINE_INTERFACE_H
 
@@ -37,6 +43,12 @@ class TemplateCLI
 
 		// switch parameters
 		//bool highest_resolution;						// generate highest resolution (default: false)
+        bool makeDirs;                          //creates the directory hiererchy
+        bool metaData;                          //creates the mdata.bin file of the output volume
+        bool parallel;                          //parallel mode: does not perform side-effect operations during merge
+        bool isotropic;                         //generate lowest resolutiona with voxels as much isotropic as possible
+
+		//bool pluginsinfo;						//display plugins information
 
 		// other parameters
 		// int/float/double/string XXXX;	// description
@@ -52,6 +64,7 @@ class TemplateCLI
 		bool show_progress_bar;					//enables/disables progress bar with estimated time remaining
 
 		string outFmt;
+		string infofile_path;					//file path of the info log file to be saved
 
 		// vertices defining the subvolume to be converted
 		int V0;
@@ -60,6 +73,8 @@ class TemplateCLI
 		int H1;
 		int D0;
 		int D1;
+
+		int tm_blending;						//tiles merging blending type
 
 		//constructor - deconstructor
 		TemplateCLI(void);					//set default params

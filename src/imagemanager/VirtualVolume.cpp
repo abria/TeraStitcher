@@ -329,7 +329,7 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
 
     //saving image
 	// Giulio_CV try{
-	// Giulio_CV cvSaveImage(buffer, img);
+		// Giulio_CV cvSaveImage(buffer, img);
 
 	char *err_tiff_fmt;
 
@@ -889,7 +889,7 @@ void VirtualVolume::halveSample_UINT8 ( uint8** img, int height, int width, int 
 						if ( B > A ) A = B;
 
 						//computing mean
-                        img[c][z*(width/2)*(height/2) + i*(width/2) + j] = (uint16) iim::round(A);
+                        img16[c][z*(width/2)*(height/2) + i*(width/2) + j] = (uint16) iim::round(A);
 					}
 				}
 			}
@@ -906,6 +906,199 @@ void VirtualVolume::halveSample_UINT8 ( uint8** img, int height, int width, int 
 	else {
 		char buffer[STATIC_STRINGS_SIZE];
 		sprintf(buffer,"VirtualVolume::in halveSample_UINT8(...): invalid number of bytes per channel (%d)\n", bytes_chan);
+        throw IOException(buffer);
+	}
+}
+
+void VirtualVolume::halveSample2D ( real32* img, int height, int width, int depth, int method )
+{
+	float A,B,C,D;
+
+	// indices are sint64 because offsets can be larger that 2^31 - 1
+
+	if ( method == HALVE_BY_MEAN ) {
+
+		for(sint64 z=0; z<depth; z++)
+		{
+			for(sint64 i=0; i<height/2; i++)
+			{
+				for(sint64 j=0; j<width/2; j++)
+				{
+					//computing 8-neighbours
+					A = img[z*width*height +2*i*width + 2*j];
+					B = img[z*width*height +2*i*width + (2*j+1)];
+					C = img[z*width*height +(2*i+1)*width + 2*j];
+					D = img[z*width*height +(2*i+1)*width + (2*j+1)];
+
+					//computing mean
+					img[z*(width/2)*(height/2)+i*(width/2)+j] = (A+B+C+D)/(float)4;
+				}
+			}
+		}
+
+	}
+	else if ( method == HALVE_BY_MAX ) {
+
+		for(sint64 z=0; z<depth; z++)
+		{
+			for(sint64 i=0; i<height/2; i++)
+			{
+				for(sint64 j=0; j<width/2; j++)
+				{
+					//computing max of 8-neighbours
+					A = img[z*width*height + 2*i*width + 2*j];
+					B = img[z*width*height + 2*i*width + (2*j+1)];
+					if ( B > A ) A = B;
+					B = img[z*width*height + (2*i+1)*width + 2*j];
+					if ( B > A ) A = B;
+					B = img[z*width*height + (2*i+1)*width + (2*j+1)];
+					if ( B > A ) A = B;
+
+					//computing max
+					img[z*(width/2)*(height/2) + i*(width/2) + j] = A;
+				}
+			}
+		}
+
+	}
+	else {
+		char buffer[S_STATIC_STRINGS_SIZE];
+		sprintf(buffer,"in VirtualVolume::halveSample2D(...): invalid halving method\n");
+        throw iom::exception(buffer);
+	}
+}
+
+void VirtualVolume::halveSample2D_UINT8 ( uint8** img, int height, int width, int depth, int channels, int method, int bytes_chan )
+{
+	float A,B,C,D;
+
+	// indices are sint64 because offsets can be larger that 2^31 - 1
+
+	if ( bytes_chan == 1 ) {
+
+		if ( method == HALVE_BY_MEAN ) {   
+
+			for(sint64 c=0; c<channels; c++)
+			{
+				for(sint64 z=0; z<depth; z++)
+				{
+					for(sint64 i=0; i<height/2; i++)
+					{
+						for(sint64 j=0; j<width/2; j++)
+						{
+							//computing 8-neighbours
+							A = img[c][z*width*height + 2*i*width + 2*j];
+							B = img[c][z*width*height + 2*i*width + (2*j+1)];
+							C = img[c][z*width*height + (2*i+1)*width + 2*j];
+							D = img[c][z*width*height + (2*i+1)*width + (2*j+1)];
+
+							//computing mean
+                            img[c][z*(width/2)*(height/2) + i*(width/2) + j] = (uint8) iim::round((A+B+C+D)/(float)4);
+						}
+					}
+				}
+			}
+		}
+
+		else if ( method == HALVE_BY_MAX ) {
+
+		for(sint64 c=0; c<channels; c++)
+		{
+			for(sint64 z=0; z<depth; z++)
+			{
+				for(sint64 i=0; i<height/2; i++)
+				{
+					for(sint64 j=0; j<width/2; j++)
+					{
+						//computing max of 8-neighbours
+						A = img[c][z*width*height + 2*i*width + 2*j];
+						B = img[c][z*width*height + 2*i*width + (2*j+1)];
+						if ( B > A ) A = B;
+						B = img[c][z*width*height + (2*i+1)*width + 2*j];
+						if ( B > A ) A = B;
+						B = img[c][z*width*height + (2*i+1)*width + (2*j+1)];
+						if ( B > A ) A = B;
+
+						//computing mean
+                        img[c][z*(width/2)*(height/2) + i*(width/2) + j] = (uint8) iim::round(A);
+					}
+				}
+			}
+		}
+
+		}
+		else {
+			char buffer[STATIC_STRINGS_SIZE];
+			sprintf(buffer,"in VirtualVolume::halveSample_UINT8(...): invalid halving method\n");
+            throw IOException(buffer);
+		}
+
+	}
+	else if ( bytes_chan == 2 ) {
+
+		uint16 **img16 = (uint16 **) img;
+
+		if ( method == HALVE_BY_MEAN ) {   
+
+			for(sint64 c=0; c<channels; c++)
+			{
+				for(sint64 z=0; z<depth; z++)
+				{
+					for(sint64 i=0; i<height/2; i++)
+					{
+						for(sint64 j=0; j<width/2; j++)
+						{
+							//computing 8-neighbours
+							A = img16[c][z*width*height + 2*i*width + 2*j];
+							B = img16[c][z*width*height + 2*i*width + (2*j+1)];
+							C = img16[c][z*width*height + (2*i+1)*width + 2*j];
+							D = img16[c][z*width*height + (2*i+1)*width + (2*j+1)];
+
+							//computing mean
+                            img16[c][z*(width/2)*(height/2) + i*(width/2) + j] = (uint16) iim::round((A+B+C+D)/(float)4);
+						}
+					}
+				}
+			}
+		}
+
+		else if ( method == HALVE_BY_MAX ) {
+
+		for(sint64 c=0; c<channels; c++)
+		{
+			for(sint64 z=0; z<depth; z++)
+			{
+				for(sint64 i=0; i<height/2; i++)
+				{
+					for(sint64 j=0; j<width/2; j++)
+					{
+						//computing max of 8-neighbours
+						A = img16[c][z*width*height + 2*i*width + 2*j];
+						B = img16[c][z*width*height + 2*i*width + (2*j+1)];
+						if ( B > A ) A = B;
+						B = img16[c][z*width*height + (2*i+1)*width + 2*j];
+						if ( B > A ) A = B;
+						B = img16[c][z*width*height + (2*i+1)*width + (2*j+1)];
+						if ( B > A ) A = B;
+
+						//computing mean
+                        img[c][z*(width/2)*(height/2) + i*(width/2) + j] = (uint16) iim::round(A);
+					}
+				}
+			}
+		}
+
+		}
+		else {
+			char buffer[STATIC_STRINGS_SIZE];
+			sprintf(buffer,"in VirtualVolume::halveSample2D_UINT8(...): invalid halving method\n");
+            throw IOException(buffer);
+		}
+
+	}
+	else {
+		char buffer[STATIC_STRINGS_SIZE];
+		sprintf(buffer,"VirtualVolume::in halveSample2D_UINT8(...): invalid number of bytes per channel (%d)\n", bytes_chan);
         throw IOException(buffer);
 	}
 }
@@ -1142,9 +1335,9 @@ VirtualVolume* VirtualVolume::instance(const char* path, std::string format,
             volume = new SimpleVolumeRaw(path);
         else if(format.compare(SIMPLE_FORMAT) == 0)
             volume = new SimpleVolume(path);
-        else if(format.compare(TIME_SERIES) == 0)
-            volume = new TimeSeries(path);
-        else
+		else if(format.compare(TIME_SERIES) == 0)
+			volume = new TimeSeries(path);
+       else
             throw IOException(strprintf("in VirtualVolume::instance(): Unsupported format \"%s\" for path \"%s\" which is a directory", format.c_str(), path), __iim__current__function__);
     }
     // file formats

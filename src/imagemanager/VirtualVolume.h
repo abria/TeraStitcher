@@ -25,6 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-04-27. Giulio.     @ADDED method to rearrange indices in order to meet pre-conditions of loadSubVolume methods
+* 2016-04-27. Giulio.     @ADDED data members and methods to convert indices to coordinates and viceversa
 * 2015-04-14. Alessandro. @ADDED 'instance_format' method with inputs = {path, format}.
 * 2015-02-28. Giulio.     @FIXED added deallocation of data member 'active' in the destructor
 * 2015-02-18. Giulio.     @CHANGED modified defalut values of parameters of loadSubvolume methods
@@ -58,6 +60,17 @@ protected:
 
     int    DIM_T;					// number of time frames         (@ADDED by Alessandro on 2014-02-20)
     int t0, t1;                     // active frames are in [t0, t1] (@ADDED by Alessandro on 2014-02-20)
+    
+    // this method should be used to rearrange coordinates in order to match the pre-conditions of loadSubVolume methods
+    void rearrange_indices ( int &i0, int &i1 ) { 
+    	if ( i0 < i1 )
+    		;
+    	else if ( i0 > i1 ) {
+    		int i = i0; i0 = i1; i1 = i;
+    	}
+    	else // if indices are equal there is a potential error 
+			throw IOException(strprintf("indices i0=%d and i1=%d are equal", i0, i1), __iim__current__function__);
+    }
 
 public:
 	//CONSTRUCTORS-DECONSTRUCTOR
@@ -148,6 +161,14 @@ public:
     int getNActiveFrames(){return t1 -t0 +1;}
     virtual int getNACtiveChannels() {return n_active;}
     virtual iim::uint32* getActiveChannels(){return active;}
+    
+    // @ADDED by Giulio. on 2016-04-27: methods to convert indices to coordinates and viceversa
+    int coord2ind_V(float v) { return (int) ((ORG_V + v) / VXL_V); }    
+    int coord2ind_H(float h) { return (int) ((ORG_H + h) / VXL_H); }    
+    int coord2ind_D(float d) { return (int) ((ORG_D + d) / VXL_D); }   
+    float ind2coord_V(int v) { return ORG_V + v*VXL_V; } 
+    float ind2coord_H(int h) { return ORG_H + h*VXL_H; } 
+    float ind2coord_D(int d) { return ORG_D + d*VXL_D; } 
 
     // @ADDED by Alessandro on 2014-02-18: returns a unique ID that identifies the volume format
     virtual std::string getPrintableFormat() = 0;
@@ -277,7 +298,7 @@ public:
 									  int raw_img_height, int raw_img_width,
                                       int start_height=0, int end_height =-1, int start_width=0, int end_width=-1,
                                       const char* img_format = iim::DEF_IMG_FORMAT.c_str(), int img_depth = iim::DEF_IMG_DEPTH, 
-                                      void *fhandle = 0, int n_pages = -1, bool do_open = true ) throw (iim::IOException, iom::exception);
+									  void *fhandle = 0, int n_pages = -1, bool do_open = true ) throw (iim::IOException, iom::exception);
 
 	/*************************************************************************************************************
 	* Performs downsampling at a halved frequency on the given 3D image.  The given image is overwritten in order
@@ -289,6 +310,10 @@ public:
     static void halveSample( iim::real32* img, int height, int width, int depth, int method = HALVE_BY_MEAN );
 
     static void halveSample_UINT8 ( iim::uint8** img, int height, int width, int depth, int channels, int method = HALVE_BY_MEAN, int bytes_chan = 1 );
+
+    static void halveSample2D( iim::real32* img, int height, int width, int depth, int method = HALVE_BY_MEAN );
+
+    static void halveSample2D_UINT8 ( iim::uint8** img, int height, int width, int depth, int channels, int method = HALVE_BY_MEAN, int bytes_chan = 1 );
 
 	//utility function: returns true if "fullString" ends with "ending"
 	inline static bool hasEnding (std::string const &fullString, std::string const &ending)

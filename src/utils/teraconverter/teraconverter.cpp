@@ -22,6 +22,14 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2016-05-02.  Giulio.     @ADDED generation of an info log file
+* 2016-05-02.  Giulio.     @ADDED routines for file management
+* 2016-04-13.  Giulio.     @ADDED parallelization
+*/
+
 # include <stdio.h> 
 # include <stdlib.h>
 
@@ -33,36 +41,111 @@
 /*
  * This is the driver program for the library class VolumeConverter
  *
- * User has to pass on the command line the following parameters:
+ * User has to pass on the command line the following parameters (run teranconverter -h for more details):
  * - directory or file name of the source image (the file name if the image 
  *   is stored in a single file, e.g. in V3D raw format)
  * - directory where to store the output image
- * - the height of the slices of the substacks in the output image
- * - the width of the slices of the substacks in the output image
- * - format of the source image ("Stacked" for Terastitcher stacked format, 
- *   "Simple" for sequence of numbered .tif images in the same directory,
- *   "Raw" for V3D raw 4D format)
- * - format of the output image ("intensity" for real valued pixels in [0,1],
- *   "graylevel" for integer valued pixels in [0,255], "RGB" for pixel represented
- *   according to RGB format)
- * - which resolutions have to be generated; specified resolutions are generated
- *
- * If the source image is multi channel the format of the output image is 
- * automatically set to "RGB"
+ * - format of the source image
+ * - format of the output image: "RGB" for pixel represented
+ *   according to RGB format (default), "graylevel" for integer valued pixels in [0,255], 
+ *   "intensity" for real valued pixels in [0,1]
+ * - which resolutions have to be generated; only specified resolutions are generated
  *
  * Allowed suffixes for V3D raw 4D format are: .raw .RAW, .v3draw .V3DRAW
- *
- *
- * ****************** NEW FEATURE **********************
- *
- * It is possoble to generate the multiresolution image in different formats
- * Allowed formats:
- * - stacks of 2D tiff (default)
- * - blocks stored in Vaa3D raw format (-f Vaa3DRaw, --outFmt Vaa3DRaw)
- * - one image per channel and single channel blocks stored in Vaa3D raw format 
- *   (-f Vaa3DRawMC, --outFmt Vaa3DRawMC)
- *
  */
+
+
+//extracts the filename from the given path and stores it into <filename>
+inline std::string getFileName(std::string const & path, bool save_ext = true){
+
+	std::string filename = path;
+
+	// Remove directory if present.
+	// Do this before extension removal in case directory has a period character.
+	const size_t last_slash_idx = filename.find_last_of("\\/");
+	if (std::string::npos != last_slash_idx)
+		filename.erase(0, last_slash_idx + 1);
+
+	// Remove extension if present.
+	if(!save_ext)
+	{
+		const size_t period_idx = filename.rfind('.');
+		if (std::string::npos != period_idx)
+			filename.erase(period_idx);
+	}
+
+	return filename;
+}
+
+//returns true if the given string <fullString> ends with <ending>
+inline bool hasEnding (std::string const &fullString, std::string const &ending){
+	if (fullString.length() >= ending.length()) {
+		return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
+	} else {
+		return false;
+	}
+}
+
+//returns file extension, if any (otherwise returns "")
+inline std::string getFileExtension(const std::string& FileName){
+	if(FileName.find_last_of(".") != std::string::npos)
+		return FileName.substr(FileName.find_last_of(".")+1);
+	return "";
+}
+
+//returns the absolute path (if present) of the given filepath, i.e. its path without the file name
+//e.g. "C:/somedir/somefile.ext" -> "C:/somedir"
+inline std::string getAbsolutePath(const std::string& filepath){
+
+	string file_path_string = filepath;
+	string file_name;
+	string ris;
+
+	//loading file name from 'file_path_string' into 'file_name' by strtoking with "/" OR "\" character
+	char * tmp;
+	tmp = strtok (&file_path_string[0],"/\\");
+	while (tmp)
+	{
+		file_name = tmp;
+		tmp = strtok (0, "/\\");
+	}
+
+	//restoring content of file_path_string due to possible alterations done by strtok
+	file_path_string = filepath;
+
+	//loading file name substring index in 'file_path_string'
+	int index_of_filename= (int) file_path_string.find(file_name);
+
+	//extract substring that contains absolute path but the filename
+	ris = file_path_string.substr(0,index_of_filename);
+	return ris;
+}
+
+inline string fillPath(const std::string & incompletePath, string defPath, string defName, string defExt){
+	
+	string ext = getFileExtension(incompletePath);
+	string name = getFileName(incompletePath, false);
+	string path = getAbsolutePath(incompletePath);
+
+	string fullpath;
+	if(path.empty())
+		fullpath += defPath;
+	else
+		fullpath += path;
+
+	if(name.empty())
+		fullpath += "/" + defName;
+	else
+		fullpath += "/" + name;
+
+	if(ext.empty())
+		fullpath += "." + defExt;
+	else
+		fullpath += "." + ext;
+
+	return fullpath;
+}
+
 
 
 int main ( int argc, char *argv[] ) {
@@ -77,34 +160,114 @@ int main ( int argc, char *argv[] ) {
 		
 		// do what you have to do
 		VolumeConverter vc;
+
+		if ( cli.infofile_path != "" ) {
+			// volume info has been requested
+			FILE *fout;
+			vc.setSrcVolume(cli.src_root_dir.c_str(),cli.src_format.c_str(),cli.dst_format.c_str());
+			string foutName = fillPath(cli.infofile_path,getAbsolutePath(cli.src_root_dir),"err_log_file", "txt");
+			if ( (fout = fopen(foutName.c_str(),"w")) == 0 ) 
+				throw iom::exception(iom::strprintf("teraconverter: cannot open info log file %s", foutName.c_str()).c_str());
+
+			// output volume info
+			fprintf(fout,"HEIGHT=%d\n",vc.getV1() - vc.getV0());
+			fprintf(fout,"WIDTH=%d\n",vc.getH1() - vc.getH0());
+			fprintf(fout,"DEPTH=%d\n",vc.getD1() - vc.getD0());
+
+			fclose(fout);
+			return EXIT_SUCCESS;
+		}
+
 		
 		vc.setSrcVolume(cli.src_root_dir.c_str(),cli.src_format.c_str(),cli.dst_format.c_str());
 		vc.setSubVolume(cli.V0,cli.V1,cli.H0,cli.H1,cli.D0,cli.D1);
 
 		if ( cli.outFmt == "Tiff2DStck" )
-			vc.generateTiles(cli.dst_root_dir.c_str(),cli.resolutions,
-				cli.slice_height,cli.slice_width,cli.halving_method,
-				cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN());
-		else if ( cli.outFmt == "Vaa3DRaw" )
-			vc.generateTilesVaa3DRaw(cli.dst_root_dir.c_str(),cli.resolutions,
-				cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,
-				cli.show_progress_bar,"vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN());
-		else if ( cli.outFmt == "Tiff3D" )
-			vc.generateTilesVaa3DRaw(cli.dst_root_dir.c_str(),cli.resolutions,
-				cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,
-				cli.show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN());
+			if ( cli.makeDirs ) {
+				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+			else if ( cli.metaData ) {
+				vc.mdataGenerator(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+			else {
+				vc.generateTiles(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+		else if ( cli.outFmt == "Vaa3DRaw" ) {
+			if ( cli.makeDirs ) {
+				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+			else if ( cli.metaData ) {
+				vc.mdataGenerator(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+			else {
+				vc.generateTilesVaa3DRaw(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+		}
+		else if ( cli.outFmt == "Tiff3D" ) {
+			if ( cli.makeDirs ) {
+				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+			else if ( cli.metaData ) {
+				vc.mdataGenerator(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+			else {
+				vc.generateTilesVaa3DRaw(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+		}
 		else if ( cli.outFmt == "Vaa3DRawMC" )
-			vc.generateTilesVaa3DRawMC(cli.dst_root_dir.c_str(),cli.resolutions,
-				cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,
-				cli.show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN());
+			if ( cli.makeDirs ) {
+				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+			else if ( cli.metaData ) {
+				vc.mdataGenerator(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"Vaa3DRawMC",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+			else {
+				vc.generateTilesVaa3DRawMC(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",false);
+			}
 		else if ( cli.outFmt == "Tiff3DMC" )
-			vc.generateTilesVaa3DRawMC(cli.dst_root_dir.c_str(),cli.resolutions,
-				cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,
-				cli.show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN());
+			if ( cli.makeDirs ) {
+				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"Tiff3DMC",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+			else if ( cli.metaData ) {
+				vc.mdataGenerator(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"Tiff3DMC",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+			else {
+				vc.generateTilesVaa3DRawMC(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
 		else if ( cli.outFmt == "Fiji_HDF5" )
 			vc.generateTilesBDV_HDF5(cli.dst_root_dir.c_str(),cli.resolutions,
 				cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,
-				cli.show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN());
+				cli.show_progress_bar,"Fiji_HDF5",8*vc.getVolume()->getBYTESxCHAN());
 	}
 	catch( iom::exception& exception){
 		cout<<"ERROR: "<<exception.what()<<endl<<endl;

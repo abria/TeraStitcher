@@ -43,7 +43,7 @@ namespace volumemanager
     *    PARAMETERS    *
     ********************
     ---------------------------------------------------------------------------------------------------------------------------*/
-    std::string VERSION = "1.1.0";            // version of current module
+    std::string VERSION = "1.1.1";            // version of current module
     std::string VOLUME_INPUT_FORMAT_PLUGIN = "TiledXY|2Dseries";		// plugin to manage the input volume format
 	std::string VOLUME_OUTPUT_FORMAT_PLUGIN = "TiledXY|2Dseries";	// plugin to manage the output volume format
     std::string IMG_FILTER_REGEX = "";				// regular expression used to filter image filenames when the volume is imported

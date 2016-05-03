@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-05-03. Giulio.     @ADDED field to set the blending algorithm (default: sinousidal blenging) 
 * 2016-04-07. Giulio.     @MODIFIED moved default constructor among private methods and declared VirtualVolume a friend class 
 * 2016-03-23. Giulio.     @ADDED  offsets of unstitched volume with respect to nominal origin (0,0,0)
 * 2015-02-18. Giulio.     @CREATED  
@@ -66,6 +67,8 @@ class UnstitchedVolume : public iim::VirtualVolume
 		int H0_offs;
 		int D0_offs;
 
+		int blending_algo;
+
 
 		//***OBJECT PRIVATE METHODS****
 		UnstitchedVolume(void);
@@ -92,7 +95,7 @@ class UnstitchedVolume : public iim::VirtualVolume
 
 	public:
 		//CONSTRUCTORS-DECONSTRUCTOR
-        UnstitchedVolume(const char* _root_dir)  throw (iim::IOException);
+        UnstitchedVolume(const char* _root_dir, int _blending_algo = S_SINUSOIDAL_BLENDING )  throw (iim::IOException);
 
 		~UnstitchedVolume(void);
 
@@ -103,6 +106,9 @@ class UnstitchedVolume : public iim::VirtualVolume
         iim::axis   getAXS_1(){return reference_system.first;}
         iim::axis   getAXS_2(){return reference_system.second;}
         iim::axis   getAXS_3(){return reference_system.third;}
+
+		//SET methods
+		void setBLENDING_ALGO(int _blending_algo){blending_algo = _blending_algo;}
 
         // returns a unique ID that identifies the volume format
         std::string getPrintableFormat(){ return iim::UNST_TIF3D_FORMAT; }

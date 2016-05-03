@@ -1053,8 +1053,8 @@ iim::uint8* TiledVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, i
 							sbv_channels = this->DIM_C;
 							sbv_bytes_chan = this->BYTESxCHAN;
 
-                            // 2016-04-20. Alessandro. @FIXED getPlugin3D call when ffmt == "Vaa3DRaw": undefined behaviour
-                            // 2015-04-15. Alessandro. @FIXED bad/missing exception handling in loadSubvolume_to_UINT8.
+							// 2016-04-20. Alessandro. @FIXED getPlugin3D call when ffmt == "Vaa3DRaw": undefined behaviour
+							// 2015-04-15. Alessandro. @FIXED bad/missing exception handling in loadSubvolume_to_UINT8.
                             try
                             {
                                 if ( ffmt != "Vaa3DRaw" && sbv_channels >1 && !(iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved()) ) {
