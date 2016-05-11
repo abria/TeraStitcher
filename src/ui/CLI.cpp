@@ -39,7 +39,6 @@
 #include "CLI.h"
 #include "volumemanager.config.h"
 #include "IOPluginAPI.h"
-//#include "S_config.h"
 #include "config.h"
 #include <tclap/CmdLine.h>
 #include <sstream>

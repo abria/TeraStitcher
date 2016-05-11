@@ -144,9 +144,9 @@ throw (iom::exception)
 		int _height;
 		int _bytes_x_chan;
 		int _chans;
-		int b_swap;
-		void *fhandle;
-		int header_len;
+		//int b_swap;
+		//void *fhandle;
+		//int header_len;
 
 		iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->readMetadata(img_path,_width,_height,_bytes_x_chan,_chans);
 

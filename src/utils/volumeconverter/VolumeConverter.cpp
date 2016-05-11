@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2014-05-11. Giulio.     @ADDED check that the whole volume is processed in makedir/parallel/metadata modes
 * 2014-04-28. Giulio.     @CHANGED output plugin is temporarily substituted to the input plugin to genrate the metadata
 * 2014-04-23. Giulio.     WARNING - resolutions directories in channel directory version of generateTilesVaa3DRawMC no longer reliable
 * 2016-04-23. Giulio.     @ADDED methods and code to manage parallelization in generateTilesVaa3DRawMC (channels directories in resolutions directories version only) 
@@ -3294,6 +3295,9 @@ void VolumeConverter::createDirectoryHierarchy(std::string output_path, bool* re
 	std::string *chans_dir;
 	std::string resolution_dir;
 
+	sint64 whole_height; // 2016-05-04. Giulio. to be used only if par_mode is set to store the height of the whole volume
+	sint64 whole_width;  // 2016-05-04. Giulio. to be used only if par_mode is set to store the width of the whole volume
+	sint64 whole_depth;  // 2016-05-04. Giulio. to be used only if par_mode is set to store the depth of the whole volume
 
 	if ( volume == 0 ) {
 		char err_msg[STATIC_STRINGS_SIZE];
@@ -3307,18 +3311,30 @@ void VolumeConverter::createDirectoryHierarchy(std::string output_path, bool* re
 	//	iom::IMOUT_PLUGIN = "tiff3D";
 	//}
 
+	// 2016-04-13. Giulio. whole_depth is the depth of the whole volume
+	whole_height = this->volume->getDIM_V();
+	whole_width  = this->volume->getDIM_H();
+	whole_depth  = this->volume->getDIM_D();
+
+
 	//computing dimensions of volume to be stitched
 	//this->computeVolumeDims(exclude_nonstitchable_stacks, _ROW_START, _ROW_END, _COL_START, _COL_END, _D0, _D1);
-	width = this->H1-this->H0;
 	height = this->V1-this->V0;
-	depth = this->D1-this->D0;
+	width  = this->H1-this->H0;
+	depth  = this->D1-this->D0;
 
-    if(par_mode && block_depth == -1) // 2016-04-13. Giulio. if conversion is parallelized, option --slicedepth must be used to set block_depth
-    {
-        char err_msg[5000];
-        sprintf(err_msg,"in VolumeConverter::createDirectoryHierarchy(...): block_depth is not set in parallel mode");
-        throw iom::exception(err_msg);
-    }
+	if ( (whole_height != height) || (whole_width != width) || (whole_depth != depth) ) {
+        char err_msg[STATIC_STRINGS_SIZE];
+        sprintf(err_msg,"in VolumeConverter::createDirectoryHierarchy(...): currently only the whole voliume can be processed in this mode");
+        throw IOException(err_msg);
+	}
+
+    //if(par_mode && block_depth == -1) // 2016-04-13. Giulio. if conversion is parallelized, option --slicedepth must be used to set block_depth
+    //{
+    //    char err_msg[5000];
+    //    sprintf(err_msg,"in VolumeConverter::createDirectoryHierarchy(...): block_depth is not set in parallel mode");
+    //    throw iom::exception(err_msg);
+    //}
 
 	//activating resolutions
     block_height = (block_height == -1 ? (int)height : block_height);

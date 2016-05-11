@@ -37,6 +37,7 @@
 #include <CmdLine.h>
 #include "TemplateCLI.h"
 #include "iomanager.config.h"
+#include "IOPluginAPI.h"
 
 /*
  * This is the driver program for the library class VolumeConverter
@@ -161,6 +162,7 @@ int main ( int argc, char *argv[] ) {
 		// do what you have to do
 		VolumeConverter vc;
 
+		// perform simple tasks
 		if ( cli.infofile_path != "" ) {
 			// volume info has been requested
 			FILE *fout;
@@ -175,6 +177,11 @@ int main ( int argc, char *argv[] ) {
 			fprintf(fout,"DEPTH=%d\n",vc.getD1() - vc.getD0());
 
 			fclose(fout);
+			return EXIT_SUCCESS;
+		}
+		if(cli.pluginsinfo)
+		{
+			std::cout << iom::IOPluginFactory::pluginsInfo();
 			return EXIT_SUCCESS;
 		}
 

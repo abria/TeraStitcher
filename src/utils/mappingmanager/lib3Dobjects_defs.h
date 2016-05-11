@@ -12,6 +12,10 @@
 *    1. This material is free for non-profit research, but needs a special license for any commercial purpose. Please contact Alessandro Bria at a.bria@unicas.it or Giulio Iannello at 
 *       g.iannello@unicampus.it for further details.
 *    2. You agree to appropriately cite this work in your related studies and publications.
+*
+*       Bria, A., et al., (2012) "Stitching Terabyte-sized 3D Images Acquired in Confocal Ultramicroscopy", Proceedings of the 9th IEEE International Symposium on Biomedical Imaging.
+*       Bria, A., Iannello, G., "TeraStitcher - A Tool for Fast 3D Automatic Stitching of Teravoxel-sized Microscopy Images", submitted for publication, 2012.
+*
 *    3. This material is provided by  the copyright holders (Alessandro Bria  and  Giulio Iannello),  University Campus Bio-Medico and contributors "as is" and any express or implied war-
 *       ranties, including, but  not limited to,  any implied warranties  of merchantability,  non-infringement, or fitness for a particular purpose are  disclaimed. In no event shall the
 *       copyright owners, University Campus Bio-Medico, or contributors be liable for any direct, indirect, incidental, special, exemplary, or  consequential  damages  (including, but not 
@@ -22,77 +26,48 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
-/******************
-*    CHANGELOG    *
-*******************
-* 2016-04-13  Giulio.     @ADDED options for parallelizing teraconverter
-*/
+/*
+ * lib3Dobjects_defs.h
+ *
+ *  Created on: September 2010
+ *      Author: iannello
+ *
+ *  Last revision: May, 31 2011
+ */
 
-#ifndef _TEMPLATE_COMMAND_LINE_INTERFACE_H
-#define _TEMPLATE_COMMAND_LINE_INTERFACE_H
+# ifndef LIB3DOBJECTS_DEFS_H
+# define LIB3DOBJECTS_DEFS_H
 
-#include <string>
-#include "iomanager.config.h"
-#include "GUI_config.h"
+# include <math.h>
 
-using namespace std;
-
-class TemplateCLI
-{
-	public:
-
-		// switch parameters
-		//bool highest_resolution;						// generate highest resolution (default: false)
-        bool makeDirs;                          //creates the directory hiererchy
-        bool metaData;                          //creates the mdata.bin file of the output volume
-        bool parallel;                          //parallel mode: does not perform side-effect operations during merge
-        bool isotropic;                         //generate lowest resolutiona with voxels as much isotropic as possible
-
-		bool pluginsinfo;						//display plugins information
-
-		// other parameters
-		// int/float/double/string XXXX;	// description
-		string src_root_dir;
-		string dst_root_dir;
-		int slice_depth;
-		int slice_height;
-		int slice_width;
-		string src_format;
-		string dst_format;
-		bool resolutions[S_MAX_MULTIRES];
-		int halving_method;
-		bool show_progress_bar;					//enables/disables progress bar with estimated time remaining
-
-		string outFmt;
-		string infofile_path;					//file path of the info log file to be saved
-
-		// vertices defining the subvolume to be converted
-		int V0;
-		int V1;
-		int H0;
-		int H1;
-		int D0;
-		int D1;
-
-		int tm_blending;						//tiles merging blending type
-
-		//constructor - deconstructor
-		TemplateCLI(void);					//set default params
-		~TemplateCLI(void){};
-
-		//reads options and parameters from command line
-		void readParams(int argc, char** argv) throw (iom::exception);
-
-		//checks parameters correctness
-		void checkParams() throw (iom::exception);
-
-		//returns help text
-		string getHelpText();
-
-		//print all arguments
-		void print();
-};
-
-#endif /* _TERASTITCHER_COMMAND_LINE_INTERFACE_H */
+# ifndef _DOUBLE_PREC_
+typedef float BASETYPE;
+# else
+typedef double BASETYPE;
+# endif
 
 
+typedef double COORDSTYPE;
+
+
+# define myMIN(a,b)     (((a)<(b)) ? (a) : (b))
+# define myMAX(a,b)     (((a)>(b)) ? (a) : (b))
+# define mySIGN(x)      (((x)>=0) ? 1 : -1)
+# define myABS(x)       (((x)>=0) ? (x) : -(x))
+# define myROUND(x,h)   (floor(pow(10.0,h) * (x) + 0.5) / pow(10.0,h))
+
+
+# ifdef DISPLAY_ERROR
+# undef DISPLAY_ERROR
+# endif
+
+# ifdef _ERROR_TO_STDERR
+# include <stdio.h>
+# define DISPLAY_ERROR(msg) \
+	fprintf(stderr,"*** error *** " msg " \n")
+# else
+# define DISPLAY_ERROR(msg)
+# endif
+
+
+# endif

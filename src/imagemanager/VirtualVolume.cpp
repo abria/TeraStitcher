@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-05-11. Giluio.     @FIXED a bug in 'halveSample2D_UINT8' ('img16' in plage of 'img' at line 1085)
 * 2016-04-15. Giluio.     @FIXED in 'saveImage_from_UINT8' offset must not be doubled when color depth is 16 bits
 * 2015-12-10. Giluio.     @FIXED added several volume creation alternatives in "instance" methods to include new formats 
 * 2015-04-15. Alessandro. @ADDED 'instance_format' method with inputs = {path, format}.
@@ -296,7 +297,7 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
     }
     else if(nchannels == 1) // source and destination depths are guarenteed to be the same
     {
-        img = new uint8[img_width * img_height * nchannels * img_depth/8]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), (img_depth == 8 ? IPL_DEPTH_8U : IPL_DEPTH_16U), 1);
+        img = new uint8[img_width * img_height * nchannels * (img_depth/8)]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), (img_depth == 8 ? IPL_DEPTH_8U : IPL_DEPTH_16U), 1);
         //float scale_factor_16b = 65535.0F/255; // conversion is not supported yet
         if(img_depth == 8)
         {
@@ -1064,29 +1065,29 @@ void VirtualVolume::halveSample2D_UINT8 ( uint8** img, int height, int width, in
 
 		else if ( method == HALVE_BY_MAX ) {
 
-		for(sint64 c=0; c<channels; c++)
-		{
-			for(sint64 z=0; z<depth; z++)
+			for(sint64 c=0; c<channels; c++)
 			{
-				for(sint64 i=0; i<height/2; i++)
+				for(sint64 z=0; z<depth; z++)
 				{
-					for(sint64 j=0; j<width/2; j++)
+					for(sint64 i=0; i<height/2; i++)
 					{
-						//computing max of 8-neighbours
-						A = img16[c][z*width*height + 2*i*width + 2*j];
-						B = img16[c][z*width*height + 2*i*width + (2*j+1)];
-						if ( B > A ) A = B;
-						B = img16[c][z*width*height + (2*i+1)*width + 2*j];
-						if ( B > A ) A = B;
-						B = img16[c][z*width*height + (2*i+1)*width + (2*j+1)];
-						if ( B > A ) A = B;
+						for(sint64 j=0; j<width/2; j++)
+						{
+							//computing max of 8-neighbours
+							A = img16[c][z*width*height + 2*i*width + 2*j];
+							B = img16[c][z*width*height + 2*i*width + (2*j+1)];
+							if ( B > A ) A = B;
+							B = img16[c][z*width*height + (2*i+1)*width + 2*j];
+							if ( B > A ) A = B;
+							B = img16[c][z*width*height + (2*i+1)*width + (2*j+1)];
+							if ( B > A ) A = B;
 
-						//computing mean
-                        img[c][z*(width/2)*(height/2) + i*(width/2) + j] = (uint16) iim::round(A);
+							//computing mean
+							img16[c][z*(width/2)*(height/2) + i*(width/2) + j] = (uint16) iim::round(A);
+						}
 					}
 				}
 			}
-		}
 
 		}
 		else {

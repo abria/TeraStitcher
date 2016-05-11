@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2015-05-11. Giulio.     @ADDED 'Mapped Format' to the list of volume formats 
 * 2015-03-17. Giulio.     @CHANGED includes of standard header files (stdlib.h and stdio.h) moved outside the directive #ifdef _WIN32 
 * 2015-02-18. Giulio.     @ADDED Identifier for unstitched volume
 */
@@ -126,6 +127,7 @@ namespace IconImageManager
     const std::string TILED_MC_TIF3D_FORMAT = "TIFF (tiled, 4D)";           // unique ID for multipage TIFF format (nontiled, 4D)
     const std::string UNST_TIF3D_FORMAT     = "TIFF (unstitched, 3D)";      // unique ID for multipage TIFF format (nontiled, 4D)
     const std::string BDV_HDF5_FORMAT       = "HDF5 (BigDataViewer)";       // unique ID for BDV HDF5
+    const std::string MAPPED_FORMAT         = "Mapped Volume";              // unique ID for mapped volumes
     const std::string TIME_SERIES           = "Time series";               // unique ID for the TimeSeries class
 
     const double      PI = 3.14159265;                          // pi

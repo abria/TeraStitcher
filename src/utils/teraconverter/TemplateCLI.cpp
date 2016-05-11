@@ -25,6 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-05-11  Giulio.     @ADDED other formats in help messages
+* 2016-05-11  Giulio.     @ADDED plugins command line options and initialization
 * 2016-04-13  Giulio.     @ADDED options for parallelizing teraconverter
 * 2015-02-10. Giulio.     @CHANGED changed how the resolutions parameter works (resolutions can be chosen individually)
 */
@@ -53,7 +55,7 @@ TemplateCLI::TemplateCLI(void)
 void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 {
 	//command line object definition
-	TCLAP::CmdLine cmd(getHelpText(), '=', "2.2.2");
+	TCLAP::CmdLine cmd(getHelpText(), '=', "2.2.3");
 		/**
 		 * Command line constructor. Defines how the arguments will be
 		 * parsed.
@@ -103,7 +105,9 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		iim::TIF3D_FORMAT + "\"/\"" + 
 		iim::TILED_TIF3D_FORMAT  + "\"/\"" +
 		iim::TILED_MC_TIF3D_FORMAT  + "\"/\"" +
-		iim::UNST_TIF3D_FORMAT  + "\")";
+		iim::UNST_TIF3D_FORMAT  + "\"/\"" +
+		iim::BDV_HDF5_FORMAT  + "\"/\"" +
+		iim::MAPPED_FORMAT  + "\")";
 	TCLAP::ValueArg<string> p_src_format("","sfmt",temp.c_str(),true,"","string");
 	TCLAP::ValueArg<string> p_dst_format("","dfmt","Destination format: (RGB (default)/intensity/graylevel.",false,"RGB","string");
  	//TCLAP::ValueArg<int> p_n_resolutions("","res","Number of resolutions.",true,2,"unsigned");
@@ -121,8 +125,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::ValueArg<int> p_D1("","D1","Last D vertex (excluded).",false,-1,"unsigned");
 
 	TCLAP::MultiArg<std::string> p_algo("","algorithm","Forces the use of the given algorithm.",false,"string");
-	//TCLAP::SwitchArg p_pluginsinfo("p","pluginsinfo","Display plugins informations",false);
-	TCLAP::ValueArg<std::string> p_vol_in_plugin("","volin_plugin",iom::strprintf("Plugin that manages the input volume format/organization. Available plugins are: {%s}. Default is \"%s\".", iom::IOPluginFactory::registeredPlugins().c_str(), vm::VOLUME_INPUT_FORMAT_PLUGIN.c_str()),false,vm::VOLUME_INPUT_FORMAT_PLUGIN,"string");
+	TCLAP::SwitchArg p_pluginsinfo("p","pluginsinfo","Display plugins informations",false);
 	TCLAP::ValueArg<std::string> p_vol_out_plugin("","volout_plugin",iom::strprintf("Plugin that manages the output volume format/organization. Available plugins are: {%s}. Default is \"%s\".", iom::IOPluginFactory::registeredPlugins().c_str(), vm::VOLUME_OUTPUT_FORMAT_PLUGIN.c_str()),false,vm::VOLUME_OUTPUT_FORMAT_PLUGIN,"string");
 	TCLAP::ValueArg<std::string> p_im_in_plugin("","imin_plugin",iom::strprintf("Plugin that manages the input image format. Available plugins are: {%s}. Default is \"auto\".", iom::IOPluginFactory::registeredPlugins().c_str()), false, "auto","string");
 	TCLAP::ValueArg<std::string> p_im_in_plugin_params("","imin_plugin_params","A series of parameters \"param1=val,param2=val,...\" to configure the input image plugin (see --pluginsinfo for the list of accepted parameters)", false, "","string");
@@ -136,8 +139,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_im_in_plugin_params);
 	cmd.add(p_im_in_plugin);
 	cmd.add(p_vol_out_plugin);
-	cmd.add(p_vol_in_plugin);
-	//cmd.add(p_pluginsinfo);
+	cmd.add(p_pluginsinfo);
 	cmd.add(p_algo);
 
 	cmd.add(p_metadata);
@@ -194,7 +196,9 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		 p_src_format.getValue() != iim::TIF3D_FORMAT  && 
 		 p_src_format.getValue() != iim::TILED_TIF3D_FORMAT  && 
 		 p_src_format.getValue() != iim::TILED_MC_TIF3D_FORMAT  && 
-		 p_src_format.getValue() != iim::UNST_TIF3D_FORMAT ) {
+		 p_src_format.getValue() != iim::UNST_TIF3D_FORMAT  && 
+		 p_src_format.getValue() != iim::BDV_HDF5_FORMAT  && 
+		 p_src_format.getValue() != iim::MAPPED_FORMAT ) {
 		temp = "Unknown source format!\nAllowed formats are:\n\t\"" + 
 			iim::TILED_MC_FORMAT + "\"/\"" + 
 			iim::TILED_FORMAT + "\"/\"" + 
@@ -273,35 +277,36 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		}
 	}
 
-	//this->pluginsinfo = p_pluginsinfo.getValue();
-
-	//importing parameters
-// 	vm::VOLUME_INPUT_FORMAT_PLUGIN = p_vol_in_plugin.getValue();
-// 	vm::VOLUME_OUTPUT_FORMAT_PLUGIN = p_vol_out_plugin.getValue();
+	this->pluginsinfo = p_pluginsinfo.getValue();
 
 	// 2014-09-29. Alessandro. @ADDED automated selection of IO plugin if not provided.
-// 	if(p_im_in_plugin.getValue().compare("auto") == 0)
-// 	{
-// 		if(vm::VOLUME_INPUT_FORMAT_PLUGIN.compare("TiledXY|2Dseries") == 0)
-// 			iom::IMIN_PLUGIN = "tiff2D";
-// 		else if(vm::VOLUME_INPUT_FORMAT_PLUGIN.compare("TiledXY|3Dseries") == 0)
-// 			iom::IMIN_PLUGIN = "tiff3D";
-// 	}
-// 	else
-// 		iom::IMIN_PLUGIN = p_im_in_plugin.getValue();
-// 	iom::IMIN_PLUGIN_PARAMS = p_im_in_plugin_params.getValue();
+ 	if(p_im_in_plugin.getValue().compare("auto") == 0)
+ 	{
+ 		if(p_src_format.getValue().compare("TIFF (tiled, 2D)") == 0)
+ 			iom::IMIN_PLUGIN = "tiff2D";
+ 		else if(p_src_format.getValue().compare("TIFF (tiled, 3D)") == 0 || p_src_format.getValue().compare("TIFF (tiled, 4D)") == 0 || 
+				p_src_format.getValue().compare("TIFF (unstitiched, 3D)") == 0)
+ 			iom::IMIN_PLUGIN = "tiff3D";
+		else
+ 			; // already initialized to empty
+ 	}
+ 	else
+ 		iom::IMIN_PLUGIN = p_im_in_plugin.getValue();
+ 	iom::IMIN_PLUGIN_PARAMS = p_im_in_plugin_params.getValue();
 
 	// 2014-09-29. Alessandro. @ADDED automated selection of IO plugin if not provided.
-// 	if(p_im_out_plugin.getValue().compare("auto") == 0)
-// 	{
-// 		if(p_vol_out_plugin.getValue().compare("TiledXY|2Dseries") == 0)
-// 			iom::IMOUT_PLUGIN = "tiff2D";
-// 		else if(p_vol_out_plugin.getValue().compare("TiledXY|3Dseries") == 0)
-// 			iom::IMOUT_PLUGIN = "tiff3D";
-// 	}
-// 	else
-// 		iom::IMOUT_PLUGIN = p_im_in_plugin.getValue();
-// 	iom::IMOUT_PLUGIN_PARAMS = p_im_out_plugin_params.getValue();
+ 	if(p_im_out_plugin.getValue().compare("auto") == 0)
+ 	{
+ 		if(p_outFmt.getValue().compare("Tiff2DStck") == 0)
+ 			iom::IMOUT_PLUGIN = "tiff2D";
+ 		else if(p_outFmt.getValue().compare("Tiff3D") == 0 || p_outFmt.getValue().compare("Tiff3DMC") == 0)
+ 			iom::IMOUT_PLUGIN = "tiff3D";
+		else
+ 			; // already initialized to empty
+ 	}
+ 	else
+ 		iom::IMOUT_PLUGIN = p_im_in_plugin.getValue();
+ 	iom::IMOUT_PLUGIN_PARAMS = p_im_out_plugin_params.getValue();
 
 	//this->resolutions[0] = p_highest_resolution.getValue() ? 1 : 0;
 	//for ( i=1; i<p_n_resolutions.getValue(); i++ )

@@ -12,6 +12,10 @@
 *    1. This material is free for non-profit research, but needs a special license for any commercial purpose. Please contact Alessandro Bria at a.bria@unicas.it or Giulio Iannello at 
 *       g.iannello@unicampus.it for further details.
 *    2. You agree to appropriately cite this work in your related studies and publications.
+*
+*       Bria, A., et al., (2012) "Stitching Terabyte-sized 3D Images Acquired in Confocal Ultramicroscopy", Proceedings of the 9th IEEE International Symposium on Biomedical Imaging.
+*       Bria, A., Iannello, G., "TeraStitcher - A Tool for Fast 3D Automatic Stitching of Teravoxel-sized Microscopy Images", submitted for publication, 2012.
+*
 *    3. This material is provided by  the copyright holders (Alessandro Bria  and  Giulio Iannello),  University Campus Bio-Medico and contributors "as is" and any express or implied war-
 *       ranties, including, but  not limited to,  any implied warranties  of merchantability,  non-infringement, or fitness for a particular purpose are  disclaimed. In no event shall the
 *       copyright owners, University Campus Bio-Medico, or contributors be liable for any direct, indirect, incidental, special, exemplary, or  consequential  damages  (including, but not 
@@ -22,77 +26,80 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
-/******************
-*    CHANGELOG    *
-*******************
-* 2016-04-13  Giulio.     @ADDED options for parallelizing teraconverter
-*/
+/*
+ * spaceObjects.h
+ *
+ * created August 10, 2012 by Giulio Iannello
+ * changed April 29, 2016 by Pierangelo Afferni
+ */
 
-#ifndef _TEMPLATE_COMMAND_LINE_INTERFACE_H
-#define _TEMPLATE_COMMAND_LINE_INTERFACE_H
+# ifndef SPACE_OBJECTS_H
+# define SPACE_OBJECTS_H
 
-#include <string>
-#include "iomanager.config.h"
-#include "GUI_config.h"
+# include "lib3Dobjects_defs.h"
+//# include "utils.h"
 
-using namespace std;
+class SpaceObj {
 
-class TemplateCLI
-{
-	public:
+	COORDSTYPE vals[3];  // Define SpaceObj assuming the coordinates system (0,1,2) or (V,H,D) be corresponding to (y,x,z)
 
-		// switch parameters
-		//bool highest_resolution;						// generate highest resolution (default: false)
-        bool makeDirs;                          //creates the directory hiererchy
-        bool metaData;                          //creates the mdata.bin file of the output volume
-        bool parallel;                          //parallel mode: does not perform side-effect operations during merge
-        bool isotropic;                         //generate lowest resolutiona with voxels as much isotropic as possible
-
-		bool pluginsinfo;						//display plugins information
-
-		// other parameters
-		// int/float/double/string XXXX;	// description
-		string src_root_dir;
-		string dst_root_dir;
-		int slice_depth;
-		int slice_height;
-		int slice_width;
-		string src_format;
-		string dst_format;
-		bool resolutions[S_MAX_MULTIRES];
-		int halving_method;
-		bool show_progress_bar;					//enables/disables progress bar with estimated time remaining
-
-		string outFmt;
-		string infofile_path;					//file path of the info log file to be saved
-
-		// vertices defining the subvolume to be converted
-		int V0;
-		int V1;
-		int H0;
-		int H1;
-		int D0;
-		int D1;
-
-		int tm_blending;						//tiles merging blending type
-
-		//constructor - deconstructor
-		TemplateCLI(void);					//set default params
-		~TemplateCLI(void){};
-
-		//reads options and parameters from command line
-		void readParams(int argc, char** argv) throw (iom::exception);
-
-		//checks parameters correctness
-		void checkParams() throw (iom::exception);
-
-		//returns help text
-		string getHelpText();
-
-		//print all arguments
-		void print();
+public:
+	SpaceObj ( ) { vals[0] = vals[1] = vals[2] = 0.0; }
+	SpaceObj ( COORDSTYPE y, COORDSTYPE x, COORDSTYPE z ) {
+		vals[0] = y;
+		vals[1] = x;
+		vals[2] = z; 
+	}
+	SpaceObj ( const SpaceObj& ex_instance ) {
+		vals[0] = ex_instance.vals[0];
+		vals[1] = ex_instance.vals[1];
+		vals[2] = ex_instance.vals[2]; 
+	}
+	SpaceObj& operator= ( const SpaceObj& ex_instance ) {
+		vals[0] = ex_instance.vals[0];
+		vals[1] = ex_instance.vals[1];
+		vals[2] = ex_instance.vals[2]; 
+		return *this;
+	}
+	bool operator== ( const SpaceObj& ex_instance ) {
+		return 
+			( vals[0] == ex_instance.vals[0] &&
+			  vals[1] == ex_instance.vals[1] &&
+			  vals[2] == ex_instance.vals[2]   ); 
+	}
+	COORDSTYPE y ( ) { return vals[0]; }
+	COORDSTYPE x ( ) { return vals[1]; }
+	COORDSTYPE z ( ) { return vals[2]; }
+	COORDSTYPE val ( int ind ) { return vals[ind]; }
+	void sety ( COORDSTYPE val ) { vals[0] = val; }
+	void setx ( COORDSTYPE val ) { vals[1] = val; }
+	void setz ( COORDSTYPE val ) { vals[2] = val; }
+	void setval ( int ind, COORDSTYPE val ) { vals[ind] = val; }
+	void setvals ( COORDSTYPE y, COORDSTYPE x, COORDSTYPE z ) {
+		vals[0] = y;
+		vals[1] = x;
+		vals[2] = z; 
+	}
 };
 
-#endif /* _TERASTITCHER_COMMAND_LINE_INTERFACE_H */
+class SpaceSize : public SpaceObj {
+public:
+	SpaceSize () : SpaceObj() { }
+	SpaceSize ( COORDSTYPE y, COORDSTYPE x, COORDSTYPE z ) : SpaceObj(y,x,z) { }
+};
 
+class Point : public SpaceObj {
+public:
+	Point () : SpaceObj() { }
+	Point ( COORDSTYPE y, COORDSTYPE x, COORDSTYPE z ) : SpaceObj(y,x,z) { }
 
+	Point move ( SpaceSize move_info ) {
+		Point temp = *this;
+		temp.setx(x() + move_info.x());
+		temp.sety(y() + move_info.y());
+		temp.setz(z() + move_info.z());
+		return temp;
+	}
+};
+
+# endif

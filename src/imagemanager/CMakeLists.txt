@@ -5,6 +5,7 @@ include_directories (${TeraStitcher_SOURCE_DIR}/iomanager)
 include_directories (${TeraStitcher_SOURCE_DIR}/volumemanager)
 include_directories (${TeraStitcher_SOURCE_DIR}/tinyxml)
 include_directories (${TeraStitcher_SOURCE_DIR}/common)
+include_directories (${TeraStitcher_SOURCE_DIR}/utils/mappingmanager)
 
 # add 3rd party modules to include path
 include_directories (${CMAKE_SOURCE_DIR}/3rdparty/zlib)
@@ -17,7 +18,6 @@ include_directories (${TeraStitcher_SOURCE_DIR}/3rdparty/tinyxml)
 file(GLOB imagemanager_headers *.h)
 file(GLOB imagemanager_sources *.cpp)
 add_library(imagemanager STATIC ${imagemanager_headers} ${imagemanager_sources})
-
 
 # check HDF5 option
 option (WITH_HDF5 "Support to HDF5" OFF) 

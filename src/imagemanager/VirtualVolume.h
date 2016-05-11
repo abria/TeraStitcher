@@ -73,7 +73,7 @@ protected:
     }
 
 public:
-	//CONSTRUCTORS-DECONSTRUCTOR
+	//CONSTRUCTORS-DESTRUCTOR
     VirtualVolume();
     VirtualVolume(const char* _root_dir, float VXL_1=0, float VXL_2=0, float VXL_3=0) throw (iim::IOException)
     {
@@ -163,12 +163,12 @@ public:
     virtual iim::uint32* getActiveChannels(){return active;}
     
     // @ADDED by Giulio. on 2016-04-27: methods to convert indices to coordinates and viceversa
-    int coord2ind_V(float v) { return (int) ((ORG_V + v) / VXL_V); }    
-    int coord2ind_H(float h) { return (int) ((ORG_H + h) / VXL_H); }    
-    int coord2ind_D(float d) { return (int) ((ORG_D + d) / VXL_D); }   
     float ind2coord_V(int v) { return ORG_V + v*VXL_V; } 
     float ind2coord_H(int h) { return ORG_H + h*VXL_H; } 
     float ind2coord_D(int d) { return ORG_D + d*VXL_D; } 
+    int coord2ind_V(float v) { return (int) ((v - ORG_V) / VXL_V); }    
+    int coord2ind_H(float h) { return (int) ((h - ORG_H) / VXL_H); }    
+    int coord2ind_D(float d) { return (int) ((d - ORG_D) / VXL_D); }   
 
     // @ADDED by Alessandro on 2014-02-18: returns a unique ID that identifies the volume format
     virtual std::string getPrintableFormat() = 0;
