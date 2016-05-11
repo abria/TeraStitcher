@@ -356,7 +356,7 @@ void TemplateCLI::checkParams() throw (iom::exception)
 string TemplateCLI::getHelpText()
 {
 	stringstream helptext;
-	helptext << "TeraConverter v2.2.1\n";
+	helptext << "TeraConverter v2.2.3\n";
 	return helptext.str();
 }
 

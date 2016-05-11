@@ -89,8 +89,9 @@ throw (iom::exception)
 	uint16 bpp;
 	uint16 spp;
 
-	 // disable warning handler to avoid messages on unrecognized tags
+	//disable warning and error handlers to avoid messages on unrecognized tags
 	TIFFSetWarningHandler(0);
+	TIFFSetErrorHandler(0);
 
 	TIFF* input=TIFFOpen(img_path.c_str(),"r");
 	if (!input)

@@ -63,8 +63,9 @@ char *loadTiff3D2Metadata ( char * filename, unsigned int &sz0, unsigned int  &s
     TIFF *input;
     int check;
 
-	//disable warning handler to avoid messages on unrecognized tags
+	//disable warning and error handlers to avoid messages on unrecognized tags
 	TIFFSetWarningHandler(0);
+	TIFFSetErrorHandler(0);
 
 	input=TIFFOpen(filename,"r");
 	if (!input)
@@ -155,8 +156,9 @@ char *openTiff3DFile ( char *filename, char *mode, void *&fhandle ) {
 		strcat(completeFilename,TIFF3D_SUFFIX);
 	}
 
-	//disable warning handler to avoid messages on unrecognized tags
+	//disable warning and error handlers to avoid messages on unrecognized tags
 	TIFFSetWarningHandler(0);
+	TIFFSetErrorHandler(0);
 
 	fhandle = TIFFOpen(completeFilename,mode);
 	if (!fhandle)
@@ -218,8 +220,9 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
     TERAFLY_TIME_RESTART(TiffInitData)
     #endif
 
-	//disable warning handler to avoid messages on unrecognized tags
+	//disable warning and error handlers to avoid messages on unrecognized tags
 	TIFFSetWarningHandler(0);
+	TIFFSetErrorHandler(0);
 
 	TIFF *output;
 	output = TIFFOpen(completeFilename,"w");
@@ -314,8 +317,9 @@ char *appendSlice2Tiff3DFile ( char *filename, int slice, unsigned char *img, un
 	TIFF *output;
 	uint16 spp, bpp, NPages, pg0;
 
-	//disable warning handler to avoid messages on unrecognized tags
+	//disable warning and error handlers to avoid messages on unrecognized tags
 	TIFFSetWarningHandler(0);
+	TIFFSetErrorHandler(0);
 
 	output=TIFFOpen(filename,"r");
 	TIFFGetField(output, TIFFTAG_BITSPERSAMPLE, &bpp); 
@@ -392,8 +396,9 @@ char *readTiff3DFile2Buffer ( char *filename, unsigned char *img, unsigned int i
 
     TIFF *input;
 
-	//disable warning handler to avoid messages on unrecognized tags
+	//disable warning and error handlers to avoid messages on unrecognized tags
 	TIFFSetWarningHandler(0);
+	TIFFSetErrorHandler(0);
 
 	input=TIFFOpen(filename,"r");
 	if (!input)
