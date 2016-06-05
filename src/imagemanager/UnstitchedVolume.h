@@ -52,10 +52,10 @@ extern bool compareCorners (stripe_corner first, stripe_corner second);
 //every object of this class has the default (1,2,3) reference system
 class UnstitchedVolume : public iim::VirtualVolume
 {
-	private:
+	protected:
 
-		volumemanager::VirtualVolume* volume;
-		StackStitcher* stitcher;
+		volumemanager::VirtualVolume *volume;
+		StackStitcher *stitcher;
 
 		iim::ref_sys reference_system;       //reference system of the stored volume
 
@@ -106,6 +106,7 @@ class UnstitchedVolume : public iim::VirtualVolume
         iim::axis   getAXS_1(){return reference_system.first;}
         iim::axis   getAXS_2(){return reference_system.second;}
         iim::axis   getAXS_3(){return reference_system.third;}
+		iim::ref_sys getREF_SYS(){return reference_system;}
 
 		//SET methods
 		void setBLENDING_ALGO(int _blending_algo){blending_algo = _blending_algo;}
@@ -125,6 +126,9 @@ class UnstitchedVolume : public iim::VirtualVolume
 
     	// needed to enable the detection by the factory of volume format through use of the default constructor
         friend class iim::VirtualVolume; 
+
+    	// needed to enable the extraction of the underlying unstitiched volume
+        friend class StackStitcher2; 
 
 };
 

@@ -75,6 +75,10 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir, int _blending_algo)  t
 	volume = volumemanager::VirtualVolumeFactory::createFromXML(_root_dir,false);
 	stitcher = new StackStitcher(volume);
 
+	reference_system.first  = (iim::axis(volume->getREF_SYS().first));
+	reference_system.second = (iim::axis(volume->getREF_SYS().second));
+	reference_system.third  = (iim::axis(volume->getREF_SYS().third));
+
 	VXL_V = volume->getVXL_V();
 	VXL_H = volume->getVXL_H();
 	VXL_D = volume->getVXL_D();

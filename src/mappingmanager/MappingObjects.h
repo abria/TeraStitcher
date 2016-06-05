@@ -16,8 +16,7 @@
 #ifndef MAPPING_OBJECTS_H
 #define MAPPING_OBJECTS_H
 
-# include "../../imagemanager/IM_config.h"
-//# include "IM_config.h"
+# include "../imagemanager/IM_config.h"
 # include "spaceObjects.h"
 # include "reg_utils.h"
 

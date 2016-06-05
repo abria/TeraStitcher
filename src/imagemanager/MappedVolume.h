@@ -32,7 +32,7 @@
 #define _MAPPED_VOLUME_H
 
 #include "VirtualVolume.h" // ADDED
-#include "../utils/mappingmanager/MappingObjects.h"
+#include "MappingObjects.h"
 #include <list>
 #include <string>
 #include "imBlock.h"

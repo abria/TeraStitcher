@@ -37,6 +37,8 @@ add_subdirectory( crossmips )
 add_subdirectory( volumemanager )
 add_subdirectory( stitcher )
 add_subdirectory( common )
+add_subdirectory( mappingmanager )
+add_subdirectory( multilayersmanager )
 add_subdirectory( ui )
 
 # build user-selectable modules
