@@ -439,9 +439,9 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 	{
 		// fill one slice block
 		if ( internal_rep == REAL_INTERNAL_REP )
-            rbuffer = volume->loadSubvolume_to_real32(V0,V1,H0,H1,(int)(z-D0),(z-D0+z_max_res <= D1) ? (int)(z-D0+z_max_res) : D1);
+            rbuffer = volume->loadSubvolume_to_real32(V0,V1,H0,H1,(int)z,(z+z_max_res <= D1) ? (int)(z+z_max_res) : D1);
 		else { // internal_rep == UINT8_INTERNAL_REP
-            ubuffer[0] = volume->loadSubvolume_to_UINT8(V0,V1,H0,H1,(int)(z-D0),(z-D0+z_max_res <= D1) ? (int)(z-D0+z_max_res) : D1,&channels,iim::NATIVE_RTYPE);
+            ubuffer[0] = volume->loadSubvolume_to_UINT8(V0,V1,H0,H1,(int)z,(z+z_max_res <= D1) ? (int)(z+z_max_res) : D1,&channels,iim::NATIVE_RTYPE);
 			// WARNING: next code assumes that channels is 1 or 3, but implementations of loadSubvolume_to_UINT8 do not guarantee this condition
 			if ( org_channels != channels ) {
 				char err_msg[STATIC_STRINGS_SIZE];
@@ -575,7 +575,7 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 							abs_pos_z.fill('0');
 							// 2015-12-20. Giulio. @FIXED file name generation (scale of some absolute coordinates was in 1 um and not in 0.1 um
 							abs_pos_z << (int)(this->getMultiresABS_D(i) + // all stacks start at the same D position
-                                                (powInt(2,halve_pow2[i])*buffer_z + z) * volume->getVXL_D() * 10);
+                                                (powInt(2,halve_pow2[i])*buffer_z + z - D0) * volume->getVXL_D() * 10);
 							img_path << H_DIR_path.str() << "/" 
 										<< this->getMultiresABS_V_string(i,start_height) << "_" 
 										<< this->getMultiresABS_H_string(i,start_width) << "_"
@@ -1056,7 +1056,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 
 		// fill one slice block
 		if ( internal_rep == REAL_INTERNAL_REP )
-            rbuffer = volume->loadSubvolume_to_real32(V0,V1,H0,H1,(int)(z-D0),(z-D0+z_max_res <= D1) ? (int)(z-D0+z_max_res) : D1);
+            rbuffer = volume->loadSubvolume_to_real32(V0,V1,H0,H1,(int)z,(z+z_max_res <= D1) ? (int)(z+z_max_res) : D1);
 		else { // internal_rep == UINT8_INTERNAL_REP
             // 2015-12-19. Giulio. @ADDED Subvolume conversion     
 			//ubuffer[0] = volume->loadSubvolume_to_UINT8(V0,V1,H0,H1,(int)(z-D0),(z-D0+z_max_res <= D1) ? (int)(z-D0+z_max_res) : D1,&channels,iim::NATIVE_RTYPE);
