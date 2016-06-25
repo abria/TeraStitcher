@@ -28,7 +28,7 @@
 * 2014-10-29 Giulio. @ADDED fflush after writes
 */
 
-#include "resumer.h"
+#include "vcresumer.h"
 
 #ifdef _WIN32
 #include "dirent_win.h"

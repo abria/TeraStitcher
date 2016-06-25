@@ -87,7 +87,7 @@
 #include <stdlib.h>
 #include <sstream>
 #include <cstdio>
-#include "resumer.h"
+#include "vcresumer.h"
 
 // 2016--04-09 Giulio.
 #include "IOPluginAPI.h" 
