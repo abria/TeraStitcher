@@ -26,6 +26,8 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2016-06-17. Giulio.     @ADDED the possibility of performing downsampling on-the-fly when reading an image
+* 2016-06-17. Giulio.     @ADDED the ability to control the number of rows per strip (rps) 
 * 2015-03-03. Giulio.     @FIXED RGB photometric interprettion has to be set when there is more than one channel 
 * 2015-02-06. Giulio.     @ADDED append operation that assume an already open and positioned file
 * 2015-02-06. Giulio.     @ADDED open operation
@@ -46,6 +48,8 @@
 #include "PLog.h"
 #include "COperation.h"
 #endif
+
+static uint32 rowsPerStrip = 1;
 
 char *loadTiff3D2Metadata ( char * filename, unsigned int &sz0, unsigned int  &sz1, unsigned int  &sz2, unsigned int  &sz3, int &datatype, int &b_swap, void * &fhandle, int &header_len ) {
 
@@ -186,10 +190,10 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 	uint16 spp    = sz3;
 
 	uint16 bpp=8 * datatype;
-	unsigned char *fakeData=new unsigned char[XSIZE * YSIZE];
+	unsigned char *fakeData=new unsigned char[XSIZE * YSIZE * spp * (bpp/8)];
 	
 	int check;
-
+ 
 	if ( sz3 == 1 )
 		spp = sz3; 
 	else if ( sz3 < 4 )
@@ -237,22 +241,27 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 
 	check = TIFFSetField(output, TIFFTAG_IMAGELENGTH, YSIZE);
 	if (!check) {
-		return ((char *) "Cannot set the image width.");
+		return ((char *) "Cannot set the image height.");
     }
 
 	check = TIFFSetField(output, TIFFTAG_BITSPERSAMPLE, bpp); 
 	if (!check) {
-		return ((char *) "Cannot set the image width.");
+		return ((char *) "Cannot set the image bit per sample.");
     }
 
 	check = TIFFSetField(output, TIFFTAG_SAMPLESPERPIXEL, spp);
 	if (!check) {
-		return ((char *) "Cannot set the image width.");
+		return ((char *) "Cannot set the image sample per pixel.");
     }
 
-	check = TIFFSetField(output, TIFFTAG_ROWSPERSTRIP, YSIZE); // one page per strip
+	check = TIFFSetField(output, TIFFTAG_ROWSPERSTRIP, (rowsPerStrip == -1) ? YSIZE : rowsPerStrip); 
 	if (!check) {
-		return ((char *) "Cannot set the image height.");
+		return ((char *) "Cannot set the image rows per strip.");
+    }
+
+	check = TIFFSetField(output, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT); 
+	if (!check) {
+		return ((char *) "Cannot set the image orientation.");
     }
 
 	check = TIFFSetField(output, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
@@ -289,6 +298,38 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 	if (!check) {
 		return ((char *) "Cannot write encoded strip to file.");
     }
+
+	if ( rowsPerStrip == -1 ) 
+		TIFFWriteEncodedStrip(output, 0, fakeData, XSIZE * YSIZE * spp * (bpp/8));
+	else { 
+		int check,StripsPerImage,LastStripSize;
+		uint32 rps = rowsPerStrip;
+		unsigned char *buf = fakeData;
+
+		StripsPerImage =  (YSIZE + rps - 1) / rps;
+		LastStripSize = YSIZE % rps;
+		if (LastStripSize==0)
+			LastStripSize=rps;
+
+		for (int i=0; i < StripsPerImage-1; i++){
+			//if (comp==1) {
+			//	TIFFReadRawStrip(input, i, buf, spp * rps * img_width * (bpp/8));
+			//	buf = buf + spp * rps * img_width * (bpp/8);
+			//}
+			//else{
+				TIFFWriteEncodedStrip(output, i, buf, spp * rps * XSIZE * (bpp/8));
+				buf = buf + spp * rps * XSIZE * (bpp/8);
+			//}
+		}
+
+		//if (comp==1) {
+		//	TIFFReadRawStrip(input, StripsPerImage-1, buf, spp * LastStripSize * img_width * (bpp/8));
+		//}
+		//else{
+			TIFFWriteEncodedStrip(output, StripsPerImage-1, buf, spp * LastStripSize * XSIZE * (bpp/8));
+		//}
+		buf = buf + spp * LastStripSize * XSIZE * (bpp/8);
+	}
 
 	delete[] fakeData;
 	delete []completeFilename;
@@ -335,7 +376,8 @@ char *appendSlice2Tiff3DFile ( char *filename, int slice, unsigned char *img, un
 	TIFFSetField(output, TIFFTAG_IMAGELENGTH, img_height);
 	TIFFSetField(output, TIFFTAG_BITSPERSAMPLE, bpp); 
 	TIFFSetField(output, TIFFTAG_SAMPLESPERPIXEL, spp);
-	TIFFSetField(output, TIFFTAG_ROWSPERSTRIP, img_height);
+	TIFFSetField(output, TIFFTAG_ROWSPERSTRIP, (rowsPerStrip == -1) ? img_height : rowsPerStrip);
+	TIFFSetField(output, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
 	TIFFSetField(output, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
 	//TIFFSetField(output, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
 	TIFFSetField(output, TIFFTAG_PLANARCONFIG,PLANARCONFIG_CONTIG);
@@ -345,7 +387,37 @@ char *appendSlice2Tiff3DFile ( char *filename, int slice, unsigned char *img, un
 	TIFFSetField(output, TIFFTAG_SUBFILETYPE, FILETYPE_PAGE);
 	TIFFSetField(output, TIFFTAG_PAGENUMBER, (uint16)slice, NPages); 
 
-	TIFFWriteEncodedStrip(output, 0, img, img_width * img_height * spp * (bpp/8));
+	if ( rowsPerStrip == -1 ) 
+		TIFFWriteEncodedStrip(output, 0, img, img_width * img_height * spp * (bpp/8));
+	else { 
+		int check,StripsPerImage,LastStripSize;
+		uint32 rps = rowsPerStrip;
+		unsigned char *buf = img;
+
+		StripsPerImage =  (img_height + rps - 1) / rps;
+		LastStripSize = img_height % rps;
+		if (LastStripSize==0)
+			LastStripSize=rps;
+
+		for (int i=0; i < StripsPerImage-1; i++){
+			//if (comp==1) {
+			//	TIFFReadRawStrip(input, i, buf, spp * rps * img_width * (bpp/8));
+			//	buf = buf + spp * rps * img_width * (bpp/8);
+			//}
+			//else{
+				TIFFWriteEncodedStrip(output, i, buf, spp * rps * img_width * (bpp/8));
+				buf = buf + spp * rps * img_width * (bpp/8);
+			//}
+		}
+
+		//if (comp==1) {
+		//	TIFFReadRawStrip(input, StripsPerImage-1, buf, spp * LastStripSize * img_width * (bpp/8));
+		//}
+		//else{
+			TIFFWriteEncodedStrip(output, StripsPerImage-1, buf, spp * LastStripSize * img_width * (bpp/8));
+		//}
+		buf = buf + spp * LastStripSize * img_width * (bpp/8);
+	}
 	//img +=  img_width * img_height;
 
 	TIFFWriteDirectory(output);
@@ -369,7 +441,8 @@ char *appendSlice2Tiff3DFile ( void *fhandler, int slice, unsigned char *img, un
 	TIFFSetField(output, TIFFTAG_IMAGELENGTH, img_height);
 	TIFFSetField(output, TIFFTAG_BITSPERSAMPLE, (uint16)bpp); 
 	TIFFSetField(output, TIFFTAG_SAMPLESPERPIXEL, (uint16)spp);
-	TIFFSetField(output, TIFFTAG_ROWSPERSTRIP, img_height);
+	TIFFSetField(output, TIFFTAG_ROWSPERSTRIP, (rowsPerStrip == -1) ? img_height : rowsPerStrip);
+	TIFFSetField(output, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
 	TIFFSetField(output, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
 	//TIFFSetField(output, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
 	TIFFSetField(output, TIFFTAG_PLANARCONFIG,PLANARCONFIG_CONTIG);
@@ -379,7 +452,37 @@ char *appendSlice2Tiff3DFile ( void *fhandler, int slice, unsigned char *img, un
 	TIFFSetField(output, TIFFTAG_SUBFILETYPE, FILETYPE_PAGE);
 	TIFFSetField(output, TIFFTAG_PAGENUMBER, (uint16)slice, (uint16)NPages); 
 
-	TIFFWriteEncodedStrip(output, 0, img, img_width * img_height * spp * (bpp/8));
+	if ( rowsPerStrip == -1 ) 
+		TIFFWriteEncodedStrip(output, 0, img, img_width * img_height * spp * (bpp/8));
+	else { 
+		int check,StripsPerImage,LastStripSize;
+		uint32 rps = rowsPerStrip;
+		unsigned char *buf = img;
+
+		StripsPerImage =  (img_height + rps - 1) / rps;
+		LastStripSize = img_height % rps;
+		if (LastStripSize==0)
+			LastStripSize=rps;
+
+		for (int i=0; i < StripsPerImage-1; i++){
+			//if (comp==1) {
+			//	TIFFReadRawStrip(input, i, buf, spp * rps * img_width * (bpp/8));
+			//	buf = buf + spp * rps * img_width * (bpp/8);
+			//}
+			//else{
+				TIFFWriteEncodedStrip(output, i, buf, spp * rps * img_width * (bpp/8));
+				buf = buf + spp * rps * img_width * (bpp/8);
+			//}
+		}
+
+		//if (comp==1) {
+		//	TIFFReadRawStrip(input, StripsPerImage-1, buf, spp * LastStripSize * img_width * (bpp/8));
+		//}
+		//else{
+			TIFFReadEncodedStrip(output, StripsPerImage-1, buf, spp * LastStripSize * img_width * (bpp/8));
+		//}
+		buf = buf + spp * LastStripSize * img_width * (bpp/8);
+	}
 	//img +=  img_width * img_height;
 
 	TIFFWriteDirectory(output);
@@ -387,7 +490,8 @@ char *appendSlice2Tiff3DFile ( void *fhandler, int slice, unsigned char *img, un
 	return (char *) 0;
 }
 
-char *readTiff3DFile2Buffer ( char *filename, unsigned char *img, unsigned int img_width, unsigned int img_height, unsigned int first, unsigned int last ) {
+char *readTiff3DFile2Buffer ( char *filename, unsigned char *img, unsigned int img_width, unsigned int img_height, unsigned int first, unsigned int last, 
+																						  int downsamplingFactor, int starti, int endi, int startj, int endj ) {
 
     // 2015-01-30. Alessandro. @ADDED performance (time) measurement in all most time-consuming methods.
     #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
@@ -408,7 +512,7 @@ char *readTiff3DFile2Buffer ( char *filename, unsigned char *img, unsigned int i
     }
     
 	int b_swap=TIFFIsByteSwapped(input);
-	char *err_msg = readTiff3DFile2Buffer(input,img,img_width,img_height,first,last,b_swap);
+	char *err_msg = readTiff3DFile2Buffer(input,img,img_width,img_height,first,last,b_swap,downsamplingFactor,starti,endi,startj,endj);
 
 	TIFFClose(input);
 
@@ -420,19 +524,27 @@ char *readTiff3DFile2Buffer ( char *filename, unsigned char *img, unsigned int i
 	return err_msg;
 }
 
-char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int img_width, unsigned int img_height, unsigned int first, unsigned int last, int b_swap ) {
+char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int img_width, unsigned int img_height, unsigned int first, unsigned int last, 
+																		   int b_swap, int downsamplingFactor, int starti, int endi, int startj, int endj ) {
 	uint32 rps;
-    uint16 spp, bpp, photo, comp, planar_config;
+    uint16 spp, bpp, orientation, photo, comp, planar_config;
     int check, StripsPerImage,LastStripSize;
+	uint32 XSIZE;
+	uint32 YSIZE;
 
     TIFF *input = (TIFF *) fhandler;
 
 	check=TIFFGetField(input, TIFFTAG_ROWSPERSTRIP, &rps);
 	if (!check)
 	{
-		return ((char *) "Image length of undefined.");
+		return ((char *) "Undefined rows per strip.");
 	}	
-	//rps=600;
+    
+	//check=TIFFGetField(input, TIFFTAG_ORIENTATION, &orientation); 
+	//if (!check)
+	//{
+	//	return ((char *) "Image orientation undefined.");
+	//}	
     
 	check=TIFFGetField(input, TIFFTAG_BITSPERSAMPLE, &bpp); 
 	if (!check)
@@ -464,52 +576,192 @@ char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int i
 		return ((char *) "Cannot determine planar configuration.");
 	}
 
-
 	StripsPerImage =  (img_height + rps - 1) / rps;
 	LastStripSize = img_height % rps;
 	if (LastStripSize==0)
 		LastStripSize=rps;
 
-	check=TIFFSetDirectory(input, first);
-	if (!check)
-	{
-		return ((char *) "Cannot open the requested first strip.");
-	}
-
 	unsigned char *buf = img;
 	int page=0;
-	do{
 
-		for (int i=0; i < StripsPerImage-1; i++){
-			if (comp==1) {
-				TIFFReadRawStrip(input, i, buf, spp * rps * img_width * (bpp/8));
-				buf = buf + spp * rps * img_width * (bpp/8);
+	if ( downsamplingFactor == 1 ) { // read without downsampling
+
+		starti = (starti == -1) ? 0 : starti;
+		endi   = (endi == -1) ? img_height-1 : endi;
+		startj = (startj == -1) ? 0 : startj;
+		endj   = (endj == -1) ? img_width-1 : endj;
+
+		if ( starti < 0 || endi >= img_height || startj < 0 || endj >= img_width || starti >= endi || startj >= endj )
+		{
+			return ((char *) "Wrong substack indices.");
+		}
+
+		if ( starti == 0 && endi == (img_height-1) && startj == 0 && endj == (img_width-1) ) { // read whole images from files 
+
+			check=TIFFSetDirectory(input, first);
+			if (!check)
+			{
+				return ((char *) "Cannot open the requested first strip.");
 			}
-			else{
-				TIFFReadEncodedStrip(input, i, buf, spp * rps * img_width * (bpp/8));
-				buf = buf + spp * rps * img_width * (bpp/8);
-			}
-		}
 
-		if (comp==1) {
-			TIFFReadRawStrip(input, StripsPerImage-1, buf, spp * LastStripSize * img_width * (bpp/8));
-		}
-		else{
-			TIFFReadEncodedStrip(input, StripsPerImage-1, buf, spp * LastStripSize * img_width * (bpp/8));
-		}
-		buf = buf + spp * LastStripSize * img_width * (bpp/8);
+			do{
 
-		page++;
+				for (int i=0; i < StripsPerImage-1; i++){
+					if (comp==1) {
+						TIFFReadRawStrip(input, i, buf, spp * rps * img_width * (bpp/8));
+						buf = buf + spp * rps * img_width * (bpp/8);
+					}
+					else{
+						TIFFReadEncodedStrip(input, i, buf, spp * rps * img_width * (bpp/8));
+						buf = buf + spp * rps * img_width * (bpp/8);
+					}
+				}
+
+				if (comp==1) {
+					TIFFReadRawStrip(input, StripsPerImage-1, buf, spp * LastStripSize * img_width * (bpp/8));
+				}
+				else{
+					TIFFReadEncodedStrip(input, StripsPerImage-1, buf, spp * LastStripSize * img_width * (bpp/8));
+				}
+				buf = buf + spp * LastStripSize * img_width * (bpp/8);
+
+				page++;
 	
-	}while ( page < static_cast<int>(last-first+1) && TIFFReadDirectory(input));//while (TIFFReadDirectory(input));
+			}while ( page < static_cast<int>(last-first+1) && TIFFReadDirectory(input));//while (TIFFReadDirectory(input));
 
-	// input file is assumedo ti be already open and it is provided as an handler; the file should be closed by caller
-	//TIFFClose(input);  
+		}
+		else { // read only a subregion of images from files
 
-	if ( page < static_cast<int>(last-first+1) ){
-		return ((char *) "Cannot read all the pages.");
+			check=TIFFGetField(input, TIFFTAG_IMAGEWIDTH, &XSIZE);
+			if (!check)
+			{
+				return ((char *) "Image width of undefined.");
+			}		    
+			check=TIFFGetField(input, TIFFTAG_IMAGELENGTH, &YSIZE);
+			if (!check)
+			{
+				return ((char *) "Image length of undefined.");
+			}
+
+			unsigned char *rowbuf = new unsigned char[spp * rps * XSIZE * (bpp/8)];
+			unsigned char *bufptr;
+
+			do{
+				check=TIFFSetDirectory(input, first + page);
+				if (!check)
+				{
+					return ((char *) "Cannot open next requested strip.");
+				}
+
+				int stripIndex = (starti / rps) - 1; // the strip preceeding the first one
+				for (int i=starti; i <= endi; i++) {
+					if ( floor(i / rps) > stripIndex ) { // read a new strip
+						stripIndex = (int)floor(i / rps);
+						if (comp==1) {
+							TIFFReadRawStrip(input, stripIndex, rowbuf, spp * ((stripIndex < StripsPerImage) ? rps :LastStripSize) * XSIZE * (bpp/8));
+						}
+						else{
+							TIFFReadEncodedStrip(input, stripIndex, rowbuf, spp * ((stripIndex < StripsPerImage) ? rps :LastStripSize) * XSIZE * (bpp/8));
+						}
+					}
+					bufptr = rowbuf + (i % rps) * (spp * XSIZE * (bpp/8));
+					if ( bpp == 8 )
+						for (int j=0, j1=startj; j<=(endj-startj); j++, j1++) {
+							for (int c=0; c<spp; c++) {
+								buf[j * spp + c] = bufptr[j1 * spp + c];
+							}
+						}
+					else
+						for (int j=0 , j1=startj; j<=(endj-startj); j++, j1++) {
+							for (int c=0; c<spp; c++) {
+								((uint16 *)buf)[j * spp + c] = ((uint16 *)bufptr)[j1 * spp + c];
+							}
+						}
+					buf = buf + spp * (endj-startj+1) * (bpp/8);
+				}
+
+				page++;
+
+			}while ( page < static_cast<int>(last-first+1) );
+
+			delete []rowbuf;
+
+		}
+
+		// input file is assumedo ti be already open and it is provided as an handler; the file should be closed by caller
+		//TIFFClose(input); 
+
+		if ( page < static_cast<int>(last-first+1) ){
+			return ((char *) "Cannot read all the pages.");
+		}
 	}
+	else { // read with downsampling
 
+		// preliminary checks
+		check=TIFFGetField(input, TIFFTAG_IMAGEWIDTH, &XSIZE);
+		if (!check)
+		{
+			return ((char *) "Image width of undefined.");
+		}		    
+		check=TIFFGetField(input, TIFFTAG_IMAGELENGTH, &YSIZE);
+		if (!check)
+		{
+			return ((char *) "Image length of undefined.");
+		}
+
+		if ( (int)ceil((double)XSIZE/downsamplingFactor) < img_width ) 
+		{
+			return ((char *) "Requested image width too large.");
+		}
+		if ( (int)ceil((double)YSIZE/downsamplingFactor) < img_height ) 
+		{
+			return ((char *) "Requested image height too large.");
+		}
+
+		unsigned char *rowbuf = new unsigned char[spp * rps * XSIZE * (bpp/8)];
+		unsigned char *bufptr;
+
+		do{
+			check=TIFFSetDirectory(input, ((first + page) * downsamplingFactor));
+			if (!check)
+			{
+				return ((char *) "Cannot open next requested strip.");
+			}
+
+			int stripIndex = -1; // the strip preceeding the first one
+			for (int i=0; i < img_height; i++) {
+				if ( floor(i * downsamplingFactor / (double)rps) > stripIndex ) { // read a new strip
+					stripIndex = (int)floor(i * downsamplingFactor / (double)rps);
+					if (comp==1) {
+						TIFFReadRawStrip(input, stripIndex, rowbuf, spp * ((stripIndex < StripsPerImage) ? rps :LastStripSize) * XSIZE * (bpp/8));
+					}
+					else{
+						TIFFReadEncodedStrip(input, stripIndex, rowbuf, spp * ((stripIndex < StripsPerImage) ? rps :LastStripSize) * XSIZE * (bpp/8));
+					}
+				}
+				bufptr = rowbuf + ((i * downsamplingFactor) % rps) * (spp * XSIZE * (bpp/8));
+				if ( bpp == 8 )
+					for (int j=0; j<img_width; j++) {
+						for (int c=0; c<spp; c++) {
+							buf[j * spp + c] = bufptr[j * spp * downsamplingFactor + c];
+						}
+					}
+				else
+					for (int j=0; j<img_width; j++) {
+						for (int c=0; c<spp; c++) {
+							((uint16 *)buf)[j * spp + c] = ((uint16 *)bufptr)[j * spp * downsamplingFactor + c];
+						}
+					}
+				buf = buf + spp * img_width * (bpp/8);
+			}
+
+			page++;
+
+		}while ( page < static_cast<int>(last-first+1) );
+
+		delete []rowbuf;
+	}
+    
 	// swap the data bytes if necessary 	
 	if (b_swap)
 	{

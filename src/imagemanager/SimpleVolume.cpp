@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-06-16. Giulio.     @ADDED ability to read a downsampled image 
 * 2016-03-24. Giulio.     @ADDED 16 bit support.
 * 2015-04-15. Alessandro. @ADDED definition for default constructor.
 * 2015-02-27. Alessandro. @ADDED automated selection of IO plugin if not provided.
@@ -67,6 +68,14 @@ SimpleVolume::SimpleVolume(const char* _root_dir)  throw (IOException)
 
 	init();
 	initChannels();
+
+	downsamplingFactor = 1;
+	trueVXL_V = VXL_V;
+	trueVXL_H = VXL_H;
+	trueVXL_D = VXL_D;
+	trueDIM_V = DIM_V;
+	trueDIM_H = DIM_H;
+	trueDIM_D = DIM_D;
 }
 
 
@@ -209,6 +218,27 @@ void SimpleVolume::initChannels ( ) throw (IOException)
 	// Giulio_CV cvReleaseImage(&slice);
 }
 
+void SimpleVolume::setDOWNSAMPLINGFACTOR( int f ) {
+	downsamplingFactor = f;
+	VXL_V = trueVXL_V * f;
+	VXL_H = trueVXL_H * f;
+	VXL_D = trueVXL_D * f;
+	DIM_V = (int)ceil((double)trueDIM_V / f);
+	DIM_H = (int)ceil((double)trueDIM_H / f);
+	DIM_D = (int)ceil((double)trueDIM_D / f);
+}
+
+
+void SimpleVolume::resetDOWNSAMPLINGFACTOR() {
+	downsamplingFactor = 1;
+	VXL_V = trueVXL_V;
+	VXL_H = trueVXL_H;
+	VXL_D = trueVXL_D;
+	DIM_V = trueDIM_V;
+	DIM_H = trueDIM_H;
+	DIM_D = trueDIM_D;
+}
+
 
 real32 *SimpleVolume::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, int D0, int D1)  throw (IOException)
 {
@@ -311,12 +341,19 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
 	D0 = (D0 == -1 ? 0		 : D0);
 	D1 = (D1 == -1 ? DIM_D	 : D1);
 
-	uint8 *subvol = 0;
-
 	//allocation
 	sint64 sbv_height = V1 - V0;
 	sint64 sbv_width  = H1 - H0;
 	sint64 sbv_depth  = D1 - D0;
+
+	uint8 *subvol = 0;
+
+	bool whole_slices = V0 == 0 && V1 == DIM_V && H0 == 0 && H1 == DIM_H;
+
+	if ( DIM_C == 1 ) 
+		subvol = new uint8[sbv_height * sbv_width * sbv_depth * BYTESxCHAN];
+	else 
+		subvol = 0;
 
     //initializing the number of channels with an undefined value (it will be detected from the first slice read)
     sint64 sbv_channels = -1;
@@ -344,9 +381,10 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
 				for(int k=0; k<sbv_depth; k++)
 				{
 					//building image path
+					int trueSliceIndex = downsamplingFactor * (D0+k);
 					sprintf(slice_fullpath, "%s/%s/%s", root_dir, 
 							STACKS[row][col]->getDIR_NAME(), 
-							STACKS[row][col]->getFILENAMES()[D0+k]);
+							STACKS[row][col]->getFILENAMES()[trueSliceIndex]);
 					//loading image
 
 					char *err_Tiff3Dfmt;
@@ -364,8 +402,20 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
 						throw iom::exception(iom::strprintf("unable to read tiff file (%s)",err_Tiff3Dfmt), __iom__current__function__);
 					}
 					closeTiff3DFile(dummy);
-					uint8 *slice = new uint8[rows * cols * channels * bytes_x_chan];
-					if ( (err_Tiff3Dfmt = readTiff3DFile2Buffer((char *)slice_fullpath,slice,cols,rows,0,0)) != 0 ) {
+
+					// resize cols and rows
+					cols = (int)ceil((double)cols/downsamplingFactor);
+					rows = (int)ceil((double)rows/downsamplingFactor);
+
+					if ( whole_slices && (rows != sbv_height || cols != sbv_width) ) {
+						throw iom::exception(iom::strprintf("whole slices to be read: mismatch in slice dimensions ([rows,cols]=%dx%d, [sbv_height,sbv_width]=%dx%d, downsampling factor=%d)",
+																												rows, cols, sbv_height, sbv_width, downsamplingFactor), __iom__current__function__);
+					}
+
+					uint8 *slice = ( DIM_C == 1 ) ? subvol + (k*sbv_height*sbv_width*bytes_x_chan) : new uint8[sbv_height * sbv_width * channels * bytes_x_chan]; // sbv variable should be used here
+
+					// cols and rows should be passed here because sbv variables have a different value when a subregion is to be loaded
+					if ( (err_Tiff3Dfmt = readTiff3DFile2Buffer((char *)slice_fullpath,slice,cols,rows,0,0,downsamplingFactor,V0,V1-1,H0,H1-1)) != 0 ) {
 						throw iom::exception(iom::strprintf("unable to read tiff file (%s)",err_Tiff3Dfmt), __iom__current__function__);
 					}
 
@@ -382,6 +432,12 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
 
 					*/
 
+					// WARNING: does not manage correclty multi-channel data
+
+					//if ( whole_slices ) {
+					//	continue;
+					//}
+
 					//if this is the first time a slice is loaded, detecting the number of channels and safely allocating memory for data
                     if(first_time)
                     {
@@ -393,11 +449,13 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
                         if(sbv_bytes_chan != this->BYTESxCHAN)
                             throw IOException(std::string("in SimpleVolume::loadSubvolume_to_UINT8: Wrong number of bits per channel\"").c_str());
 
-                        try
-                        {
-                            subvol = new uint8[sbv_height * sbv_width * sbv_depth * sbv_channels * sbv_bytes_chan];
-                        }
-                        catch(...){throw IOException("in SimpleVolume::loadSubvolume_to_UINT8: unable to allocate memory");}
+						if ( !subvol ) {
+							try
+							{
+								subvol = new uint8[sbv_height * sbv_width * sbv_depth * sbv_channels * sbv_bytes_chan];
+							}
+							catch(...){throw IOException("in SimpleVolume::loadSubvolume_to_UINT8: unable to allocate memory");}
+						}
                     }
                     //otherwise checking that all the other slices have the same bitdepth of the first one
                     else
@@ -409,32 +467,42 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
 					}
 
 					//computing offsets
-                    int slice_step = cols * bytes_x_chan * channels; // Giulio_CV slice->widthStep / sizeof(uint8); // widthStep takes already into account the number of bytes per channel
+                    int slice_step = sbv_width * bytes_x_chan * channels; // Giulio_CV slice->widthStep / sizeof(uint8); // widthStep takes already into account the number of bytes per channel
                     int ABS_V_offset = V0 - STACKS[row][col]->getABS_V();
                     int ABS_H_offset = (H0 - STACKS[row][col]->getABS_H())*((int)sbv_channels);
 
+					if ( whole_slices && (ABS_V_offset != 0 || ABS_H_offset != 0) ) {
+						throw iom::exception(iom::strprintf("ABS_V_offset=%d, ABS_H_offset=%d when extracting whole slices",ABS_V_offset,ABS_H_offset), __iom__current__function__);
+					}
+
 					//different procedures for 1 and 3 channels images
-                    int istart, iend, jstart, jend;
+                    sint64 istart, iend, jstart, jend;
                     istart  = intersect_area->V0-V0;
                     iend    = intersect_area->V1-V0;
                     jstart  = intersect_area->H0-H0;
                     jend    = intersect_area->H1-H0;
+
+					if ( istart !=0 || iend != sbv_height || jstart != 0 || jend != sbv_width ) {
+						throw iom::exception(iom::strprintf("istart=%d, iend=%d, jstart=%d, jend=%d",istart,iend,jstart,jend), __iom__current__function__);
+					}
+
                     if(sbv_channels == 1)
                     {
  						// about subvol index: actually there is always just one stack, 
 						// hence all the subvolume has to be filled
 						// this is why for k=0 is k_offset=0
-						sint64 k_offset = k*sbv_height*sbv_width*sbv_bytes_chan;
-                        for(int i = istart; i < iend; i++)
-                        {
-                            uint8* slice_row = slice + (i+ABS_V_offset)*slice_step;
-							int c = 0; // controls the number of bytes to be copied
-							for(sint64 j = (jstart * sbv_bytes_chan); c <((jend-jstart) * sbv_bytes_chan); j++, c++) { 
-								// all horizontal indices have to be multiplied by sbv_bytes_chan, including jstart
-								// the number of bytes to be copied is [(jend-jstart) * sbv_bytes_chan]
-                                subvol[k_offset + i*sbv_width*sbv_bytes_chan + j] = slice_row[j+ABS_H_offset];
-							}
-                        }
+						//sint64 k_offset = k*sbv_height*sbv_width*sbv_bytes_chan;
+						//memcpy(subvol + k_offset, slice, sbv_height*sbv_width*sbv_bytes_chan);
+       //                 for(int i = istart; i < iend; i++)
+       //                 {
+       //                     uint8* slice_row = slice + (i/*+ABS_V_offset*/)*slice_step;
+							//int c = 0; // controls the number of bytes to be copied
+							//for(sint64 j = (jstart * sbv_bytes_chan); c <((jend-jstart) * sbv_bytes_chan); j++, c++) { 
+							//	// all horizontal indices have to be multiplied by sbv_bytes_chan, including jstart
+							//	// the number of bytes to be copied is [(jend-jstart) * sbv_bytes_chan]
+       //                         subvol[k_offset + i*sbv_width*sbv_bytes_chan + j] = slice_row[/*ABS_H_offset*sbv_bytes_chan*/ + j];
+							//}
+       //                 }
                     }
                     else if(sbv_channels == 3) // channels in subvol are separated, where as in slice_row are arranged in triplets
                     {
@@ -446,17 +514,17 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
                         sint64 offset3 = offset2 + sbv_height*sbv_width*sbv_bytes_chan*sbv_depth;
                         for(int i = istart; i < iend; i++)
                         {
-                            uint8* slice_row = slice + (i+ABS_V_offset)*slice_step;
- 							int c = 0; // controls the number of bytes to be copied
+                            uint8* slice_row = slice + (i/*+ABS_V_offset*/)*slice_step;
+ 							sint64 c = 0; // controls the number of bytes to be copied
 							for(sint64 j1 = (jstart * sbv_bytes_chan), j2 = (3 * jstart * sbv_bytes_chan); c <(jend-jstart); j1+=sbv_bytes_chan, j2+=3*sbv_bytes_chan, c++)
                             {
 								// all horizontal indices have to be multiplied by sbv_bytes_chan, including jstart
  								// the number of triplets to be copied is (jend-jstart)
 								for ( int b=0; b<sbv_bytes_chan; b++ ) {
 									// each triplet consists of sbv_bytes_chan bytes
-									subvol[offset1 + i*sbv_width*sbv_bytes_chan + j1 + b] = slice_row[j2 + b + ABS_H_offset + 2*sbv_bytes_chan];
-									subvol[offset2 + i*sbv_width*sbv_bytes_chan + j1 + b] = slice_row[j2 + b + ABS_H_offset + sbv_bytes_chan];
-									subvol[offset3 + i*sbv_width*sbv_bytes_chan + j1 + b] = slice_row[j2 + b + ABS_H_offset];
+									subvol[offset1 + i*sbv_width*sbv_bytes_chan + j1 + b] = slice_row[/*ABS_H_offset +*/ 2*sbv_bytes_chan + j2 + b];
+									subvol[offset2 + i*sbv_width*sbv_bytes_chan + j1 + b] = slice_row[/*ABS_H_offset +*/ sbv_bytes_chan + j2 + b];
+									subvol[offset3 + i*sbv_width*sbv_bytes_chan + j1 + b] = slice_row[/*ABS_H_offset +*/ j2 + b];
 								}
                             }
                         }
@@ -465,7 +533,9 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
                         throw IOException(std::string("Unsupported number of channels at \"").append(slice_fullpath).append("\". Only 1 and 3-channels images are supported in this format").c_str());
 
 					//releasing image
-					delete []slice; // Giulio_CV cvReleaseImage(&slice);
+					//if ( !whole_slices && slice ) // release only if olny partial slices have been read (and then copied)
+					if ( DIM_C != 1 && slice ) 
+						delete []slice; // Giulio_CV cvReleaseImage(&slice);
 				}
 			}
 		}

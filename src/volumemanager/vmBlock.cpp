@@ -28,7 +28,9 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2015-08-05. Giulio.     @ADDED detailed error messages in loadImageStack and compute_z_ranges
+* 2016-06-09. Giulio.     @ADDED code to load the buffer when the input plugin does not interleve channels
+* 2016-06-09. Giulio.     @FIXED initialized the buffer 'data' to 0 in 'loadImageStack'
+* 2015-08-05. Giulio.     @ADDED detailed error messages in 'loadImageStack' and 'compute_z_ranges's
 * 2015-08-01. Giulio.     @FIXED bugs in sparse data management (compute_z_ranges)
 * 2015-07-22. Giluio.     @ADDED support for spase data.
 * 2015-02-13. Giulio.     @CHANGED 3D ioplugin is called instead of Tiff3DMngr functions
@@ -464,6 +466,7 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 
 	Segm_t *intersect_segm = Intersects(first_file, last_file+1); // the second parameter should be the last slice + 1
 	unsigned char *data = new unsigned char[HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN * N_CHANS];
+	memset(data,0,sizeof(unsigned char) * (HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN * N_CHANS));
 	unsigned char *temp = data;
 
 	for(int i = intersect_segm->ind0; i <= intersect_segm->ind1; i++)
@@ -484,12 +487,12 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 	}
 
 	//conversion from unsigned char to iom::real_t
-	if (N_CHANS == 2 || N_CHANS > 3) // only monocromatic or RGB images are supported
-	{
-		char errMsg[2000];
-		sprintf(errMsg, "in Block[%d,%d]::loadImageStack(...): %d channels are not supported.", ROW_INDEX, COL_INDEX, N_CHANS);
-		throw iom::exception(errMsg);
-	}
+	//if (N_CHANS == 2 || N_CHANS > 3) // only monocromatic or RGB images are supported
+	//{
+	//	char errMsg[2000];
+	//	sprintf(errMsg, "in Block[%d,%d]::loadImageStack(...): %d channels are not supported.", ROW_INDEX, COL_INDEX, N_CHANS);
+	//	throw iom::exception(errMsg);
+	//}
 
 	if ( N_BYTESxCHAN == 1 )
 		scale_factor  = 255.0F;
@@ -545,10 +548,23 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 				for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
 					STACKED_IMAGE[i] = (iom::real_t) ((iom::uint16 *)data)[3*i + offset]/scale_factor; // data must be interpreted as a uint16 array
 		}
-		else {
-			char errMsg[2000];
-			sprintf(errMsg, "in Block[%d,%d]::loadImageStack(...): channels are not interleaved in the returned buffer 'data', conversion to intensity images not supported yet.", ROW_INDEX, COL_INDEX);
-			throw iom::exception(errMsg);
+		else { // channels are not interleaved in the returned buffer 'data'
+			//char errMsg[2000];
+			//sprintf(errMsg, "in Block[%d,%d]::loadImageStack(...): channels are not interleaved in the returned buffer 'data', conversion to intensity images not supported yet.", ROW_INDEX, COL_INDEX);
+			//throw iom::exception(errMsg);
+			// 2016-06-09. Giulio. @ADDED
+
+			offset = this->CONTAINER->getACTIVE_CHAN(); 
+			if ( N_BYTESxCHAN == 1 ) {
+				temp = data + (offset * HEIGHT * WIDTH * (last_file-first_file+1));
+				for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
+					STACKED_IMAGE[i] = (iom::real_t) temp[i]/scale_factor;
+			}
+			else { // N_BYTESxCHAN == 2
+				temp = data + (offset * HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN);
+				for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
+					STACKED_IMAGE[i] = (iom::real_t) ((iom::uint16 *)temp)[i]/scale_factor; // data must be interpreted as a uint16 array
+			}
 		}
 	}
 

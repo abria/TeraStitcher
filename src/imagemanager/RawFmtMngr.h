@@ -197,10 +197,12 @@ void closeRawFile ( void *fhandle );
 char *loadRaw2SubStack ( void *fhandle, unsigned char *img, V3DLONG *sz, 
 						 V3DLONG startx, V3DLONG starty, V3DLONG startz, 
 						 V3DLONG endx,V3DLONG endy, V3DLONG endz, 
-						 int datatype, int b_swap, int header_len ); //4-byte raw reading
+						 int datatype, int b_swap, int header_len, int nslices = 1 ); //4-byte raw reading
 /* read a substack of the 4D image stored in raw format in the file associated to fhandle
  * input parameters:
- *    image:      a pointer to an empty buffer large enough to contain the substack
+ *    img:        a pointer to an empty buffer large enough to contain the substack
+ *    nslices:    number of slices to be stored in the buffer (should be used to compute 
+ *                the 'channel stride'
  *    sz:         a four component array containing image dimensions along horizontal (x),
  *                vertical (y), depth (z) directions, and the number of channels
  *    startx:     index along x of the pixel which is the first vertex of the substack 
@@ -214,6 +216,28 @@ char *loadRaw2SubStack ( void *fhandle, unsigned char *img, V3DLONG *sz,
  *                is different (1) from the one of the current machine
  *    header_len: the length of the header in bytes
  *
+ * WARNING: (endz-startz) and nslices cannot be both greater than 1 
+ * if some exception occurs, returns a string describing the exception; returns a NULL pointer
+ * if there are no exceptions
+ */
+
+
+char *loadRawSlices2SubStack(void *fhandle, unsigned char *img, int nslices, V3DLONG *sz, int datatype, 
+							 unsigned int first, unsigned int last, int b_swap, int header_len, int downsamplingFactor = 1); //4-byte raw reading
+/* reads whole slices in the closed interval [first,last] of the 4D image stored in raw format in the file associated to fhandle
+ * input parameters:
+ *    img:                a pointer to an empty buffer large enough to contain the substack
+ *    nslices:            number of slices to be stored in the buffer (should be used to compute 
+ *                        the 'channel stride'
+ *    sz:                 a four component array containing image dimensions along horizontal (x),
+ *                        vertical (y), depth (z) directions, and the number of channels
+ *    datatype:           the number of bytes per pixel
+ *    first, last:        first and last indices of the interval of slices to be read
+ *    b_swap:             a 0/1 value that indicates if endianness of the file is the same (0) or 
+ *                        is different (1) from the one of the current machine
+ *    header_len:         the length of the header in bytes
+ *    downsamplingFactor: downsampling factor to be used to reduce the amount of data to be read
+ *
  * if some exception occurs, returns a string describing the exception; returns a NULL pointer
  * if there are no exceptions
  */
@@ -222,15 +246,17 @@ char *loadRaw2SubStack ( void *fhandle, unsigned char *img, V3DLONG *sz,
 char *loadRaw2WholeStack(char * filename, unsigned char * & img, V3DLONG * & sz, int & datatype); //4-byte raw reading
 /* opens and reads the file filename in raw format containing a 4D image and returns 
  * in parameters:
- *    img:      a pointer to a newly allocated buffer where the whole image is stored
- *              one channel after another
- *    sz:       a four component array containing image dimensions along horizontal (x), 
- *              vertical (y), depth (z) directions, and the number of channels
- *    datatype: the number of bytes per pixel
+ *    img:                a pointer to a newly allocated buffer where the whole image is stored
+ *                        one channel after another
+ *    sz:                 a four component array containing image dimensions along horizontal (x), 
+ *                        vertical (y), depth (z) directions, and the number of channels
+ *    datatype:           the number of bytes per pixel
+ *    downsamplingFactor: downsampling factor to be used to reduce the amount of data to be read
  *
  * if some exception occurs, returns a string describing the exception; returns a NULL pointer
  * if there are no exceptions
  */
+
 
 char *saveWholeStack2Raw(const char * filename, unsigned char *img, V3DLONG *sz, int datatype); //4-byte raw reading
 /* save a 4D image in raw format 

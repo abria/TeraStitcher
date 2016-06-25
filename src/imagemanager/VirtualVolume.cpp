@@ -204,7 +204,7 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
 
 	// throw IOException("in VirtualVolume::saveImage_from_UINT8(...): disabled to remove dependence from openCV"); // Giulio_CV
 
-	if ( strcmp(img_format,"tif") != 0 ) 
+	if ( strcmp(img_format,"tif") != 0 && strcmp(img_format,"raw") != 0) 
 		throw iom::exception(iom::strprintf("unsupported file format %s",img_format), __iom__current__function__);
 
     //checking for non implemented features
@@ -255,93 +255,128 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
         sprintf(buffer,"in saveImage_from_UINT8(..., img_depth=%d, ...): unsupported bit depth for multi-channels images\n",img_depth);
         throw IOException(buffer);
     }
-	// 2016-04-09 Giulio. @ADDED to debug error on wrong 2D plugin
-	if ( iom::IMOUT_PLUGIN.compare("empty") == 0 || iom::IMOUT_PLUGIN.compare("tiff3D") == 0 ) {
-		throw iom::exception(iom::strprintf("wrong input plugin (%s).",iom::IMOUT_PLUGIN.c_str()), __iom__current__function__);
-	}
-	if ( nchannels >1 && !(iom::IOPluginFactory::getPlugin2D(iom::IMOUT_PLUGIN)->isChansInterleaved()) ) {
-		throw iom::exception("in saveImage_from_UINT8(...): the plugin do not store channels in interleaved mode: more than one channel not supported yet.");
-	}
-
-    //converting raw data into tif image data
-    if(nchannels == 3)
-    {
-		img = new uint8[img_width * img_height * nchannels]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 3);
-		int img_data_step = img_width * nchannels;
-		for(int i = 0; i <img_height; i++)
-		{
-			uint8* row_data_8bit = img + i*img_data_step;
-			for(int j1 = 0, j2 = start_width; j1 < img_width*3; j1+=3, j2++)
-			{
-				row_data_8bit[j1  ] = raw_ch1[(i+start_height)*raw_img_width + j2];
-				row_data_8bit[j1+1] = raw_ch2[(i+start_height)*raw_img_width + j2];
-				row_data_8bit[j1+2] = raw_ch3[(i+start_height)*raw_img_width + j2];
-			}
-		}
-   }
-    if(nchannels == 2)
-    {
-		// stores in any case as a 3 channels image (RGB)
-        img = new uint8[img_width * img_height * (nchannels+1)]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 3);
-        int img_data_step = img_width * (nchannels+1); 
-        for(int i = 0; i <img_height; i++)
-        {
-            uint8* row_data_8bit = img + i*img_data_step;
-            for(int j1 = 0, j2 = start_width; j1 < img_width*3; j1+=3, j2++)
-            {
-                row_data_8bit[j1  ] = raw_ch1[(i+start_height)*raw_img_width + j2];
-                row_data_8bit[j1+1] = raw_ch2[(i+start_height)*raw_img_width + j2];
-                row_data_8bit[j1+2] = 0;
-            }
-        }
-    }
-    else if(nchannels == 1) // source and destination depths are guarenteed to be the same
-    {
-        img = new uint8[img_width * img_height * nchannels * (img_depth/8)]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), (img_depth == 8 ? IPL_DEPTH_8U : IPL_DEPTH_16U), 1);
-        //float scale_factor_16b = 65535.0F/255; // conversion is not supported yet
-        if(img_depth == 8)
-        {
-            int img_data_step = img_width * nchannels;
-            for(int i = 0; i <img_height; i++)
-            {
-                uint8* row_data_8bit = img + i*img_data_step;
-                for(int j = 0; j < img_width; j++)
-                    row_data_8bit[j] = raw_ch1[(i+start_height)*raw_img_width+j+start_width];
-            }
-        }
-        else // img->depth == 16
-        {
-            //int img_data_step = img_width * nchannels * 2;
-            // 2016-04-15. Giulio. @FIXED offset is applied to uint16 pointers: is must not be doubled
-            int img_data_step = img_width * nchannels;
-            for(int i = 0; i <img_height; i++)
-            {
-                uint16* row_data_16bit = ((uint16*)img) + i*img_data_step;
-                for(int j = 0; j < img_width; j++)
-                    // row_data_16bit[j] = (uint16) (raw_ch1[(i+start_height)*raw_img_width+j+start_width] * scale_factor_16b); // conversion is not supported yet
-                    row_data_16bit[j] = ((uint16 *) raw_ch1)[(i+start_height)*raw_img_width+j+start_width] /* 2014-11-10. Giulio.    removed: [* scale_factor_16b )] */;
-            }
-        }
-    }
-
 
     //generating complete path for image to be saved
     sprintf(buffer, "%s.%s", img_path.c_str(), img_format);
 
-    //saving image
-	// Giulio_CV try{
-		// Giulio_CV cvSaveImage(buffer, img);
 
-	char *err_tiff_fmt;
+	if ( strcmp(img_format,"tif") == 0 ) { // these code should be executed only if the output format is TIFF
 
-	// creates the file (2D image: depth is 1)
-	if ( (err_tiff_fmt = initTiff3DFile((char *)img_path.c_str(),img_width,img_height,1,(nchannels>1 ? 3 : 1),img_depth/8)) != 0 ) {
-		throw iom::exception(iom::strprintf("unable to create tiff file (%s)",err_tiff_fmt), __iom__current__function__);
+		// 2016-04-09 Giulio. @ADDED to debug error on wrong 2D plugin
+		if ( iom::IMOUT_PLUGIN.compare("empty") == 0 || iom::IMOUT_PLUGIN.compare("tiff3D") == 0 ) {
+			throw iom::exception(iom::strprintf("wrong input plugin (%s).",iom::IMOUT_PLUGIN.c_str()), __iom__current__function__);
+		}
+		if ( nchannels >1 && !(iom::IOPluginFactory::getPlugin2D(iom::IMOUT_PLUGIN)->isChansInterleaved()) ) {
+			throw iom::exception("in saveImage_from_UINT8(...): the plugin do not store channels in interleaved mode: more than one channel not supported yet.");
+		}
+
+		//converting raw data into tif image data
+		if(nchannels == 3)
+		{
+			img = new uint8[img_width * img_height * nchannels]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 3);
+			int img_data_step = img_width * nchannels;
+			for(int i = 0; i <img_height; i++)
+			{
+				uint8* row_data_8bit = img + i*img_data_step;
+				for(int j1 = 0, j2 = start_width; j1 < img_width*3; j1+=3, j2++)
+				{
+					row_data_8bit[j1  ] = raw_ch1[(i+start_height)*raw_img_width + j2];
+					row_data_8bit[j1+1] = raw_ch2[(i+start_height)*raw_img_width + j2];
+					row_data_8bit[j1+2] = raw_ch3[(i+start_height)*raw_img_width + j2];
+				}
+			}
+	   }
+		if(nchannels == 2)
+		{
+			// stores in any case as a 3 channels image (RGB)
+			img = new uint8[img_width * img_height * (nchannels+1)]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 3);
+			int img_data_step = img_width * (nchannels+1); 
+			for(int i = 0; i <img_height; i++)
+			{
+				uint8* row_data_8bit = img + i*img_data_step;
+				for(int j1 = 0, j2 = start_width; j1 < img_width*3; j1+=3, j2++)
+				{
+					row_data_8bit[j1  ] = raw_ch1[(i+start_height)*raw_img_width + j2];
+					row_data_8bit[j1+1] = raw_ch2[(i+start_height)*raw_img_width + j2];
+					row_data_8bit[j1+2] = 0;
+				}
+			}
+		}
+		else if(nchannels == 1) // source and destination depths are guarenteed to be the same
+		{
+			img = new uint8[img_width * img_height * nchannels * (img_depth/8)]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), (img_depth == 8 ? IPL_DEPTH_8U : IPL_DEPTH_16U), 1);
+			//float scale_factor_16b = 65535.0F/255; // conversion is not supported yet
+			if(img_depth == 8)
+			{
+				int img_data_step = img_width * nchannels;
+				for(int i = 0; i <img_height; i++)
+				{
+					uint8* row_data_8bit = img + i*img_data_step;
+					for(int j = 0; j < img_width; j++)
+						row_data_8bit[j] = raw_ch1[(i+start_height)*raw_img_width+j+start_width];
+				}
+			}
+			else // img->depth == 16
+			{
+				//int img_data_step = img_width * nchannels * 2;
+				// 2016-04-15. Giulio. @FIXED offset is applied to uint16 pointers: is must not be doubled
+				int img_data_step = img_width * nchannels;
+				for(int i = 0; i <img_height; i++)
+				{
+					uint16* row_data_16bit = ((uint16*)img) + i*img_data_step;
+					for(int j = 0; j < img_width; j++)
+						// row_data_16bit[j] = (uint16) (raw_ch1[(i+start_height)*raw_img_width+j+start_width] * scale_factor_16b); // conversion is not supported yet
+						row_data_16bit[j] = ((uint16 *) raw_ch1)[(i+start_height)*raw_img_width+j+start_width] /* 2014-11-10. Giulio.    removed: [* scale_factor_16b )] */;
+				}
+			}
+		}
+
+		char *err_tiff_fmt;
+
+		// creates the file (2D image: depth is 1)
+		if ( (err_tiff_fmt = initTiff3DFile((char *)img_path.c_str(),img_width,img_height,1,(nchannels>1 ? 3 : 1),img_depth/8)) != 0 ) {
+			throw iom::exception(iom::strprintf("unable to create tiff file (%s)",err_tiff_fmt), __iom__current__function__);
+		}
+
+		if ( (err_tiff_fmt = appendSlice2Tiff3DFile(buffer,0,(unsigned char *)img,(int)img_width,(int)img_height)) != 0 ) {
+			throw iom::exception(iom::strprintf("error in saving 2D image (%lld x %lld) in file %s (appendSlice2Tiff3DFile: %s)",img_width,img_height,buffer,err_tiff_fmt), __iom__current__function__);
+		}
+
+		if ( img )
+			delete []img;
 	}
+	else { // raw format
 
-	if ( (err_tiff_fmt = appendSlice2Tiff3DFile(buffer,0,(unsigned char *)img,(int)img_width,(int)img_height)) != 0 ) {
-		throw iom::exception(iom::strprintf("error in saving 2D image (%lld x %lld) in file %s (appendSlice2Tiff3DFile: %s)",img_width,img_height,buffer,err_tiff_fmt), __iom__current__function__);
-	}
+		char *err_rawfmt;
+		V3DLONG sz[4];
+		sz[0] = img_width;
+		sz[1] = img_height;
+		sz[2] = 1;
+		sz[3] = nchannels;
+
+		img = raw_ch1 + (start_height*raw_img_width + start_width); // assume that there is just one channel: in this case do not copy
+		// chack that the channel buffers are contiguous
+		if ( nchannels > 1 ) { // there are al least two channels
+// 			if ( (raw_ch2 - raw_ch1) != (sz[0] * sz[1] * sz[2] * (img_depth/8)) )
+// 				throw iom::exception(iom::strprintf("error in saving 2D image (%lld x %lld) in file %s: channel buffers not contiguous",img_height,img_width,buffer), __iom__current__function__);
+			int chanSize = img_width * img_height * (img_depth/8);
+			img = new uint8[chanSize * nchannels]; 
+			memcpy(img,(raw_ch1 + (start_height*raw_img_width + start_width)),chanSize);
+			memcpy(img + chanSize,(raw_ch2 + (start_height*raw_img_width + start_width)),chanSize);
+			if ( nchannels > 2 ) { // there are three channels
+// 				if ( (raw_ch3 - raw_ch2) != (sz[0] * sz[1] * sz[2] * (img_depth/8)) )
+// 					throw iom::exception(iom::strprintf("error in saving 2D image (%lld x %lld) in file %s: channel buffers not contiguous",img_height,img_width,buffer), __iom__current__function__);
+				memcpy(img + 2*chanSize,(raw_ch3 + (start_height*raw_img_width + start_width)),chanSize);
+			}
+		}
+
+		if ( (err_rawfmt = saveWholeStack2Raw(buffer,(unsigned char *)img,sz,(img_depth/8))) != 0 ) {
+			throw iom::exception(iom::strprintf("error in saving 2D image (%lld x %lld) in file %s (writeSlice2RawFile: %s)",img_height,img_width,buffer,err_rawfmt), __iom__current__function__);
+		}
+
+		if ( nchannels > 1 && img )
+			delete []img;
+	} // end if ( strcmp(img_format,"tif") != 0 )
 
 	/* Giulio_CV
 
@@ -357,9 +392,6 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
     cvReleaseImage(&img);
 
 	*/
-
-	if ( img )
-		delete []img;
 }
 
 

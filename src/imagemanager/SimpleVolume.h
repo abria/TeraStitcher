@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-06-16. Giulio.     @ADDED ability to read a downsampled image 
 * 2016-04-07. Giulio.     @MODIFIED moved default constructor among private methods and declared VirtualVolume a friend class 
 */
 
@@ -43,7 +44,11 @@ class SimpleVolume : public iim::VirtualVolume
         iim::uint16 N_ROWS, N_COLS;		//dimensions (in stacks) of stacks matrix along VH axes
         iim::Stack ***STACKS;			//2-D array of <Stack*>
 
-        SimpleVolume(void);
+		float  trueVXL_V, trueVXL_H, trueVXL_D;		  // [microns]: voxel dimensions (in microns) along V(Vertical), H(horizontal) and D(Depth) axes of the true volume
+		iim::uint32 trueDIM_V, trueDIM_H, trueDIM_D;  // true volume dimensions (in voxels) along VHD axes
+		int downsamplingFactor;
+
+		 SimpleVolume(void);
 
         void init ( ) throw (iim::IOException);
 
@@ -67,6 +72,10 @@ class SimpleVolume : public iim::VirtualVolume
         iim::axis getAXS_2() {return iim::vertical;}
         iim::axis getAXS_3() {return iim::depth;}
 
+		int getDOWNSAMPLINGFACTOR() {return downsamplingFactor;}
+		void setDOWNSAMPLINGFACTOR( int f );
+		void resetDOWNSAMPLINGFACTOR(); 
+
         iim::real32 *loadSubvolume_to_real32(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1)  throw (iim::IOException);
 
         iim::uint8 *loadSubvolume_to_UINT8(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1,
@@ -74,6 +83,7 @@ class SimpleVolume : public iim::VirtualVolume
     
     	// needed to enable the detection by the factory of volume format through use of the default constructor
         friend class iim::VirtualVolume; 
+        friend class VolumeConverter; 
 
 };
 

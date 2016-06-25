@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-06-09. Giulio      @ADDED the initialization of 'active_channel' in the constructor
 * 2015-02-26. Giulio.     @ADDED dummy initialization of fields DIM_C and BYTESxCHAN in constructor
 * 2014-09-10. Alessandro. @ADDED 'getVolumeFormat' method to be applied on xml file.
 * 2014-09-01. Alessandro. @FIXED 'extractCoordinates()' method to deal with sparse tiles w/o causing crashes.
@@ -88,6 +89,21 @@ void VirtualVolume::init() throw (iom::exception)
 
 	DIM_C = 0;
 	BYTESxCHAN = 0;
+
+	switch ( iom::CHANS ) {
+		case iom::R:
+			active_channel = 0;
+			break;
+		case iom::G:
+			active_channel = 1;
+			break;
+		case iom::B:
+			active_channel = 2;
+			break;
+		default:
+			active_channel = 0;
+			break;
+	}
 }
 
 //returns true if file exists at the given filepath

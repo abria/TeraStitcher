@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-06-18  Giulio.     @ADDED option for downsampling the reading of data
 * 2016-04-13  Giulio.     @ADDED options for parallelizing teraconverter
 */
 
@@ -65,6 +66,7 @@ class TemplateCLI
 
 		string outFmt;
 		string infofile_path;					//file path of the info log file to be saved
+		int downsamplingFactor;                 //downsampling factor to be used to read source volume (only if it is a serie of 2D slices)
 
 		// vertices defining the subvolume to be converted
 		int V0;

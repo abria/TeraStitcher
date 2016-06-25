@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-06-18  Giulio.     @ADDED option for downsampling the reading of data
 * 2016-05-11  Giulio.     @ADDED other formats in help messages
 * 2016-05-11  Giulio.     @ADDED plugins command line options and initialization
 * 2016-04-13  Giulio.     @ADDED options for parallelizing teraconverter
@@ -55,7 +56,7 @@ TemplateCLI::TemplateCLI(void)
 void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 {
 	//command line object definition
-	TCLAP::CmdLine cmd(getHelpText(), '=', "2.2.3");
+	TCLAP::CmdLine cmd(getHelpText(), '=', "3.0.0");
 		/**
 		 * Command line constructor. Defines how the arguments will be
 		 * parsed.
@@ -94,26 +95,42 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::ValueArg<int> p_slice_depth("","depth","Slice depth.",false,-1,"unsigned");
 	TCLAP::ValueArg<int> p_slice_height("","height","Slice height.",false,-1,"unsigned");
 	TCLAP::ValueArg<int> p_slice_width("","width","Slice width.",false,-1,"unsigned");
-	//TCLAP::ValueArg<string> p_src_format("","sfmt","Source format (Stacked/Simple/SimpleRaw/Raw/Tiled/TiledMC).",true,"","string");
+
 	string temp = "Source format (\"" + 
-		iim::TILED_MC_FORMAT + "\"/\"" + 
-		iim::TILED_FORMAT + "\"/\"" + 
-		iim::STACKED_FORMAT + "\"/\"" + 
-		iim::SIMPLE_FORMAT + "\"/\"" + 
-		iim::SIMPLE_RAW_FORMAT + "\"/\"" + 
 		iim::RAW_FORMAT + "\"/\"" + 
+		iim::SIMPLE_RAW_FORMAT + "\"/\"" + 
+		//iim::STACKED_RAW_FORMAT + "\"/\"" + 
+		iim::TILED_FORMAT + "\"/\"" + 
+		iim::TILED_MC_FORMAT + "\"/\"" + 
 		iim::TIF3D_FORMAT + "\"/\"" + 
+		iim::SIMPLE_FORMAT + "\"/\"" + 
+		iim::STACKED_FORMAT + "\"/\"" + 
 		iim::TILED_TIF3D_FORMAT  + "\"/\"" +
 		iim::TILED_MC_TIF3D_FORMAT  + "\"/\"" +
 		iim::UNST_TIF3D_FORMAT  + "\"/\"" +
 		iim::BDV_HDF5_FORMAT  + "\"/\"" +
 		iim::MAPPED_FORMAT  + "\")";
 	TCLAP::ValueArg<string> p_src_format("","sfmt",temp.c_str(),true,"","string");
-	TCLAP::ValueArg<string> p_dst_format("","dfmt","Destination format: (RGB (default)/intensity/graylevel.",false,"RGB","string");
- 	//TCLAP::ValueArg<int> p_n_resolutions("","res","Number of resolutions.",true,2,"unsigned");
+
+	string tempd = "Destination format (\"" + 
+		iim::SIMPLE_RAW_FORMAT + "\"/\"" + 
+		//iim::STACKED_RAW_FORMAT + "\"/\"" + 
+		iim::TILED_FORMAT + "\"/\"" + 
+		iim::TILED_MC_FORMAT + "\"/\"" + 
+		iim::SIMPLE_FORMAT + "\"/\"" + 
+		iim::STACKED_FORMAT + "\"/\"" + 
+		iim::TILED_TIF3D_FORMAT  + "\"/\"" +
+		iim::TILED_MC_TIF3D_FORMAT  + "\"/\"" +
+		iim::BDV_HDF5_FORMAT  + "\")";
+	TCLAP::ValueArg<string> p_dst_format("","dfmt",tempd.c_str(),true,"","string");
+
+	//TCLAP::ValueArg<int> p_n_resolutions("","res","Number of resolutions.",true,2,"unsigned");
 	TCLAP::ValueArg<std::string> p_resolutions("","resolutions","Resolutions to be produced. Possible values are [[i]...] where i = 0,..,5 and 2^i is the subsampling factor.",false,"0","string");
 	TCLAP::ValueArg<string> p_halving_method("","halve","Halving method (mean/max, default: mean).",false,"mean","unsigned");
-	TCLAP::ValueArg<std::string> p_outFmt("f","outFmt","Output format (Tiff2DStck/Vaa3DRaw/Tiff3D/Vaa3DRawMC/Tiff3DMC/Fiji_HDF5, default: Tiff2DStck).",false,"Tiff2DStck","string");
+
+	TCLAP::ValueArg<string> p_outFmt("f","outFmt","Voxel format (graylevel or RGB (default)/intensity.",false,"RGB","string");
+	//TCLAP::ValueArg<std::string> p_outFmt("f","outFmt","Output format (Tiff2DStck/Vaa3DRaw/Tiff3D/Vaa3DRawMC/Tiff3DMC/Fiji_HDF5, default: Tiff2DStck).",false,"Tiff2DStck","string");
+
 	TCLAP::ValueArg<std::string> p_infofile_path("","info","File path of the info log file to be saved.",false,"","string");
  	TCLAP::SwitchArg p_hide_progress_bar("","noprogressbar","Disables progress bar and estimated time remaining", false);
 	TCLAP::SwitchArg p_verbose("","verbose","set verbosity to maximum level (to be activated ONLY for debugging)");
@@ -126,19 +143,21 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	TCLAP::MultiArg<std::string> p_algo("","algorithm","Forces the use of the given algorithm.",false,"string");
 	TCLAP::SwitchArg p_pluginsinfo("p","pluginsinfo","Display plugins informations",false);
-	TCLAP::ValueArg<std::string> p_vol_out_plugin("","volout_plugin",iom::strprintf("Plugin that manages the output volume format/organization. Available plugins are: {%s}. Default is \"%s\".", iom::IOPluginFactory::registeredPlugins().c_str(), vm::VOLUME_OUTPUT_FORMAT_PLUGIN.c_str()),false,vm::VOLUME_OUTPUT_FORMAT_PLUGIN,"string");
+	//TCLAP::ValueArg<std::string> p_vol_out_plugin("","volout_plugin",iom::strprintf("Plugin that manages the output volume format/organization. Available plugins are: {%s}. Default is \"%s\".", iom::IOPluginFactory::registeredPlugins().c_str(), vm::VOLUME_OUTPUT_FORMAT_PLUGIN.c_str()),false,vm::VOLUME_OUTPUT_FORMAT_PLUGIN,"string");
 	TCLAP::ValueArg<std::string> p_im_in_plugin("","imin_plugin",iom::strprintf("Plugin that manages the input image format. Available plugins are: {%s}. Default is \"auto\".", iom::IOPluginFactory::registeredPlugins().c_str()), false, "auto","string");
 	TCLAP::ValueArg<std::string> p_im_in_plugin_params("","imin_plugin_params","A series of parameters \"param1=val,param2=val,...\" to configure the input image plugin (see --pluginsinfo for the list of accepted parameters)", false, "","string");
 	TCLAP::ValueArg<std::string> p_im_out_plugin("","imout_plugin",iom::strprintf("Plugin that manages the output image format. Available plugins are: {%s}. Default is \"auto\".", iom::IOPluginFactory::registeredPlugins().c_str()), false, "auto","string");
 	TCLAP::ValueArg<std::string> p_im_out_plugin_params("","imout_plugin_params","A series of parameters \"param1=val,param2=val,...\" to configure the output image plugin (see --pluginsinfo for the list of accepted parameters)", false, "","string");
 
+	TCLAP::ValueArg<int> p_dwnsmplngFactor("","dsfactor","Dowsampling factor to be used to read the source volume (only for serie of 2D slices).",false,1,"unsigned");
 
 	//argument objects must be inserted using LIFO policy (last inserted, first shown)
+	cmd.add(p_dwnsmplngFactor);
 	cmd.add(p_im_out_plugin_params);
 	cmd.add(p_im_out_plugin);
 	cmd.add(p_im_in_plugin_params);
 	cmd.add(p_im_in_plugin);
-	cmd.add(p_vol_out_plugin);
+	//cmd.add(p_vol_out_plugin);
 	cmd.add(p_pluginsinfo);
 	cmd.add(p_algo);
 
@@ -187,37 +206,64 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		throw iom::exception(errMsg);
 	}
 
-	if ( p_src_format.getValue() != iim::STACKED_FORMAT && 
-		 p_src_format.getValue() != iim::SIMPLE_FORMAT  && 
+	if ( p_src_format.getValue() != iim::RAW_FORMAT  && 
 		 p_src_format.getValue() != iim::SIMPLE_RAW_FORMAT  && 
-		 p_src_format.getValue() != iim::RAW_FORMAT  && 
+		 //p_src_format.getValue() != iim::STACKED_RAW_FORMAT && 
 		 p_src_format.getValue() != iim::TILED_FORMAT  && 
 		 p_src_format.getValue() != iim::TILED_MC_FORMAT &&
 		 p_src_format.getValue() != iim::TIF3D_FORMAT  && 
+		 p_src_format.getValue() != iim::SIMPLE_FORMAT  && 
+		 p_src_format.getValue() != iim::STACKED_FORMAT && 
 		 p_src_format.getValue() != iim::TILED_TIF3D_FORMAT  && 
 		 p_src_format.getValue() != iim::TILED_MC_TIF3D_FORMAT  && 
 		 p_src_format.getValue() != iim::UNST_TIF3D_FORMAT  && 
 		 p_src_format.getValue() != iim::BDV_HDF5_FORMAT  && 
 		 p_src_format.getValue() != iim::MAPPED_FORMAT ) {
 		temp = "Unknown source format!\nAllowed formats are:\n\t\"" + 
-			iim::TILED_MC_FORMAT + "\"/\"" + 
-			iim::TILED_FORMAT + "\"/\"" + 
-			iim::STACKED_FORMAT + "\"/\"" + 
-			iim::SIMPLE_FORMAT + "\"/\"" + 
-			iim::SIMPLE_RAW_FORMAT + "\"/\"" + 
 			iim::RAW_FORMAT + "\"/\"" + 
+			iim::SIMPLE_RAW_FORMAT + "\"/\"" + 
+			//iim::STACKED_RAW_FORMAT + "\"/\"" + 
+			iim::TILED_FORMAT + "\"/\"" + 
+			iim::TILED_MC_FORMAT + "\"/\"" + 
 			iim::TIF3D_FORMAT + "\"/\"" + 
+			iim::SIMPLE_FORMAT + "\"/\"" + 
+			iim::STACKED_FORMAT + "\"/\"" + 
 			iim::TILED_TIF3D_FORMAT  + "\"/\"" +
 			iim::TILED_MC_TIF3D_FORMAT  + "\"/\"" +
-			iim::UNST_TIF3D_FORMAT  + "\"";
+			iim::UNST_TIF3D_FORMAT  + "\"/\"" +
+			iim::BDV_HDF5_FORMAT  + "\"/\"" +
+			iim::MAPPED_FORMAT  + "\"";
 		//sprintf(errMsg, "Unknown source format!\nAllowed formats are:\n\tStacked / Simple / SimpeRaw / Raw / Tiled / TiledMC");
 		sprintf(errMsg, "%s", temp.c_str());
 		throw iom::exception(errMsg);
 	}
-	if ( p_dst_format.getValue() != "intensity" && 
-		 p_dst_format.getValue() != "graylevel" && 
-		 p_dst_format.getValue() != "RGB" ) {
-		sprintf(errMsg, "Unknown destination format!\nAllowed formats are:\n\tintensity / graylevel / RGB");
+	if ( p_dst_format.getValue() != iim::SIMPLE_RAW_FORMAT && 
+		 //p_dst_format.getValue() != iim::STACKED_RAW_FORMAT && 
+		 p_dst_format.getValue() != iim::TILED_FORMAT  && 
+		 p_dst_format.getValue() != iim::TILED_MC_FORMAT &&
+		 p_dst_format.getValue() != iim::SIMPLE_FORMAT  && 
+		 p_dst_format.getValue() != iim::STACKED_FORMAT && 
+		 p_dst_format.getValue() != iim::TILED_TIF3D_FORMAT  && 
+		 p_dst_format.getValue() != iim::TILED_MC_TIF3D_FORMAT  && 
+		 p_dst_format.getValue() != iim::BDV_HDF5_FORMAT ) {
+		tempd = "Unknown destination format!\nAllowed formats are:\n\t\"" + 
+			iim::SIMPLE_RAW_FORMAT + "\"/\"" + 
+			iim::STACKED_RAW_FORMAT + "\"/\"" + 
+			iim::TILED_FORMAT + "\"/\"" + 
+			iim::TILED_MC_FORMAT + "\"/\"" + 
+			iim::SIMPLE_FORMAT + "\"/\"" + 
+			iim::STACKED_FORMAT + "\"/\"" + 
+			iim::TILED_TIF3D_FORMAT  + "\"/\"" +
+			iim::TILED_MC_TIF3D_FORMAT  + "\"/\"" +
+			iim::BDV_HDF5_FORMAT  + "\"";
+		//sprintf(errMsg, "Unknown output format!\nAllowed formats are:\n\tTiff2DStck / Vaa3DRaw / Vaa3DRawMC / Tiff3D / Tiff3DMC / Fiji_HDF5");
+		sprintf(errMsg, "%s", tempd.c_str());
+		throw iom::exception(errMsg);
+	}
+	if ( p_outFmt.getValue() != "intensity" && 
+		 p_outFmt.getValue() != "graylevel" && 
+		 p_outFmt.getValue() != "RGB" ) {
+		sprintf(errMsg, "Unknown destination format!\nAllowed formats are:\n\tgraylevel / RGB / intensity");
 		throw iom::exception(errMsg);
 	}
 	if ( p_halving_method.getValue() != "mean" && 
@@ -225,17 +271,8 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		sprintf(errMsg, "Unknown halving method!\nAllowed methods are:\n\tmean / max");
 		throw iom::exception(errMsg);
 	}
-	if ( p_outFmt.getValue() != "Tiff2DStck" && 
-		 p_outFmt.getValue() != "Vaa3DRaw"   &&
-		 p_outFmt.getValue() != "Tiff3D"   &&
-		 p_outFmt.getValue() != "Vaa3DRawMC" &&
-		 p_outFmt.getValue() != "Tiff3DMC" &&
-		 p_outFmt.getValue() != "Fiji_HDF5" ) {
-		sprintf(errMsg, "Unknown output format!\nAllowed formats are:\n\tTiff2DStck / Vaa3DRaw / Vaa3DRawMC / Tiff3D / Tiff3DMC / Fiji_HDF5");
-		throw iom::exception(errMsg);
-	}
 
-	if ( p_outFmt.getValue() == "Fiji_HDF5" && (p_makedirs.isSet() || p_metadata.isSet() || p_parallel.isSet()) ) {
+	if ( p_dst_format.getValue() == iim::BDV_HDF5_FORMAT && (p_makedirs.isSet() || p_metadata.isSet() || p_parallel.isSet()) ) {
 		sprintf(errMsg, "makedirs, parallel, metadata options are not allowed with Fiji_HDF5 output format");
 		throw iom::exception(errMsg);
 	}
@@ -282,10 +319,10 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	// 2014-09-29. Alessandro. @ADDED automated selection of IO plugin if not provided.
  	if(p_im_in_plugin.getValue().compare("auto") == 0)
  	{
- 		if(p_src_format.getValue().compare("TIFF (tiled, 2D)") == 0)
+ 		if(p_src_format.getValue().compare(iim::STACKED_FORMAT) == 0)
  			iom::IMIN_PLUGIN = "tiff2D";
- 		else if(p_src_format.getValue().compare("TIFF (tiled, 3D)") == 0 || p_src_format.getValue().compare("TIFF (tiled, 4D)") == 0 || 
-				p_src_format.getValue().compare("TIFF (unstitiched, 3D)") == 0)
+ 		else if(p_src_format.getValue().compare(iim::TILED_TIF3D_FORMAT) == 0 || 
+				p_src_format.getValue().compare(iim::TILED_MC_TIF3D_FORMAT) == 0 /* || p_src_format.getValue().compare(iim::UNST_TIF3D_FORMAT) == 0 */ )
  			iom::IMIN_PLUGIN = "tiff3D";
 		else
  			; // already initialized to empty
@@ -297,9 +334,9 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	// 2014-09-29. Alessandro. @ADDED automated selection of IO plugin if not provided.
  	if(p_im_out_plugin.getValue().compare("auto") == 0)
  	{
- 		if(p_outFmt.getValue().compare("Tiff2DStck") == 0)
+ 		if(p_dst_format.getValue().compare(iim::STACKED_FORMAT) == 0)
  			iom::IMOUT_PLUGIN = "tiff2D";
- 		else if(p_outFmt.getValue().compare("Tiff3D") == 0 || p_outFmt.getValue().compare("Tiff3DMC") == 0)
+ 		else if(p_dst_format.getValue().compare(iim::TILED_TIF3D_FORMAT) == 0 || p_dst_format.getValue().compare(iim::TILED_MC_TIF3D_FORMAT) == 0)
  			iom::IMOUT_PLUGIN = "tiff3D";
 		else
  			; // already initialized to empty
@@ -334,6 +371,17 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	this->D0  = p_D0.getValue();
 	this->D1  = p_D1.getValue();
 
+	if ( p_dwnsmplngFactor.getValue() > 1 ) {
+		if ( p_src_format.getValue() == iim::SIMPLE_FORMAT || p_src_format.getValue() == iim::SIMPLE_RAW_FORMAT )
+			this->downsamplingFactor = p_dwnsmplngFactor.getValue();
+		else {
+			sprintf(errMsg, "Invalid downsampling factor %d for format \"%s\"\n", p_dwnsmplngFactor.getValue(),p_src_format.getValue().c_str());
+			throw iom::exception(errMsg);
+		}
+	}
+	else
+		this->downsamplingFactor = 1;
+
 	if(p_verbose.getValue())
 	{
 		terastitcher::DEBUG = terastitcher::LEV_MAX;
@@ -356,7 +404,7 @@ void TemplateCLI::checkParams() throw (iom::exception)
 string TemplateCLI::getHelpText()
 {
 	stringstream helptext;
-	helptext << "TeraConverter v2.2.3\n";
+	helptext << "TeraConverter v3.0.0\n";
 	return helptext.str();
 }
 

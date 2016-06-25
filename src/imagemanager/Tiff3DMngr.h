@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2016-06-17. Giulio. @CHANGED the interface of 'readTiff3DFile2Buffer' (enabling the possibility of performing downsampling on-the-fly when reading an image
 * 2015-02-15. Giulio. @CHANGED revised all interfaces passing always width and height in this order
 * 2015-02-06. Giulio. @ADDED append operation that assumes an already open and positioned file
 * 2015-02-06. Giulio. @ADDED open operation
@@ -91,7 +92,8 @@ char *appendSlice2Tiff3DFile ( void *fhandler, int slice, unsigned char *img, un
  * WARNING: the file is already open and it is not closed after data have been read
  */
 
-char *readTiff3DFile2Buffer ( char *filename, unsigned char *img, unsigned int img_width, unsigned int img_height, unsigned int first, unsigned int last );
+char *readTiff3DFile2Buffer ( char *filename, unsigned char *img, unsigned int img_width, unsigned int img_height, unsigned int first, unsigned int last, 
+																  int downsamplingFactor = 1, int starti = -1, int endi = -1, int startj = -1, int endj = -1 );
 /* reads a substack from a file containing a 3D image
  * 
  * filename:   complete path of the file to be modified
@@ -105,17 +107,18 @@ char *readTiff3DFile2Buffer ( char *filename, unsigned char *img, unsigned int i
  * where bps and spp are the bit-per-sample and sample-per-pixel tags of the multipage tiff file
  */
 
-char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int img_width, unsigned int img_height, unsigned int first, unsigned int last, int b_swap );
+char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int img_width, unsigned int img_height, unsigned int first, unsigned int last, 
+																  int b_swap, int downsamplingFactor = 1, int starti = -1, int endi = -1, int startj = -1, int endj = -1 );
 /* reads a substack from a file containing a 3D image
  * 
- * fhandler:   handler of the file to be modified
- * img:        pointer to slice (3D buffer)
- * img_width:  width of the slice
- * img_height: height of the slice
- * first:      index of first slice
- * last:       index of last slice
- * b_swap:     a 0/1 value that indicates if endianness of the file is the same (0) or 
- *             is different (1) from the one of the current machine
+ * fhandler:           handler of the file to be modified
+ * img:                pointer to slice (3D buffer)
+ * img_width:          width of the slice
+ * img_height:         height of the slice
+ * first:              index of first slice
+ * last:               index of last slice
+ * b_swap:             a 0/1 value that indicates if endianness of the file is the same (0) or 
+ *                     is different (1) from the one of the current machine
  *
  * WARNING: the file is already open and it is not closed after data have been read
  *

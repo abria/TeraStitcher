@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-06-19. Giulio.     @FIXED bug in the call to input plugin (introduced the information on the plugin type: 2D/3D)
 * 2016-05-03. Giulio.     @ADDED field to set the blending algorithm (default: sinousidal blenging) 
 * 2016-04-07. Giulio.     @MODIFIED moved default constructor among private methods and declared VirtualVolume a friend class 
 * 2016-03-23. Giulio.     @ADDED  offsets of unstitched volume with respect to nominal origin (0,0,0)
@@ -68,6 +69,8 @@ class UnstitchedVolume : public iim::VirtualVolume
 		int D0_offs;
 
 		int blending_algo;
+
+		std::string plugin_type;
 
 
 		//***OBJECT PRIVATE METHODS****

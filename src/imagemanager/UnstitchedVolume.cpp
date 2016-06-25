@@ -25,6 +25,9 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-06-19. Giulio.     @FIXED bug in the call to input plugin (introduced the information on the plugin type: 2D/3D)
+* 2016-06-10. Giulio.     @ADDED the code to load only active channels
+* 2016-06-10. Giulio.     @ADDED the code to manage the case when channels are more than three
 * 2016-05-03. Giulio.     @FIXED 'internal_loadSubvolume_to_real32' checks to guarantee that merging is performed also at the border of the subvolume
 * 2016-03-23. Giulio.     @FIXED 'internal_loadSubvolume_to_real32' bug on the idetification of the tiles involved in the subvolume extraction 
 * 2015-12-28. Giulio.     @ADDED 'internal_loadSubvolume_to_real32' now check the ret_type parameter to determine voxel depth to be returned 
@@ -41,6 +44,8 @@
 #include "UnstitchedVolume.h"
 #include "vmBlockVolume.h"
 #include "vmStackedVolume.h"
+
+#include "IOPluginAPI.h"
 
 #ifdef _WIN32
 #include "dirent_win.h"
@@ -72,6 +77,18 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir, int _blending_algo)  t
 			iom::IMIN_PLUGIN = "tiff3D";
 	}
 
+	bool flag = false;
+	try{
+		plugin_type = "3D image-based I/O plugin";
+		flag = iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->desc().find(plugin_type);
+	}
+	catch (...) {
+		plugin_type = "2D image-based I/O plugin";
+		flag = iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->desc().find(plugin_type);
+	}
+	if ( !flag )
+ 		throw iim::IOException(iom::strprintf("cannot determine the type of the input plugin"), __iom__current__function__);
+
 	volume = volumemanager::VirtualVolumeFactory::createFromXML(_root_dir,false);
 	stitcher = new StackStitcher(volume);
 
@@ -90,8 +107,16 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir, int _blending_algo)  t
 	DIM_C = volume->getDIM_C();
 	BYTESxCHAN = volume->getBYTESxCHAN();
 
-	if ( DIM_C > 3 || BYTESxCHAN > 2 )
- 		throw iim::IOException(iom::strprintf("image not supported by UnstitchedVolume (DIM_C=%d, BYTESxCHAN=%d)", DIM_C, BYTESxCHAN), __iom__current__function__);
+	if ( (plugin_type.compare("3D image-based I/O plugin") == 0) ?
+		  iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() :
+		  iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved() ) {
+		if ( DIM_C > 3 || BYTESxCHAN > 2 )
+ 			throw iim::IOException(iom::strprintf("image not supported by UnstitchedVolume (DIM_C=%d, BYTESxCHAN=%d)", DIM_C, BYTESxCHAN), __iom__current__function__);
+ 	}
+	else { // if channels are not interleaved more than 3 channels are possible
+		if ( BYTESxCHAN > 2 )
+ 			throw iim::IOException(iom::strprintf("image not supported by UnstitchedVolume (BYTESxCHAN=%d)", BYTESxCHAN), __iom__current__function__);
+ 	}
 
     active = (iim::uint32 *) new iim::uint32[DIM_C];
     n_active = DIM_C;
@@ -607,9 +632,31 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
     H1 = (H1 < 0 || H1 > (int)DIM_H) ? DIM_H : H1; 
     D1 = (D1 < 0 || D1 > (int)DIM_D) ? DIM_D : D1; 
 
-	if ( DIM_C > 1 ){ 
+	bool chans_interleaved = (plugin_type.compare("3D image-based I/O plugin") == 0) ?
+								iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() :
+								iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved();
+	int n_chans = (n_active < DIM_C) ? n_active : DIM_C;
+	if ( n_chans > 1 ){ 
 		// load the first channel
-		iom::CHANS = iom::R;
+		if ( chans_interleaved )
+			if ( n_chans <= 3 )
+				switch (active[0]) {
+					case 0: 
+						iom::CHANS = iom::R;
+						break;
+					case 1:
+						iom::CHANS = iom::G;
+						break;
+					case 2:
+						iom::CHANS = iom::B;
+						break;
+				}
+			else {
+  				throw iim::IOException(iom::strprintf("pulgins with interleaved channels do not support %d channels", n_chans), __iim__current__function__);
+			}
+		else { // channels are not interleaved in the returned buffer 'data'
+			volume->setACTIVE_CHAN(active[0]);
+		}
 	}
 
 	real32 *buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1); 
@@ -626,7 +673,7 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 	sint64 sbv_height = V1 - V0;
 	sint64 sbv_depth = D1 - D0;
 
-    uint8 *subvol = new uint8[sbv_width * sbv_height * sbv_depth * DIM_C * (BYTESxCHAN/red_factor)];
+    uint8 *subvol = new uint8[sbv_width * sbv_height * sbv_depth * n_chans * (BYTESxCHAN/red_factor)];
 
 	int i, j, k, c;
 	real32 *ptr_s_xy;
@@ -640,9 +687,12 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 				for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
 					*ptr_d = uint8(*ptr_s * 255.0f);
 
-		for ( c=1; c<DIM_C; c++ ) { // more than one channel
+		for ( c=1; c<n_chans; c++ ) { // more than one channel
 			delete []buf;
-			iom::CHANS = c==1 ? iom::G : iom::B; // only two more channels are currently supported
+			if ( chans_interleaved )
+				iom::CHANS = active[c]==1 ? iom::G : iom::B; // only two more channels are supported for plugins with interleaved channels
+			else
+				volume->setACTIVE_CHAN(active[c]);
 			// loads next channel
 			buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1);
 			// append next channel to the subvolume buffer
@@ -661,9 +711,12 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 					for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
 						*ptr_d = uint16(*ptr_s * 65535.0F);
 
-			for ( c=1; c<DIM_C; c++ ) { // more than one channel
+			for ( c=1; c<n_chans; c++ ) { // more than one channel
 				delete []buf;
-				iom::CHANS = c==1 ? iom::G : iom::B; // only two more channels are currently supported
+				if ( chans_interleaved )
+					iom::CHANS = active[c]==1 ? iom::G : iom::B; // only two more channels are supported for plugins with interleaved channels
+				else
+					volume->setACTIVE_CHAN(active[c]);
 				// loads next channel
 				buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1);
 				// append next channels to the subvolume buffer
@@ -689,9 +742,12 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 					for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
 						*ptr_d = uint8((*ptr_s/valmax) * 255.0F);
 
-			for ( c=1; c<DIM_C; c++ ) { // more than one channel
+			for ( c=1; c<n_chans; c++ ) { // more than one channel
 				delete []buf;
-				iom::CHANS = c==1 ? iom::G : iom::B; // only two more channels are currently supported
+				if ( chans_interleaved )
+					iom::CHANS = active[c]==1 ? iom::G : iom::B; // only two more channels are supported for plugins with interleaved channels
+				else
+					volume->setACTIVE_CHAN(active[c]);
 				// loads next channel
 				buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1);
 				// append next channels to the subvolume buffer
@@ -716,7 +772,7 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 
 	delete []buf;
 
-	*channels = DIM_C;
+	*channels = n_chans;
 
 	return subvol;
 }

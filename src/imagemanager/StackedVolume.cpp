@@ -25,8 +25,9 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-06-19. Giulio.     @ADDED the format Vaa3D raw for the slices (only initialization)
 * 2015-04-15. Alessandro. @ADDED definition for default constructor.
-* 2015-04-06. Giulio.       @CHANGED Modified prunt method: printing stacks information is now off by default
+* 2015-04-06. Giulio.     @CHANGED Modified prunt method: printing stacks information is now off by default
 * 2015-03-03. Giulio.     @ADDED check that ioplugin interleaves channels in loadSubvolume_to_UINT8.
 * 2015-03-03. Giulio.     @CHANGED the order of how RGB images are copied in the subvol buffer in loadSubvolume_to_UINT8.
 * 2015-03-03. Giulio.     @ADDED selection of IO plugin in the constructors if not provided.
@@ -624,7 +625,20 @@ void StackedVolume::initChannels ( ) throw (IOException)
     // Giulio_CVIplImage* slice = cvLoadImage(slice_fullpath, CV_LOAD_IMAGE_ANYCOLOR);  // 2014-10-03. Alessandro. @FIXED: eliminated CV_LOAD_IMAGE_ANYDEPTH flag since we want 16 bit images to be automatically converted to 8 bit.
 	try
 	{
-		iomanager::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->readMetadata(slice_fullpath, img_width, img_height,	BYTESxCHAN, DIM_C, params);
+		if ( strstr(slice_fullpath,".raw") || strstr(slice_fullpath,".v3draw") ) {
+			V3DLONG *sz = 0;
+			int b_swap;
+			void *fhandle;
+			int header_len;
+			loadRaw2Metadata(slice_fullpath,sz,BYTESxCHAN,b_swap,fhandle,header_len );
+			img_width = sz[0];
+			img_height = sz[1];
+			DIM_C = sz[3];
+			delete sz;
+		}
+		else {
+			iomanager::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->readMetadata(slice_fullpath, img_width, img_height,	BYTESxCHAN, DIM_C, params);
+		}
 	}
 	catch (iom::exception & ex)
 	{

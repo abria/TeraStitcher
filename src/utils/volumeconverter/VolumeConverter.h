@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2014-06-20. Giulio.     @ADDED methods for conversion to 'simple' representation (series, 2D), including parallel support
 * 2016-04-13  Giulio.     @ADDED methods to manage parallelization
 */
 
@@ -119,13 +120,16 @@ class VolumeConverter
 		* _fmt          : format in which the source volume is stored (default: STACKED_FORMAT)            
 		* _internal_fmt : format in which the pixels are represented internally (default: REAL_REPRESENTATION)
 		*
+		* The parameter 'downdamplingFactor' can be different from 1 used only if the internal volume is a 
+		* serie of 2D slices (derived classes: SimpleVolume / SimpleVolumeRaw)
+		*
 		* When _out_fmt=REAL_REPRESENTATION the image must be graylevel
 		* When _out_fmt=UINT8_REPRESENTATION or _out_fmt=UINT8x3_REPRESENTATION the image can be both 
 		* graylevel and multi channel and it will be saved as RGB; at most three channels are supported; if channels
 		* of original image are two, the third RGB channel (Blue channel) is set to all zero
 		*************************************************************************************************************/
         void setSrcVolume(const char* _root_dir, const char* _fmt = iim::STACKED_FORMAT.c_str(),
-                          const char* _out_fmt = REAL_REPRESENTATION, bool time_series = false) throw (iim::IOException, iom::exception);
+                          const char* _out_fmt = REAL_REPRESENTATION, bool time_series = false, int downsamplingFactor = 1) throw (iim::IOException, iom::exception);
 
 		/*************************************************************************************************************
 		* Method to set the subvolume to be converted
@@ -165,6 +169,28 @@ class VolumeConverter
 		* [saved_img_depth]		: determines saved images bitdepth (16 or 8).
 		**************************************************************************************************************/
 		void generateTiles(std::string output_path, bool* resolutions = NULL, 
+			int slice_height = -1, int slice_width = -1, int method = HALVE_BY_MEAN, bool isotropic = false, 
+            bool show_progress_bar = true, const char* saved_img_format = iim::DEF_IMG_FORMAT.c_str(), 
+            int saved_img_depth = iim::NUL_IMG_DEPTH, std::string frame_dir = "", bool par_mode = false)	throw (iim::IOException, iom::exception);
+		
+
+		/*************************************************************************************************************
+		* Method to be called for tile generation. <> parameters are mandatory, while [] are optional.
+		* <output_path>			: absolute directory path where generated tiles have to be stored.
+		* [resolutions]			: pointer to an array of S_MAX_MULTIRES  size which boolean entries identify the acti-
+		*						  vaction/deactivation of the i-th resolution.  If not given, all resolutions will  be
+		*						  activated.
+		* [slice_height/width]	: desired dimensions of tiles  slices after merging.  It is actually an upper-bound of
+		*						  the actual slice dimensions, which will be computed in such a way that all tiles di-
+		*						  mensions can differ by 1 pixel only along both directions. If not given, the maximum
+		*						  allowed dimensions will be set, which will result in a volume composed by  one large 
+		*						  tile only.
+		* [method]              : method used to compute pixel whel halving image size (default: by mean)
+		* [show_progress_bar]	: enables/disables progress bar with estimated time remaining.
+		* [saved_img_format]	: determines saved images format ("png","tif","jpeg", etc.).
+		* [saved_img_depth]		: determines saved images bitdepth (16 or 8).
+		**************************************************************************************************************/
+		void generateTilesSimple(std::string output_path, bool* resolutions = NULL, 
 			int slice_height = -1, int slice_width = -1, int method = HALVE_BY_MEAN, bool isotropic = false, 
             bool show_progress_bar = true, const char* saved_img_format = iim::DEF_IMG_FORMAT.c_str(), 
             int saved_img_depth = iim::NUL_IMG_DEPTH, std::string frame_dir = "", bool par_mode = false)	throw (iim::IOException, iom::exception);
@@ -275,6 +301,13 @@ class VolumeConverter
             bool show_progress_bar = true, const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,
             std::string frame_dir = "", bool par_mode=false) throw (iim::IOException, iom::exception);
 		
+
+		void createDirectoryHierarchySimple(std::string output_path, bool* resolutions = NULL, 
+			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool isotropic=false, 
+            bool show_progress_bar = true, const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,
+            std::string frame_dir = "", bool par_mode=false) throw (iim::IOException, iom::exception);
+
+
 		void mdataGenerator(std::string output_path, bool* resolutions = NULL, 
 			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool isotropic=false, 
             bool show_progress_bar = true, const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,

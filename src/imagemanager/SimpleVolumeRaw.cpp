@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-06-17. Giulio.    @ADDED ability to read a downsampled image 
 * 2016-03-24. Giulio.    @ADDED 16 bit support.
 * 2015-04-15 Alessandro. @ADDED definition for default constructor.
 * 2014-11-22 Giulio.     @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
@@ -63,6 +64,14 @@ SimpleVolumeRaw::SimpleVolumeRaw(const char* _root_dir)  throw (IOException)
 
 	init();
 	initChannels();
+
+	downsamplingFactor = 1;
+	trueVXL_V = VXL_V;
+	trueVXL_H = VXL_H;
+	trueVXL_D = VXL_D;
+	trueDIM_V = DIM_V;
+	trueDIM_H = DIM_H;
+	trueDIM_D = DIM_D;
 }
 
 
@@ -189,6 +198,27 @@ void SimpleVolumeRaw::initChannels ( ) throw (IOException)
 	delete[] sz;
 }
 
+void SimpleVolumeRaw::setDOWNSAMPLINGFACTOR( int f ) {
+	downsamplingFactor = f;
+	VXL_V = trueVXL_V * f;
+	VXL_H = trueVXL_H * f;
+	VXL_D = trueVXL_D * f;
+	DIM_V = (int)ceil((double)trueDIM_V / f);
+	DIM_H = (int)ceil((double)trueDIM_H / f);
+	DIM_D = (int)ceil((double)trueDIM_D / f);
+}
+
+
+void SimpleVolumeRaw::resetDOWNSAMPLINGFACTOR() {
+	downsamplingFactor = 1;
+	VXL_V = trueVXL_V;
+	VXL_H = trueVXL_H;
+	VXL_D = trueVXL_D;
+	DIM_V = trueDIM_V;
+	DIM_H = trueDIM_H;
+	DIM_D = trueDIM_D;
+}
+
 
 real32 *SimpleVolumeRaw::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, int D0, int D1)  throw (IOException)
 {
@@ -293,15 +323,23 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
 	D0 = (D0 == -1 ? 0		 : D0);
 	D1 = (D1 == -1 ? DIM_D	 : D1);
 
-	uint8 *subvol = 0;
-
 	//allocation
 	sint64 sbv_height = V1 - V0;
 	sint64 sbv_width  = H1 - H0;
 	sint64 sbv_depth  = D1 - D0;
 
+	uint8 *subvol;
+
+	bool whole_slices = V0 == 0 && V1 == DIM_V && H0 == 0 && H1 == DIM_H;
+
+	if ( whole_slices ) 
+		subvol = new uint8[sbv_height * sbv_width * sbv_depth * DIM_C * BYTESxCHAN];
+	else 
+		subvol = 0;
+
     //initializing the number of channels with an undefined value (it will be detected from the first slice read)
     sint64 sbv_channels = -1;
+	sint64 sbv_bytes_chan = -1;
 
 	//scanning of stacks matrix for data loading and storing into subvol
 	Rect_t subvol_area;
@@ -309,7 +347,7 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
 	subvol_area.V0 = V0;
 	subvol_area.H1 = H1;
 	subvol_area.V1 = V1;
-	bool first_time = true;
+	//bool first_time = true;
 
 	for(int row=0; row<N_ROWS; row++) 
 	{
@@ -326,19 +364,39 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
 				for(int k=0; k<sbv_depth; k++)
 				{
 					//building image path
+					int trueSliceIndex = downsamplingFactor * (D0+k);
 					sprintf(slice_fullpath, "%s/%s/%s", root_dir, 
 							STACKS[row][col]->getDIR_NAME(), 
-							STACKS[row][col]->getFILENAMES()[D0+k]);
+							STACKS[row][col]->getFILENAMES()[trueSliceIndex]);
+							//STACKS[row][col]->getFILENAMES()[D0+k]);
 
 					//loading image
 					char *err_rawfmt;
 					V3DLONG *sz = 0;
 					int datatype;
+					int b_swap;
+					void *fhandle;
+					int header_len;
 					
-					if ( (err_rawfmt = loadRaw2WholeStack(slice_fullpath,slice,sz,datatype)) != 0 ) {
+					if ( (err_rawfmt = loadRaw2Metadata(slice_fullpath,sz,datatype,b_swap,fhandle,header_len )) != 0 ) {
 						if ( sz ) delete[] sz;
 						char msg[STATIC_STRINGS_SIZE];
 						sprintf(msg,"in SimpleVolumeRaw::loadSubvolume_to_UINT8: unable to open image \"%s\". Wrong path or format (%s)", 
+							slice_fullpath,err_rawfmt);
+                        throw IOException(msg);
+					}
+
+					// resize cols and rows
+					int cols = (int)ceil((double)sz[0]/downsamplingFactor);
+					int rows = (int)ceil((double)sz[1]/downsamplingFactor);
+
+					// if whole_slices is true the offset is one slice and the channel stride is the number of slices, otherwise allocate a buffer to contain
+					// all the channels and the channel stride is 1
+					unsigned char *slice = whole_slices ? (subvol + k * (rows * cols * datatype)) : new uint8[rows * cols * sz[3] * datatype];
+					if ( (err_rawfmt = loadRawSlices2SubStack(fhandle,slice,(whole_slices ? sbv_depth : 1),sz,datatype,0,0,b_swap,header_len,downsamplingFactor)) != 0 ) {
+						if ( sz ) delete[] sz;
+						char msg[STATIC_STRINGS_SIZE];
+						sprintf(msg,"in SimpleVolumeRaw::loadSubvolume_to_UINT8: unable to read image \"%s\". Wrong path or format (%s)", 
 							slice_fullpath,err_rawfmt);
                         throw IOException(msg);
 					}
@@ -355,6 +413,11 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
                         throw IOException(msg);
 					}		
 
+					if ( whole_slices ) {
+                        sbv_channels = sz[3];
+						continue;
+					}
+
 					if(!slice)
 					{
 						if ( sz ) delete[] sz;
@@ -365,9 +428,9 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
 					}		
 
 					//if this is the first time a slice is loaded, detecting the number of channels and safely allocating memory for data
-                    if(first_time)
+                    if(!subvol)
                     {
-                        first_time = false;
+                        //first_time = false;
                         sbv_channels = sz[3];
                         //if(sbv_channels != 1 && sbv_channels != 3)
                         //	throw iim::IOException(std::string("Unsupported number of channels at \"").append(slice_fullpath).append("\". Only 1 and 3-channels images are supported").c_str());
@@ -388,32 +451,34 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
 					}
 
 					//computing offsets
-                    int slice_step = (int)sz[0] * datatype; // WARNING, not sure: to be checked
-                    int ABS_V_offset = V0 - STACKS[row][col]->getABS_V();
-                    int ABS_H_offset = (H0 - STACKS[row][col]->getABS_H())*((int)sbv_channels);
+                    int slice_step = (int)sz[0]; // WARNING, not sure: to be checked
+                    sint64 ABS_V_offset = V0 - STACKS[row][col]->getABS_V();
+                    sint64 ABS_H_offset = (H0 - STACKS[row][col]->getABS_H());
 
-                    int istart, iend, jstart, jend;
+                    sint64 istart, iend, jstart, jend;
                     istart  = intersect_area->V0-V0;
                     iend    = intersect_area->V1-V0;
                     jstart  = intersect_area->H0-H0;
                     jend    = intersect_area->H1-H0;
  					for ( int c=0; c<sbv_channels; c++ )
 					{
-                        sint64 c_offset = c*sbv_height*sbv_width*sbv_depth*datatype;
-                        sint64 k_offset = k*sbv_height*sbv_width*datatype;
+                        sint64 c_offset = c*sbv_height*sbv_width*sbv_depth;
+                        sint64 k_offset = k*sbv_height*sbv_width;
                         for(int i = istart; i < iend; i++)
                         {
-                            uint8* slice_row = ((uint8*)(slice + c*sbv_height*sbv_width*datatype)) + (i+ABS_V_offset)*slice_step;
+                            uint8* slice_row = ((uint8*)slice) + ((c*sbv_height*sbv_width + (i+ABS_V_offset)*slice_step) * datatype);
 							int cnt = 0;
-                            for(int j = jstart; cnt < ((jend-jstart) * datatype); j++, cnt++)
-                                subvol[c_offset + k_offset + i*sbv_width*datatype + j] = slice_row[j+ABS_H_offset];
+                            for(int j = jstart * datatype; cnt < ((jend-jstart) * datatype); j++, cnt++)
+                                subvol[((c_offset + k_offset + i*sbv_width) * datatype) + j] = slice_row[(ABS_H_offset * datatype) + j];
                         }
                     }
 
 					//releasing image
 					//cvReleaseImage(&slice);
-					delete slice;
-					delete[] sz;
+					if ( !whole_slices && slice ) // release only if olny prtial slices have been read (and then copied)
+						delete slice;
+					if ( sz )
+						delete[] sz;
 					slice = 0;
 					sz = 0;
 				}

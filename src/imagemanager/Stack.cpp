@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-06-19. Giulio.    @ADDED the format Vaa3D raw for the slices
 * 2016-04-29. Giulio.    @FIXED used input plugin in place of tiff2d (fixed) in 'init'
 * 2015-04-14 Alessandro. @FIXED folder image scan: Only .tif/.TIF/.tiff/.TIFF files have to be included in the image list.
 * 2014-11-22 Giulio. @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
@@ -43,6 +44,7 @@
 #include <string>
 
 #include "IOPluginAPI.h" // 2014-11-26. Giulio.
+#include "RawFmtMngr.h" // 2016-06-19. Giulio
 
 
 // 140427_IANNELLO
@@ -262,8 +264,12 @@ void Stack::init() throw (IOException)
     {
         tmp = entry_lev3->d_name;
         if(tmp.compare(".") != 0 && tmp.compare("..") != 0 &&
-           (tmp.find(".tif") != string::npos || tmp.find(".TIF") != string::npos || tmp.find(".jpg") != string::npos ) ) // 2016-04-29. Giulio. experimentally allowed .jpg suffix 
+           (tmp.find(".tif") != string::npos || tmp.find(".TIF") != string::npos || 
+		    tmp.find(".jpg") != string::npos ||                                               // 2016-04-29. Giulio. experimentally allowed .jpg suffix
+			tmp.find(".raw") != string::npos || tmp.find(".v3draw") != string::npos ) )  {
+
             entries_lev3.push_back(tmp);
+		}
     }
     entries_lev3.sort();
     DEPTH = (int)entries_lev3.size();
@@ -308,9 +314,24 @@ void Stack::init() throw (IOException)
 
     try
     {
-        //iomanager::IOPluginFactory::getPlugin2D("tiff2D")->readMetadata(slice_fullpath, img_width, img_height,	 img_depth, img_chans, params);
-		// 2016-04-29. Giulio.  @FIXED the input plugin used instead of a fixed one (tiff2D)
-        iomanager::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->readMetadata(slice_fullpath, img_width, img_height, img_depth, img_chans, params);
+		if ( strstr(slice_fullpath,".raw") || strstr(slice_fullpath,".v3draw") ) {
+			V3DLONG *sz = 0;
+			int datatype;
+			int b_swap;
+			void *fhandle;
+			int header_len;
+			loadRaw2Metadata(slice_fullpath,sz,datatype,b_swap,fhandle,header_len );
+			img_width = sz[0];
+			img_height = sz[1];
+			img_depth = sz[2];
+			img_chans = sz[3];
+			delete sz;
+		}
+		else {
+			//iomanager::IOPluginFactory::getPlugin2D("tiff2D")->readMetadata(slice_fullpath, img_width, img_height,	 img_depth, img_chans, params);
+			// 2016-04-29. Giulio.  @FIXED the input plugin used instead of a fixed one (tiff2D)
+			iomanager::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->readMetadata(slice_fullpath, img_width, img_height, img_depth, img_chans, params);
+		}
     }
     catch (iom::exception & ex)
     {

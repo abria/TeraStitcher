@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-06-09. Giulio      @ADDED the 'active_channel' field and corresponding getter and setter
 * 2015-06-12. Giulio      @ADDED 'check' method to check completeness and coherence of a volume
 * 2015-02-26. Giulio.     @ADDED fields DIM_C and BYTESxCHAN
 * 2014-09-10. Alessandro. @ADDED 'getVolumeFormat' method to be applied on xml file.
@@ -63,6 +64,9 @@ class volumemanager::VirtualVolume
 		int    DIM_C;					// number of channels        (@ADDED by Iannello   on ..........)
 		int    BYTESxCHAN;              // number of bytes per channel
 
+		int active_channel;
+
+
 		//initialization methods
 		virtual void init() throw (iom::exception);
 		virtual void applyReferenceSystem(vm::ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3) throw (iom::exception)=0;
@@ -86,6 +90,7 @@ class volumemanager::VirtualVolume
 		VirtualVolume(){
 			init();
 		}
+
 		VirtualVolume(const char* _stacks_dir, vm::ref_sys _reference_system, float VXL_1=0, float VXL_2=0, float VXL_3=0) throw (iom::exception)
 		{
 			init();
@@ -99,6 +104,7 @@ class volumemanager::VirtualVolume
 			VXL_H = VXL_2;
 			VXL_D = VXL_3;
 		}
+
 		VirtualVolume(const char* xml_path) throw (iom::exception){
 			init();
 		}
@@ -133,6 +139,9 @@ class volumemanager::VirtualVolume
 		int		 getDEFAULT_DISPLACEMENT_H();
 		virtual int		 getDEFAULT_DISPLACEMENT_D();
 		vm::ref_sys getREF_SYS(){return reference_system;}
+
+		int      getACTIVE_CHAN() { return active_channel; }
+		void     setACTIVE_CHAN(int c) { active_channel = c; }
 		
 		//loads/saves metadata from/in the given xml filename
 		virtual void loadXML(const char *xml_filename) = 0;

@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-06-18.  Giulio.     @ADDED the possibility to dowsampling the reading of data
 * 2016-05-02.  Giulio.     @ADDED generation of an info log file
 * 2016-05-02.  Giulio.     @ADDED routines for file management
 * 2016-04-13.  Giulio.     @ADDED parallelization
@@ -166,7 +167,7 @@ int main ( int argc, char *argv[] ) {
 		if ( cli.infofile_path != "" ) {
 			// volume info has been requested
 			FILE *fout;
-			vc.setSrcVolume(cli.src_root_dir.c_str(),cli.src_format.c_str(),cli.dst_format.c_str());
+			vc.setSrcVolume(cli.src_root_dir.c_str(),cli.src_format.c_str(),cli.outFmt.c_str());
 			string foutName = fillPath(cli.infofile_path,getAbsolutePath(cli.src_root_dir),"err_log_file", "txt");
 			if ( (fout = fopen(foutName.c_str(),"w")) == 0 ) 
 				throw iom::exception(iom::strprintf("teraconverter: cannot open info log file %s", foutName.c_str()).c_str());
@@ -186,10 +187,58 @@ int main ( int argc, char *argv[] ) {
 		}
 
 		
-		vc.setSrcVolume(cli.src_root_dir.c_str(),cli.src_format.c_str(),cli.dst_format.c_str());
+		vc.setSrcVolume(cli.src_root_dir.c_str(),cli.src_format.c_str(),cli.outFmt.c_str(),false,cli.downsamplingFactor);
 		vc.setSubVolume(cli.V0,cli.V1,cli.H0,cli.H1,cli.D0,cli.D1);
 
-		if ( cli.outFmt == "Tiff2DStck" )
+		if ( cli.dst_format == iim::SIMPLE_RAW_FORMAT )
+			if ( cli.makeDirs ) {
+				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+			else if ( cli.metaData ) {
+				//vc.mdataGenerator(cli.dst_root_dir.c_str(),cli.resolutions,
+				//	cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
+				//	cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+			else {
+				vc.generateTilesSimple(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+		else if ( cli.dst_format == iim::SIMPLE_FORMAT )
+			if ( cli.makeDirs ) {
+				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+			else if ( cli.metaData ) {
+				//vc.mdataGenerator(cli.dst_root_dir.c_str(),cli.resolutions,
+				//	cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
+				//	cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+			else {
+				vc.generateTilesSimple(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+		else if ( cli.dst_format == iim::STACKED_RAW_FORMAT )
+			if ( cli.makeDirs ) {
+				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+			else if ( cli.metaData ) {
+				vc.mdataGenerator(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+			else {
+				vc.generateTiles(cli.dst_root_dir.c_str(),cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.halving_method,cli.isotropic,
+					cli.show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+			}
+		else if ( cli.dst_format == iim::STACKED_FORMAT )
 			if ( cli.makeDirs ) {
 				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
 					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
@@ -205,7 +254,7 @@ int main ( int argc, char *argv[] ) {
 					cli.slice_height,cli.slice_width,cli.halving_method,cli.isotropic,
 					cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
 			}
-		else if ( cli.outFmt == "Vaa3DRaw" ) {
+		else if ( cli.dst_format == iim::TILED_FORMAT ) {
 			if ( cli.makeDirs ) {
 				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
 					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
@@ -222,7 +271,7 @@ int main ( int argc, char *argv[] ) {
 					cli.show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
 			}
 		}
-		else if ( cli.outFmt == "Tiff3D" ) {
+		else if ( cli.dst_format == iim::TILED_TIF3D_FORMAT ) {
 			if ( cli.makeDirs ) {
 				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
 					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
@@ -239,7 +288,7 @@ int main ( int argc, char *argv[] ) {
 					cli.show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
 			}
 		}
-		else if ( cli.outFmt == "Vaa3DRawMC" )
+		else if ( cli.dst_format == iim::TILED_MC_FORMAT )
 			if ( cli.makeDirs ) {
 				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
 					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
@@ -255,7 +304,7 @@ int main ( int argc, char *argv[] ) {
 					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
 					cli.show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",false);
 			}
-		else if ( cli.outFmt == "Tiff3DMC" )
+		else if ( cli.dst_format == iim::TILED_MC_TIF3D_FORMAT )
 			if ( cli.makeDirs ) {
 				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
 					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
@@ -271,7 +320,7 @@ int main ( int argc, char *argv[] ) {
 					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
 					cli.show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
 			}
-		else if ( cli.outFmt == "Fiji_HDF5" )
+		else if ( cli.dst_format == iim::BDV_HDF5_FORMAT )
 			vc.generateTilesBDV_HDF5(cli.dst_root_dir.c_str(),cli.resolutions,
 				cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,
 				cli.show_progress_bar,"Fiji_HDF5",8*vc.getVolume()->getBYTESxCHAN());
