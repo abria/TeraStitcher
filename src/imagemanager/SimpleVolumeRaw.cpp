@@ -332,7 +332,8 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
 
 	bool whole_slices = V0 == 0 && V1 == DIM_V && H0 == 0 && H1 == DIM_H;
 
-	if ( whole_slices ) 
+	//if ( whole_slices )
+	if ( true )
 		subvol = new uint8[sbv_height * sbv_width * sbv_depth * DIM_C * BYTESxCHAN];
 	else 
 		subvol = 0;
@@ -390,10 +391,15 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
 					int cols = (int)ceil((double)sz[0]/downsamplingFactor);
 					int rows = (int)ceil((double)sz[1]/downsamplingFactor);
 
-					// if whole_slices is true the offset is one slice and the channel stride is the number of slices, otherwise allocate a buffer to contain
-					// all the channels and the channel stride is 1
-					unsigned char *slice = whole_slices ? (subvol + k * (rows * cols * datatype)) : new uint8[rows * cols * sz[3] * datatype];
-					if ( (err_rawfmt = loadRawSlices2SubStack(fhandle,slice,(whole_slices ? sbv_depth : 1),sz,datatype,0,0,b_swap,header_len,downsamplingFactor)) != 0 ) {
+					/*
+					// if whole_slices is true, then the offset on subvol must be of k slices relative to one chanel and the channel stride is the number of slices, 
+					// otherwise allocate a buffer to contain all the channels and the channel stride is 1
+					*/
+					// if whole_slices is true use image dimensions to compute the offset, otherwise use subvolume dimensions
+					unsigned char *slice = whole_slices ? (subvol + k * (rows * cols * datatype)) : (subvol + k * (sbv_height * sbv_width * datatype))/*new uint8[rows * cols * sz[3] * datatype]*/;
+					if ( whole_slices ? 
+							(err_rawfmt = loadRawSlices2SubStack(fhandle,slice,(whole_slices ? sbv_depth : 1),sz,datatype,0,0,b_swap,header_len,downsamplingFactor)) != 0 :
+							(err_rawfmt = loadRaw2SubStack(fhandle,slice,sz,H0,V0,0,H1,V1,1,datatype,b_swap,header_len,sbv_depth)) != 0 ) {
 						if ( sz ) delete[] sz;
 						char msg[STATIC_STRINGS_SIZE];
 						sprintf(msg,"in SimpleVolumeRaw::loadSubvolume_to_UINT8: unable to read image \"%s\". Wrong path or format (%s)", 
@@ -413,8 +419,10 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
                         throw IOException(msg);
 					}		
 
-					if ( whole_slices ) {
+					//if ( whole_slices ) {
+					if ( true ) {
                         sbv_channels = sz[3];
+						delete []sz; // release memory because when e new 2D file is opened at the next cycle sz is reallocated
 						continue;
 					}
 

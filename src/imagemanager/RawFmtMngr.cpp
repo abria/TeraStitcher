@@ -565,6 +565,9 @@ char *loadRaw2SubStack ( void *fhandle, unsigned char *img, V3DLONG *sz,
 	
 	if (b_swap==1)
 	{
+		if ( nslices != 1 ) // WARNINIG: the read data is not stored contiguously
+			return ((char *)"cannot manage endianess when slices is not 1 (bug to be fixed)");
+
 		if (unitSize==2)
 		{
 			for (i=0;i<total; i++)
@@ -681,6 +684,9 @@ char *loadRawSlices2SubStack(void *fhandle, unsigned char *img, int nslices, V3D
 
 	if (b_swap==1)
 	{
+		if ( nslices != 1 ) // WARNINIG: the read data is not stored contiguously
+			return ((char *)"cannot manage endianess when slices is not 1 (bug to be fixed)");
+
 		if (unitSize==2)
 		{
 			for (i=0;i<total; i++)

@@ -277,6 +277,13 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		throw iom::exception(errMsg);
 	}
 
+	if ( (p_dst_format.getValue() == iim::SIMPLE_RAW_FORMAT || p_dst_format.getValue() == iim::SIMPLE_FORMAT) && 
+						p_dwnsmplngFactor.getValue()!=1 && (p_V0.isSet() || p_V1.isSet() || p_H0.isSet() || p_H1.isSet()) ) {
+		sprintf(errMsg, "V0, V1, H0, H1 are not allowed when destination formats %s or %s are chosen with a downsampling factor different from 1",
+																		iim::SIMPLE_RAW_FORMAT.c_str(),iim::SIMPLE_RAW_FORMAT.c_str());
+		throw iom::exception(errMsg);
+	}
+
 	//checking that parallel-related options have been correctly selected
 	if(p_makedirs.isSet() && (p_metadata.isSet() || p_parallel.isSet()) )
 		throw iom::exception("parallel or metadata options cannot be set with makedirs option. See --help for usage.");
