@@ -3776,7 +3776,7 @@ void VolumeConverter::convertTo(
             volume->setActiveFrames(t,t);
             std::string frame_dir = iim::TIME_FRAME_PREFIX + strprintf("%06d", t);
             if(output_format.compare(iim::STACKED_FORMAT) == 0)
-                generateTiles(output_path, resolutions, block_height, block_width, method, false, true, iim::DEF_IMG_FORMAT.c_str(), output_bitdepth, frame_dir, false);
+                generateTiles(output_path, resolutions, block_height, block_width, method, false, true, "tif", output_bitdepth, frame_dir, false);
             else if(output_format.compare(iim::TILED_FORMAT) == 0)
                 generateTilesVaa3DRaw(output_path, resolutions, block_height, block_width, block_depth, method, false, true, "raw", output_bitdepth, frame_dir, false);
             else if(output_format.compare(iim::TILED_MC_FORMAT) == 0)
@@ -3785,6 +3785,10 @@ void VolumeConverter::convertTo(
                 generateTilesVaa3DRaw(output_path, resolutions, block_height, block_width, block_depth, method, false, true, "Tiff3D", output_bitdepth, frame_dir, false);
             else if(output_format.compare(iim::TILED_MC_TIF3D_FORMAT) == 0)
                 generateTilesVaa3DRawMC(output_path, resolutions, block_height, block_width, block_depth, method, false, true, "Tiff3D", output_bitdepth, frame_dir, false);
+            else if(output_format.compare(iim::SIMPLE_RAW_FORMAT) == 0)
+                generateTilesSimple(output_path, resolutions, block_height, block_width, method, false, true, "raw", output_bitdepth, frame_dir, false);
+            else if(output_format.compare(iim::SIMPLE_FORMAT) == 0)
+                generateTilesSimple(output_path, resolutions, block_height, block_width, method, false, true, "tif", output_bitdepth, frame_dir, false);
             else
                 throw iim::IOException(strprintf("Output format \"%s\" not supported", output_format.c_str()).c_str());
         }
@@ -3804,6 +3808,10 @@ void VolumeConverter::convertTo(
             generateTilesVaa3DRawMC(output_path, resolutions, block_height, block_width, block_depth, method, false, true, "Tiff3D", output_bitdepth, "", false);
         else if(output_format.compare(iim::BDV_HDF5_FORMAT) == 0)
             generateTilesBDV_HDF5(output_path,resolutions, block_height,block_width,block_depth,method, true,"Tiff3D",output_bitdepth);
+        else if(output_format.compare(iim::SIMPLE_RAW_FORMAT) == 0)
+            generateTilesSimple(output_path, resolutions, block_height, block_width, method, false, true, "raw", output_bitdepth, "", false);
+        else if(output_format.compare(iim::SIMPLE_FORMAT) == 0)
+            generateTilesSimple(output_path, resolutions, block_height, block_width, method, false, true, "tif", output_bitdepth, "", false);
         else
             throw iim::IOException(strprintf("Output format \"%s\" not supported", output_format.c_str()).c_str());
     }
