@@ -428,8 +428,8 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 			sprintf(err_msg, "in generateTiles(...): unable to create DIR = \"%s\"\n", output_path_par.str().c_str());
 			throw IOException(err_msg);
 		}
-		if ( initResumer(saved_img_format,output_path_par.str().c_str(),resolutions_size,resolutions,slice_height,slice_width,method,saved_img_format,saved_img_depth,fhandle) ) { // halve_pow2 is not saved
-				readResumerState(fhandle,output_path_par.str().c_str(),resolutions_size,z,z_parts); // halve_pow2 is not saved
+		if ( initVCResumer(saved_img_format,output_path_par.str().c_str(),resolutions_size,resolutions,slice_height,slice_width,method,saved_img_format,saved_img_depth,fhandle) ) { // halve_pow2 is not saved
+				readVCResumerState(fhandle,output_path_par.str().c_str(),resolutions_size,z,z_parts); // halve_pow2 is not saved
 		}
 		else { // halve_pow2 is not saved: start form the first slice
 			// z must begin from D0 (absolute index into the volume) since it is used to compute tha file names (containing the absolute position along D)
@@ -438,8 +438,8 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 		}
 	}
 	else { // not in parallel mode: use output_path to maintain resume status
-		if ( initResumer(saved_img_format,output_path.c_str(),resolutions_size,resolutions,slice_height,slice_width,method,saved_img_format,saved_img_depth,fhandle) ) {
-			readResumerState(fhandle,output_path.c_str(),resolutions_size,z,z_parts);
+		if ( initVCResumer(saved_img_format,output_path.c_str(),resolutions_size,resolutions,slice_height,slice_width,method,saved_img_format,saved_img_depth,fhandle) ) {
+			readVCResumerState(fhandle,output_path.c_str(),resolutions_size,z,z_parts);
 		}
 		else {
 			z = this->D0;
@@ -639,13 +639,13 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 			delete ubuffer[0]; // other buffer pointers are only offsets
 		
 		// save next group data
-		saveResumerState(fhandle,resolutions_size,z+z_max_res,z_parts+1);
+		saveVCResumerState(fhandle,resolutions_size,z+z_max_res,z_parts+1);
 	}
 
 
 	if ( !par_mode ) {
 		// 2016-04-13. Giulio. @ADDED close resume 
-		closeResumer(fhandle,output_path.c_str());
+		closeVCResumer(fhandle,output_path.c_str());
 
 		// reloads created volumes to generate .bin file descriptors at all resolutions
 		ref_sys reference(axis(1),axis(2),axis(3));
@@ -710,7 +710,7 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 	}
 	else { // par mode
 		// 2016-04-13. Giulio. @ADDED close resume in par mode
-		closeResumer(fhandle,output_path_par.str().c_str());
+		closeVCResumer(fhandle,output_path_par.str().c_str());
 		// WARNINIG --- the directory should be removed
 		bool res = remove_dir(output_path_par.str().c_str());
 	}
@@ -969,8 +969,8 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 			sprintf(err_msg, "in generateTiles(...): unable to create DIR = \"%s\"\n", output_path_par.str().c_str());
 			throw IOException(err_msg);
 		}
-		if ( initResumer(saved_img_format,output_path_par.str().c_str(),resolutions_size,resolutions,slice_height,slice_width,method,saved_img_format,saved_img_depth,fhandle) ) { // halve_pow2 is not saved
-				readResumerState(fhandle,output_path_par.str().c_str(),resolutions_size,z,z_parts); // halve_pow2 is not saved
+		if ( initVCResumer(saved_img_format,output_path_par.str().c_str(),resolutions_size,resolutions,slice_height,slice_width,method,saved_img_format,saved_img_depth,fhandle) ) { // halve_pow2 is not saved
+				readVCResumerState(fhandle,output_path_par.str().c_str(),resolutions_size,z,z_parts); // halve_pow2 is not saved
 		}
 		else { // halve_pow2 is not saved: start form the first slice
 			// z must begin from D0 (absolute index into the volume) since it is used to compute tha file names (containing the absolute position along D)
@@ -979,8 +979,8 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 		}
 	}
 	else { // not in parallel mode: use output_path to maintain resume status
-		if ( initResumer(saved_img_format,output_path.c_str(),resolutions_size,resolutions,slice_height,slice_width,method,saved_img_format,saved_img_depth,fhandle) ) {
-			readResumerState(fhandle,output_path.c_str(),resolutions_size,z,z_parts);
+		if ( initVCResumer(saved_img_format,output_path.c_str(),resolutions_size,resolutions,slice_height,slice_width,method,saved_img_format,saved_img_depth,fhandle) ) {
+			readVCResumerState(fhandle,output_path.c_str(),resolutions_size,z,z_parts);
 		}
 		else {
 			z = this->D0;
@@ -1185,13 +1185,13 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 			delete ubuffer[0]; // other buffer pointers are only offsets
 		
 		// save next group data
-		saveResumerState(fhandle,resolutions_size,z+z_max_res,z_parts+1);
+		saveVCResumerState(fhandle,resolutions_size,z+z_max_res,z_parts+1);
 	}
 
 
 	if ( !par_mode ) {
 		// 2016-04-13. Giulio. @ADDED close resume 
-		closeResumer(fhandle,output_path.c_str());
+		closeVCResumer(fhandle,output_path.c_str());
 
 	//	// reloads created volumes to generate .bin file descriptors at all resolutions
 	//	ref_sys reference(axis(1),axis(2),axis(3));
@@ -1256,7 +1256,7 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 	}
 	else { // par mode
 		// 2016-04-13. Giulio. @ADDED close resume in par mode
-		closeResumer(fhandle,output_path_par.str().c_str());
+		closeVCResumer(fhandle,output_path_par.str().c_str());
 		// WARNINIG --- the directory should be removed
 		bool res = remove_dir(output_path_par.str().c_str());
 	}
@@ -1569,8 +1569,8 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 			sprintf(err_msg, "in generateTilesVaa3DRaw(...): unable to create DIR = \"%s\"\n", output_path_par.str().c_str());
 			throw IOException(err_msg);
 		}
-		if ( initResumer(saved_img_format,output_path_par.str().c_str(),resolutions_size,resolutions,block_height,block_width,block_depth,method,saved_img_format,saved_img_depth,fhandle) ) { // halve_pow2 is not saved
-				readResumerState(fhandle,output_path_par.str().c_str(),resolutions_size,stack_block,slice_start,slice_end,z,z_parts); // halve_pow2 is not saved
+		if ( initVCResumer(saved_img_format,output_path_par.str().c_str(),resolutions_size,resolutions,block_height,block_width,block_depth,method,saved_img_format,saved_img_depth,fhandle) ) { // halve_pow2 is not saved
+				readVCResumerState(fhandle,output_path_par.str().c_str(),resolutions_size,stack_block,slice_start,slice_end,z,z_parts); // halve_pow2 is not saved
 		}
 		else { // halve_pow2 is not saved: start form the first slice
 			//slice_start and slice_end of current block depend on the resolution
@@ -1585,8 +1585,8 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 		}
 	}
 	else { // not in parallel mode: use output_path to maintain resume status
-		if ( initResumer(saved_img_format,output_path.c_str(),resolutions_size,resolutions,block_height,block_width,block_depth,method,saved_img_format,saved_img_depth,fhandle) ) {
-			readResumerState(fhandle,output_path.c_str(),resolutions_size,stack_block,slice_start,slice_end,z,z_parts);
+		if ( initVCResumer(saved_img_format,output_path.c_str(),resolutions_size,resolutions,block_height,block_width,block_depth,method,saved_img_format,saved_img_depth,fhandle) ) {
+			readVCResumerState(fhandle,output_path.c_str(),resolutions_size,stack_block,slice_start,slice_end,z,z_parts);
 		}
 		else {
 			//slice_start and slice_end of current block depend on the resolution
@@ -1814,7 +1814,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 
 									//if ( (err_rawfmt = initRawFile((char *)img_path_temp.str().c_str(),sz,datatype)) != 0 ) {
 									if ( ( !strcmp(saved_img_format,"Tiff3D") ? // format can be only "Tiff3D" or "Vaa3DRaw"
-												( (err_rawfmt = initTiff3DFile((char *)img_path_temp.str().c_str(),sz[0],sz[1],sz[2],sz[3],datatype)) != 0 ) : 
+												( (err_rawfmt = initTiff3DFile((char *)img_path_temp.str().c_str(),(int)sz[0],(int)sz[1],(int)sz[2],(int)sz[3],datatype)) != 0 ) : 
 												( (err_rawfmt = initRawFile((char *)img_path_temp.str().c_str(),sz,datatype)) != 0 ) ) ) {
 										char err_msg[STATIC_STRINGS_SIZE];
 										sprintf(err_msg,"VolumeConverter::generateTilesVaa3DRaw: error in initializing block file - %s", err_rawfmt);
@@ -1945,14 +1945,14 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 			delete ubuffer[0]; // other buffer pointers are only offsets
 		
 		// save next group data
-		saveResumerState(fhandle,resolutions_size,stack_block,slice_start,slice_end,z+z_max_res,z_parts+1);
+		saveVCResumerState(fhandle,resolutions_size,stack_block,slice_start,slice_end,z+z_max_res,z_parts+1);
 	}
 
 	int n_err = 0; // used to trigger exception in case the .bin file cannot be generated
 
 	if ( !par_mode ) {
 		// 2016-04-13. Giulio. @ADDED close resume 
-		closeResumer(fhandle,output_path.c_str());
+		closeVCResumer(fhandle,output_path.c_str());
 
 		// reloads created volumes to generate .bin file descriptors at all resolutions
 		ref_sys reference(axis(1),axis(2),axis(3));
@@ -2020,7 +2020,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 	}
 	else { // par mode
 		// 2016-04-13. Giulio. @ADDED close resume in par mode
-		closeResumer(fhandle,output_path_par.str().c_str());
+		closeVCResumer(fhandle,output_path_par.str().c_str());
 		// WARNINIG --- the directory should be removed
 		bool res = remove_dir(output_path_par.str().c_str());
 	}
@@ -2062,7 +2062,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 int VolumeConverter::getMultiresABS_V(int res, int REL_V)
 {
 	//if(volume->getVXL_V() > 0)
-        return volume->getABS_V( V0 + REL_V*pow(2.0f,res) ) * 10;
+        return volume->getABS_V( V0 + REL_V*(int)pow(2.0f,res) ) * 10;
 	//else
 	//	return volume->getABS_V( V0 - 1 + REL_V*pow(2.0f,res))*10 + volume->getVXL_V()*pow(2.0f,res)*10;
 }
@@ -2077,7 +2077,7 @@ std::string VolumeConverter::getMultiresABS_V_string(int res, int REL_V)
 int VolumeConverter::getMultiresABS_H(int res, int REL_H)
 {
 	//if(volume->getVXL_H() > 0)
-        return volume->getABS_H( H0 + REL_H*pow(2.0f,res) )*10;
+        return volume->getABS_H( H0 + REL_H*(int)pow(2.0f,res) )*10;
 	//else
 	//	return volume->getABS_H( H0 - 1 + REL_H*pow(2.0f,res))*10  + volume->getVXL_H()*pow(2.0f,res)*10;
 }
@@ -3030,8 +3030,8 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 			sprintf(err_msg, "in generateTilesVaa3DRaw(...): unable to create DIR = \"%s\"\n", output_path_par.str().c_str());
 			throw IOException(err_msg);
 		}
-		if ( initResumer(saved_img_format,output_path_par.str().c_str(),resolutions_size,resolutions,block_height,block_width,block_depth,method,saved_img_format,saved_img_depth,fhandle) ) { // halve_pow2 is not saved
-				readResumerState(fhandle,output_path_par.str().c_str(),resolutions_size,stack_block,slice_start,slice_end,z,z_parts); // halve_pow2 is not saved
+		if ( initVCResumer(saved_img_format,output_path_par.str().c_str(),resolutions_size,resolutions,block_height,block_width,block_depth,method,saved_img_format,saved_img_depth,fhandle) ) { // halve_pow2 is not saved
+				readVCResumerState(fhandle,output_path_par.str().c_str(),resolutions_size,stack_block,slice_start,slice_end,z,z_parts); // halve_pow2 is not saved
 		}
 		else { // halve_pow2 is not saved: start form the first slice
 			//slice_start and slice_end of current block depend on the resolution
@@ -3046,8 +3046,8 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 		}
 	}
 	else { // not in parallel mode: use output_path to maintain resume status
-		if ( initResumer(saved_img_format,output_path.c_str(),resolutions_size,resolutions,block_height,block_width,block_depth,method,saved_img_format,saved_img_depth,fhandle) ) {
-			readResumerState(fhandle,output_path.c_str(),resolutions_size,stack_block,slice_start,slice_end,z,z_parts);
+		if ( initVCResumer(saved_img_format,output_path.c_str(),resolutions_size,resolutions,block_height,block_width,block_depth,method,saved_img_format,saved_img_depth,fhandle) ) {
+			readVCResumerState(fhandle,output_path.c_str(),resolutions_size,stack_block,slice_start,slice_end,z,z_parts);
 		}
 		else {
 			//slice_start and slice_end of current block depend on the resolution
@@ -3244,7 +3244,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 
 										//if ( (err_rawfmt = initRawFile((char *)img_path_temp.str().c_str(),sz,datatype)) != 0 ) {
 										if ( ( !strcmp(saved_img_format,"Tiff3D") ? // format can be only "Tiff3D" or "Vaa3DRaw"
-												( (err_rawfmt = initTiff3DFile((char *)img_path_temp.str().c_str(),sz[0],sz[1],sz[2],sz[3],datatype)) != 0 ) : 
+												( (err_rawfmt = initTiff3DFile((char *)img_path_temp.str().c_str(),(int)sz[0],(int)sz[1],(int)sz[2],(int)sz[3],datatype)) != 0 ) : 
 												( (err_rawfmt = initRawFile((char *)img_path_temp.str().c_str(),sz,datatype)) != 0 ) ) ) {
 											char err_msg[STATIC_STRINGS_SIZE];
 											sprintf(err_msg,"VolumeConverter::generateTilesVaa3DRawMC: error in initializing block file - %s", err_rawfmt);
@@ -3367,14 +3367,14 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 			delete ubuffer[0]; // other buffer pointers are only offsets
 			
 		// save next group data
-		saveResumerState(fhandle,resolutions_size,stack_block,slice_start,slice_end,z+z_max_res,z_parts+1);
+		saveVCResumerState(fhandle,resolutions_size,stack_block,slice_start,slice_end,z+z_max_res,z_parts+1);
 	}
 
 	int n_err = 0; // used to trigger exception in case the .bin file cannot be generated
 
 	if ( !par_mode ) {
 		// 2016-04-13. Giulio. @ADDED close resume 
-		closeResumer(fhandle,output_path.c_str());
+		closeVCResumer(fhandle,output_path.c_str());
 
 		// reloads created volumes to generate .bin file descriptors at all resolutions
 		ref_sys reference(axis(1),axis(2),axis(3));
@@ -3450,7 +3450,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 	}
 	else { // par mode
 		// 2016-04-13. Giulio. @ADDED close resume in par mode
-		closeResumer(fhandle,output_path_par.str().c_str());
+		closeVCResumer(fhandle,output_path_par.str().c_str());
 		// WARNINIG --- the directory should be removed
 		bool res = remove_dir(output_path_par.str().c_str());
 	}
@@ -4079,7 +4079,7 @@ void VolumeConverter::createDirectoryHierarchySimple(std::string output_path, bo
 	std::stringstream output_path_par; // used if parallel option is set
 	int halve_pow2[TMITREE_MAX_HEIGHT];
 
-	std::string *chans_dir;
+	//std::string *chans_dir;
 	std::string resolution_dir;
 
 	sint64 whole_height; // 2016-05-04. Giulio. to be used only if par_mode is set to store the height of the whole volume

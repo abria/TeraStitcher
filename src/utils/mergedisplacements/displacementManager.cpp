@@ -119,10 +119,26 @@ void XMLDisplacementBag::merge ( const char *xml_out_file ) {
 	// open input files
 	for ( i=0; i<nFiles; i++ ) {
 		sprintf(xml_filepath,"%s/%s",main_dir,XMLFileNames[i]);
-		if(!xml[i].LoadFile(xml_filepath))
-		{
+		try {
+			if(!xml[i].LoadFile(xml_filepath)) {
+				char errMsg[2000];
+				sprintf(errMsg,"in XMLDisplacementBag::merge() : unable to load xml %s", xml_filepath);
+				throw iom::exception(errMsg);
+			}
+		}
+		catch( iom::exception& exception){
 			char errMsg[2000];
-			sprintf(errMsg,"in XMLDisplacementBag::merge() : unable to load xml %s", xml_filepath);
+			sprintf(errMsg,"in XMLDisplacementBag::merge() : unable to load xml %s (cause: %s)", xml_filepath, exception.what());
+			throw iom::exception(errMsg);
+		}
+		catch(bad_exception& be){
+			char errMsg[2000];
+			sprintf(errMsg,"in XMLDisplacementBag::merge() : unable to load xml %s (cause: %s)", xml_filepath, be.what());
+			throw iom::exception(errMsg);
+		}
+		catch(char* error){
+			char errMsg[2000];
+			sprintf(errMsg,"in XMLDisplacementBag::merge() : unable to load xml %s (cause: %s)", xml_filepath, error);
 			throw iom::exception(errMsg);
 		}
 	}
@@ -382,10 +398,26 @@ void XMLDisplacementBag::mergeTileGroups ( const char *xml_out_file ) {
 	// open input files
 	for ( i=0; i<nFiles; i++ ) {
 		sprintf(xml_filepath,"%s/%s",main_dir,XMLFileNames[i]);
-		if(!xml[i].LoadFile(xml_filepath))
-		{
+		try {
+			if(!xml[i].LoadFile(xml_filepath)) {
+				char errMsg[2000];
+				sprintf(errMsg,"in XMLDisplacementBag::mergeTileGroups() : unable to load xml %s", xml_filepath);
+				throw iom::exception(errMsg);
+			}
+		}
+		catch( iom::exception& exception){
 			char errMsg[2000];
-			sprintf(errMsg,"in XMLDisplacementBag::merge() : unable to load xml %s", xml_filepath);
+			sprintf(errMsg,"in XMLDisplacementBag::mergeTileGroups() : unable to load xml %s (cause: %s)", xml_filepath, exception.what());
+			throw iom::exception(errMsg);
+		}
+		catch(bad_exception& be){
+			char errMsg[2000];
+			sprintf(errMsg,"in XMLDisplacementBag::mergeTileGroups() : unable to load xml %s (cause: %s)", xml_filepath, be.what());
+			throw iom::exception(errMsg);
+		}
+		catch(char* error){
+			char errMsg[2000];
+			sprintf(errMsg,"in XMLDisplacementBag::mergeTileGroups() : unable to load xml %s (cause: %s)", xml_filepath, error);
 			throw iom::exception(errMsg);
 		}
 	}
@@ -400,7 +432,7 @@ void XMLDisplacementBag::mergeTileGroups ( const char *xml_out_file ) {
     if(!out_xml.LoadFile(xml_out_file))
 	{
 		char errMsg[5000];
-		sprintf(errMsg, "in XMLDisplacementBag::merge(...) : unable to load xml file at \"%s\"", xml_out_file);
+		sprintf(errMsg, "in XMLDisplacementBag::mergeTileGroups(...) : unable to load xml file at \"%s\"", xml_out_file);
 		throw iom::exception(errMsg);
 	}
 

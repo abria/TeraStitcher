@@ -655,8 +655,8 @@ char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int i
 
 				int stripIndex = (starti / rps) - 1; // the strip preceeding the first one
 				for (int i=starti; i <= endi; i++) {
-					if ( floor(i / rps) > stripIndex ) { // read a new strip
-						stripIndex = (int)floor(i / rps);
+					if ( floor((double)i / rps) > stripIndex ) { // read a new strip
+						stripIndex = (int)floor((double)i / rps);
 						if (comp==1) {
 							TIFFReadRawStrip(input, stripIndex, rowbuf, spp * ((stripIndex < StripsPerImage) ? rps :LastStripSize) * XSIZE * (bpp/8));
 						}

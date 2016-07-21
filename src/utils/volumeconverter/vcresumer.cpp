@@ -54,7 +54,7 @@ using namespace iim;
 
 
 
-bool initResumer ( const char *out_fmt, const char *output_path, int resolutions_size, bool* resolutions, 
+bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutions_size, bool* resolutions, 
 				   int slice_height, int slice_width, int method, const char* saved_img_format, int saved_img_depth, FILE *&fhandle ) throw (iim::IOException) {
 	size_t  str_len;
 	char resumer_filepath[STATIC_STRINGS_SIZE];
@@ -159,7 +159,7 @@ bool initResumer ( const char *out_fmt, const char *output_path, int resolutions
 }
 
 
-void readResumerState ( FILE *&fhandle, const char *output_path, int &resolutions_size, iim::sint64 &z, iim::sint64 &z_parts ) throw (iim::IOException) {
+void readVCResumerState ( FILE *&fhandle, const char *output_path, int &resolutions_size, iim::sint64 &z, iim::sint64 &z_parts ) throw (iim::IOException) {
 	int dummy = fread(&resolutions_size,sizeof(int),1,fhandle);
 	dummy = fread(&z,sizeof(sint64),1,fhandle);
 	dummy = fread(&z_parts,sizeof(sint64),1,fhandle);
@@ -176,7 +176,7 @@ void readResumerState ( FILE *&fhandle, const char *output_path, int &resolution
 }
 
 
-void saveResumerState ( FILE *fhandle, int resolutions_size, iim::sint64 z, iim::sint64 z_parts ) throw (iim::IOException) {
+void saveVCResumerState ( FILE *fhandle, int resolutions_size, iim::sint64 z, iim::sint64 z_parts ) throw (iim::IOException) {
 	fwrite(&resolutions_size,sizeof(int),1,fhandle);
 	fwrite(&z,sizeof(sint64),1,fhandle);
 	fwrite(&z_parts,sizeof(sint64),1,fhandle);
@@ -185,7 +185,7 @@ void saveResumerState ( FILE *fhandle, int resolutions_size, iim::sint64 z, iim:
 
 
 
-bool initResumer ( const char *out_fmt, const char *output_path, int resolutions_size, bool* resolutions, 
+bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutions_size, bool* resolutions, 
 				   int block_height, int block_width, int block_depth, int method, 
                    const char* saved_img_format, int saved_img_depth, FILE *&fhandle ) throw (IOException)
 {
@@ -294,7 +294,7 @@ bool initResumer ( const char *out_fmt, const char *output_path, int resolutions
 	}
 }
 
-void readResumerState ( FILE *&fhandle, const char *output_path, int &resolutions_size, int *stack_block, int *slice_start, int *slice_end, 
+void readVCResumerState ( FILE *&fhandle, const char *output_path, int &resolutions_size, int *stack_block, int *slice_start, int *slice_end, 
                  sint64 &z, sint64 &z_parts ) throw (IOException)
 {
 	int dummy = fread(&resolutions_size,sizeof(int),1,fhandle);
@@ -315,7 +315,7 @@ void readResumerState ( FILE *&fhandle, const char *output_path, int &resolution
 	}
 }
 
-void saveResumerState ( FILE *fhandle, int resolutions_size, int *stack_block, int *slice_start, int *slice_end, 
+void saveVCResumerState ( FILE *fhandle, int resolutions_size, int *stack_block, int *slice_start, int *slice_end, 
                  sint64 z, sint64 z_parts ) throw (IOException)
 {
 	fwrite(&resolutions_size,sizeof(int),1,fhandle);
@@ -327,7 +327,7 @@ void saveResumerState ( FILE *fhandle, int resolutions_size, int *stack_block, i
 	fflush(fhandle);
 }
 
-void closeResumer ( FILE *fhandle, const char *output_path ) throw (IOException)
+void closeVCResumer ( FILE *fhandle, const char *output_path ) throw (IOException)
 {
 	//char err_msg[STATIC_STRINGS_SIZE];
 
