@@ -125,7 +125,7 @@ public:
      *           currently only iim::DEF_IMG_DEPTH and iim::NATIVE_RTYPE are permitted values for this parameter
      */
     virtual iim::uint8 *loadSubvolume_to_UINT8(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1,
-                                               int *channels=0, int ret_type=iim::DEF_IMG_DEPTH) throw (iim::IOException) = 0;
+                                               int *channels=0, int ret_type=iim::DEF_IMG_DEPTH) throw (iim::IOException, iom::exception) = 0;
 
     // ******GET METHODS******
     float   getORG_V() {return ORG_V;}

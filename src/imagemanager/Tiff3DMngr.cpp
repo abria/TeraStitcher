@@ -294,13 +294,17 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
     }
 
 
-	check = (int)TIFFWriteEncodedStrip(output, 0, fakeData, XSIZE * YSIZE);
-	if (!check) {
-		return ((char *) "Cannot write encoded strip to file.");
-    }
+	//check = (int)TIFFWriteEncodedStrip(output, 0, fakeData, XSIZE * YSIZE);
+	//if (!check) {
+	//	return ((char *) "Cannot write encoded strip to file.");
+ //   }
 
-	if ( rowsPerStrip == -1 ) 
-		TIFFWriteEncodedStrip(output, 0, fakeData, XSIZE * YSIZE * spp * (bpp/8));
+	if ( rowsPerStrip == -1 ) {
+		check = TIFFWriteEncodedStrip(output, 0, fakeData, XSIZE * YSIZE * spp * (bpp/8));
+		if (!check) {
+			return ((char *) "Cannot write encoded strip to file.");
+		}
+	}
 	else { 
 		int check,StripsPerImage,LastStripSize;
 		uint32 rps = rowsPerStrip;
@@ -312,21 +316,17 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 			LastStripSize=rps;
 
 		for (int i=0; i < StripsPerImage-1; i++){
-			//if (comp==1) {
-			//	TIFFReadRawStrip(input, i, buf, spp * rps * img_width * (bpp/8));
-			//	buf = buf + spp * rps * img_width * (bpp/8);
-			//}
-			//else{
-				TIFFWriteEncodedStrip(output, i, buf, spp * rps * XSIZE * (bpp/8));
-				buf = buf + spp * rps * XSIZE * (bpp/8);
-			//}
+			check = TIFFWriteEncodedStrip(output, i, buf, spp * rps * XSIZE * (bpp/8));
+			if (!check) {
+				return ((char *) "Cannot write encoded strip to file.");
+			}
+			buf = buf + spp * rps * XSIZE * (bpp/8);
 		}
 
-		//if (comp==1) {
-		//	TIFFReadRawStrip(input, StripsPerImage-1, buf, spp * LastStripSize * img_width * (bpp/8));
-		//}
-		//else{
-			TIFFWriteEncodedStrip(output, StripsPerImage-1, buf, spp * LastStripSize * XSIZE * (bpp/8));
+		check = TIFFWriteEncodedStrip(output, StripsPerImage-1, buf, spp * LastStripSize * XSIZE * (bpp/8));
+		if (!check) {
+			return ((char *) "Cannot write encoded strip to file.");
+		}
 		//}
 		buf = buf + spp * LastStripSize * XSIZE * (bpp/8);
 	}
@@ -400,22 +400,11 @@ char *appendSlice2Tiff3DFile ( char *filename, int slice, unsigned char *img, un
 			LastStripSize=rps;
 
 		for (int i=0; i < StripsPerImage-1; i++){
-			//if (comp==1) {
-			//	TIFFReadRawStrip(input, i, buf, spp * rps * img_width * (bpp/8));
-			//	buf = buf + spp * rps * img_width * (bpp/8);
-			//}
-			//else{
-				TIFFWriteEncodedStrip(output, i, buf, spp * rps * img_width * (bpp/8));
-				buf = buf + spp * rps * img_width * (bpp/8);
-			//}
+			TIFFWriteEncodedStrip(output, i, buf, spp * rps * img_width * (bpp/8));
+			buf = buf + spp * rps * img_width * (bpp/8);
 		}
 
-		//if (comp==1) {
-		//	TIFFReadRawStrip(input, StripsPerImage-1, buf, spp * LastStripSize * img_width * (bpp/8));
-		//}
-		//else{
-			TIFFWriteEncodedStrip(output, StripsPerImage-1, buf, spp * LastStripSize * img_width * (bpp/8));
-		//}
+		TIFFWriteEncodedStrip(output, StripsPerImage-1, buf, spp * LastStripSize * img_width * (bpp/8));
 		buf = buf + spp * LastStripSize * img_width * (bpp/8);
 	}
 	//img +=  img_width * img_height;
@@ -465,22 +454,11 @@ char *appendSlice2Tiff3DFile ( void *fhandler, int slice, unsigned char *img, un
 			LastStripSize=rps;
 
 		for (int i=0; i < StripsPerImage-1; i++){
-			//if (comp==1) {
-			//	TIFFReadRawStrip(input, i, buf, spp * rps * img_width * (bpp/8));
-			//	buf = buf + spp * rps * img_width * (bpp/8);
-			//}
-			//else{
-				TIFFWriteEncodedStrip(output, i, buf, spp * rps * img_width * (bpp/8));
-				buf = buf + spp * rps * img_width * (bpp/8);
-			//}
+			TIFFWriteEncodedStrip(output, i, buf, spp * rps * img_width * (bpp/8));
+			buf = buf + spp * rps * img_width * (bpp/8);
 		}
 
-		//if (comp==1) {
-		//	TIFFReadRawStrip(input, StripsPerImage-1, buf, spp * LastStripSize * img_width * (bpp/8));
-		//}
-		//else{
-			TIFFReadEncodedStrip(output, StripsPerImage-1, buf, spp * LastStripSize * img_width * (bpp/8));
-		//}
+		TIFFWriteEncodedStrip(output, StripsPerImage-1, buf, spp * LastStripSize * img_width * (bpp/8));
 		buf = buf + spp * LastStripSize * img_width * (bpp/8);
 	}
 	//img +=  img_width * img_height;
