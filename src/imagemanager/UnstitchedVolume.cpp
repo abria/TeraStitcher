@@ -25,6 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-08-20. Giulio.     @FIXED bug in 'loadSubvolume_to_real32': the buffer allocated was too big (BYTESxCHAN and DIM_C should not be considered)
+* 2016-08-20. Giulio.     @FIXED bug in 'loadSubvolume_to_UINT3' about the management of active channels
 * 2016-06-19. Giulio.     @FIXED bug in the call to input plugin (introduced the information on the plugin type: 2D/3D)
 * 2016-06-10. Giulio.     @ADDED the code to load only active channels
 * 2016-06-10. Giulio.     @ADDED the code to manage the case when channels are more than three
@@ -590,7 +592,7 @@ real32* UnstitchedVolume::loadSubvolume_to_real32(int V0,int V1, int H0, int H1,
 	sint64 sbv_height = V1 - V0;
 	sint64 sbv_depth = D1 - D0;
 
-    real32 *subvol = new real32[sbv_width * sbv_height * sbv_depth * DIM_C * BYTESxCHAN];
+    real32 *subvol = new real32[sbv_width * sbv_height * sbv_depth];
 
 	int i, j, k;
 	real32 *ptr_s_xy;
@@ -636,27 +638,25 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 								iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() :
 								iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved();
 	int n_chans = (n_active < DIM_C) ? n_active : DIM_C;
-	if ( n_chans > 1 ){ 
-		// load the first channel
-		if ( chans_interleaved )
-			if ( n_chans <= 3 )
-				switch (active[0]) {
-					case 0: 
-						iom::CHANS = iom::R;
-						break;
-					case 1:
-						iom::CHANS = iom::G;
-						break;
-					case 2:
-						iom::CHANS = iom::B;
-						break;
-				}
-			else {
-  				throw iim::IOException(iom::strprintf("pulgins with interleaved channels do not support %d channels", n_chans), __iim__current__function__);
+	if ( chans_interleaved )
+		if ( n_chans <= 3 ) {
+			switch (active[0]) {
+				case 0: 
+					iom::CHANS = iom::R;
+					break;
+				case 1:
+					iom::CHANS = iom::G;
+					break;
+				case 2:
+					iom::CHANS = iom::B;
+					break;
 			}
-		else { // channels are not interleaved in the returned buffer 'data'
-			volume->setACTIVE_CHAN(active[0]);
 		}
+		else {
+  			throw iim::IOException(iom::strprintf("pulgins with interleaved channels do not support %d channels", n_chans), __iim__current__function__);
+		}
+	else { // channels are not interleaved in the returned buffer 'data'
+		volume->setACTIVE_CHAN(active[0]);
 	}
 
 	real32 *buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1); 
@@ -689,8 +689,19 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 
 		for ( c=1; c<n_chans; c++ ) { // more than one channel
 			delete []buf;
-			if ( chans_interleaved )
-				iom::CHANS = active[c]==1 ? iom::G : iom::B; // only two more channels are supported for plugins with interleaved channels
+			if ( chans_interleaved ) {
+				switch (active[c]) {
+					case 0: 
+						iom::CHANS = iom::R;
+						break;
+					case 1:
+						iom::CHANS = iom::G;
+						break;
+					case 2:
+						iom::CHANS = iom::B;
+						break;
+				}
+			}
 			else
 				volume->setACTIVE_CHAN(active[c]);
 			// loads next channel
@@ -713,8 +724,19 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 
 			for ( c=1; c<n_chans; c++ ) { // more than one channel
 				delete []buf;
-				if ( chans_interleaved )
-					iom::CHANS = active[c]==1 ? iom::G : iom::B; // only two more channels are supported for plugins with interleaved channels
+				if ( chans_interleaved ) {
+					switch (active[c]) {
+						case 0: 
+							iom::CHANS = iom::R;
+							break;
+						case 1:
+							iom::CHANS = iom::G;
+							break;
+						case 2:
+							iom::CHANS = iom::B;
+							break;
+					}
+				}
 				else
 					volume->setACTIVE_CHAN(active[c]);
 				// loads next channel
@@ -744,8 +766,19 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 
 			for ( c=1; c<n_chans; c++ ) { // more than one channel
 				delete []buf;
-				if ( chans_interleaved )
-					iom::CHANS = active[c]==1 ? iom::G : iom::B; // only two more channels are supported for plugins with interleaved channels
+				if ( chans_interleaved ) {
+					switch (active[c]) {
+						case 0: 
+							iom::CHANS = iom::R;
+							break;
+						case 1:
+							iom::CHANS = iom::G;
+							break;
+						case 2:
+							iom::CHANS = iom::B;
+							break;
+					}
+				}
 				else
 					volume->setACTIVE_CHAN(active[c]);
 				// loads next channel
