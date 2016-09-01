@@ -467,7 +467,7 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
 					}
 
 					//computing offsets
-                    int slice_step = sbv_width * bytes_x_chan * channels; // Giulio_CV slice->widthStep / sizeof(uint8); // widthStep takes already into account the number of bytes per channel
+                    sint64 slice_step = sbv_width * bytes_x_chan * channels; // Giulio_CV slice->widthStep / sizeof(uint8); // widthStep takes already into account the number of bytes per channel
                     int ABS_V_offset = V0 - STACKS[row][col]->getABS_V();
                     int ABS_H_offset = (H0 - STACKS[row][col]->getABS_H())*((int)sbv_channels);
 
@@ -476,7 +476,7 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
 					}
 
 					//different procedures for 1 and 3 channels images
-                    sint64 istart, iend, jstart, jend;
+                    int istart, iend, jstart, jend;
                     istart  = intersect_area->V0-V0;
                     iend    = intersect_area->V1-V0;
                     jstart  = intersect_area->H0-H0;
@@ -485,6 +485,7 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
 					if ( istart !=0 || iend != sbv_height || jstart != 0 || jend != sbv_width ) {
 						throw iom::exception(iom::strprintf("istart=%d, iend=%d, jstart=%d, jend=%d",istart,iend,jstart,jend), __iom__current__function__);
 					}
+					// istart = jstart = 0
 
                     if(sbv_channels == 1)
                     {
@@ -504,7 +505,7 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
 							//}
        //                 }
                     }
-                    else if(sbv_channels == 3) // channels in subvol are separated, where as in slice_row are arranged in triplets
+                    else if(sbv_channels == 3) // channels in subvol are separated, whereas in slice_row are arranged in triplets
                     {
 						// about subvol index: actually there is always just one stack, 
 						// hence all the subvolume has to be filled
@@ -514,17 +515,18 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
                         sint64 offset3 = offset2 + sbv_height*sbv_width*sbv_bytes_chan*sbv_depth;
                         for(int i = istart; i < iend; i++)
                         {
-                            uint8* slice_row = slice + (i/*+ABS_V_offset*/)*slice_step;
- 							sint64 c = 0; // controls the number of bytes to be copied
+                            uint8* slice_row = slice + (i/*+ABS_V_offset*/)*slice_step; // slice height is equal to subvol height: there is no vertical offset
+ 							sint64 c = 0; // controls the number of triplets to be copied
+							// all horizontal indices have to be multiplied by sbv_bytes_chan, including jstart
+ 							// the number of triplets to be copied is (jend-jstart)
 							for(sint64 j1 = (jstart * sbv_bytes_chan), j2 = (3 * jstart * sbv_bytes_chan); c <(jend-jstart); j1+=sbv_bytes_chan, j2+=3*sbv_bytes_chan, c++)
                             {
-								// all horizontal indices have to be multiplied by sbv_bytes_chan, including jstart
- 								// the number of triplets to be copied is (jend-jstart)
+								// each triplet consists of sbv_bytes_chan bytes
 								for ( int b=0; b<sbv_bytes_chan; b++ ) {
-									// each triplet consists of sbv_bytes_chan bytes
-									subvol[offset1 + i*sbv_width*sbv_bytes_chan + j1 + b] = slice_row[/*ABS_H_offset +*/ 2*sbv_bytes_chan + j2 + b];
+									// slice width is equal to subvol width: there is no horizontal offset
+									subvol[offset1 + i*sbv_width*sbv_bytes_chan + j1 + b] = slice_row[/*ABS_H_offset +*/ j2 + b];
 									subvol[offset2 + i*sbv_width*sbv_bytes_chan + j1 + b] = slice_row[/*ABS_H_offset +*/ sbv_bytes_chan + j2 + b];
-									subvol[offset3 + i*sbv_width*sbv_bytes_chan + j1 + b] = slice_row[/*ABS_H_offset +*/ j2 + b];
+									subvol[offset3 + i*sbv_width*sbv_bytes_chan + j1 + b] = slice_row[/*ABS_H_offset +*/ 2*sbv_bytes_chan + j2 + b];
 								}
                             }
                         }

@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-09-01. Giulio.     @FIXED management of 16 bit images in loadSubvolume_to_UINT8
 * 2016-06-19. Giulio.     @ADDED the format Vaa3D raw for the slices (only initialization)
 * 2015-04-15. Alessandro. @ADDED definition for default constructor.
 * 2015-04-06. Giulio.     @CHANGED Modified prunt method: printing stacks information is now off by default
@@ -1037,6 +1038,7 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
 
     //initializing the number of channels with an undefined value (it will be detected from the first slice read)
     sint64 sbv_channels = -1;
+	iim::sint64 sbv_bytes_chan = -1;
 
     //scanning of stacks matrix for data loading and storing into subvol
     Rect_t subvol_area;
@@ -1089,6 +1091,7 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
                     {
                         first_time = false;
                         sbv_channels = DIM_C; // Giulio_CV slice->nChannels;
+						sbv_bytes_chan = BYTESxCHAN;
 
 						if(sbv_channels != 1 && sbv_channels != 3)
                             throw IOException(std::string("in StackedVolume::loadSubvolume_to_UINT8:Unsupported number of channels at \"").append(slice_fullpath).append("\". Only 1 and 3-channels images are supported").c_str());
@@ -1104,12 +1107,12 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
 
                         try
                         {
-                            subvol = new uint8[sbv_height * sbv_width * sbv_depth * sbv_channels];
+                            subvol = new uint8[sbv_height * sbv_width * sbv_depth * sbv_channels * sbv_bytes_chan];
                         }
                         catch(...){throw IOException("in StackedVolume::loadSubvolume_to_UINT8: unable to allocate memory");}
                     }
                     //otherwise checking that all the other slices have the same bitdepth of the first one
-                    else if (chans != sbv_channels || bytes_x_chan != BYTESxCHAN )
+                    else if (chans != sbv_channels || bytes_x_chan != sbv_bytes_chan )
 						throw iom::exception(
 							iom::strprintf(std::string("Image channels/bytes_x_chans mismatch at slice \"").append(slice_fullpath).append("\" (%d-%d / %d-%d): all slices must have the same bitdepth").c_str(),
 										   chans,sbv_channels,bytes_x_chan,BYTESxCHAN), __iom__current__function__);
@@ -1129,34 +1132,44 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
                     jend    = intersect_area->H1-H0;
                     if(sbv_channels == 1)
                     {
-                        sint64 k_offset = k*sbv_height*sbv_width;
+                        sint64 k_offset = k*sbv_height*sbv_width*bytes_x_chan;
                         for(int i = istart; i < iend; i++)
                         {
                             uint8* slice_row = slice + (i+ABS_V_offset)*slice_step;
-                            for(int j = jstart; j < jend; j++)
-                                subvol[k_offset + i*sbv_width + j] = slice_row[j+ABS_H_offset];
+ 							sint64 c = 0; // controls the number of triplets to be copied
+							// all horizontal indices have to be multiplied by bytes_x_chan, including jstart
+ 							// the number of voxels to be copied is (jend-jstart)
+                            for(int j = jstart*bytes_x_chan; c < (jend - jstart); j+=bytes_x_chan, c++) 
+							{
+								for ( int b=0; b<sbv_bytes_chan; b++ ) {
+									subvol[k_offset + i*sbv_width*bytes_x_chan + j + b] = slice_row[j+ABS_H_offset*bytes_x_chan + b];
+								}
+							}
                         }
                     }
                     else if(sbv_channels == 3)
                     {
 
-                        sint64 offset1 =                                     k*sbv_height*sbv_width;
-                        sint64 offset2 =   sbv_height*sbv_width*sbv_depth  + offset1;
-                        sint64 offset3 = 2*sbv_height*sbv_width*sbv_depth  + k*sbv_height*sbv_width;
+                        sint64 offset1 = k*sbv_height*sbv_width*bytes_x_chan;
+                        sint64 offset2 = sbv_height*sbv_width*sbv_depth*bytes_x_chan + offset1;
+                        sint64 offset3 = sbv_height*sbv_width*sbv_depth*bytes_x_chan + offset2;
                         for(int i = istart; i < iend; i++)
                         {
                             uint8* slice_row = slice + (i+ABS_V_offset)*slice_step;
-                            for(int j1 = jstart, j2 = jstart*3; j1 < jend; j1++, j2+=3)
+ 							sint64 c = 0; // controls the number of triplets to be copied
+                            for(int j1 = jstart*bytes_x_chan, j2 = jstart*3*bytes_x_chan; c < (jend - jstart); j1+=bytes_x_chan, j2+=3*bytes_x_chan, c++)
                             {
-								// next code assumes that channels are inteleaved as R-G-B
-                                subvol[offset1 + i*sbv_width + j1] = slice_row[j2 + ABS_H_offset];
-                                subvol[offset2 + i*sbv_width + j1] = slice_row[j2 + ABS_H_offset + 1];
-                                subvol[offset3 + i*sbv_width + j1] = slice_row[j2 + ABS_H_offset + 2];
+								for ( int b=0; b<sbv_bytes_chan; b++ ) {
+									// next code assumes that channels are inteleaved as R-G-B
+									subvol[offset1 + i*sbv_width*bytes_x_chan + j1 + b] = slice_row[j2 + ABS_H_offset*bytes_x_chan + b];
+									subvol[offset2 + i*sbv_width*bytes_x_chan + j1 + b] = slice_row[j2 + ABS_H_offset*bytes_x_chan + 1+ b];
+									subvol[offset3 + i*sbv_width*bytes_x_chan + j1 + b] = slice_row[j2 + ABS_H_offset*bytes_x_chan + 2+ b];
 
-								// next code assumes that channels are inteleaved as B-G-R
-                                //subvol[offset1 + i*sbv_width + j1] = slice_row[j2 + ABS_H_offset + 2];
-                                //subvol[offset2 + i*sbv_width + j1] = slice_row[j2 + ABS_H_offset + 1];
-                                //subvol[offset3 + i*sbv_width + j1] = slice_row[j2 + ABS_H_offset];
+									// next code assumes that channels are inteleaved as B-G-R
+									//subvol[offset1 + i*sbv_width*bytes_x_chan + j1 + b] = slice_row[j2 + ABS_H_offset*bytes_x_chan + 2 + b];
+									//subvol[offset2 + i*sbv_width*bytes_x_chan + j1 + b] = slice_row[j2 + ABS_H_offset*bytes_x_chan + 1 + b];
+									//subvol[offset3 + i*sbv_width*bytes_x_chan + j1 + b] = slice_row[j2 + ABS_H_offset*bytes_x_chan + b];
+								}
                             }
                         }
                     }

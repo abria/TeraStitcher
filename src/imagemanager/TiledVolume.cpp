@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-09-01. Giulio.     @DELETED old commented code
 * 2016-04-10. Giulio.     @FIXED the set of the right input plugin when input volume contains TIFF 3D files (in init or load, not in the constructor)
 * 2015-04-15. Alessandro. @FIXED bad/missing exception handling in loadSubvolume_to_UINT8.
 * 2015-04-15. Alessandro. @ADDED definition for default constructor.
@@ -1164,52 +1165,6 @@ iim::uint8* TiledVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, i
 			sprintf(err_msg,"TiledVolume::loadSubvolume_to_UINT8: %s", err_rawfmt);
             throw IOException(err_msg);
 		}
-
-		//int c, i, j, p;
-		//iim::sint64 totalUnits = sbv_height * sbv_width * sbv_depth * sbv_channels;
-		//iim::sint64 totalBlockSize = sbv_height * sbv_width * sbv_depth;
-
-		//char endianCodeMachine = checkMachineEndian();
-		//if ( endianCodeMachine == 'L' ) {
-		//	j = red_factor - 1; // MSB is the last
-		//}
-		//else if ( endianCodeMachine == 'B' ) {
-		//	j = 0;              // MSB is the first
-		//}
-		//else {
-        //	char err_msg[STATIC_STRINGS_SIZE];
-		//	sprintf(err_msg,"TiledVolume::loadSubvolume_to_UINT8: unknown machine endianess (%c)", endianCodeMachine);
-		//	throw iim::IOException(err_msg);
-		//}
-
-		//// look for maximum values in each channel and rescale each channel separately
-		//unsigned short maxVal;
-		//unsigned short *temp = (unsigned short *) subvol;
-		//iim::sint64 count;
-		//for ( c=0; c<sbv_channels; c++, temp+=totalBlockSize ) {
-		//	for ( i=0, maxVal=0; i<totalBlockSize; i++ )
-		//		if ( temp[i] > maxVal )
-		//			maxVal = temp[i];
-		//	for ( i=1, p=8*red_factor; i<maxVal; i<<=1, p-- )
-		//		;
-		//	// p represents the number of bits of the shift
-		//	for ( i=0, count=0; i<totalBlockSize; i++ ) {
-		//		//if ( temp[i] > (0.9*maxVal) )
-		//		//	count++;
-  //              temp[i] <<= p;
-		//	}
-		//	printf("\t\t\t\tin TiledVolume::loadSubvolume_to_UINT8: c=%d, maxVal=%d, p=%d, count=%ld\n\n",c,maxVal,p,count);
-		//}
-		//
-		//iim::uint8 *temp_buf = new iim::uint8[totalUnits];
-		//memset(temp_buf,0,totalUnits);
-		//for ( i=0; i<totalUnits; i++, j+=red_factor )
-		//	temp_buf[i] = subvol[j];
-		////for ( i=0; i<(sbv_height * sbv_width * sbv_depth); i++, j+=red_factor )
-		////	(temp_buf + (sbv_height * sbv_width * sbv_depth))[i] = (subvol + (sbv_height * sbv_width * sbv_depth * sbv_bytes_chan))[j];
-
-		//delete[] subvol;
-		//subvol = temp_buf;
 	}
 
 	return subvol;

@@ -25,6 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-08-30. Giulio.     @FIXED bug in 'internal_loadSubvolume_to_real32': for each row/column both tests have to be performed to check if border tiles have to be added on both sides 
+* 2016-08-30. Giulio.     @FIXED bug in 'internal_loadSubvolume_to_real32': vxl_i was not correctly initialized and it was incorrectly compared with V1/H1
 * 2016-08-20. Giulio.     @FIXED bug in 'loadSubvolume_to_real32': the buffer allocated was too big (BYTESxCHAN and DIM_C should not be considered)
 * 2016-08-20. Giulio.     @FIXED bug in 'loadSubvolume_to_UINT3' about the management of active channels
 * 2016-06-19. Giulio.     @FIXED bug in the call to input plugin (introduced the information on the plugin type: 2D/3D)
@@ -82,11 +84,11 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir, int _blending_algo)  t
 	bool flag = false;
 	try{
 		plugin_type = "3D image-based I/O plugin";
-		flag = iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->desc().find(plugin_type);
+		flag = iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->desc().find(plugin_type) != std::string::npos;
 	}
 	catch (...) {
 		plugin_type = "2D image-based I/O plugin";
-		flag = iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->desc().find(plugin_type);
+		flag = iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->desc().find(plugin_type) != std::string::npos;
 	}
 	if ( !flag )
  		throw iim::IOException(iom::strprintf("cannot determine the type of the input plugin"), __iom__current__function__);
@@ -230,21 +232,21 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 	//col_end   = stitcher->COL_END;
 
 	// compute which tiles have to be loaded
-	int vxl_i;
-	int tile_offset;
+	int vxl_i;       // last voxel index included in current tile
+	int tile_offset; // tile_size - overlap: vxl_i + tile_offset is the last voxel index include in next tile
 
 	// 2016-03-23. Giulio.     @FIXED the way tile indices are found 
 	row_start = 0;
 	tile_offset = (int) floor( volume->getMEC_V() / volume->getVXL_V() );
 	//vxl_i = (int) floor( volume->getMEC_V() / volume->getVXL_V() ); // size the first time and offset the next ones
-	vxl_i = volume->getSTACKS()[0][0]->getHEIGHT();
+	vxl_i = volume->getSTACKS()[0][0]->getHEIGHT()-1; // 2016-08-30. Giulio. 
 	while ( vxl_i < V0 && row_start < (volume->getN_ROWS()-1) ) { // row_start must be a valid tile index
 		row_start++;
 		//vxl_i += volume->getSTACKS()[row_start][0]->getHEIGHT(); // size the first time and offset the next ones
 		vxl_i += tile_offset;
 	}
 	row_end   = row_start;
-	while ( vxl_i < V1 && row_end < (volume->getN_ROWS()-1) ) {
+	while ( vxl_i < (V1-1) && row_end < (volume->getN_ROWS()-1) ) { // 2016-08-30. Giulio.
 		row_end++;
 		// vxl_i += volume->getSTACKS()[row_end][0]->getHEIGHT(); // size the first time and offset the next ones
 		vxl_i += tile_offset;
@@ -253,14 +255,14 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 	col_start = 0;
 	tile_offset = (int) floor( volume->getMEC_H() / volume->getVXL_H() );
 	//vxl_i = (int) floor( volume->getMEC_H() / volume->getVXL_H()); // size the first time and offset the next ones
-	vxl_i = volume->getSTACKS()[0][0]->getWIDTH();
+	vxl_i = volume->getSTACKS()[0][0]->getWIDTH()-1; // 2016-08-30. Giulio.
 	while ( vxl_i < H0 && col_start < (volume->getN_COLS()-1) ) {
 		col_start++;
 		//vxl_i += volume->getSTACKS()[0][col_start]->getWIDTH();
 		vxl_i += tile_offset;
 	}
 	col_end   = col_start;
-	while ( vxl_i < H1 && col_end < (volume->getN_COLS()-1) ) {
+	while ( vxl_i < (H1-1) && col_end < (volume->getN_COLS()-1) ) { // 2016-08-30. Giulio.
 		col_end++;
 		//vxl_i += volume->getSTACKS()[0][col_end]->getWIDTH();
 		vxl_i += tile_offset;
@@ -283,7 +285,8 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 			changed_row_start = true; // remember that row_start has been decremented
 			found_start = true;
 		}
-		else if ( !found_end  && (volume->getSTACKS()[row_end+1][i]->getABS_V() < V1 ) ) {
+		// 2016-08-30. Giulio. the following test should not be in alternative: eliminated 'else'
+		if ( !found_end  && (volume->getSTACKS()[row_end+1][i]->getABS_V() < V1 ) ) {
 			// there is a tile in (row_start+1)-th row that overlaps with the subvolume
 			row_end++;
 			changed_row_end = true; // remember that row_end has been incremented
@@ -302,7 +305,8 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 			col_start--;
 			found_start = true;
 		}
-		else if ( !found_end  && (volume->getSTACKS()[i][col_end+1]->getABS_H() < H1 ) ) {
+		// 2016-08-30. Giulio. the following test should not be in alternative: eliminated 'else'
+		if ( !found_end  && (volume->getSTACKS()[i][col_end+1]->getABS_H() < H1 ) ) {
 			// there is a tile in (col_start+1)-th column that overlaps with the subvolume
 			col_end++;
 			found_end = true;
