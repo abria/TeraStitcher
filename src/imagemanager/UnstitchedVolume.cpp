@@ -809,7 +809,8 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 
 	delete []buf;
 
-	*channels = n_chans;
+	if ( channels )
+		*channels = n_chans;
 
 	return subvol;
 }

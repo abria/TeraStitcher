@@ -377,7 +377,8 @@ iim::uint8* MappedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, 
 
 	delete tempbuf;
 
-	*channels = DIM_C; 
+	if ( channels ) 
+		*channels = DIM_C; 
 
 	return subvol;
 }

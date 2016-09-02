@@ -197,16 +197,6 @@ uint8 *RawVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, 
 
 	char *err_rawfmt;
 
-	// check #channels
-	//if ( CHANS == 1 )
-	//	*channels = 1;
-	//else if ( CHANS <=3 )
-	//	*channels = 3;
-	//else {
-	//	char err_msg[STATIC_STRINGS_SIZE];
-	//	sprintf(err_msg,"RawVolume::loadSubvolume_to_UINT8: too many channels [%d]",CHANS);
-	//	throw iim::IOException(err_msg);
-	//}
     if(channels)
         *channels = DIM_C; 	// returns the exact number of channels;
     else
@@ -258,7 +248,7 @@ uint8 *RawVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, 
    fhandle = 0;
 
 	if ( red_factor > 1 ) { // the buffer has to be reduced
-
+		// channels must be a valid pointer (it is &DIM_C if initially it was NULL)
 		if ( (err_rawfmt = convert2depth8bits(red_factor,(sbv_height*sbv_width*sbv_depth),*channels,subvol)) != 0  ) {
             char err_msg[STATIC_STRINGS_SIZE];
 			sprintf(err_msg,"in RawVolume::loadSubvolume_to_UINT8: %s", err_rawfmt);

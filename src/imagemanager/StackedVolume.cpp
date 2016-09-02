@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-09-02. Giulio.     @FIXED assignment of a 2D plugin when the object is created
 * 2016-09-01. Giulio.     @FIXED management of 16 bit images in loadSubvolume_to_UINT8
 * 2016-06-19. Giulio.     @ADDED the format Vaa3D raw for the slices (only initialization)
 * 2015-04-15. Alessandro. @ADDED definition for default constructor.
@@ -79,8 +80,8 @@ StackedVolume::StackedVolume(const char* _root_dir)  throw (IOException)
 
 	//throw IOException("in StackedVolume::StackedVolume(...): disabled to remove dependence from openCV"); // Giulio_CV
 
-	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
-	if(iom::IMIN_PLUGIN.compare("empty") == 0)
+	// 2016-09-02. Giulio. @ADDED selection of IO plugin if not provided.
+	if(iom::IMIN_PLUGIN.compare("tiff2D") != 0)
 	{
 		iom::IMIN_PLUGIN = "tiff2D";
 	}
@@ -116,7 +117,7 @@ StackedVolume::StackedVolume(const char* _root_dir, ref_sys _reference_system, f
 	//throw IOException("in StackedVolume::StackedVolume(...): disabled to remove dependence from openCV"); // Giulio_CV
 
 	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
-	if(iom::IMIN_PLUGIN.compare("empty") == 0)
+	if(iom::IMIN_PLUGIN.compare("tiff2D") != 0)
 	{
 		iom::IMIN_PLUGIN = "tiff2D";
 	}
@@ -632,9 +633,9 @@ void StackedVolume::initChannels ( ) throw (IOException)
 			void *fhandle;
 			int header_len;
 			loadRaw2Metadata(slice_fullpath,sz,BYTESxCHAN,b_swap,fhandle,header_len );
-			img_width = sz[0];
-			img_height = sz[1];
-			DIM_C = sz[3];
+			img_width = (int) sz[0];
+			img_height = (int) sz[1];
+			DIM_C = (int) sz[3];
 			delete sz;
 		}
 		else {
