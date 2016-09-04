@@ -631,7 +631,7 @@ char *loadRawSlices2SubStack(void *fhandle, unsigned char *img, int nslices, V3D
 		cn = tmpw*tmph*tmpz;
 		kn = tmpw*tmph*(last - first +1);
 
-		V3DLONG c,j,k;
+		V3DLONG c;
 		for (c = 0; c < sz[3]; c++)
 		{
 			rewind(fid);

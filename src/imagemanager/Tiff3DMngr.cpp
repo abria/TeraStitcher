@@ -49,7 +49,22 @@
 #include "COperation.h"
 #endif
 
-static uint32 rowsPerStrip = 1;
+static bool unconfigured = true;
+static bool compressed = true;
+static int32 rowsPerStrip = 1;
+
+void setLibTIFFcfg ( bool cmprssd, int rps ) {
+	if ( unconfigured ) {
+		compressed = cmprssd;
+		if ( compressed ) {
+			rowsPerStrip = rps;
+		}
+		unconfigured = false;
+	}
+	else
+		iim::warning(iim::strprintf("setLibTIFFcfg ( bool cmprssd = %s, unsigned int rps = %d )", cmprssd ? "true" : "false", rps).c_str());
+}
+
 
 char *loadTiff3D2Metadata ( char * filename, unsigned int &sz0, unsigned int  &sz1, unsigned int  &sz2, unsigned int  &sz3, int &datatype, int &b_swap, void * &fhandle, int &header_len ) {
 
@@ -254,7 +269,7 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 		return ((char *) "Cannot set the image sample per pixel.");
     }
 
-	check = TIFFSetField(output, TIFFTAG_ROWSPERSTRIP, (rowsPerStrip == -1) ? YSIZE : rowsPerStrip); 
+	check = TIFFSetField(output, TIFFTAG_ROWSPERSTRIP, (rowsPerStrip == -1) ? YSIZE : (uint32)rowsPerStrip); 
 	if (!check) {
 		return ((char *) "Cannot set the image rows per strip.");
     }
@@ -264,7 +279,7 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 		return ((char *) "Cannot set the image orientation.");
     }
 
-	check = TIFFSetField(output, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
+	check = TIFFSetField(output, TIFFTAG_COMPRESSION, compressed ? COMPRESSION_LZW : COMPRESSION_NONE);
 	if (!check) {
 		return ((char *) "Cannot set the compression tag.");
     }
@@ -307,7 +322,7 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 	}
 	else { 
 		int check,StripsPerImage,LastStripSize;
-		uint32 rps = rowsPerStrip;
+		uint32 rps = (uint32)rowsPerStrip;
 		unsigned char *buf = fakeData;
 
 		StripsPerImage =  (YSIZE + rps - 1) / rps;
@@ -357,6 +372,9 @@ char *appendSlice2Tiff3DFile ( char *filename, int slice, unsigned char *img, un
 
 	TIFF *output;
 	uint16 spp, bpp, NPages, pg0;
+	uint32 rperstrip;
+	uint16 cmprssd;
+	uint16 photomtrcintrp;
 
 	//disable warning and error handlers to avoid messages on unrecognized tags
 	TIFFSetWarningHandler(0);
@@ -366,6 +384,9 @@ char *appendSlice2Tiff3DFile ( char *filename, int slice, unsigned char *img, un
 	TIFFGetField(output, TIFFTAG_BITSPERSAMPLE, &bpp); 
 	TIFFGetField(output, TIFFTAG_SAMPLESPERPIXEL, &spp);
 	TIFFGetField(output, TIFFTAG_PAGENUMBER, &pg0, &NPages);
+	TIFFGetField(output, TIFFTAG_ROWSPERSTRIP, &rperstrip);
+	TIFFGetField(output, TIFFTAG_COMPRESSION, &cmprssd);
+	TIFFGetField(output, TIFFTAG_PHOTOMETRIC, &photomtrcintrp);
 	TIFFClose(output);
 	// since we are 
 	output = (slice==0)? TIFFOpen(filename,"w") : TIFFOpen(filename,"a");
@@ -376,13 +397,11 @@ char *appendSlice2Tiff3DFile ( char *filename, int slice, unsigned char *img, un
 	TIFFSetField(output, TIFFTAG_IMAGELENGTH, img_height);
 	TIFFSetField(output, TIFFTAG_BITSPERSAMPLE, bpp); 
 	TIFFSetField(output, TIFFTAG_SAMPLESPERPIXEL, spp);
-	TIFFSetField(output, TIFFTAG_ROWSPERSTRIP, (rowsPerStrip == -1) ? img_height : rowsPerStrip);
+	TIFFSetField(output, TIFFTAG_ROWSPERSTRIP, rperstrip);
 	TIFFSetField(output, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
-	TIFFSetField(output, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
-	//TIFFSetField(output, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+	TIFFSetField(output, TIFFTAG_COMPRESSION, cmprssd);
 	TIFFSetField(output, TIFFTAG_PLANARCONFIG,PLANARCONFIG_CONTIG);
-	TIFFSetField(output, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);	
-	//TIFFSetField(output, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);	
+	TIFFSetField(output, TIFFTAG_PHOTOMETRIC, photomtrcintrp);	
 	// We are writing single page of the multipage file 
 	TIFFSetField(output, TIFFTAG_SUBFILETYPE, FILETYPE_PAGE);
 	TIFFSetField(output, TIFFTAG_PAGENUMBER, (uint16)slice, NPages); 
@@ -391,7 +410,7 @@ char *appendSlice2Tiff3DFile ( char *filename, int slice, unsigned char *img, un
 		TIFFWriteEncodedStrip(output, 0, img, img_width * img_height * spp * (bpp/8));
 	else { 
 		int check,StripsPerImage,LastStripSize;
-		uint32 rps = rowsPerStrip;
+		uint32 rps = rperstrip;
 		unsigned char *buf = img;
 
 		StripsPerImage =  (img_height + rps - 1) / rps;
@@ -430,13 +449,14 @@ char *appendSlice2Tiff3DFile ( void *fhandler, int slice, unsigned char *img, un
 	TIFFSetField(output, TIFFTAG_IMAGELENGTH, img_height);
 	TIFFSetField(output, TIFFTAG_BITSPERSAMPLE, (uint16)bpp); 
 	TIFFSetField(output, TIFFTAG_SAMPLESPERPIXEL, (uint16)spp);
-	TIFFSetField(output, TIFFTAG_ROWSPERSTRIP, (rowsPerStrip == -1) ? img_height : rowsPerStrip);
+	TIFFSetField(output, TIFFTAG_ROWSPERSTRIP, (rowsPerStrip == -1) ? img_height : (uint32)rowsPerStrip);
 	TIFFSetField(output, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
-	TIFFSetField(output, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
-	//TIFFSetField(output, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+	TIFFSetField(output, TIFFTAG_COMPRESSION, compressed ? COMPRESSION_LZW : COMPRESSION_NONE);
 	TIFFSetField(output, TIFFTAG_PLANARCONFIG,PLANARCONFIG_CONTIG);
-	TIFFSetField(output, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);	
-	//TIFFSetField(output, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);	
+	if ( spp == 1 )
+		TIFFSetField(output, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);	
+	else // spp == 3
+		TIFFSetField(output, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);	
 	// We are writing single page of the multipage file 
 	TIFFSetField(output, TIFFTAG_SUBFILETYPE, FILETYPE_PAGE);
 	TIFFSetField(output, TIFFTAG_PAGENUMBER, (uint16)slice, (uint16)NPages); 
@@ -445,7 +465,7 @@ char *appendSlice2Tiff3DFile ( void *fhandler, int slice, unsigned char *img, un
 		TIFFWriteEncodedStrip(output, 0, img, img_width * img_height * spp * (bpp/8));
 	else { 
 		int check,StripsPerImage,LastStripSize;
-		uint32 rps = rowsPerStrip;
+		uint32 rps = (uint32)rowsPerStrip;
 		unsigned char *buf = img;
 
 		StripsPerImage =  (img_height + rps - 1) / rps;

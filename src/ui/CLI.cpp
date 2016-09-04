@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-09-04. Giulio.     @ADDED the options for setting the configuration of the LibTIFF library
 * 2015-08-16. Giulio.     @ADDED the 'method' and 'isotropi' parameters 
 * 2015-06-12. Giulio      @ADDED parameter to specify the path and name of an error log file
 * 2014-12-10. Giulio.     @ADDED parallel flag
@@ -130,8 +131,13 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::SwitchArg p_metadata("","metadata","Creates the directory hierarchy.", false);
 	TCLAP::ValueArg<std::string> p_halving_method("","halve","Halving method (mean/max, default: mean).",false,"mean","string");
 
+	TCLAP::SwitchArg p_libtiff_uncompressed("","libtiff_uncompress","Configure libtiff library to not compress output files (default: compression enabled).", false);
+	TCLAP::ValueArg<int> p_libtiff_rowsperstrip("","libtiff_rowsperstrip","Configure libtiff library to pack n rows per strip when compression is enabled (default: 1 row per strip).",false,1,"integer");
 
 	// argument objects must be inserted using FIFO policy (first inserted, first shown)
+	cmd.add(p_libtiff_rowsperstrip);
+	cmd.add(p_libtiff_uncompressed);
+
 	cmd.add(p_im_out_plugin_params);
 	cmd.add(p_im_out_plugin);
 	cmd.add(im_out_depth);
@@ -566,6 +572,9 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 		this->halving_method = HALVE_BY_MEAN;
 	else if ( p_halving_method.getValue() == "max" )
 		this->halving_method = HALVE_BY_MAX;
+
+	this->libtiff_uncompressed = p_libtiff_uncompressed.getValue();
+	this->libtiff_rowsPerStrip = p_libtiff_rowsperstrip.getValue();
 }
 
 //checks parameters correctness

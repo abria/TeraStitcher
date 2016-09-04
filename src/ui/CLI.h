@@ -25,6 +25,12 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2016-09-04. Giulio.     @ADDED the options for setting the configuration of the LibTIFF library
+*/
+
 #ifndef _TERASTITCHER_COMMAND_LINE_INTERFACE_H
 #define _TERASTITCHER_COMMAND_LINE_INTERFACE_H
 
@@ -91,6 +97,10 @@ class TeraStitcherCLI
 
 		int slice_depth;						//desired dimension of blocks after merging
 		int halving_method;
+
+		// parameters to configure LibTIFF
+		bool libtiff_uncompressed;
+		int libtiff_rowsPerStrip;
 
 		//constructor - deconstructor
 		TeraStitcherCLI(void);					//set default params

@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-09-04.  Giulio.     @ADDED the setting of the configuration of the LibTIFF library
 * 2016-06-18.  Giulio.     @ADDED the possibility to dowsampling the reading of data
 * 2016-05-02.  Giulio.     @ADDED generation of an info log file
 * 2016-05-02.  Giulio.     @ADDED routines for file management
@@ -39,6 +40,9 @@
 #include "TemplateCLI.h"
 #include "iomanager.config.h"
 #include "IOPluginAPI.h"
+
+#include "../imagemanager/Tiff3DMngr.h"
+
 
 /*
  * This is the driver program for the library class VolumeConverter
@@ -162,6 +166,8 @@ int main ( int argc, char *argv[] ) {
 		
 		// do what you have to do
 		VolumeConverter vc;
+
+		setLibTIFFcfg(!cli.libtiff_uncompressed,cli.libtiff_rowsPerStrip);
 
 		// perform simple tasks
 		if ( cli.infofile_path != "" ) {

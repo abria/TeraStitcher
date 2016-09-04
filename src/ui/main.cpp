@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-09-04. Giulio.     @ADDED the setting of the configuration of the LibTIFF library
 * 2015-08-16. Giulio.     @ADDED the 'method' and 'isotropi' parameters to calls to methods merging 3D tiled images
 * 2015-06-12. Giulio.     @ADDED calla to check method on the imported/tested volume
 * 2015-02-03. Alessandro. @FIXED bug in the call of mergeTiles (wrong D1 if D1 was not set).
@@ -45,6 +46,8 @@
 #include "vmBlockVolume.h"
 #include "IOPluginAPI.h"
 #include "ProgressBar.h"
+
+#include "../imagemanager/Tiff3DMngr.h"
 
 using namespace std;
 
@@ -148,6 +151,8 @@ int main(int argc, char** argv)
 		cli.readParams(argc, argv);
 		cli.checkParams();
 		string defaultOutputFileName = "null";
+
+		setLibTIFFcfg(!cli.libtiff_uncompressed,cli.libtiff_rowsPerStrip);
 
 		// redirect progress bar output to command line
 		terastitcher::ProgressBar::instance()->setToGUI(false);

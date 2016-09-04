@@ -849,7 +849,7 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 				try 
 				{
 					iim::DEBUG = iim::NO_DEBUG;
-					TiledVolume temp_vol(file_path[res_i].str().c_str(),reference,
+					iim::TiledVolume temp_vol(file_path[res_i].str().c_str(),reference,
 							volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,halve_pow2[res_i])); 
 				}
 				catch (iim::IOException & ex)
@@ -1217,7 +1217,7 @@ void StackStitcher::mdataGenerator (std::string output_path, int block_height, i
 				try 
 				{
 					iim::DEBUG = iim::NO_DEBUG;
-					TiledVolume temp_vol(file_path[res_i].str().c_str(),reference,
+					iim::TiledVolume temp_vol(file_path[res_i].str().c_str(),reference,
 							volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,halve_pow2[res_i]));
 				}
 				catch (iim::IOException & ex)

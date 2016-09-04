@@ -40,7 +40,7 @@
 //class  Block;
 
 //every object of this class has the default (1,2,3) reference system
-class TiledVolume : public iim::VirtualVolume
+class iim::TiledVolume : public iim::VirtualVolume
 {
 	private:	
 		//******OBJECT ATTRIBUTES******

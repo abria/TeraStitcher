@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-09-04. Giulio.     @ADDED the options for setting the configuration of the LibTIFF library
 * 2016-06-18  Giulio.     @ADDED option for downsampling the reading of data
 * 2016-04-13  Giulio.     @ADDED options for parallelizing teraconverter
 */
@@ -65,7 +66,7 @@ class TemplateCLI
 		bool show_progress_bar;					//enables/disables progress bar with estimated time remaining
 
 		string outFmt;
-		string infofile_path;					//file path of the info log file to be saved
+		string infofile_path;					//file path of the info file to be saved
 		int downsamplingFactor;                 //downsampling factor to be used to read source volume (only if it is a serie of 2D slices)
 
 		// vertices defining the subvolume to be converted
@@ -77,6 +78,10 @@ class TemplateCLI
 		int D1;
 
 		int tm_blending;						//tiles merging blending type
+
+		// parameters to configure LibTIFF
+		bool libtiff_uncompressed;
+		int libtiff_rowsPerStrip;
 
 		//constructor - deconstructor
 		TemplateCLI(void);					//set default params

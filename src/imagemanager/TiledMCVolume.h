@@ -37,7 +37,7 @@
 #include <string>
 
 //every object of this class has the default (1,2,3) reference system
-class TiledMCVolume : public iim::VirtualVolume
+class iim::TiledMCVolume : public iim::VirtualVolume
 {
 	private:	
 		//******OBJECT ATTRIBUTES******

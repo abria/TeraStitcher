@@ -398,8 +398,8 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
 					// if whole_slices is true use image dimensions to compute the offset, otherwise use subvolume dimensions
 					unsigned char *slice = whole_slices ? (subvol + k * (rows * cols * datatype)) : (subvol + k * (sbv_height * sbv_width * datatype))/*new uint8[rows * cols * sz[3] * datatype]*/;
 					if ( whole_slices ? 
-							(err_rawfmt = loadRawSlices2SubStack(fhandle,slice,(whole_slices ? sbv_depth : 1),sz,datatype,0,0,b_swap,header_len,downsamplingFactor)) != 0 :
-							(err_rawfmt = loadRaw2SubStack(fhandle,slice,sz,H0,V0,0,H1,V1,1,datatype,b_swap,header_len,sbv_depth)) != 0 ) {
+							(err_rawfmt = loadRawSlices2SubStack(fhandle,slice,(whole_slices ? (int)sbv_depth : 1),sz,datatype,0,0,b_swap,header_len,downsamplingFactor)) != 0 :
+							(err_rawfmt = loadRaw2SubStack(fhandle,slice,sz,H0,V0,0,H1,V1,1,datatype,b_swap,header_len,(int)sbv_depth)) != 0 ) {
 						if ( sz ) delete[] sz;
 						char msg[STATIC_STRINGS_SIZE];
 						sprintf(msg,"in SimpleVolumeRaw::loadSubvolume_to_UINT8: unable to read image \"%s\". Wrong path or format (%s)", 
@@ -474,11 +474,11 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
 					{
                         sint64 c_offset = c*sbv_height*sbv_width*sbv_depth;
                         sint64 k_offset = k*sbv_height*sbv_width;
-                        for(int i = istart; i < iend; i++)
+                        for(sint64 i = istart; i < iend; i++)
                         {
                             uint8* slice_row = ((uint8*)slice) + ((c*sbv_height*sbv_width + (i+ABS_V_offset)*slice_step) * datatype);
 							int cnt = 0;
-                            for(int j = jstart * datatype; cnt < ((jend-jstart) * datatype); j++, cnt++)
+                            for(sint64 j = jstart * datatype; cnt < ((jend-jstart) * datatype); j++, cnt++)
                                 subvol[((c_offset + k_offset + i*sbv_width) * datatype) + j] = slice_row[(ABS_H_offset * datatype) + j];
                         }
                     }

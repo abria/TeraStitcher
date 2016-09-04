@@ -25,6 +25,13 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2016-09-04.  Giulio.     @ADDED the setting of the configuration of the LibTIFF library 
+*/
+
+
 #include <iostream>
 #include <stdio.h>
 #include <CmdLine.h>
@@ -33,6 +40,8 @@
 #include "MultiLayers.h"
 #include "StackStitcher2.h"
 #include "TeraStitcher2CLI.h"
+
+#include "../imagemanager/Tiff3DMngr.h"
 
 using namespace std;
 using namespace iim;
@@ -154,6 +163,8 @@ int main(int argc, char** argv)
 		cli.readParams(argc, argv);
 		cli.checkParams();
 		string defaultOutputFileName = "null";
+
+		setLibTIFFcfg(!cli.libtiff_uncompressed,cli.libtiff_rowsPerStrip);
 
 		// set a IOManager parameter replicated in ImageManager
 		//iim::CHANNEL_SELECTION = iom::CHANNEL_SELECTION;

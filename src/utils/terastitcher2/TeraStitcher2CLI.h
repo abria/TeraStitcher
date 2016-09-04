@@ -25,6 +25,13 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2016-09-04.  Giulio.     @ADDED the options for setting the configuration of the LibTIFF library 
+*/
+
+
 #ifndef _TERASTITCHER_COMMAND_LINE_INTERFACE_H
 #define _TERASTITCHER_COMMAND_LINE_INTERFACE_H
 
@@ -91,6 +98,10 @@ class TeraStitcher2CLI
 		int slice_depth;						//desired dimension of blocks after merging
 		float norm_fact_D;						//factor to rescale D coordinates; default is 1.0 which means that coordinate D step is 1.0 um
 		float cut_depth;						//depth in um to be used to decrease the effect of the cut in alignment and blending between layers; default is 10 um
+
+		// parameters to configure LibTIFF
+		bool libtiff_uncompressed;
+		int libtiff_rowsPerStrip;
 
 		//constructor - deconstructor
 		TeraStitcher2CLI(void);					//set default params

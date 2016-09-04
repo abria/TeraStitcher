@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-09-04. Giulio.     @ADDED the options for setting the configuration of the LibTIFF library
 * 2016-06-18  Giulio.     @ADDED option for downsampling the reading of data
 * 2016-05-11  Giulio.     @ADDED other formats in help messages
 * 2016-05-11  Giulio.     @ADDED plugins command line options and initialization
@@ -131,7 +132,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::ValueArg<string> p_outFmt("f","outFmt","Voxel format (graylevel or RGB (default)/intensity.",false,"RGB","string");
 	//TCLAP::ValueArg<std::string> p_outFmt("f","outFmt","Output format (Tiff2DStck/Vaa3DRaw/Tiff3D/Vaa3DRawMC/Tiff3DMC/Fiji_HDF5, default: Tiff2DStck).",false,"Tiff2DStck","string");
 
-	TCLAP::ValueArg<std::string> p_infofile_path("","info","File path of the info log file to be saved.",false,"","string");
+	TCLAP::ValueArg<std::string> p_infofile_path("","info","File path of the info file to be saved.",false,"","string");
  	TCLAP::SwitchArg p_hide_progress_bar("","noprogressbar","Disables progress bar and estimated time remaining", false);
 	TCLAP::SwitchArg p_verbose("","verbose","set verbosity to maximum level (to be activated ONLY for debugging)");
 	TCLAP::ValueArg<int> p_V0("","V0","First V vertex (included).",false,-1,"unsigned");
@@ -151,7 +152,13 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	TCLAP::ValueArg<int> p_dwnsmplngFactor("","dsfactor","Dowsampling factor to be used to read the source volume (only for serie of 2D slices).",false,1,"unsigned");
 
+	TCLAP::SwitchArg p_libtiff_uncompressed("","libtiff_uncompress","Configure libtiff library to not compress output files (default: compression enabled).", false);
+	TCLAP::ValueArg<int> p_libtiff_rowsperstrip("","libtiff_rowsperstrip","Configure libtiff library to pack n rows per strip when compression is enabled (default: 1 row per strip).",false,1,"integer");
+
 	//argument objects must be inserted using LIFO policy (last inserted, first shown)
+	cmd.add(p_libtiff_rowsperstrip);
+	cmd.add(p_libtiff_uncompressed);
+
 	cmd.add(p_dwnsmplngFactor);
 	cmd.add(p_im_out_plugin_params);
 	cmd.add(p_im_out_plugin);
@@ -388,6 +395,9 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	}
 	else
 		this->downsamplingFactor = 1;
+
+	this->libtiff_uncompressed = p_libtiff_uncompressed.getValue();
+	this->libtiff_rowsPerStrip = p_libtiff_rowsperstrip.getValue();
 
 	if(p_verbose.getValue())
 	{

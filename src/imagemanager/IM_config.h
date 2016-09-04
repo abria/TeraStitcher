@@ -78,9 +78,12 @@ namespace IconImageManager
 	class Block;
 	class VirtualVolume;
 	class StackedVolume;
+	class TiledVolume;
+	class TiledMCVolume;
 	class VirtualFmtMngr;
 	class Tiff3DFmtMngr;
 	class Vaa3DRawFmtMngr;
+	class CacheBuffer;
     /*-------------------------------------------------------------------------------------------------------------------------*/
 
 	

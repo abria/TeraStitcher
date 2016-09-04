@@ -25,6 +25,13 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2016-09-04.  Giulio.     @ADDED the options for setting the configuration of the LibTIFF library 
+*/
+
+
 #include "TeraStitcher2CLI.h"
 #include "volumemanager.config.h"
 //#include "S_config.h"
@@ -105,7 +112,13 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 	TCLAP::ValueArg<float> p_norm_fact_D("","normD","Normalizing factor along D (in microns).",false,CLI_DEF_NORM3,"real");
 	TCLAP::ValueArg<float> p_cut_depth("","depthcut","Depth of cut (in microns).",false,CLI_DEF_CUT_DEPTH,"real");
 
+	TCLAP::SwitchArg p_libtiff_uncompressed("","libtiff_uncompress","Configure libtiff library to not compress output files (default: compression enabled).", false);
+	TCLAP::ValueArg<int> p_libtiff_rowsperstrip("","libtiff_rowsperstrip","Configure libtiff library to pack n rows per strip when compression is enabled (default: 1 row per strip).",false,1,"integer");
+
 	//argument objects must be inserted using LIFO policy (last inserted, first shown)
+	cmd.add(p_libtiff_rowsperstrip);
+	cmd.add(p_libtiff_uncompressed);
+
 	cmd.add(p_cut_depth);
 	cmd.add(p_norm_fact_D);
 	cmd.add(p_img_channel_select);
@@ -503,6 +516,9 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 	//this->ignoreUnequalStacksDepth = p_ignoreUnequalStacksDepth.getValue();
 	this->norm_fact_D = p_norm_fact_D.getValue();
 	this->cut_depth = p_cut_depth.getValue();
+
+	this->libtiff_uncompressed = p_libtiff_uncompressed.getValue();
+	this->libtiff_rowsPerStrip = p_libtiff_rowsperstrip.getValue();
 }
 
 //checks parameters correctness

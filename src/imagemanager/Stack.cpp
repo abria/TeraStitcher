@@ -321,10 +321,10 @@ void Stack::init() throw (IOException)
 			void *fhandle;
 			int header_len;
 			loadRaw2Metadata(slice_fullpath,sz,datatype,b_swap,fhandle,header_len );
-			img_width = sz[0];
-			img_height = sz[1];
-			img_depth = sz[2];
-			img_chans = sz[3];
+			img_width  = (int)sz[0];
+			img_height = (int)sz[1];
+			img_depth  = (int)sz[2];
+			img_chans  = (int)sz[3];
 			delete sz;
 		}
 		else {

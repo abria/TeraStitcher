@@ -38,6 +38,15 @@
 #define TIFF3D_SUFFIX   "tif"
 
 
+void setLibTIFFcfg ( bool cmprssd = true, int rps = 1 );
+/* the interface to LibTIFF can be configured once to:
+ * - enable compression (cmprssd = true, default) of desable compression (cmprssd = false)
+ * - if compression is enabled, set the rows per strip in case of compression (rps = i means that strips are groups of i rows, 
+ *   rps = -1 means that each slice is just one strip); this parameter has no effect if comprssd = false
+ * WARNINIG: if slices are big, setting rps to -1 (or to large values) may lead to very slow access to images, 
+ * or even to memory explosion; this is why the default is 1
+ */
+
 char *loadTiff3D2Metadata ( char * filename, unsigned int &sz0, unsigned int  &sz1, unsigned int  &sz2, unsigned int  &sz3, int &datatype, int &b_swap, void * &fhandle, int &header_len );
 /* opens the file filename in raw format containing a 4D image and returns in parameters:
  *    szX:      a four values representing image dimensions along horizontal (x), 
