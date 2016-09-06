@@ -9,7 +9,7 @@ include_directories (${TeraStitcher_SOURCE_DIR}/common)
 
 # add 3rd party modules to include path
 include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty)
-include_directories(${TeraStitcher_SOURCE_DIR}/tinyxml)
+include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty/tinyxml)
 
 # add executable from the all .h and .cpp files
 file(GLOB example_headers *.h)
