@@ -11,6 +11,14 @@ ties names are:
 - Rem: a feature no longer available
 
 ============================================================================================
+TeraStitcher version 1.9.62
+September 6th, 2016
+--------------------------------------------------------------------------------------------
+- Fix: fixed bug in the GUI impeding pure 2D stitching.
+- Fix: minor CMake fixes.
+- New: added advanced libtiff command line options.
+
+
 TeraStitcher version 1.9.61
 April 18th, 2016
 --------------------------------------------------------------------------------------------
