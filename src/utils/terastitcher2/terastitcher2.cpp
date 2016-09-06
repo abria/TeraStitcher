@@ -41,7 +41,7 @@
 #include "StackStitcher2.h"
 #include "TeraStitcher2CLI.h"
 
-#include "../imagemanager/Tiff3DMngr.h"
+#include "Tiff3DMngr.h"
 
 using namespace std;
 using namespace iim;

@@ -95,7 +95,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     outputs_label->setAlignment(Qt::AlignVCenter);
     resolutions_save_selection = new QButtonGroup();
     resolutions_save_selection->setExclusive(false);
-    for(int i=0; i<S_MAX_MULTIRES; i++)
+    for(int i=0; i<n_max_resolutions; i++)
     {
         resolutions_fields[i] = new QLabel();
         resolutions_fields[i]->setAlignment(Qt::AlignCenter);
@@ -309,8 +309,8 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     basic_panel_row_2->addWidget(resolutions_save_label,        0,      10,  1,              1);
     basic_panel_row_2->addWidget(resolutions_view_label,        0,      11,  1,              1);
     outputs_label->setFixedWidth(left_margin);
-    basic_panel_row_2->addWidget(outputs_label,                 1,      0,   S_MAX_MULTIRES, 1);
-    for(int i=0; i<S_MAX_MULTIRES; i++)
+    basic_panel_row_2->addWidget(outputs_label,                 1,      0,   n_max_resolutions, 1);
+    for(int i=0; i<n_max_resolutions; i++)
     {
         resolutions_fields[i]->setFont(smallFont);
         resolutions_fields[i]->setFixedWidth(200);
@@ -447,7 +447,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     connect(excludenonstitchables_cbox, SIGNAL(stateChanged(int)),this, SLOT(excludenonstitchables_changed()));
     connect(vol_format_cbox, SIGNAL(currentIndexChanged(QString)), this, SLOT(volumeformat_changed(QString)));
     connect(imout_plugin_cbox, SIGNAL(currentIndexChanged(QString)), this, SLOT(imout_plugin_changed(QString)));
-    for(int i=0; i<S_MAX_MULTIRES; i++)
+    for(int i=0; i<n_max_resolutions; i++)
     {
         connect(resolutions_save_cboxs[i], SIGNAL(stateChanged(int)), this, SLOT(updateContent()));
         connect(resolutions_save_cboxs[i], SIGNAL(stateChanged(int)), this, SLOT(save_changed(int)));
@@ -479,7 +479,7 @@ void PTabMergeTiles::reset()
     #endif
 
     savedir_field->setText("Enter or select the directory where to save the stitched volume.");
-    for(int i=0; i<S_MAX_MULTIRES; i++)
+    for(int i=0; i<n_max_resolutions; i++)
     {
         resolutions_fields[i]->setText(QString("n.a. ").append(QChar(0x00D7)).append(QString(" n.a. ").append(QChar(0x00D7)).append(" n.a.")));
         resolutions_sizes[i]->setText("n.a.");
@@ -620,7 +620,7 @@ void PTabMergeTiles::start()
 
         //propagating options and parameters and launching task
         CMergeTiles::instance()->setPMergeTiles(this);
-        for(int i=0; i<S_MAX_MULTIRES; i++)
+        for(int i=0; i<n_max_resolutions; i++)
         {
             CMergeTiles::instance()->setResolution(i, resolutions_save_cboxs[i]->isChecked());
             if(vol_format_cbox->currentText().compare("2Dseries")==0 && resolutions_view_cboxs[i]->isChecked())
@@ -800,7 +800,7 @@ void PTabMergeTiles::updateContent()
                                        col0_field->value(), col1_field->value(), slice0_field->value(), slice1_field->value()+1);
 
             int max_res = 0;
-            for(int i=0; i<S_MAX_MULTIRES; i++)
+            for(int i=0; i<n_max_resolutions; i++)
             {
                 int height = (stitcher.getV1()-stitcher.getV0())/pow(2.0f, i);
                 int width = (stitcher.getH1()-stitcher.getH0())/pow(2.0f, i);
@@ -810,6 +810,13 @@ void PTabMergeTiles::updateContent()
                 resolutions_sizes[i]->setText(QString::number(GVoxels,'f',3));
                 if(resolutions_save_cboxs[i]->isChecked())
                     max_res = std::max(max_res, i);
+				if(!height || !width || !depth)
+				{
+					resolutions_fields[i]->setVisible(false);
+					resolutions_sizes[i]->setVisible(false);
+					resolutions_save_cboxs[i]->setVisible(false);
+					resolutions_view_cboxs[i]->setVisible(false);
+				}
             }
 
             //updating RAM usage estimation
@@ -892,7 +899,7 @@ void PTabMergeTiles::volumeformat_changed(QString str)
         block_depth_field->setValue(256);
     }
 
-    for(int i=0; i<S_MAX_MULTIRES; i++)
+    for(int i=0; i<n_max_resolutions; i++)
         resolutions_view_cboxs[i]->setEnabled(vol_format_cbox->currentText().compare("2Dseries")==0);
 
 //    PTeraStitcher::setEnabledComboBoxItem(img_format_cbox, 2, i == 2);
@@ -932,7 +939,7 @@ void PTabMergeTiles::viewinVaa3D_changed(int checked)
 
     //unchecking other checkboxes
     if(checked)
-        for(int i=0; i<S_MAX_MULTIRES; i++)
+        for(int i=0; i<n_max_resolutions; i++)
             if(resolutions_view_cboxs[i]->isChecked())
             {
                 if(resolutions_view_cboxs[i] == sender)
@@ -949,7 +956,7 @@ void PTabMergeTiles::save_changed(int checked)
 {
     //unchecking other checkboxes
     if(!checked)
-        for(int i=0; i<S_MAX_MULTIRES; i++)
+        for(int i=0; i<n_max_resolutions; i++)
             if(!resolutions_save_cboxs[i]->isChecked())
                 resolutions_view_cboxs[i]->setChecked(false);
 }

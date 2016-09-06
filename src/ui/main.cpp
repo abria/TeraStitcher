@@ -47,7 +47,7 @@
 #include "IOPluginAPI.h"
 #include "ProgressBar.h"
 
-#include "../imagemanager/Tiff3DMngr.h"
+#include "Tiff3DMngr.h"
 
 using namespace std;
 

@@ -103,10 +103,10 @@ void CMergeTiles::run()
             // launch merging
             if ( vm::VOLUME_OUTPUT_FORMAT_PLUGIN.compare(vm::BlockVolume::id)==0 )
                 stitcher.mergeTilesVaa3DRaw(volumedir, sliceheight, slicewidth, slicedepth, resolutions,excludenonstitchables, row0, row1, col0, col1,
-                                    slice0, slice1,restoreSPIM,restore_direction, blending_algo, HALVE_BY_MEAN, false, false, true, img_format.c_str(), img_depth, false );
+                                    slice0, slice1+1,restoreSPIM,restore_direction, blending_algo, HALVE_BY_MEAN, false, false, true, img_format.c_str(), img_depth, false );
             else if ( vm::VOLUME_OUTPUT_FORMAT_PLUGIN.compare(vm::StackedVolume::id)==0 )
                 stitcher.mergeTiles(volumedir, sliceheight, slicewidth, resolutions,excludenonstitchables, row0, row1, col0, col1,
-                                    slice0, slice1,restoreSPIM,restore_direction, blending_algo, HALVE_BY_MEAN, false, true, img_format.c_str(), img_depth );
+                                    slice0, slice1+1,restoreSPIM,restore_direction, blending_algo, HALVE_BY_MEAN, false, true, img_format.c_str(), img_depth );
             else
                 throw iom::exception(vm::strprintf("Unsupported output volume format plugin \"%s\"", vm::VOLUME_OUTPUT_FORMAT_PLUGIN.c_str()).c_str());
 

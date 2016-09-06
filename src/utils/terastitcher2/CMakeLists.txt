@@ -11,6 +11,7 @@ include_directories(${TeraStitcher_SOURCE_DIR}/common)
 include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty)
 include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty/tclap)
 include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty/tinyxml)
+include_directories (${TeraStitcher_SOURCE_DIR}/imagemanager)
 #Onofri
 #include_directories(${TeraImagesTools_SOURCE_DIR}/../include/libtiff)
 #link_directories(${TeraImagesTools_SOURCE_DIR}/../lib/libtiff)

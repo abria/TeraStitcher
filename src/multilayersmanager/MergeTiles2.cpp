@@ -42,7 +42,7 @@
 #include "IM_config.h"
 #include "VirtualVolume.h"
 #include "TiledVolume.h"
-#include "../CrossMIPs/my_defs.h"
+#include "my_defs.h"
 
 using namespace IconImageManager;
 using namespace iomanager;

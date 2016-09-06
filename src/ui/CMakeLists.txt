@@ -6,6 +6,7 @@ include_directories (${TeraStitcher_SOURCE_DIR}/volumemanager)
 include_directories (${TeraStitcher_SOURCE_DIR}/crossmips)
 include_directories (${TeraStitcher_SOURCE_DIR}/stitcher)
 include_directories (${TeraStitcher_SOURCE_DIR}/common)
+include_directories (${TeraStitcher_SOURCE_DIR}/imagemanager)
 
 # add 3rd party modules to include path
 include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty)

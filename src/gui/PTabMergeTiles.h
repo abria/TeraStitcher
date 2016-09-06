@@ -41,7 +41,7 @@ class terastitcher::PTabMergeTiles : public QWidget
 
     /*********************************************************************************
     * Singleton design pattern: this class can have one instance only,  which must be
-    * instantiated by calling static method "istance(...)"
+    * instantiated by calling static method "instance(...)"
     **********************************************************************************/
     static PTabMergeTiles* uniqueInstance;
 
@@ -54,7 +54,7 @@ class terastitcher::PTabMergeTiles : public QWidget
     //members
     QMyTabWidget* container;        //tabs container
     int tab_index;                  //tab index
-
+	static const int n_max_resolutions = 6; // maximum number of resolutions
 #ifdef VAA3D_TERASTITCHER
     V3DPluginCallback* V3D_env;
 #endif

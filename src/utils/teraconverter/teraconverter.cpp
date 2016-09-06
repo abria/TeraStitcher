@@ -41,7 +41,7 @@
 #include "iomanager.config.h"
 #include "IOPluginAPI.h"
 
-#include "../imagemanager/Tiff3DMngr.h"
+#include "Tiff3DMngr.h"
 
 
 /*
