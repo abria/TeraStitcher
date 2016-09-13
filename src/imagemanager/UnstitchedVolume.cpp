@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-09-13. Giulio.     @ADDED a cache manager to store stitched subregions
 * 2016-08-30. Giulio.     @FIXED bug in 'internal_loadSubvolume_to_real32': for each row/column both tests have to be performed to check if border tiles have to be added on both sides 
 * 2016-08-30. Giulio.     @FIXED bug in 'internal_loadSubvolume_to_real32': vxl_i was not correctly initialized and it was incorrectly compared with V1/H1
 * 2016-08-20. Giulio.     @FIXED bug in 'loadSubvolume_to_real32': the buffer allocated was too big (BYTESxCHAN and DIM_C should not be considered)
@@ -64,8 +65,34 @@
 using namespace std;
 using namespace iim;
 
+/* Indices on unstitched volume refer to absolute position of voxels in the matix obtained placing tiles at their aligned position with respect 
+ * to up-left-top voxel of the up-left tile which is conventionally assgned the indices (0,0,0)
+ * According to the strategy of image reconstruction, the minimun value for indices V and H is <= 0, whereas the minimum index D is >= 0.
+ * These minimum values are stored in the V0, H0, D0 data members of the stitcher class after the method 'computeVolumeDims' has been run of 
+ * all tiles
+ * Indices on the stitched volume (i.e. the volume visible through the VirtualVolume interface) always start from 0
+ *
+ * Indices on unsitiched and stiched volume must therefore mapped each other:
+ * - to map indices from stitched to unsitiched the values of V0, H0, D0 must be added, whereas to map unstitched to stitched those values 
+ * must be subtracted
+ */
 
-UnstitchedVolume::UnstitchedVolume(const char* _root_dir, int _blending_algo)  throw (IOException)
+
+UnstitchedVolume::UnstitchedVolume(void) : VirtualVolume() 
+{
+	volume = (volumemanager::VirtualVolume *) 0;
+	stitcher = (StackStitcher *) 0;
+
+    reference_system.first = reference_system.second = reference_system.third = iim::axis_invalid;
+
+	stripesCoords = (stripe_2Dcoords  *) 0;
+	stripesCorners = (stripe_2Dcorners *) 0;
+
+	cb = (iim::CacheBuffer *) 0;
+}
+
+
+UnstitchedVolume::UnstitchedVolume(const char* _root_dir, bool cacheEnabled, int _blending_algo)  throw (IOException)
 : VirtualVolume(_root_dir) 
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir=%s", _root_dir).c_str(), __iim__current__function__);
@@ -127,15 +154,18 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir, int _blending_algo)  t
 	for ( int i=0; i<DIM_C; i++ )
 		active[i] = i;
 
+	current_channel = -1;
+	internal_buffer_deallocate = true;
+
 	t0 = t1 = 0;
 	DIM_T = 1;
 
- 	stitcher->computeVolumeDims(false);
+ 	stitcher->computeVolumeDims(false); // set index limits of unstitched volume
 
 	// 2016-03-23. Giulio.     @ADDED offsets of unstitched volume with respect to nominal origin (0,0,0) 
-	V0_offs = stitcher->V0;
-	H0_offs = stitcher->H0;
-	D0_offs = stitcher->D0;
+	V0_offs = stitcher->V0; // may be negative and must be subtracted to map insices of unstitched volume (that may start from a negative value) to indices of stitched volume (starting from 0)
+	H0_offs = stitcher->H0; // may be negative and must be subtracted to map insices of unstitched volume (that may start from a negative value) to indices of stitched volume (starting from 0)
+	D0_offs = stitcher->D0; // may be positive and must be subtracted to map insices of unstitched volume (that may start from a positive value) to indices of stitched volume (starting from 0)
 
 	blending_algo = _blending_algo;
 
@@ -145,6 +175,8 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir, int _blending_algo)  t
 
 	stripesCoords = new stripe_2Dcoords[volume->getN_ROWS()];
 	stripesCorners = new stripe_2Dcorners[volume->getN_ROWS()];
+
+	cb = new iim::CacheBuffer(this);
 }
 
 UnstitchedVolume::~UnstitchedVolume(void)
@@ -164,6 +196,8 @@ UnstitchedVolume::~UnstitchedVolume(void)
 		delete volume;
 	if ( stitcher )
 		delete stitcher;
+	if ( cb )
+		delete cb;
 }
 
 
@@ -314,7 +348,7 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 		i++;
 	}
 
-	stitcher->computeVolumeDims(false,row_start,row_end,col_start,col_end,D0+D0_offs,D1+D0_offs); // map D indices from stitched to unstitched volume
+	stitcher->computeVolumeDims(false,row_start,row_end,col_start,col_end,D0+D0_offs,D1+D0_offs); // D indices are mapped from stitched to unstitched volume
 
 	/* WARNING: it is possible that selected tiles do not contain all the subvolume requested 
 	 * a check between indices on unstitched volume (data members of stitcher) and indices on stitched volume (method input parameters)
@@ -328,225 +362,237 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 	D0 = stitcher->D0;
 	D1 = stitcher->D1;
 
-	//computing VH coordinates of all stripes
-	for(int row_index=stitcher->ROW_START; row_index<=stitcher->ROW_END; row_index++)
-	{
-        stripesCoords[row_index].up_left.V		= stitcher->getStripeABS_V(row_index,true);
-        stripesCoords[row_index].up_left.H      = volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_H();
-        stripesCoords[row_index].bottom_right.V = stitcher->getStripeABS_V(row_index,false);
-        stripesCoords[row_index].bottom_right.H = volume->getSTACKS()[row_index][stitcher->COL_END]->getABS_H()+volume->getStacksWidth();
-	}
-
-	// clear stripesCorners
-	for ( int i=0; i<volume->getN_ROWS(); i++ ) {
-		stripesCorners[i].ups.clear();
-		stripesCorners[i].bottoms.clear();
-		stripesCorners[i].merged.clear();
-	}
-	
-	//computing stripes corners, i.e. corners that result from the overlap between each pair of adjacent stripes
-	for(int row_index=stitcher->ROW_START; row_index<=stitcher->ROW_END; row_index++)
-	{
-		stripe_corner tmp;
-
-		//for first VirtualStack of every stripe
-		tmp.H = volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_H();
-		tmp.h = volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_V()-stripesCoords[row_index].up_left.V;
-		tmp.up = true;
-		stripesCorners[row_index].ups.push_back(tmp);
-		
-		tmp.h = stripesCoords[row_index].bottom_right.V - volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_V() - volume->getStacksHeight();
-		tmp.up = false;
-		stripesCorners[row_index].bottoms.push_back(tmp);
-
-		for(int col_index=stitcher->COL_START; col_index<stitcher->COL_END; col_index++)
-		{
-			if(volume->getSTACKS()[row_index][col_index]->getABS_V() < volume->getSTACKS()[row_index][col_index+1]->getABS_V())
-			{
-				tmp.H = volume->getSTACKS()[row_index][col_index]->getABS_H() + volume->getStacksWidth();
-				tmp.h = volume->getSTACKS()[row_index][col_index+1]->getABS_V() - stripesCoords[row_index].up_left.V;
-				tmp.up = true;
-				stripesCorners[row_index].ups.push_back(tmp);
-
-				tmp.H = volume->getSTACKS()[row_index][col_index+1]->getABS_H();
-				tmp.h = stripesCoords[row_index].bottom_right.V - volume->getSTACKS()[row_index][col_index+1]->getABS_V() - volume->getStacksHeight();
-				tmp.up = false;
-				stripesCorners[row_index].bottoms.push_back(tmp);
-			}
-			else
-			{
-				tmp.H = volume->getSTACKS()[row_index][col_index+1]->getABS_H();
-				tmp.h = volume->getSTACKS()[row_index][col_index+1]->getABS_V() - stripesCoords[row_index].up_left.V;
-				tmp.up = true;
-				stripesCorners[row_index].ups.push_back(tmp);
-
-				tmp.H = volume->getSTACKS()[row_index][col_index]->getABS_H()+volume->getStacksWidth();
-				tmp.h = stripesCoords[row_index].bottom_right.V - volume->getSTACKS()[row_index][col_index+1]->getABS_V() - volume->getStacksHeight();
-				tmp.up = false;
-				stripesCorners[row_index].bottoms.push_back(tmp);
-			}
-		}
-
-		//for last VirtualStack of every stripe (h is not set because it doesn't matter)
-		tmp.H = volume->getSTACKS()[row_index][stitcher->COL_END]->getABS_H() + volume->getStacksWidth();
-		tmp.up = true;
-		stripesCorners[row_index].ups.push_back(tmp);
-
-		tmp.up = false;
-		stripesCorners[row_index].bottoms.push_back(tmp);
-	}
-
-	//ordered merging between ups and bottoms corners for every stripe
-	for(int row_index = 1; row_index<=(volume->getN_ROWS()-1); row_index++)
-	{
-		stripesCorners[row_index-1].merged.merge(stripesCorners[row_index-1].bottoms,   compareCorners);
-		stripesCorners[row_index-1].merged.merge(stripesCorners[row_index  ].ups,       compareCorners);
-	}
-
-    sint64 height;
-	sint64 width;
-	sint64 depth;  
-	int slice_height = -1; 
-	int slice_width  = -1;
-
-	width  = H1 - H0;
-	height = V1 - V0;
-	depth  = D1 - D0;
-
-	slice_height = (int)(slice_height == -1 ? height : slice_height);
-    slice_width  = (int)(slice_width  == -1 ? width  : slice_width);
-
-	sint64 u_strp_bottom_displ;
-	sint64 d_strp_top_displ;
-	sint64 u_strp_top_displ;
-	sint64 d_strp_left_displ;
-	sint64 u_strp_left_displ;
-	sint64 d_strp_width;
-	sint64 u_strp_width;
-	sint64 dd_strp_top_displ;
-	sint64 u_strp_d_strp_overlap = 0; // WARNING: check how initialize
-	sint64 h_up, h_down, h_overlap;
-	iom::real_t *buffer_ptr, *ustripe_ptr, *dstripe_ptr;	
-
 	iom::real_t* buffer;								//buffer temporary image data are stored
-    iom::real_t* stripe_up=NULL, *stripe_down;                                   //will contain up-stripe and down-stripe computed by calling 'getStripe' method
-	double angle;								//angle between 0 and PI used to sample overlapping zone in [0,PI]
-	double delta_angle;							//angle step
 
-	iom::real_t (*blending)(double& angle, iom::real_t& pixel1, iom::real_t& pixel2);
-
-	//retrieving blending function
-	if(blending_algo == S_SINUSOIDAL_BLENDING)
-        blending = StackStitcher::sinusoidal_blending;
-	else if(blending_algo == S_NO_BLENDING)
-        blending = StackStitcher::no_blending;
-	else if(blending_algo == S_SHOW_STACK_MARGIN)
-        blending = StackStitcher::stack_margin;
-	else
- 		throw iim::IOException(iom::strprintf("unrecognized blending function"), __iom__current__function__);
-
-	buffer = new iom::real_t[height*width*depth];
-	for (int i=0; i<height*width*depth; i++)
-		buffer[i]=0;
-
-	sint64 z = D0;
-
-	for(sint64 k = 0; k < depth; k++)
-	{
-		//looping on all stripes
+	if ( !cb->getSubvolume(current_channel,V0,V1,H0,H1,D0,D1,buffer) ) {
+	
+		//computing VH coordinates of all stripes
 		for(int row_index=stitcher->ROW_START; row_index<=stitcher->ROW_END; row_index++)
 		{
-			//loading down stripe
-			if(row_index==stitcher->ROW_START) stripe_up = NULL;
-			stripe_down = stitcher->getStripe(row_index,(int)(z+k), restore_direction, stk_rst, blending_algo);
+			stripesCoords[row_index].up_left.V		= stitcher->getStripeABS_V(row_index,true);
+			stripesCoords[row_index].up_left.H      = volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_H();
+			stripesCoords[row_index].bottom_right.V = stitcher->getStripeABS_V(row_index,false);
+			stripesCoords[row_index].bottom_right.H = volume->getSTACKS()[row_index][stitcher->COL_END]->getABS_H()+volume->getStacksWidth();
+		}
 
-			if(stripe_up) u_strp_bottom_displ	= stripesCoords[row_index-1].bottom_right.V	 - V0;
-			d_strp_top_displ					= stripesCoords[row_index  ].up_left.V	     - V0;
-			if(stripe_up) u_strp_top_displ      = stripesCoords[row_index-1].up_left.V	     - V0;
-			d_strp_left_displ					= stripesCoords[row_index  ].up_left.H		 - H0;
-			if(stripe_up) u_strp_left_displ     = stripesCoords[row_index-1].up_left.H		 - H0;
-			d_strp_width						= stripesCoords[row_index  ].bottom_right.H - stripesCoords[row_index  ].up_left.H;
-			if(stripe_up) u_strp_width			= stripesCoords[row_index-1].bottom_right.H - stripesCoords[row_index-1].up_left.H;
-			if(stripe_up) u_strp_d_strp_overlap = u_strp_bottom_displ - d_strp_top_displ;
-			if(row_index!=stitcher->ROW_END) 
-				dd_strp_top_displ				= stripesCoords[row_index+1].up_left.V		 - V0;
-			h_up =  h_down						= u_strp_d_strp_overlap;
+		// clear stripesCorners
+		for ( int i=0; i<volume->getN_ROWS(); i++ ) {
+			stripesCorners[i].ups.clear();
+			stripesCorners[i].bottoms.clear();
+			stripesCorners[i].merged.clear();
+		}
+	
+		//computing stripes corners, i.e. corners that result from the overlap between each pair of adjacent stripes
+		for(int row_index=stitcher->ROW_START; row_index<=stitcher->ROW_END; row_index++)
+		{
+			stripe_corner tmp;
 
-			//overlapping zone
-			if(row_index!=stitcher->ROW_START)
-			{	
-				std::list<stripe_corner>::iterator cnr_i_next, cnr_i = stripesCorners[row_index-1].merged.begin();
-				stripe_corner *cnr_left=&(*cnr_i), *cnr_right;
-				cnr_i++;
-				cnr_i_next = cnr_i;
-				cnr_i_next++;
+			//for first VirtualStack of every stripe
+			tmp.H = volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_H();
+			tmp.h = volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_V()-stripesCoords[row_index].up_left.V;
+			tmp.up = true;
+			stripesCorners[row_index].ups.push_back(tmp);
+		
+			tmp.h = stripesCoords[row_index].bottom_right.V - volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_V() - volume->getStacksHeight();
+			tmp.up = false;
+			stripesCorners[row_index].bottoms.push_back(tmp);
 
-				while( cnr_i != stripesCorners[row_index-1].merged.end())
+			for(int col_index=stitcher->COL_START; col_index<stitcher->COL_END; col_index++)
+			{
+				if(volume->getSTACKS()[row_index][col_index]->getABS_V() < volume->getSTACKS()[row_index][col_index+1]->getABS_V())
 				{
-					//computing h_up, h_overlap, h_down
-					cnr_right = &(*cnr_i);
-					if(cnr_i_next == stripesCorners[row_index-1].merged.end())
-					{
-						h_up =   cnr_left->up ? u_strp_d_strp_overlap : 0;
-						h_down = cnr_left->up ? 0                     : u_strp_d_strp_overlap;
-					}
-					else
-						if(cnr_left->up)
-							h_up = cnr_left->h;
-						else
-							h_down = cnr_left->h;
-							
-					h_overlap = u_strp_d_strp_overlap - h_up - h_down;
+					tmp.H = volume->getSTACKS()[row_index][col_index]->getABS_H() + volume->getStacksWidth();
+					tmp.h = volume->getSTACKS()[row_index][col_index+1]->getABS_V() - stripesCoords[row_index].up_left.V;
+					tmp.up = true;
+					stripesCorners[row_index].ups.push_back(tmp);
 
-					//splitting overlapping zone in sub-regions along H axis
-					for(sint64 j= cnr_left->H - H0; j < cnr_right->H - H0; j++)
-					{
-						delta_angle = PI/(h_overlap-1);
-						angle = 0;
+					tmp.H = volume->getSTACKS()[row_index][col_index+1]->getABS_H();
+					tmp.h = stripesCoords[row_index].bottom_right.V - volume->getSTACKS()[row_index][col_index+1]->getABS_V() - volume->getStacksHeight();
+					tmp.up = false;
+					stripesCorners[row_index].bottoms.push_back(tmp);
+				}
+				else
+				{
+					tmp.H = volume->getSTACKS()[row_index][col_index+1]->getABS_H();
+					tmp.h = volume->getSTACKS()[row_index][col_index+1]->getABS_V() - stripesCoords[row_index].up_left.V;
+					tmp.up = true;
+					stripesCorners[row_index].ups.push_back(tmp);
 
-						//UP stripe zone
-						buffer_ptr  = &buffer[k*height*width+d_strp_top_displ*width+j];
-						ustripe_ptr = &stripe_up[(d_strp_top_displ-u_strp_top_displ)*u_strp_width +j - u_strp_left_displ];
-						for(sint64 i=d_strp_top_displ; i<d_strp_top_displ+h_up+(h_overlap >= 0 ?  0 : h_overlap); i++, buffer_ptr+=width, ustripe_ptr+= u_strp_width)
-							*buffer_ptr = *ustripe_ptr;
-
-						//OVERLAPPING zone
-						buffer_ptr  = &buffer[k*height*width+(d_strp_top_displ+h_up)*width+j];
-						ustripe_ptr = &stripe_up[(d_strp_top_displ+h_up-u_strp_top_displ)*u_strp_width +j - u_strp_left_displ];
-						dstripe_ptr = &stripe_down[(d_strp_top_displ+h_up-d_strp_top_displ)*d_strp_width +j - d_strp_left_displ];
-						for(sint64 i=d_strp_top_displ+h_up; i<d_strp_top_displ+h_up+h_overlap; i++, buffer_ptr+=width, ustripe_ptr+= u_strp_width, dstripe_ptr+=d_strp_width, angle+=delta_angle)
-							*buffer_ptr = blending(angle,*ustripe_ptr,*dstripe_ptr);
-
-						//DOWN stripe zone
-						buffer_ptr = &buffer[k*height*width+(d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0))*width+j];
-						dstripe_ptr = &stripe_down[((d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0))-d_strp_top_displ)*d_strp_width +j - d_strp_left_displ];
-						for(sint64 i=d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0); i<d_strp_top_displ+h_up+h_overlap+h_down; i++, buffer_ptr+=width, dstripe_ptr+=d_strp_width)
-							*buffer_ptr = *dstripe_ptr;
-					}
-
-					cnr_left = cnr_right;
-					cnr_i++;
-					if(cnr_i_next != stripesCorners[row_index-1].merged.end())
-						cnr_i_next++;
+					tmp.H = volume->getSTACKS()[row_index][col_index]->getABS_H()+volume->getStacksWidth();
+					tmp.h = stripesCoords[row_index].bottom_right.V - volume->getSTACKS()[row_index][col_index+1]->getABS_V() - volume->getStacksHeight();
+					tmp.up = false;
+					stripesCorners[row_index].bottoms.push_back(tmp);
 				}
 			}
 
-			//non-overlapping zone
-			buffer_ptr = &buffer[k*height*width+((row_index==stitcher->ROW_START ? 0 : u_strp_bottom_displ))*width];
-			for(sint64 i= (row_index==stitcher->ROW_START ? 0 : u_strp_bottom_displ); i<(row_index==stitcher->ROW_END? height : dd_strp_top_displ); i++)
-			{
-				dstripe_ptr = &stripe_down[(i-d_strp_top_displ)*d_strp_width - d_strp_left_displ];
-				for(sint64 j=0; j<width; j++, buffer_ptr++, dstripe_ptr++)
-					if(j - d_strp_left_displ >= 0 && j - d_strp_left_displ < stripesCoords[row_index].bottom_right.H)
-						*buffer_ptr = *dstripe_ptr;
-			}
+			//for last VirtualStack of every stripe (h is not set because it doesn't matter)
+			tmp.H = volume->getSTACKS()[row_index][stitcher->COL_END]->getABS_H() + volume->getStacksWidth();
+			tmp.up = true;
+			stripesCorners[row_index].ups.push_back(tmp);
 
-			//moving to bottom stripe_up
-			delete stripe_up;
-			stripe_up=stripe_down;
+			tmp.up = false;
+			stripesCorners[row_index].bottoms.push_back(tmp);
 		}
-		//releasing last stripe_down
-		delete stripe_down;
+
+		//ordered merging between ups and bottoms corners for every stripe
+		for(int row_index = 1; row_index<=(volume->getN_ROWS()-1); row_index++)
+		{
+			stripesCorners[row_index-1].merged.merge(stripesCorners[row_index-1].bottoms,   compareCorners);
+			stripesCorners[row_index-1].merged.merge(stripesCorners[row_index  ].ups,       compareCorners);
+		}
+
+		sint64 u_strp_bottom_displ;
+		sint64 d_strp_top_displ;
+		sint64 u_strp_top_displ;
+		sint64 d_strp_left_displ;
+		sint64 u_strp_left_displ;
+		sint64 d_strp_width;
+		sint64 u_strp_width;
+		sint64 dd_strp_top_displ;
+		sint64 u_strp_d_strp_overlap = 0; // WARNING: check how initialize
+		sint64 h_up, h_down, h_overlap;
+		iom::real_t *buffer_ptr, *ustripe_ptr, *dstripe_ptr;	
+
+		iom::real_t* stripe_up=NULL, *stripe_down;                                   //will contain up-stripe and down-stripe computed by calling 'getStripe' method
+		double angle;								//angle between 0 and PI used to sample overlapping zone in [0,PI]
+		double delta_angle;							//angle step
+
+		iom::real_t (*blending)(double& angle, iom::real_t& pixel1, iom::real_t& pixel2);
+
+		//retrieving blending function
+		if(blending_algo == S_SINUSOIDAL_BLENDING)
+			blending = StackStitcher::sinusoidal_blending;
+		else if(blending_algo == S_NO_BLENDING)
+			blending = StackStitcher::no_blending;
+		else if(blending_algo == S_SHOW_STACK_MARGIN)
+			blending = StackStitcher::stack_margin;
+		else
+ 			throw iim::IOException(iom::strprintf("unrecognized blending function"), __iom__current__function__);
+
+		sint64 height;
+		sint64 width;
+		sint64 depth;  
+		int slice_height = -1; 
+		int slice_width  = -1;
+
+		width  = H1 - H0;
+		height = V1 - V0;
+		depth  = D1 - D0;
+
+		slice_height = (int)(slice_height == -1 ? height : slice_height);
+		slice_width  = (int)(slice_width  == -1 ? width  : slice_width);
+
+		buffer = new iom::real_t[height*width*depth];
+		for (int i=0; i<height*width*depth; i++)
+			buffer[i]=0;
+
+		sint64 z = D0;
+
+		for(sint64 k = 0; k < depth; k++)
+		{
+			//looping on all stripes
+			for(int row_index=stitcher->ROW_START; row_index<=stitcher->ROW_END; row_index++)
+			{
+				//loading down stripe
+				if(row_index==stitcher->ROW_START) stripe_up = NULL;
+				stripe_down = stitcher->getStripe(row_index,(int)(z+k), restore_direction, stk_rst, blending_algo);
+
+				if(stripe_up) u_strp_bottom_displ	= stripesCoords[row_index-1].bottom_right.V	 - V0;
+				d_strp_top_displ					= stripesCoords[row_index  ].up_left.V	     - V0;
+				if(stripe_up) u_strp_top_displ      = stripesCoords[row_index-1].up_left.V	     - V0;
+				d_strp_left_displ					= stripesCoords[row_index  ].up_left.H		 - H0;
+				if(stripe_up) u_strp_left_displ     = stripesCoords[row_index-1].up_left.H		 - H0;
+				d_strp_width						= stripesCoords[row_index  ].bottom_right.H - stripesCoords[row_index  ].up_left.H;
+				if(stripe_up) u_strp_width			= stripesCoords[row_index-1].bottom_right.H - stripesCoords[row_index-1].up_left.H;
+				if(stripe_up) u_strp_d_strp_overlap = u_strp_bottom_displ - d_strp_top_displ;
+				if(row_index!=stitcher->ROW_END) 
+					dd_strp_top_displ				= stripesCoords[row_index+1].up_left.V		 - V0;
+				h_up =  h_down						= u_strp_d_strp_overlap;
+
+				//overlapping zone
+				if(row_index!=stitcher->ROW_START)
+				{	
+					std::list<stripe_corner>::iterator cnr_i_next, cnr_i = stripesCorners[row_index-1].merged.begin();
+					stripe_corner *cnr_left=&(*cnr_i), *cnr_right;
+					cnr_i++;
+					cnr_i_next = cnr_i;
+					cnr_i_next++;
+
+					while( cnr_i != stripesCorners[row_index-1].merged.end())
+					{
+						//computing h_up, h_overlap, h_down
+						cnr_right = &(*cnr_i);
+						if(cnr_i_next == stripesCorners[row_index-1].merged.end())
+						{
+							h_up =   cnr_left->up ? u_strp_d_strp_overlap : 0;
+							h_down = cnr_left->up ? 0                     : u_strp_d_strp_overlap;
+						}
+						else
+							if(cnr_left->up)
+								h_up = cnr_left->h;
+							else
+								h_down = cnr_left->h;
+							
+						h_overlap = u_strp_d_strp_overlap - h_up - h_down;
+
+						//splitting overlapping zone in sub-regions along H axis
+						for(sint64 j= cnr_left->H - H0; j < cnr_right->H - H0; j++)
+						{
+							delta_angle = PI/(h_overlap-1);
+							angle = 0;
+
+							//UP stripe zone
+							buffer_ptr  = &buffer[k*height*width+d_strp_top_displ*width+j];
+							ustripe_ptr = &stripe_up[(d_strp_top_displ-u_strp_top_displ)*u_strp_width +j - u_strp_left_displ];
+							for(sint64 i=d_strp_top_displ; i<d_strp_top_displ+h_up+(h_overlap >= 0 ?  0 : h_overlap); i++, buffer_ptr+=width, ustripe_ptr+= u_strp_width)
+								*buffer_ptr = *ustripe_ptr;
+
+							//OVERLAPPING zone
+							buffer_ptr  = &buffer[k*height*width+(d_strp_top_displ+h_up)*width+j];
+							ustripe_ptr = &stripe_up[(d_strp_top_displ+h_up-u_strp_top_displ)*u_strp_width +j - u_strp_left_displ];
+							dstripe_ptr = &stripe_down[(d_strp_top_displ+h_up-d_strp_top_displ)*d_strp_width +j - d_strp_left_displ];
+							for(sint64 i=d_strp_top_displ+h_up; i<d_strp_top_displ+h_up+h_overlap; i++, buffer_ptr+=width, ustripe_ptr+= u_strp_width, dstripe_ptr+=d_strp_width, angle+=delta_angle)
+								*buffer_ptr = blending(angle,*ustripe_ptr,*dstripe_ptr);
+
+							//DOWN stripe zone
+							buffer_ptr = &buffer[k*height*width+(d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0))*width+j];
+							dstripe_ptr = &stripe_down[((d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0))-d_strp_top_displ)*d_strp_width +j - d_strp_left_displ];
+							for(sint64 i=d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0); i<d_strp_top_displ+h_up+h_overlap+h_down; i++, buffer_ptr+=width, dstripe_ptr+=d_strp_width)
+								*buffer_ptr = *dstripe_ptr;
+						}
+
+						cnr_left = cnr_right;
+						cnr_i++;
+						if(cnr_i_next != stripesCorners[row_index-1].merged.end())
+							cnr_i_next++;
+					}
+				}
+
+				//non-overlapping zone
+				buffer_ptr = &buffer[k*height*width+((row_index==stitcher->ROW_START ? 0 : u_strp_bottom_displ))*width];
+				for(sint64 i= (row_index==stitcher->ROW_START ? 0 : u_strp_bottom_displ); i<(row_index==stitcher->ROW_END? height : dd_strp_top_displ); i++)
+				{
+					dstripe_ptr = &stripe_down[(i-d_strp_top_displ)*d_strp_width - d_strp_left_displ];
+					for(sint64 j=0; j<width; j++, buffer_ptr++, dstripe_ptr++)
+						if(j - d_strp_left_displ >= 0 && j - d_strp_left_displ < stripesCoords[row_index].bottom_right.H)
+							*buffer_ptr = *dstripe_ptr;
+				}
+
+				//moving to bottom stripe_up
+				delete stripe_up;
+				stripe_up=stripe_down;
+			}
+			//releasing last stripe_down
+			delete stripe_down;
+		}
+
+		if ( cb->cacheSubvolume(current_channel,V0,V1,H0,H1,D0,D1,buffer,(height*width*depth)) ) 
+			internal_buffer_deallocate = false;
+		else
+			internal_buffer_deallocate = true;
+	}
+	else {
+		internal_buffer_deallocate = false;
 	}
 
 	// 2016-03-23. Giulio.     @ADDED map back from indices on unstitched to indices on stitched volumes
@@ -608,7 +654,8 @@ real32* UnstitchedVolume::loadSubvolume_to_real32(int V0,int V1, int H0, int H1,
 			for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
 				*ptr_d = *ptr_s;
 
-	delete []buf;
+	if ( internal_buffer_deallocate ) 
+		delete []buf;
 
 	return subvol;
 
@@ -647,12 +694,15 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 			switch (active[0]) {
 				case 0: 
 					iom::CHANS = iom::R;
+					current_channel = 0;
 					break;
 				case 1:
 					iom::CHANS = iom::G;
+					current_channel = 1;
 					break;
 				case 2:
 					iom::CHANS = iom::B;
+					current_channel = 2;
 					break;
 			}
 		}
@@ -661,6 +711,7 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 		}
 	else { // channels are not interleaved in the returned buffer 'data'
 		volume->setACTIVE_CHAN(active[0]);
+		current_channel = active[0];
 	}
 
 	real32 *buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1); 
@@ -692,22 +743,28 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 					*ptr_d = uint8(*ptr_s * 255.0f);
 
 		for ( c=1; c<n_chans; c++ ) { // more than one channel
-			delete []buf;
+			if ( internal_buffer_deallocate )
+				delete []buf;
 			if ( chans_interleaved ) {
 				switch (active[c]) {
 					case 0: 
 						iom::CHANS = iom::R;
+						current_channel = 0;
 						break;
 					case 1:
 						iom::CHANS = iom::G;
+						current_channel = 1;
 						break;
 					case 2:
 						iom::CHANS = iom::B;
+						current_channel = 2;
 						break;
 				}
 			}
-			else
+			else {
 				volume->setACTIVE_CHAN(active[c]);
+				current_channel = active[c];
+			}
 			// loads next channel
 			buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1);
 			// append next channel to the subvolume buffer
@@ -727,22 +784,28 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 						*ptr_d = uint16(*ptr_s * 65535.0F);
 
 			for ( c=1; c<n_chans; c++ ) { // more than one channel
-				delete []buf;
+				if ( internal_buffer_deallocate )
+					delete []buf;
 				if ( chans_interleaved ) {
 					switch (active[c]) {
 						case 0: 
 							iom::CHANS = iom::R;
+							current_channel = 0;
 							break;
 						case 1:
 							iom::CHANS = iom::G;
+							current_channel = 1;
 							break;
 						case 2:
 							iom::CHANS = iom::B;
+							current_channel = 2;
 							break;
 					}
 				}
-				else
+				else {
 					volume->setACTIVE_CHAN(active[c]);
+					current_channel = active[c];
+				}
 				// loads next channel
 				buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1);
 				// append next channels to the subvolume buffer
@@ -769,22 +832,28 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 						*ptr_d = uint8((*ptr_s/valmax) * 255.0F);
 
 			for ( c=1; c<n_chans; c++ ) { // more than one channel
-				delete []buf;
+				if ( internal_buffer_deallocate )
+					delete []buf;
 				if ( chans_interleaved ) {
 					switch (active[c]) {
 						case 0: 
 							iom::CHANS = iom::R;
+							current_channel = 0;
 							break;
 						case 1:
 							iom::CHANS = iom::G;
+							current_channel = 1;
 							break;
 						case 2:
 							iom::CHANS = iom::B;
+							current_channel = 2;
 							break;
 					}
 				}
-				else
+				else {
 					volume->setACTIVE_CHAN(active[c]);
+					current_channel = active[c];
+				}
 				// loads next channel
 				buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1);
 				// append next channels to the subvolume buffer
@@ -802,17 +871,195 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 			}
 		}
 		else 
-  			throw iim::IOException(iom::strprintf("%d wrong reduction factor (%d) for 16 bits images", red_factor), __iim__current__function__);
+  			throw iim::IOException(iom::strprintf("wrong reduction factor (%d) for 16 bits images", red_factor), __iim__current__function__);
 	}
 	else
   		throw iim::IOException(iom::strprintf("%d bits depth not currently supported", BYTESxCHAN*8), __iim__current__function__);
 
-	delete []buf;
+	if ( internal_buffer_deallocate ) 
+		delete []buf;
 
 	if ( channels )
 		*channels = n_chans;
 
 	return subvol;
 }
+
+
+
+
+#define _MBYTE_   1048576.0
+#define _BUFSIZE_   (128.0 * 128.0 * 128.0 / _MBYTE_)
+
+iim::CacheBuffer::CacheBuffer ( UnstitchedVolume *_volume, iim::uint64 _bufSizeMB, bool _enable, bool _printstats ) {
+
+	volume = _volume;
+
+	// set optional parameters
+	char *params;
+	if ( (params = getenv("__UNST_CACHE__")) ) {
+		char *sptr = strstr(params,"enable:");
+		if ( sptr ) {
+			sscanf(sptr+strlen("enable:"),"%llu",&_bufSizeMB);
+			_enable = true;
+		}
+		sptr = strstr(params,"printstats:");
+		if ( sptr ) {
+			if ( strncmp(sptr+strlen("printstats:"),"true",strlen("true")) )
+				_printstats = true;
+			else
+				_printstats = false;
+		}
+	}
+	bufSizeMB = _bufSizeMB;
+	enabled = _enable; 
+	printstats = _printstats;
+	
+	chits = cmisses = crplcmnts = 0;
+
+	cachedMB = 0.0;
+
+	N_CHANS = volume->getDIM_C();
+	N_ROWS  = volume->volume->getN_ROWS();
+	N_COLS  = volume->volume->getN_COLS();
+
+	max_buffers = (int) (bufSizeMB / _BUFSIZE_);
+
+	buffers = new bufEntry *[N_CHANS];
+	for ( int ch=0; ch<N_CHANS; ch++ ) {
+		buffers[ch] = new bufEntry [max_buffers];
+		for ( int b=0; b<max_buffers; b++ ) {
+			buffers[ch][b].buf = (iom::real_t *) 0;
+		}
+	}
+	n_buffers = new int[N_CHANS];
+	memset(n_buffers,0,(N_CHANS * sizeof(int)));
+
+	cQueue = new SbvID[max_buffers]; // to avoid to maintain the number of IDs in the circular queue
+	cQueueIn = cQueueOut = n_cached = 0;
+}
+
+
+iim::CacheBuffer::~CacheBuffer () {
+	if ( buffers ) {
+		for ( int ch=0; ch<N_CHANS; ch++ ) {
+			if ( buffers[ch] ) {
+				for ( int b=0; b<max_buffers; b++ ) { // test all entries to avoid unexpected memory leaks
+					if ( buffers[ch][b].buf )
+						delete []buffers[ch][b].buf;
+				}
+			}
+			delete []buffers[ch];
+		}
+		delete []buffers;
+	}
+	if ( n_buffers )
+		delete []n_buffers;
+	if ( cQueue )
+		delete []cQueue;
+
+	if ( printstats ) {
+		printf("Cache statistics: hits = %llu, misses = %llu, replacements = %llu \n",chits,cmisses,crplcmnts);
+	}
+}
+
+
+bool iim::CacheBuffer::match_sbvID ( int VV0, int VV1, int HH0, int HH1, int DD0, int DD1, bufEntry *e ) {
+	return e->buf && (e->VV0 <= VV0) && (VV1 <= e->VV1) && (e->HH0 <= HH0) && (HH1 <= e->HH1) && (e->DD0 <= DD0) && (DD1 <= e->DD1);
+}
+
+
+bool iim::CacheBuffer::cacheSubvolume ( int chan, int VV0, int VV1, int HH0, int HH1, int DD0, int DD1, iom::real_t *sbv, iim::sint64 size ) {
+
+	if ( enabled ) {
+		if ( n_buffers[chan] == max_buffers ) { // too many buffers in channel chan
+  			throw iim::IOException(iom::strprintf("too many buffer in channel %d", chan), __iim__current__function__);
+		}
+		if ( ((cachedMB + sizeof(iom::real_t) * size/_MBYTE_) > bufSizeMB) ) { // buffer cannot be cached without freeing space
+			// free according to a FIFO policy
+			// remove from buffers and free space
+			delete buffers[cQueue[cQueueOut].chan][cQueue[cQueueOut].index].buf;
+			buffers[cQueue[cQueueOut].chan][cQueue[cQueueOut].index].buf = (iom::real_t *) 0;
+			cachedMB -= buffers[cQueue[cQueueOut].chan][cQueue[cQueueOut].index].sizeMB;
+			//n_buffers[cQueue[cQueueOut].chan]--;
+			// extract fron cQueue
+			cQueueOut++;
+			if ( cQueueOut == max_buffers )
+				cQueueOut = 0;
+			n_cached--;
+			crplcmnts++;
+		}
+
+		// enqueue the subvolume to be cached
+		cQueue[cQueueIn].chan  = chan;
+		cQueue[cQueueIn].VV0   = VV0;
+		cQueue[cQueueIn].VV1   = VV1;
+		cQueue[cQueueIn].HH0   = HH0;
+		cQueue[cQueueIn].HH1   = HH1;
+		cQueue[cQueueIn].DD0   = DD0;
+		cQueue[cQueueIn].DD1   = DD1;
+		cQueue[cQueueIn].index = n_buffers[chan];
+		cQueueIn++;
+		if ( cQueueIn == max_buffers )
+			cQueueIn = 0;
+		n_cached++;
+
+		// cache the subvolume
+		buffers[chan][n_buffers[chan]].buf    = sbv;
+		buffers[chan][n_buffers[chan]].chan   = chan;
+		buffers[chan][n_buffers[chan]].VV0    = VV0;
+		buffers[chan][n_buffers[chan]].VV1    = VV1;
+		buffers[chan][n_buffers[chan]].HH0    = HH0;
+		buffers[chan][n_buffers[chan]].HH1    = HH1;
+		buffers[chan][n_buffers[chan]].DD0    = DD0;
+		buffers[chan][n_buffers[chan]].DD1    = DD1;
+		buffers[chan][n_buffers[chan]].sizeMB = sizeof(iom::real_t) * size/_MBYTE_;
+		n_buffers[chan]++;
+
+		cachedMB += sizeof(iom::real_t) * size/_MBYTE_;
+
+		return true;	
+	}
+	else
+		return false;
+}
+
+
+bool iim::CacheBuffer::getSubvolume ( int chan, int &VV0, int &VV1, int &HH0,  int &HH1, int &DD0, int &DD1, iom::real_t *&sbv ) {
+	int i;
+	bool found;
+
+	if ( enabled ) {
+		i = 0;
+		found = false;
+		while ( i<n_buffers[chan] && !found ) {
+			if ( match_sbvID(VV0,VV1,HH0,HH1,DD0,DD1,&buffers[chan][i]) ) {
+				found = true;
+			}
+			else {
+				i++;
+			}
+		}
+		if ( found ) {
+			sbv = buffers[chan][i].buf;
+			VV0 = buffers[chan][i].VV0;
+			VV1 = buffers[chan][i].VV1;
+			HH0 = buffers[chan][i].HH0;
+			HH1 = buffers[chan][i].HH1;
+			DD0 = buffers[chan][i].DD0;
+			DD1 = buffers[chan][i].DD1;
+			chits++;
+			return true;
+		}
+		else {
+			cmisses++;
+			return false;
+		}
+	}
+	else
+		return false;
+}
+
+
 		
 

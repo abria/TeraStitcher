@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-09-13. Giulio.     @ADDED a cache manager to store stitched subregions
 * 2016-06-19. Giulio.     @FIXED bug in the call to input plugin (introduced the information on the plugin type: 2D/3D)
 * 2016-05-03. Giulio.     @ADDED field to set the blending algorithm (default: sinousidal blenging) 
 * 2016-04-07. Giulio.     @MODIFIED moved default constructor among private methods and declared VirtualVolume a friend class 
@@ -72,6 +73,9 @@ class UnstitchedVolume : public iim::VirtualVolume
 
 		std::string plugin_type;
 
+		iim::CacheBuffer *cb;
+		int current_channel;
+		bool internal_buffer_deallocate;
 
 		//***OBJECT PRIVATE METHODS****
 		UnstitchedVolume(void);
@@ -98,7 +102,7 @@ class UnstitchedVolume : public iim::VirtualVolume
 
 	public:
 		//CONSTRUCTORS-DECONSTRUCTOR
-        UnstitchedVolume(const char* _root_dir, int _blending_algo = S_SINUSOIDAL_BLENDING )  throw (iim::IOException);
+        UnstitchedVolume(const char* _root_dir, bool cacheEnabled = true, int _blending_algo = S_SINUSOIDAL_BLENDING )  throw (iim::IOException);
 
 		~UnstitchedVolume(void);
 
@@ -130,9 +134,87 @@ class UnstitchedVolume : public iim::VirtualVolume
     	// needed to enable the detection by the factory of volume format through use of the default constructor
         friend class iim::VirtualVolume; 
 
-    	// needed to enable the extraction of the underlying unstitiched volume
-        friend class StackStitcher2; 
-
+		// needed to enable the extraction of the underlying unstitiched volume
+		friend class StackStitcher2; 
+		friend class iim::CacheBuffer; 
 };
+
+
+
+class iim::CacheBuffer {
+private:
+	bool enabled;
+	bool printstats;
+	iim::uint64 chits;
+	iim::uint64 cmisses;
+	iim::uint64 crplcmnts;
+
+	UnstitchedVolume *volume;
+	iim::uint64 bufSizeMB;   // maximum size of cache in MB
+	double cachedMB;   // maximum size of cache in MB
+
+	int N_CHANS;
+	int N_ROWS;
+	int N_COLS;
+	
+	struct bufEntry {
+		iom::real_t *buf;
+		int chan;
+		int VV0;
+		int VV1; 
+		int HH0;
+		int HH1; 
+		int DD0;
+		int DD1; 
+		double sizeMB;
+	};
+	bufEntry **buffers;       // matrix of list of pointer to buffers
+	int *n_buffers;
+	int max_buffers;
+
+	/************************************************************************************* 
+	 * data structure to manage the deallocation policy
+	 * simple circular queue to implement a FIFO policy
+	 *************************************************************************************/
+	// circular queue of slices IDs 
+	struct SbvID {
+		int chan;
+		int VV0;
+		int VV1; 
+		int HH0;
+		int HH1; 
+		int DD0;
+		int DD1;
+		int index;
+	};
+	SbvID *cQueue;
+	int cQueueIn;
+	int cQueueOut;
+	int n_cached;           // number of slice cached
+
+	bool cqueueEmpty ( ) { return n_cached == 0; }
+	bool cqueueFull  ( ) { return n_cached == max_buffers; }
+	/*************************************************************************************/ 
+
+	bool match_sbvID ( int VV0, int VV1, int HH0, int HH1, int DD0, int DD1, bufEntry *e );
+
+public:
+
+	CacheBuffer ( UnstitchedVolume *_volume,  iim::uint64 _bufSizeMB = 1024, bool _enable = false, bool _printstats = false );
+
+	~CacheBuffer ();
+
+	void enableCache ( )  { enabled = true; }
+	void disableCache ( ) { enabled = false; }
+
+	void resetCounts ( ) { chits = cmisses = crplcmnts = 0; }
+	void getCounts ( vm::uint64 &_chits, vm::uint64 &_cmisses, vm::uint64 &_crplcmnts ) { 
+		_chits = chits; _cmisses = cmisses; _crplcmnts = crplcmnts; 
+	}
+
+	bool cacheSubvolume ( int chan, int VV0, int VV1, int HH0, int HH1, int DD0, int DD1, iom::real_t *sbv, iim::sint64 bufsize );
+	bool getSubvolume   ( int chan, int &VV0, int &VV1, int &HH0, int &HH1, int &DD0, int &DD1, iom::real_t *&sbv );
+};
+
 
 #endif //_UNSTITCHED_VOLUME_H

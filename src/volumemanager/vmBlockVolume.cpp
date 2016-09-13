@@ -70,6 +70,8 @@
 #include "S_config.h"
 //#include <string>
 
+#include "vmCacheManager.h"
+
 using namespace std;
 using namespace iom;
 using namespace vm;
@@ -176,6 +178,9 @@ BlockVolume::BlockVolume(const char *xml_filepath, bool overwrite_mdata) throw (
 				}
 			}
 	}
+
+	cb = new CacheBuffer(this);
+	//cb->enableCache();
 }
 
 BlockVolume::~BlockVolume()

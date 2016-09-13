@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2016-09-10. Giulio.     @ADDED support for reading internally tiled images 
 * 2016-06-17. Giulio.     @ADDED the possibility of performing downsampling on-the-fly when reading an image
 * 2016-06-17. Giulio.     @ADDED the ability to control the number of rows per strip (rps) 
 * 2015-03-03. Giulio.     @FIXED RGB photometric interprettion has to be set when there is more than one channel 
@@ -48,6 +49,13 @@
 #include "PLog.h"
 #include "COperation.h"
 #endif
+
+static
+void copydata ( unsigned char *psrc, uint32 stride_src, unsigned char *pdst, uint32 stride_dst, uint32 width, uint32 len ) {
+	uint32 i;
+	for ( uint32 i=0; i<len; i++, psrc+=stride_src, pdst+=stride_dst )
+		memcpy(pdst, psrc, width*sizeof(unsigned char));
+}
 
 static bool unconfigured = true;
 static bool compressed = true;
@@ -532,18 +540,6 @@ char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int i
 
     TIFF *input = (TIFF *) fhandler;
 
-	check=TIFFGetField(input, TIFFTAG_ROWSPERSTRIP, &rps);
-	if (!check)
-	{
-		return ((char *) "Undefined rows per strip.");
-	}	
-    
-	//check=TIFFGetField(input, TIFFTAG_ORIENTATION, &orientation); 
-	//if (!check)
-	//{
-	//	return ((char *) "Image orientation undefined.");
-	//}	
-    
 	check=TIFFGetField(input, TIFFTAG_BITSPERSAMPLE, &bpp); 
 	if (!check)
 	{
@@ -574,6 +570,97 @@ char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int i
 		return ((char *) "Cannot determine planar configuration.");
 	}
 
+	starti = (starti == -1) ? 0 : starti;
+	endi   = (endi == -1) ? img_height-1 : endi;
+	startj = (startj == -1) ? 0 : startj;
+	endj   = (endj == -1) ? img_width-1 : endj;
+
+	check=TIFFIsTiled(input);
+	if (check) // file is internally tiled
+	{
+		uint32 tilewidth;
+		uint32 tilelength;
+		uint32 tiledepth;
+		tsize_t tilenum;
+		tsize_t tilesize;
+		tsize_t tilenum_width;
+		tsize_t tilenum_length;
+		ttile_t tile;
+		tdata_t data;
+		unsigned char *psrc; // pointer in the tile buffer to the top left pixel of the current block to be copied
+		unsigned char *pdst; // pointer in the image buffer to the top left pixel of the current block to be filled
+		uint32 stride_src;
+		uint32 stride_dst;
+		int i; // row index in the slice of the top left pixel of the current block to be filled
+		int j; // column index in the slice of the top left pixel of the current block to be filled 
+		uint32 width; // width of the current block to be filled (in pixels)
+		uint32 len; // length of the current block to be filled (in pixels)
+		int page;
+
+		// checks
+		if ( TIFFGetField(input, TIFFTAG_TILEDEPTH, &tiledepth) )
+			return ((char *) "Tiling among slices (z direction) not supported.");
+		if ( spp > 1 )
+			if ( TIFFGetField(input, TIFFTAG_PLANARCONFIG, &planar_config) )
+				if ( planar_config > 1 )
+					return ((char *) "Non-interleaved multiple channels not supported with tiling.");
+
+		// tiling is in x,y only
+		TIFFGetField(input, TIFFTAG_TILEWIDTH, &tilewidth);
+		TIFFGetField(input, TIFFTAG_TILELENGTH, &tilelength);
+		tilenum = TIFFNumberOfTiles(input);
+		tilesize = TIFFTileSize(input);
+		tilenum_width  = (img_width % tilewidth) ? (img_width / tilewidth) + 1 : img_width / tilewidth;
+		tilenum_length = (img_height % tilelength) ? (img_height / tilelength) + 1 : img_height / tilelength;
+
+		data = new unsigned char[tilesize];
+		stride_src = tilewidth * spp; // width of tile (in bytes)
+		stride_dst = (endj - startj + 1) * spp; // width of subregion (in bytes)
+
+		page = 0;
+		do {
+
+			psrc = ((unsigned char *)data) + ((starti % tilelength)*tilewidth + (startj % tilewidth)) * spp; // in the first tile skip (starti % tilelength) rows plus (startj % tilewidth) pixels
+			pdst = img; // the buffer has the size of the subregion
+			len = tilelength - (starti % tilelength); // rows to be copied for the first row of tiles 
+			tile = TIFFComputeTile(input,startj,starti,0,0); // index of the first tile to be copied in the current row of tiles
+			for ( i=starti; i<=endi; ) {
+				width = tilewidth - (startj%tilewidth); // width of the first block to be copied/filled
+				for ( j=startj; j<=endj; ) {
+					TIFFReadEncodedTile(input,tile,data,(tsize_t) -1); // read tile into tile buffer
+					copydata (psrc,stride_src,pdst,stride_dst,(width * spp),len); // copy the block 
+					j += width;
+					tile++; // index of the next tile in the same row of tiles
+					psrc = ((unsigned char *)data) + ((i % tilelength)*tilewidth) * spp; // the block in the next tile begins just after (i % tilelength) rows
+					pdst += width * spp; // the block in the image buffer move forward of width pixels
+					width = (((tile%tilenum_width) + 1) * tilewidth <= (endj+1)) ? tilewidth : ((endj+1)%tilewidth); // if the next tile in the row is all within the subregion, width is tilewidth otherwise it is shorter
+				}
+				i += len;
+				tile = TIFFComputeTile(input,startj,i,0,0); // index of the first tile to be copied in the current row of tiles
+				psrc = ((unsigned char *)data) + ((i % tilelength)*tilewidth + (startj % tilewidth)) * spp; // in the first tile of the next row of tiles skip (i % tilelength) rows plus (startj % tilewidth) pixels
+				pdst = img + ((i-starti) * stride_dst); // the block in the image buffer begin after (i-starti) rows
+				len = (((tile/tilenum_width) + 1) * tilelength <= (endi+1)) ? tilelength : ((endi+1)%tilelength); // if the next row of tiles is all within the subregion, len is tilelength otherwise it is shorter
+			}
+
+			page++;
+	
+		}while ( page < static_cast<int>(last-first+1) && TIFFReadDirectory(input));
+
+		return (char *) 0;
+	}
+
+	check=TIFFGetField(input, TIFFTAG_ROWSPERSTRIP, &rps);
+	if (!check)
+	{
+		return ((char *) "Undefined rows per strip.");
+	}	
+    
+	//check=TIFFGetField(input, TIFFTAG_ORIENTATION, &orientation); 
+	//if (!check)
+	//{
+	//	return ((char *) "Image orientation undefined.");
+	//}	
+    
 	StripsPerImage =  (img_height + rps - 1) / rps;
 	LastStripSize = img_height % rps;
 	if (LastStripSize==0)
@@ -583,11 +670,6 @@ char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int i
 	int page=0;
 
 	if ( downsamplingFactor == 1 ) { // read without downsampling
-
-		starti = (starti == -1) ? 0 : starti;
-		endi   = (endi == -1) ? img_height-1 : endi;
-		startj = (startj == -1) ? 0 : startj;
-		endj   = (endj == -1) ? img_width-1 : endj;
 
 		if ( starti < 0 || endi >= img_height || startj < 0 || endj >= img_width || starti >= endi || startj >= endj )
 		{
@@ -696,6 +778,9 @@ char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int i
 	else { // read with downsampling
 
 		// preliminary checks
+		if ( starti != 0 || endi != (img_height-1) || startj != 0 || endj != (img_width-1) ) { // a subregion has been requested 
+			return ((char *) "Subregion extraction not supported with downsampling.");
+		}		    
 		check=TIFFGetField(input, TIFFTAG_IMAGEWIDTH, &XSIZE);
 		if (!check)
 		{

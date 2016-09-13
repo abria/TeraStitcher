@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-09-01. Giulio.     @ADDED cache management in loadImageStack
 * 2015-08-24. Giulio.     @FIXED memory leak in loadImageStack
 * 2015-02-28. Giulio.     @ADDED saving of fields N_CHANS and N_BYTESxCHAN in the xml files
 * 2015-02-26. Giulio.     @ADDED initialization of fields N_CHANS and N_BYTESxCHAN in constructor; this information is NOT saved in mdata.bin and xml files
@@ -56,6 +57,8 @@
 #include "StackStitcher.h"
 #include "Displacement.h"
 #include "IOPluginAPI.h"
+
+#include "vmCacheManager.h"
 
 using namespace std;
 using namespace vm;
@@ -552,31 +555,10 @@ iom::real_t* Stack::loadImageStack(int first_file, int last_file) throw (iom::ex
 	printf("\t\t\t\tin Stack[%d,%d](%s, empty = %s)::loadImageStack(first_file = %d, last_file = %d)\n",ROW_INDEX, COL_INDEX, DIR_NAME, isEmpty() ? "true": "false", first_file, last_file);
 	#endif
 
-	//// if stack is empty in the given range, just return a black image
-	//if(isEmpty(first_file, last_file))
-	//{
-	//	// check and adjust file selection
-	//	first_file = (first_file == -1 ? 0 : first_file);
-	//	last_file  = (last_file  == -1 ? DEPTH - 1 : last_file );
-	//	first_file = min(first_file, DEPTH-1);
-	//	last_file = min(last_file, DEPTH-1);
-
-	//	// allocate and initialize a black stack
-	//	uint64 image_size = static_cast<uint64>(WIDTH) * static_cast<uint64>(HEIGHT) * static_cast<uint64>(last_file-first_file+1);
-	//	STACKED_IMAGE = new iom::real_t[image_size];
-	//	for(uint64 k=0; k<image_size; k++)
-	//		STACKED_IMAGE[k] = 0;
-	//}
-	//else
-	//{
-	//	STACKED_IMAGE = iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->readData(FILENAMES, DEPTH, 
-	//	(std::string(CONTAINER->getSTACKS_DIR()) + "/" + DIR_NAME).c_str(), first_file, last_file, isSparse());
-	//}
-
 	uint64 image_stack_width=0, image_stack_height=0, z=0;
  	iom::real_t *raw_data;
 
-	unsigned char *data;
+	unsigned char *data = (unsigned char *) 0;
 	int img_width;
 	int img_height;
 	int img_bytes_x_chan;
@@ -599,6 +581,77 @@ iom::real_t* Stack::loadImageStack(int first_file, int last_file) throw (iom::ex
 		return STACKED_IMAGE;
 	}
 
+	if ( first_file == last_file ) { // only one slice has been requested
+		if ( CONTAINER->getCACHEBUFFER()->getSlice(ROW_INDEX,COL_INDEX,first_file,data) ) {
+			img_width        = WIDTH;
+			img_height       = HEIGHT;
+			img_bytes_x_chan = N_BYTESxCHAN;
+			img_chans        = N_CHANS;
+
+			/**** DUPLICATED CODE (BEGIN) ***/
+			// initialize output data and image dimensions
+			if(!STACKED_IMAGE)
+			{
+				image_stack_height = (uint64) img_height;
+				image_stack_width  = (uint64) img_width;
+				uint64 image_stack_size = image_stack_width * image_stack_height * (last_file - first_file + 1);
+				STACKED_IMAGE = new iom::real_t[image_stack_size];
+				for(uint64 j=0; j < image_stack_size; j++)
+					STACKED_IMAGE[j] = 0;		// default is 0 (black)
+			}
+			else if(image_stack_width != (uint64)img_width || image_stack_height != (uint64)img_height)
+				throw iom::exception("images in stack have not the same dimensions", __iom__current__function__);
+
+			int offset;
+
+			// convert image to [0.0,1.0]-valued array
+			if ( img_chans == 1 ) {
+				raw_data = &STACKED_IMAGE[z*img_height*img_width];
+				if ( img_bytes_x_chan == 1 ) {
+					for(int i = 0; i < (img_height * img_width); i++)
+						raw_data[i] = (iom::real_t) data[i]/255.0f;
+				}
+				else { // img_bytes_x_chan == 2
+					for(int i = 0; i < (img_height * img_width); i++)
+						raw_data[i] = (iom::real_t) ((uint16 *)data)[i]/65535.0f; // data must be interpreted as a uint16 array
+				}
+			}
+			else { // conversion to an intensity image
+				// test how channel are stored in the returned buffer 'data'
+				if ( iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved() ) {
+					if ( CHANS == iom::ALL ) {
+						throw iom::exception("conversion from multi-channel to intensity images not supported.", __iom__current__function__);
+					}
+					else if ( CHANS == iom::R ) {
+						offset = 0;
+					}
+					else if ( CHANS == iom::G ) {
+						offset = 1;
+					}
+					else if ( CHANS == iom::B ) {
+						offset = 2;
+					}
+					else {
+						throw iom::exception("wrong value for parameter iom::CHANNEL_SELECTION.", __iom__current__function__);
+					}
+					raw_data = &STACKED_IMAGE[z*img_height*img_width];
+					if ( img_bytes_x_chan == 1 )
+						for(int i = 0; i < (img_height * img_width); i++)
+							raw_data[i] = (iom::real_t) data[3*i + offset]/255.0f;
+					else // img_bytes_x_chan == 2
+						for(int i = 0; i < (img_height * img_width); i++)
+							raw_data[i] = (iom::real_t) ((uint16 *)data)[3*i + offset]/65535.0f; // data must be interpreted as a uint16 array
+				}
+				else {
+					throw iom::exception("channels are not interleaved in the returned buffer 'data', conversion to intensity images not supported yet.");
+				}
+			}
+			/**** DUPLICATED CODE (END) ***/
+
+			return STACKED_IMAGE;
+		}
+	}
+
 	// build absolute image path of first file in the stack
 	int i = first_file;
 	while ( isSparse() && i<=last_file && FILENAMES[i]==0 ) // look for existing file
@@ -609,6 +662,13 @@ iom::real_t* Stack::loadImageStack(int first_file, int last_file) throw (iom::ex
 	std::string image_path = std::string(CONTAINER->getSTACKS_DIR()) + "/" + DIR_NAME + "/" + FILENAMES[i];
 
 	iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->readMetadata(image_path,img_width,img_height,img_bytes_x_chan,img_chans);
+
+	// 2016-08-29. Giulio. @ADDED check of coherence
+	if ( (img_width != WIDTH) ||  (img_height != HEIGHT) || (img_bytes_x_chan != N_BYTESxCHAN) || (img_chans != N_CHANS) )
+		throw iom::exception(iom::strprintf("incosistent metadata in file %s",image_path.c_str()).c_str(), __iom__current__function__);
+
+	// 2016-04-29. Giulio. patch to test opencv2D when using jpeg
+	//img_chans = 1;
 
 	// allocate buffer
 	data = new unsigned char[img_width * img_height * img_bytes_x_chan * img_chans];
@@ -688,8 +748,16 @@ iom::real_t* Stack::loadImageStack(int first_file, int last_file) throw (iom::ex
 		}
 	}
 
-	// 2015-08-24. Giulio. data must be released
-	delete [] data;
+	if ( first_file == last_file ) {
+		if ( !CONTAINER->getCACHEBUFFER()->cacheSlice(ROW_INDEX,COL_INDEX,first_file,data) ) { // slice cannot be cached
+			// 2015-08-24. Giulio. data must be released
+			delete [] data;
+		}
+	}
+	else {
+		// 2015-08-24. Giulio. data must be released
+		delete [] data;
+	}
 
 	return STACKED_IMAGE;
 }

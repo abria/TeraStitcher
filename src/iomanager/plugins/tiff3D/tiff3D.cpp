@@ -172,7 +172,7 @@ throw (iom::exception)
 
 	// set the ROI
 	z0 = (z0 < 0) ? 0: z0;
-	z1 = (z1 < 0) ? img_depth  : z1;
+	z1 = (z1 < 0) ? img_depth : z1;
 
 	if ( z0 >= z1 )
 		throw iom::exception(iom::strprintf("wrong slice indices (z0 = %d, z1 = %d)",z0, z1), __iom__current__function__);

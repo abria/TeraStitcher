@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-09-01. Giulio.     @ADDED Cache buffer.
 * 2016-06-09. Giulio      @ADDED the 'active_channel' field and corresponding getter and setter
 * 2015-06-12. Giulio      @ADDED 'check' method to check completeness and coherence of a volume
 * 2015-02-26. Giulio.     @ADDED fields DIM_C and BYTESxCHAN
@@ -44,7 +45,9 @@
 #include <map>
 #include "volumemanager.config.h"
 #include "iomanager.config.h"
+//#include "vmCacheManager.h"
 
+class CacheBuffer;
 
 //FORWARD-DECLARATIONS
 class Displacement;
@@ -66,6 +69,7 @@ class volumemanager::VirtualVolume
 
 		int active_channel;
 
+		CacheBuffer *cb;
 
 		//initialization methods
 		virtual void init() throw (iom::exception);
@@ -89,6 +93,8 @@ class volumemanager::VirtualVolume
 		//CONSTRUCTORS-DECONSTRUCTOR
 		VirtualVolume(){
 			init();
+
+			cb = (CacheBuffer *) 0;
 		}
 
 		VirtualVolume(const char* _stacks_dir, vm::ref_sys _reference_system, float VXL_1=0, float VXL_2=0, float VXL_3=0) throw (iom::exception)
@@ -103,14 +109,16 @@ class volumemanager::VirtualVolume
 			VXL_V = VXL_1;
 			VXL_H = VXL_2;
 			VXL_D = VXL_3;
+
+			cb = (CacheBuffer *) 0;
 		}
 
 		VirtualVolume(const char* xml_path) throw (iom::exception){
 			init();
+			cb = (CacheBuffer *) 0;
 		}
 
-        virtual ~VirtualVolume(){}
-
+        virtual ~VirtualVolume();
 
 		// ******GET METHODS******
 		float	 getORG_V();
@@ -142,6 +150,8 @@ class volumemanager::VirtualVolume
 
 		int      getACTIVE_CHAN() { return active_channel; }
 		void     setACTIVE_CHAN(int c) { active_channel = c; }
+
+		CacheBuffer *getCACHEBUFFER() { return cb; }
 		
 		//loads/saves metadata from/in the given xml filename
 		virtual void loadXML(const char *xml_filename) = 0;

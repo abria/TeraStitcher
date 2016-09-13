@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-09-01. Giulio.     @ADDED cache management in loadImageStack
 * 2016-06-09. Giulio.     @ADDED code to load the buffer when the input plugin does not interleve channels
 * 2016-06-09. Giulio.     @FIXED initialized the buffer 'data' to 0 in 'loadImageStack'
 * 2015-08-05. Giulio.     @ADDED detailed error messages in 'loadImageStack' and 'compute_z_ranges's
@@ -69,6 +70,7 @@
 #include "Displacement.h"
 #include "IOPluginAPI.h"
 
+#include "vmCacheManager.h"
 
 using namespace std;
 using namespace iom;
@@ -464,26 +466,38 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 		return STACKED_IMAGE;
 	}
 
-	Segm_t *intersect_segm = Intersects(first_file, last_file+1); // the second parameter should be the last slice + 1
 	unsigned char *data = new unsigned char[HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN * N_CHANS];
 	memset(data,0,sizeof(unsigned char) * (HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN * N_CHANS));
+
+	bool inCache = false;
+	if ( first_file == last_file ) { // only one slice has been requested
+		if ( CONTAINER->getCACHEBUFFER()->getSlice(ROW_INDEX,COL_INDEX,first_file,data) ) 
+			inCache = true;
+	}
+
 	unsigned char *temp = data;
+	Segm_t *intersect_segm;
 
-	for(int i = intersect_segm->ind0; i <= intersect_segm->ind1; i++)
-	{
-		//if ( temp - data > (HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN * N_CHANS) )
-		//	throw iom::exception(vm::strprintf("in Block[%s]::loadImageStack(): buffer overrun at block %d", DIR_NAME, i-1).c_str());
+	if ( !inCache ) {
+
+		intersect_segm = Intersects(first_file, last_file+1); // the second parameter should be the last slice + 1
+
+		for(int i = intersect_segm->ind0; i <= intersect_segm->ind1; i++)
+		{
+			//if ( temp - data > (HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN * N_CHANS) )
+			//	throw iom::exception(vm::strprintf("in Block[%s]::loadImageStack(): buffer overrun at block %d", DIR_NAME, i-1).c_str());
 			
-		first = (first_file > BLOCK_ABS_D[i]) ? first_file-BLOCK_ABS_D[i] : 0 ;
-		last = (last_file < BLOCK_ABS_D[i]+BLOCK_SIZE[i]-1) ?  last_file-BLOCK_ABS_D[i] : BLOCK_SIZE[i]-1 ;
-		if ( FILENAMES[i] ) { // 2015-07-26. Giulio. @ADDED sparsedata support
-			sprintf(slice_fullpath, "%s/%s/%s", CONTAINER->getSTACKS_DIR(), DIR_NAME, FILENAMES[i]);
+			first = (first_file > BLOCK_ABS_D[i]) ? first_file-BLOCK_ABS_D[i] : 0 ;
+			last = (last_file < BLOCK_ABS_D[i]+BLOCK_SIZE[i]-1) ?  last_file-BLOCK_ABS_D[i] : BLOCK_SIZE[i]-1 ;
+			if ( FILENAMES[i] ) { // 2015-07-26. Giulio. @ADDED sparsedata support
+				sprintf(slice_fullpath, "%s/%s/%s", CONTAINER->getSTACKS_DIR(), DIR_NAME, FILENAMES[i]);
 
-			// 2014-09-05. Alessandro & Iannello. @MODIFIED to deal with IO plugins
-			//iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->readData(slice_fullpath, WIDTH, HEIGHT, temp, first, last);
-			iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->readData(slice_fullpath,WIDTH,HEIGHT,BLOCK_SIZE[i],N_BYTESxCHAN,N_CHANS,temp,first,last+1);
+				// 2014-09-05. Alessandro & Iannello. @MODIFIED to deal with IO plugins
+				//iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->readData(slice_fullpath, WIDTH, HEIGHT, temp, first, last);
+				iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->readData(slice_fullpath,WIDTH,HEIGHT,BLOCK_SIZE[i],N_BYTESxCHAN,N_CHANS,temp,first,last+1);
+			}
+			temp +=  HEIGHT * WIDTH * (last-first+1) * N_BYTESxCHAN * N_CHANS;
 		}
-		temp +=  HEIGHT * WIDTH * (last-first+1) * N_BYTESxCHAN * N_CHANS;
 	}
 
 	//conversion from unsigned char to iom::real_t
@@ -568,13 +582,21 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 		}
 	}
 
-	delete [] data;
+	if ( first_file == last_file && !inCache ) {
+		if ( !CONTAINER->getCACHEBUFFER()->cacheSlice(ROW_INDEX,COL_INDEX,first_file,data) ) { // slice cannot be cached
+			delete [] data;
+		}
+	}
+	else { // data has to be released since inCache must be false (first != last -> !inCache)
+		delete [] data;
+	}
 
-
-	delete intersect_segm;
+	if ( !inCache )
+		delete intersect_segm;
 
 	return STACKED_IMAGE;
 }
+
 
 //deallocates memory used by STACKED_IMAGE
 void Block::releaseImageStack()

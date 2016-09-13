@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-09-01. Giulio.     @ADDED Cache buffer.
 * 2016-06-09. Giulio      @ADDED the initialization of 'active_channel' in the constructor
 * 2015-02-26. Giulio.     @ADDED dummy initialization of fields DIM_C and BYTESxCHAN in constructor
 * 2014-09-10. Alessandro. @ADDED 'getVolumeFormat' method to be applied on xml file.
@@ -44,6 +45,7 @@
 #endif
 #include <math.h> //fabs
 
+#include "vmCacheManager.h"
 
 using namespace std;
 using namespace vm;
@@ -70,6 +72,11 @@ int		VirtualVolume::getOVERLAP_H()				{return (int)(getStacksWidth() -  MEC_H/VX
 int		VirtualVolume::getDEFAULT_DISPLACEMENT_V()	{return (int)(fabs(MEC_V/VXL_V));}
 int		VirtualVolume::getDEFAULT_DISPLACEMENT_H()	{return (int)(fabs(MEC_H/VXL_H));}
 int		VirtualVolume::getDEFAULT_DISPLACEMENT_D()	{return 0;}
+
+VirtualVolume::~VirtualVolume() {
+	if ( cb )
+		delete cb;
+}
 
 void VirtualVolume::init() throw (iom::exception)
 {

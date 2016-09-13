@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2016-09-12. Giulio.     @FIXED wrong initialization of the input plugin in case of tif input format
 * 2015-12-10. Giulio.     @ADDED support for single Tiff 3D volumes 
 */
 
@@ -94,7 +95,7 @@ void RawVolume::init ( ) throw (IOException)
 	if ( strcmp(temp,"tif")==0 ) {
 		ffmt = "Tiff3D";
 		// 2015-02-27. Alessandro. @ADDED automated selection of IO plugin if not provided.
-		if(iom::IMIN_PLUGIN.compare("empty") == 0)
+		if(iom::IMIN_PLUGIN.compare("tiff3D") != 0)
 			iom::IMIN_PLUGIN = "tiff3D";
 		fmtMngr = new Tiff3DFmtMngr();
 	}

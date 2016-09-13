@@ -67,6 +67,8 @@
 #include "vmStack.h"
 #include "Displacement.h"
 
+#include "vmCacheManager.h"
+
 #ifdef min
 #undef min
 #endif
@@ -183,6 +185,8 @@ StackedVolume::StackedVolume(const char *xml_filepath, bool overwrite_mdata) thr
 				}
 			}
 	}
+
+	cb = new CacheBuffer(this);
 }
 
 StackedVolume::~StackedVolume()
