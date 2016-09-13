@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-09-13. Giulio.     @ADDED flag for time series
 * 2016-09-04. Giulio.     @ADDED the options for setting the configuration of the LibTIFF library
 * 2016-06-18  Giulio.     @ADDED option for downsampling the reading of data
 * 2016-04-13  Giulio.     @ADDED options for parallelizing teraconverter
@@ -51,6 +52,8 @@ class TemplateCLI
         bool isotropic;                         //generate lowest resolutiona with voxels as much isotropic as possible
 
 		bool pluginsinfo;						//display plugins information
+
+		bool timeseries;						//the input is a time series
 
 		// other parameters
 		// int/float/double/string XXXX;	// description

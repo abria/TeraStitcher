@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-09-13. Giulio.     @ADDED flag for time series
 * 2016-09-04. Giulio.     @ADDED the options for setting the configuration of the LibTIFF library
 * 2016-06-18  Giulio.     @ADDED option for downsampling the reading of data
 * 2016-05-11  Giulio.     @ADDED other formats in help messages
@@ -90,6 +91,8 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::SwitchArg p_isotropic("","isotropic","Generate lowest resolution with voxels as much isotropic as possible. Use this flag when the high resolution image has highy anistropic voxels",false);
 	TCLAP::SwitchArg p_makedirs("","makedirs","Creates the mdata.bin file of the output volume.", false);
 	TCLAP::SwitchArg p_metadata("","metadata","Creates the directory hierarchy.", false);
+
+	TCLAP::SwitchArg p_timeseries("","timeseries","The input is a time series.", false);
 
 	TCLAP::ValueArg<std::string> p_src_root_dir("s","src","Source file / root directory path.",true,"","string");
 	TCLAP::ValueArg<std::string> p_dst_root_dir("d","dst","Destination root directory path.",false,"","string");
@@ -159,6 +162,8 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_libtiff_rowsperstrip);
 	cmd.add(p_libtiff_uncompressed);
 
+	cmd.add(p_timeseries);
+
 	cmd.add(p_dwnsmplngFactor);
 	cmd.add(p_im_out_plugin_params);
 	cmd.add(p_im_out_plugin);
@@ -210,6 +215,11 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	/* Checking parameter consistency */
 	if ( p_infofile_path.getValue() == "" && p_dst_root_dir.getValue() == "" ) {
 		sprintf(errMsg, "Missing destination directory (option -d)");
+		throw iom::exception(errMsg);
+	}
+
+	if ( p_timeseries.isSet() && (p_parallel.isSet() || p_makedirs.isSet()) ) {
+		sprintf(errMsg, "Parallel options are not allowed for time series");
 		throw iom::exception(errMsg);
 	}
 

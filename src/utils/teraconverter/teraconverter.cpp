@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-09-13.  Giulio.     @ADDED support for time series
 * 2016-09-04.  Giulio.     @ADDED the setting of the configuration of the LibTIFF library
 * 2016-06-18.  Giulio.     @ADDED the possibility to dowsampling the reading of data
 * 2016-05-02.  Giulio.     @ADDED generation of an info log file
@@ -193,11 +194,15 @@ int main ( int argc, char *argv[] ) {
 		}
 
 		
-		vc.setSrcVolume(cli.src_root_dir.c_str(),cli.src_format.c_str(),cli.outFmt.c_str(),false,cli.downsamplingFactor);
+		vc.setSrcVolume(cli.src_root_dir.c_str(),cli.src_format.c_str(),cli.outFmt.c_str(),cli.timeseries,cli.downsamplingFactor);
 		vc.setSubVolume(cli.V0,cli.V1,cli.H0,cli.H1,cli.D0,cli.D1);
 
 		if ( cli.dst_format == iim::SIMPLE_RAW_FORMAT )
-			if ( cli.makeDirs ) {
+			if ( cli.timeseries ) {
+				vc.convertTo(cli.dst_root_dir.c_str(),cli.dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method);
+			}
+			else if ( cli.makeDirs ) {
 				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
 					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
 					cli.show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
@@ -213,7 +218,11 @@ int main ( int argc, char *argv[] ) {
 					cli.show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
 			}
 		else if ( cli.dst_format == iim::SIMPLE_FORMAT )
-			if ( cli.makeDirs ) {
+			if ( cli.timeseries ) {
+				vc.convertTo(cli.dst_root_dir.c_str(),cli.dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method);
+			}
+			else if ( cli.makeDirs ) {
 				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
 					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
 					cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
@@ -229,7 +238,11 @@ int main ( int argc, char *argv[] ) {
 					cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
 			}
 		else if ( cli.dst_format == iim::STACKED_RAW_FORMAT )
-			if ( cli.makeDirs ) {
+			if ( cli.timeseries ) {
+				vc.convertTo(cli.dst_root_dir.c_str(),cli.dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method);
+			}
+			else if ( cli.makeDirs ) {
 				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
 					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
 					cli.show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
@@ -245,7 +258,11 @@ int main ( int argc, char *argv[] ) {
 					cli.show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
 			}
 		else if ( cli.dst_format == iim::STACKED_FORMAT )
-			if ( cli.makeDirs ) {
+			if ( cli.timeseries ) {
+				vc.convertTo(cli.dst_root_dir.c_str(),cli.dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method);
+			}
+			else if ( cli.makeDirs ) {
 				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
 					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
 					cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
@@ -261,7 +278,11 @@ int main ( int argc, char *argv[] ) {
 					cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
 			}
 		else if ( cli.dst_format == iim::TILED_FORMAT ) {
-			if ( cli.makeDirs ) {
+			if ( cli.timeseries ) {
+				vc.convertTo(cli.dst_root_dir.c_str(),cli.dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method);
+			}
+			else if ( cli.makeDirs ) {
 				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
 					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
 					cli.show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
@@ -278,7 +299,11 @@ int main ( int argc, char *argv[] ) {
 			}
 		}
 		else if ( cli.dst_format == iim::TILED_TIF3D_FORMAT ) {
-			if ( cli.makeDirs ) {
+			if ( cli.timeseries ) {
+				vc.convertTo(cli.dst_root_dir.c_str(),cli.dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method);
+			}
+			else if ( cli.makeDirs ) {
 				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
 					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
 					cli.show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
@@ -295,7 +320,11 @@ int main ( int argc, char *argv[] ) {
 			}
 		}
 		else if ( cli.dst_format == iim::TILED_MC_FORMAT )
-			if ( cli.makeDirs ) {
+			if ( cli.timeseries ) {
+				vc.convertTo(cli.dst_root_dir.c_str(),cli.dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method);
+			}
+			else if ( cli.makeDirs ) {
 				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
 					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
 					cli.show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
@@ -311,7 +340,11 @@ int main ( int argc, char *argv[] ) {
 					cli.show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",false);
 			}
 		else if ( cli.dst_format == iim::TILED_MC_TIF3D_FORMAT )
-			if ( cli.makeDirs ) {
+			if ( cli.timeseries ) {
+				vc.convertTo(cli.dst_root_dir.c_str(),cli.dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,cli.resolutions,
+					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method);
+			}
+			else if ( cli.makeDirs ) {
 				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.resolutions,
 					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
 					cli.show_progress_bar,"Tiff3DMC",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);

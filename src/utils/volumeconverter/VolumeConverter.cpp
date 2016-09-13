@@ -1426,7 +1426,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
     if(block_height < TMITREE_MIN_BLOCK_DIM || block_width < TMITREE_MIN_BLOCK_DIM /* 2014-11-10. Giulio. @REMOVED (|| block_depth < TMITREE_MIN_BLOCK_DIM) */)
     { 
         char err_msg[STATIC_STRINGS_SIZE];
-        sprintf(err_msg,"in VolumeConverter::generateTilesVaa3DRaw(...): the minimum dimension for block height, width, and depth is %d", TMITREE_MIN_BLOCK_DIM);
+        sprintf(err_msg,"in VolumeConverter::generateTilesVaa3DRaw(...): the minimum dimension for block height and width is %d", TMITREE_MIN_BLOCK_DIM);
         throw IOException(err_msg);
     }
 
@@ -3777,6 +3777,8 @@ void VolumeConverter::convertTo(
             std::string frame_dir = iim::TIME_FRAME_PREFIX + strprintf("%06d", t);
             if(output_format.compare(iim::STACKED_FORMAT) == 0)
                 generateTiles(output_path, resolutions, block_height, block_width, method, false, true, "tif", output_bitdepth, frame_dir, false);
+            else if(output_format.compare(iim::STACKED_RAW_FORMAT) == 0)
+                generateTiles(output_path, resolutions, block_height, block_width, method, false, true, "raw", output_bitdepth, frame_dir, false);
             else if(output_format.compare(iim::TILED_FORMAT) == 0)
                 generateTilesVaa3DRaw(output_path, resolutions, block_height, block_width, block_depth, method, false, true, "raw", output_bitdepth, frame_dir, false);
             else if(output_format.compare(iim::TILED_MC_FORMAT) == 0)

@@ -266,7 +266,7 @@ iim::uint8 * TimeSeries::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, i
     }
 
     // compute subvol dimension
-    size_t subvol_frame_size = static_cast<size_t>(H1-H0) * (V1-V0) * (D1-D0) * (frames[0]->getNACtiveChannels());
+    size_t subvol_frame_size = static_cast<size_t>(H1-H0) * (V1-V0) * (D1-D0) * BYTESxCHAN * (frames[0]->getNACtiveChannels());
     size_t subvol_size = subvol_frame_size * (t1-t0+1);
     iim::uint8* subvol_data = 0;
 
@@ -285,7 +285,7 @@ iim::uint8 * TimeSeries::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, i
             ts::ProgressBar::getInstance()->display();
         }
 
-        iim::uint8* temp_data = frames[t+t0]->loadSubvolume_to_UINT8(V0, V1, H0, H1, D0, D1);
+        iim::uint8* temp_data = frames[t+t0]->loadSubvolume_to_UINT8(V0, V1, H0, H1, D0, D1,channels,ret_type);
         memcpy(subvol_data + t*subvol_frame_size, temp_data, subvol_frame_size*sizeof(iim::uint8));
         delete[] temp_data;
     }
