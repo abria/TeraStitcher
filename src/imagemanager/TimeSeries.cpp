@@ -266,7 +266,8 @@ iim::uint8 * TimeSeries::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, i
     }
 
     // compute subvol dimension
-    size_t subvol_frame_size = static_cast<size_t>(H1-H0) * (V1-V0) * (D1-D0) * BYTESxCHAN * (frames[0]->getNACtiveChannels());
+    int bytes = ret_type == iim::NUL_IMG_DEPTH ? BYTESxCHAN : ret_type / 8;
+    size_t subvol_frame_size = static_cast<size_t>(H1-H0) * (V1-V0) * (D1-D0) * (bytes) * (frames[0]->getNACtiveChannels());
     size_t subvol_size = subvol_frame_size * (t1-t0+1);
     iim::uint8* subvol_data = 0;
 
