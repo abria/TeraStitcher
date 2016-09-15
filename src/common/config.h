@@ -25,9 +25,13 @@ namespace terastitcher
     *    PARAMETERS    *
     ********************
     ---------------------------------------------------------------------------------------------------------------------------*/
-    extern std::string version;					//TeraStitcher version
-    extern int DEBUG;							//debug level of current module
-	extern std::string qtversion;				//Qt version (if used)
+    extern std::string version;					   //TeraStitcher version
+    extern std::string teraconverter_version;	   //TeraConverter version
+    extern std::string terastitcher2_version;	   //TeraStitcher2 version
+    extern std::string mdatagenerator_version;     //mdatagenerator version
+	extern std::string mergedisplacement_version;  // mergedisplacement verision
+    extern int DEBUG;							   //debug level of current module
+	extern std::string qtversion;				   //Qt version (if used)
     /*-------------------------------------------------------------------------------------------------------------------------*/
 
 	

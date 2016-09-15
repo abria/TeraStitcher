@@ -39,6 +39,8 @@
 #include "GUI_config.h"
 #include <CmdLine.h>
 #include <sstream>
+#include "config.h"
+
 
 using namespace iim;
 
@@ -54,7 +56,7 @@ TeraStitcher2CLI::TeraStitcher2CLI(void)
 void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 {
 	//command line object definition
-	TCLAP::CmdLine cmd(getHelpText(), '=', "0.4.0");
+	TCLAP::CmdLine cmd(getHelpText(), '=', terastitcher::terastitcher2_version);
 
 	//argument objects definitions
 	TCLAP::SwitchArg p_stitch("S","stitch","Stitches a volume by executing the entire pipeline (steps 1-6).",false);
@@ -537,14 +539,15 @@ void TeraStitcher2CLI::checkParams() throw (IOException)
 string TeraStitcher2CLI::getHelpText()
 {
 	stringstream helptext;
-	helptext << "TeraStitcher 0.4.0\n";
+	helptext << "TeraStitcher2 " << terastitcher::terastitcher2_version << "\n";
 	helptext << "  developed at University Campus Bio-Medico of Rome by:\n";
-	helptext << "  -\tAlessandro Bria (email: a.bria@unicas.it)                            ";
-	helptext << "   \tPhD student at Departement of Electrical and Information Engineering";
-	helptext << "   \tFaculty of Engineering of University of Cassino\n";
-	helptext << "  -\tGiulio Iannello, Ph.D. (email: g.iannello@unicampus.it)              ";
-	helptext << "   \tFull Professor of Computer Science and Computer Engineering          ";
-	helptext << "   \tFaculty of Engineering of University Campus Bio-Medico of Rome";
+	helptext << "   -\tAlessandro Bria (email: a.bria@unicas.it)                            ";
+	helptext << "    \tPhD student at Departement of Electrical and Information Engineering";
+	helptext << "    \tFaculty of Engineering of University of Cassino\n";
+	helptext << "   -\tGiulio Iannello, Ph.D. (email: g.iannello@unicampus.it)              ";
+	helptext << "    \tFull Professor of Computer Science and Computer Engineering          ";
+	helptext << "    \tFaculty of Engineering of University Campus Bio-Medico of Rome\n";
+	helptext << "  Official website/repo: http://abria.github.io/TeraStitcher";
 	return helptext.str();
 }
 

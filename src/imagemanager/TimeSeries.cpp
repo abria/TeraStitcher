@@ -266,7 +266,7 @@ iim::uint8 * TimeSeries::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, i
     }
 
     // compute subvol dimension
-    int bytes = ret_type == iim::NUL_IMG_DEPTH ? BYTESxCHAN : ret_type / 8;
+    int bytes = ret_type == iim::NATIVE_RTYPE ? BYTESxCHAN : ret_type / 8;
     size_t subvol_frame_size = static_cast<size_t>(H1-H0) * (V1-V0) * (D1-D0) * (bytes) * (frames[0]->getNACtiveChannels());
     size_t subvol_size = subvol_frame_size * (t1-t0+1);
     iim::uint8* subvol_data = 0;
@@ -280,15 +280,18 @@ iim::uint8 * TimeSeries::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, i
     // load data
     for ( int t=0; t<=t1-t0; t++ )
     {
-        if(t1 - t0 > 0)
+        if(t1 - t0 > 0) // more than one time points 
         {
             ts::ProgressBar::getInstance()->setProgressValue( (static_cast<float>(t) / (t1-t0))*100, iim::strprintf("Loading time frame %d/%d", t, t1-t0).c_str());
             ts::ProgressBar::getInstance()->display();
-        }
-
-        iim::uint8* temp_data = frames[t+t0]->loadSubvolume_to_UINT8(V0, V1, H0, H1, D0, D1,channels,ret_type);
-        memcpy(subvol_data + t*subvol_frame_size, temp_data, subvol_frame_size*sizeof(iim::uint8));
-        delete[] temp_data;
+ 
+			iim::uint8* temp_data = frames[t+t0]->loadSubvolume_to_UINT8(V0, V1, H0, H1, D0, D1,channels,ret_type);
+			memcpy(subvol_data + t*subvol_frame_size, temp_data, subvol_frame_size*sizeof(iim::uint8));
+			delete[] temp_data;
+		}
+		else { // just one time point: avoid additional copy
+			subvol_data = frames[t+t0]->loadSubvolume_to_UINT8(V0, V1, H0, H1, D0, D1,channels,ret_type);
+		}
     }
 
     // add gaussian noise

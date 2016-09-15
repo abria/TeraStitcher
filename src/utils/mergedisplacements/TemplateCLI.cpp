@@ -32,6 +32,7 @@
 #include <sstream>
 
 #include "IM_config.h"
+#include "config.h"
 
 using namespace iim;
 
@@ -47,7 +48,7 @@ TemplateCLI::TemplateCLI(void)
 void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 {
 	//command line object definition
-	TCLAP::CmdLine cmd(getHelpText(), '=', "1.0.0");
+	TCLAP::CmdLine cmd(getHelpText(), '=', terastitcher::mergedisplacement_version);
 		/**
 		 * Command line constructor. Defines how the arguments will be
 		 * parsed.
@@ -203,7 +204,17 @@ void TemplateCLI::checkParams() throw (iom::exception)
 string TemplateCLI::getHelpText()
 {
 	stringstream helptext;
-	helptext << "Generator of volume description v1.0.0\n";
+
+	helptext << "Merge Displacement " << terastitcher::mergedisplacement_version << "\n";
+	helptext << "  developed at University Campus Bio-Medico of Rome by:\n";
+	helptext << "   -\tAlessandro Bria (email: a.bria@unicas.it)                            ";
+	helptext << "    \tPhD student at Departement of Electrical and Information Engineering";
+	helptext << "    \tFaculty of Engineering of University of Cassino\n";
+	helptext << "   -\tGiulio Iannello, Ph.D. (email: g.iannello@unicampus.it)              ";
+	helptext << "    \tFull Professor of Computer Science and Computer Engineering          ";
+	helptext << "    \tFaculty of Engineering of University Campus Bio-Medico of Rome\n";
+	helptext << "  Official website/repo: http://abria.github.io/TeraStitcher";
+
 	return helptext.str();
 }
 
