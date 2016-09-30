@@ -122,6 +122,8 @@ BlockVolume::BlockVolume(const char* _stacks_dir, vm::ref_sys _reference_system,
 				}
 			}
 	}
+
+	cb = new CacheBuffer(this);
 }
 
 BlockVolume::BlockVolume(const char *xml_filepath, bool overwrite_mdata) throw (iom::exception)
@@ -180,7 +182,6 @@ BlockVolume::BlockVolume(const char *xml_filepath, bool overwrite_mdata) throw (
 	}
 
 	cb = new CacheBuffer(this);
-	//cb->enableCache();
 }
 
 BlockVolume::~BlockVolume()

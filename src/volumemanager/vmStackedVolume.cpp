@@ -127,6 +127,8 @@ StackedVolume::StackedVolume(const char* _stacks_dir, vm::ref_sys _reference_sys
 				}
 			}
 	}
+	
+	cb = new CacheBuffer(this);
 }
 
 StackedVolume::StackedVolume(const char *xml_filepath, bool overwrite_mdata) throw (iom::exception)
