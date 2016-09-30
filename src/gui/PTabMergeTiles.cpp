@@ -808,15 +808,19 @@ void PTabMergeTiles::updateContent()
                 float GVoxels = (height/1024.0f)*(width/1024.0f)*(depth/1024.0f);
                 resolutions_fields[i]->setText(QString::number(width).append(" ").append(QChar(0x00D7)).append(" ").append(QString::number(height)).append(" ").append(QChar(0x00D7)).append(" ").append(QString::number(depth)));
                 resolutions_sizes[i]->setText(QString::number(GVoxels,'f',3));
-                if(resolutions_save_cboxs[i]->isChecked())
-                    max_res = std::max(max_res, i);
+
 				if(!height || !width || !depth)
 				{
 					resolutions_fields[i]->setVisible(false);
 					resolutions_sizes[i]->setVisible(false);
 					resolutions_save_cboxs[i]->setVisible(false);
 					resolutions_view_cboxs[i]->setVisible(false);
+					resolutions_save_cboxs[i]->setChecked(false);
+					resolutions_view_cboxs[i]->setChecked(false);
 				}
+
+				if(resolutions_save_cboxs[i]->isChecked())
+					max_res = std::max(max_res, i);
             }
 
             //updating RAM usage estimation
