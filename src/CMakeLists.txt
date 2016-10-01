@@ -2,10 +2,10 @@
 cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
 
 # apple backwards compatibility
-option(MACOSX_BACKWARDS_COMPATIBILITY "MacOSX 10.7 backwords compatibility mode" OFF)
+option(MACOSX_BACKWARDS_COMPATIBILITY "MacOSX 10.8 backwords compatibility mode" OFF)
 if(APPLE AND MACOSX_BACKWARDS_COMPATIBILITY)
-	set(CMAKE_OSX_DEPLOYMENT_TARGET "10.7" CACHE STRING "Minimum OS X deployment version" FORCE)
-	set(CMAKE_OSX_SYSROOT "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk")
+	set(CMAKE_OSX_DEPLOYMENT_TARGET "10.8" CACHE STRING "Minimum OS X deployment version" FORCE)
+	set(CMAKE_OSX_SYSROOT "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk")
 	message(STATUS ${CMAKE_OSX_DEPLOYMENT_TARGET})
 	message(STATUS ${MACOSX_DEPLOYMENT_TARGET})
 endif()
