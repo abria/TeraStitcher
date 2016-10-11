@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-10-07. Giulio.     @CHANGED in 'readMetadata' img_chans set to 1 if SAMPLESPERPIXEL is not defined
 * 2015-01-02. Giulio.     @IMPLEMENTED new plugins interface
 */
 
@@ -108,7 +109,8 @@ throw (iom::exception)
 	img_bytes_x_chan = bpp/8;
 
 	if (!TIFFGetField(input, TIFFTAG_SAMPLESPERPIXEL, &spp)) 
-		throw iom::exception(iom::strprintf("unable to determine 'TIFFTAG_SAMPLESPERPIXEL' from image \"%s\". ", img_path.c_str()), __iom__current__function__);
+		spp = 1;
+		//throw iom::exception(iom::strprintf("unable to determine 'TIFFTAG_SAMPLESPERPIXEL' from image \"%s\". ", img_path.c_str()), __iom__current__function__);
 	img_chans = spp;
 
 	// Onofri

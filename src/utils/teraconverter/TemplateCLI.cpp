@@ -25,6 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-09-13. Giulio.     @ADDED flag for channel subdirectory name (single channel to tiled 4D format only)
+* 2016-09-13. Giulio.     @FIXED initialized flag for time series
 * 2016-09-13. Giulio.     @ADDED flag for time series
 * 2016-09-04. Giulio.     @ADDED the options for setting the configuration of the LibTIFF library
 * 2016-06-18  Giulio.     @ADDED option for downsampling the reading of data
@@ -96,6 +98,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	TCLAP::ValueArg<std::string> p_src_root_dir("s","src","Source file / root directory path.",true,"","string");
 	TCLAP::ValueArg<std::string> p_dst_root_dir("d","dst","Destination root directory path.",false,"","string");
+	TCLAP::ValueArg<std::string> p_ch_dir("","ch_dir","subdirectory to store the channel (single channel in tiled 4D format only).",false,"","string");
 	TCLAP::ValueArg<int> p_slice_depth("","depth","Slice depth.",false,-1,"unsigned");
 	TCLAP::ValueArg<int> p_slice_height("","height","Slice height.",false,-1,"unsigned");
 	TCLAP::ValueArg<int> p_slice_width("","width","Slice width.",false,-1,"unsigned");
@@ -198,6 +201,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_slice_width);
 	cmd.add(p_slice_height);
 	cmd.add(p_slice_depth);
+	cmd.add(p_ch_dir);
 	cmd.add(p_dst_root_dir);
 	cmd.add(p_src_root_dir);
 
@@ -277,6 +281,12 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		sprintf(errMsg, "%s", tempd.c_str());
 		throw iom::exception(errMsg);
 	}
+
+	if ( p_ch_dir.getValue() != "" && p_dst_format.getValue() == iim::TILED_MC_TIF3D_FORMAT && (p_makedirs.isSet() || p_metadata.isSet() || p_parallel.isSet())) {
+		sprintf(errMsg, "A subdirectory name for tiled 4D format cannot be provided if options makedirs, parallel or metadata options");
+		throw iom::exception(errMsg);
+	}
+
 	if ( p_outFmt.getValue() != "intensity" && 
 		 p_outFmt.getValue() != "graylevel" && 
 		 p_outFmt.getValue() != "RGB" ) {
@@ -311,6 +321,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	//importing parameters not set yet
 	this->src_root_dir  = p_src_root_dir.getValue();
 	this->dst_root_dir  = p_dst_root_dir.getValue();
+	this->ch_dir        = p_ch_dir.getValue();
 	this->slice_depth   = p_slice_depth.getValue();
 	this->slice_height  = p_slice_height.getValue();
 	this->slice_width   = p_slice_width.getValue();
@@ -320,6 +331,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
     this->makeDirs      = p_makedirs.getValue();
 	this->parallel      = p_parallel.getValue();
 	this->isotropic     = p_isotropic.getValue();
+	this->timeseries    = p_timeseries.getValue();
 	this->infofile_path = p_infofile_path.getValue();
 
 	//the [algorithm] parameter is multi-arguments

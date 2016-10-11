@@ -905,7 +905,7 @@ iim::CacheBuffer::CacheBuffer ( UnstitchedVolume *_volume, iim::uint64 _bufSizeM
 		}
 		sptr = strstr(params,"printstats:");
 		if ( sptr ) {
-			if ( strncmp(sptr+strlen("printstats:"),"true",strlen("true")) )
+			if ( strncmp(sptr+strlen("printstats:"),"true",strlen("true")) == 0 )
 				_printstats = true;
 			else
 				_printstats = false;
@@ -915,108 +915,126 @@ iim::CacheBuffer::CacheBuffer ( UnstitchedVolume *_volume, iim::uint64 _bufSizeM
 	enabled = _enable; 
 	printstats = _printstats;
 	
-	chits = cmisses = crplcmnts = 0;
+	caccesses = chits = cmisses = crplcmnts = 0;
 
-	cachedMB = 0.0;
+	cachedMB    = 0.0;
+	maxCachedMB = 0.0;
 
 	N_CHANS = volume->getDIM_C();
-	N_ROWS  = volume->volume->getN_ROWS();
-	N_COLS  = volume->volume->getN_COLS();
 
-	max_buffers = (int) (bufSizeMB / _BUFSIZE_);
-
-	buffers = new bufEntry *[N_CHANS];
-	for ( int ch=0; ch<N_CHANS; ch++ ) {
-		buffers[ch] = new bufEntry [max_buffers];
-		for ( int b=0; b<max_buffers; b++ ) {
-			buffers[ch][b].buf = (iom::real_t *) 0;
-		}
-	}
-	n_buffers = new int[N_CHANS];
-	memset(n_buffers,0,(N_CHANS * sizeof(int)));
-
-	cQueue = new SbvID[max_buffers]; // to avoid to maintain the number of IDs in the circular queue
-	cQueueIn = cQueueOut = n_cached = 0;
+	dq_buffers = new deque<bufEntry>[N_CHANS];
+	it_active = false;
+	timestamp = 0;
 }
 
 
 iim::CacheBuffer::~CacheBuffer () {
-	if ( buffers ) {
-		for ( int ch=0; ch<N_CHANS; ch++ ) {
-			if ( buffers[ch] ) {
-				for ( int b=0; b<max_buffers; b++ ) { // test all entries to avoid unexpected memory leaks
-					if ( buffers[ch][b].buf )
-						delete []buffers[ch][b].buf;
-				}
-			}
-			delete []buffers[ch];
-		}
-		delete []buffers;
-	}
-	if ( n_buffers )
-		delete []n_buffers;
-	if ( cQueue )
-		delete []cQueue;
+	if ( dq_buffers )
+		delete []dq_buffers;
 
 	if ( printstats ) {
-		printf("Cache statistics: hits = %llu, misses = %llu, replacements = %llu \n",chits,cmisses,crplcmnts);
+		printf("Cache statistics: accesses = %llu, hits = %llu, misses = %llu, replacements = %llu, maximum cached (MB) = %f \n",caccesses,chits,cmisses,crplcmnts,maxCachedMB);
 	}
 }
 
 
-bool iim::CacheBuffer::match_sbvID ( int VV0, int VV1, int HH0, int HH1, int DD0, int DD1, bufEntry *e ) {
-	return e->buf && (e->VV0 <= VV0) && (VV1 <= e->VV1) && (e->HH0 <= HH0) && (HH1 <= e->HH1) && (e->DD0 <= DD0) && (DD1 <= e->DD1);
+bool iim::CacheBuffer::scan_sbvID ( int VV0, int VV1, int HH0, int HH1, int DD0, int DD1, bufEntry *e, bool &found ) {
+	found = e->buf && (e->VV0 <= VV0) && (VV1 <= e->VV1) && (e->HH0 <= HH0) && (HH1 <= e->HH1) && (e->DD0 <= DD0) && (DD1 <= e->DD1);
+	return found || ( (((uint64)(VV1 - VV0)) * ((uint64)(HH1 - HH0)) * ((uint64)(DD1 - DD0))) > (((uint64)(e->VV1 - e->VV0)) * ((uint64)(e->HH1 - e->HH0)) * ((uint64)(e->DD1 - e->DD0))) );
+}
+
+
+bool iim::CacheBuffer::wider_sbvID ( int VV0, int VV1, int HH0, int HH1, int DD0, int DD1, bufEntry *e ) {
+	return (e->VV0 >= VV0) && (VV1 >= e->VV1) && (e->HH0 >= HH0) && (HH1 >= e->HH1) && (e->DD0 >= DD0) && (DD1 >= e->DD1);
 }
 
 
 bool iim::CacheBuffer::cacheSubvolume ( int chan, int VV0, int VV1, int HH0, int HH1, int DD0, int DD1, iom::real_t *sbv, iim::sint64 size ) {
 
 	if ( enabled ) {
-		if ( n_buffers[chan] == max_buffers ) { // too many buffers in channel chan
-  			throw iim::IOException(iom::strprintf("too many buffer in channel %d", chan), __iim__current__function__);
-		}
-		if ( ((cachedMB + sizeof(iom::real_t) * size/_MBYTE_) > bufSizeMB) ) { // buffer cannot be cached without freeing space
-			// free according to a FIFO policy
-			// remove from buffers and free space
-			delete buffers[cQueue[cQueueOut].chan][cQueue[cQueueOut].index].buf;
-			buffers[cQueue[cQueueOut].chan][cQueue[cQueueOut].index].buf = (iom::real_t *) 0;
-			cachedMB -= buffers[cQueue[cQueueOut].chan][cQueue[cQueueOut].index].sizeMB;
-			//n_buffers[cQueue[cQueueOut].chan]--;
-			// extract fron cQueue
-			cQueueOut++;
-			if ( cQueueOut == max_buffers )
-				cQueueOut = 0;
-			n_cached--;
-			crplcmnts++;
+
+		if ( sizeof(iom::real_t) * size/_MBYTE_ > bufSizeMB ) {
+			// the buffer is too big: cannot be cached
+			iom::warning(iom::strprintf("subvolume cannot be cached: too big (%f MB)", sizeof(iom::real_t) * size/_MBYTE_).c_str(),__iom__current__function__);
+			return false;
 		}
 
-		// enqueue the subvolume to be cached
-		cQueue[cQueueIn].chan  = chan;
-		cQueue[cQueueIn].VV0   = VV0;
-		cQueue[cQueueIn].VV1   = VV1;
-		cQueue[cQueueIn].HH0   = HH0;
-		cQueue[cQueueIn].HH1   = HH1;
-		cQueue[cQueueIn].DD0   = DD0;
-		cQueue[cQueueIn].DD1   = DD1;
-		cQueue[cQueueIn].index = n_buffers[chan];
-		cQueueIn++;
-		if ( cQueueIn == max_buffers )
-			cQueueIn = 0;
-		n_cached++;
+		// PRE: the buffer is not contained in any other buffer in the cache
+		// PRE: it_active = true
+		// PRE: the buffer must be inserted at dq_it 
 
-		// cache the subvolume
-		buffers[chan][n_buffers[chan]].buf    = sbv;
-		buffers[chan][n_buffers[chan]].chan   = chan;
-		buffers[chan][n_buffers[chan]].VV0    = VV0;
-		buffers[chan][n_buffers[chan]].VV1    = VV1;
-		buffers[chan][n_buffers[chan]].HH0    = HH0;
-		buffers[chan][n_buffers[chan]].HH1    = HH1;
-		buffers[chan][n_buffers[chan]].DD0    = DD0;
-		buffers[chan][n_buffers[chan]].DD1    = DD1;
-		buffers[chan][n_buffers[chan]].sizeMB = sizeof(iom::real_t) * size/_MBYTE_;
-		n_buffers[chan]++;
+		if ( !it_active ) { // the buffer has not been searched before caching
+  			throw iim::IOException(iom::strprintf("the buffer has not been searched before caching"), __iim__current__function__);
+		}
+
+		// insert buffer in cache
+		bufEntry betemp;
+		betemp.buf    = sbv;
+		betemp.ts     = timestamp;
+		betemp.valid  = true;
+		betemp.chan   = chan;
+		betemp.VV0    = VV0;
+		betemp.VV1    = VV1;
+		betemp.HH0    = HH0;
+		betemp.HH1    = HH1;
+		betemp.DD0    = DD0;
+		betemp.DD1    = DD1;
+		betemp.sizeMB = sizeof(iom::real_t) * size/_MBYTE_;
+		dq_it = dq_buffers[chan].insert(dq_it,betemp);
+		it_active = false;
+
+		// insert entry in the story
+		bufID bidtemp;
+		bidtemp.ts         = timestamp;
+		bidtemp.valid      = true;
+		bidtemp.chan       = chan,
+		bidtemp.bufs_entry = &(*dq_it);
+		bufStory.push_front(bidtemp);
+
+		dq_it->storyEntry = &bufStory.at(0); // link the buffer entry to his story
 
 		cachedMB += sizeof(iom::real_t) * size/_MBYTE_;
+		timestamp++;
+
+		// look for contained buffers to be eliminated (smaller than the current one)
+		dq_it++; // must start after last insertion
+		while (  dq_it != dq_buffers[chan].end() ) {
+			if ( dq_it->valid ) {
+				// valid entry
+				if ( wider_sbvID(VV0,VV1,HH0,HH1,DD0,DD1,&(*dq_it)) ) { // found a buffer that is contained in the current buffer
+					// dispose the found buffer
+					delete dq_it->buf;
+					cachedMB -= dq_it->sizeMB;
+					dq_it->storyEntry->valid = false; // make invalid buffer story
+					dq_it = dq_buffers[chan].erase(dq_it);
+					crplcmnts++;
+				}
+				else
+					dq_it++;
+			}
+			else {
+				// invalid entry remove it
+				dq_it = dq_buffers[chan].erase(dq_it);
+			}
+		}
+
+		// remobe buffers if the cache is full
+		while ( cachedMB > bufSizeMB ) { 
+			// cache full some buffers must be disposed
+			if ( bufStory.back().valid ) {
+				// dispose the oldest buffer and remove it from buffer deque
+				// entry of the older buffer is guaranteed to be valid
+				delete bufStory.back().bufs_entry->buf;
+				bufStory.back().bufs_entry->buf = (iom::real_t *) 0;
+				cachedMB -= bufStory.back().bufs_entry->sizeMB;
+				bufStory.back().bufs_entry->valid = false; // make invalid buffer entry
+				crplcmnts++;
+			}
+			bufStory.pop_back(); // buffer story must be removed
+		}
+		
+		if ( cachedMB > maxCachedMB )
+			maxCachedMB = cachedMB;
 
 		return true;	
 	}
@@ -1026,32 +1044,46 @@ bool iim::CacheBuffer::cacheSubvolume ( int chan, int VV0, int VV1, int HH0, int
 
 
 bool iim::CacheBuffer::getSubvolume ( int chan, int &VV0, int &VV1, int &HH0,  int &HH1, int &DD0, int &DD1, iom::real_t *&sbv ) {
-	int i;
-	bool found;
+
+	bool stop, found2;
 
 	if ( enabled ) {
-		i = 0;
-		found = false;
-		while ( i<n_buffers[chan] && !found ) {
-			if ( match_sbvID(VV0,VV1,HH0,HH1,DD0,DD1,&buffers[chan][i]) ) {
-				found = true;
+
+		caccesses++;
+
+		dq_it = dq_buffers[chan].begin();
+		stop = false;
+		found2 = false;
+		while ( dq_it != dq_buffers[chan].end() && !stop ) {
+			if ( dq_it->valid ) {
+				// valid entry 
+				if ( scan_sbvID(VV0,VV1,HH0,HH1,DD0,DD1,&(*dq_it),found2) ) {
+					stop = true;
+				}
+				else {
+					dq_it++;
+				}
 			}
 			else {
-				i++;
+				// invalid entry: remove it
+				dq_it = dq_buffers[chan].erase(dq_it);
 			}
 		}
-		if ( found ) {
-			sbv = buffers[chan][i].buf;
-			VV0 = buffers[chan][i].VV0;
-			VV1 = buffers[chan][i].VV1;
-			HH0 = buffers[chan][i].HH0;
-			HH1 = buffers[chan][i].HH1;
-			DD0 = buffers[chan][i].DD0;
-			DD1 = buffers[chan][i].DD1;
+
+		if ( found2 ) {
+			sbv = dq_it->buf;
+			VV0 = dq_it->VV0;
+			VV1 = dq_it->VV1;
+			HH0 = dq_it->HH0;
+			HH1 = dq_it->HH1;
+			DD0 = dq_it->DD0;
+			DD1 = dq_it->DD1;
+			it_active = false; // buffer found: dq_it undefined
 			chits++;
 			return true;
 		}
 		else {
+			it_active = true; // buffer not found: dq_it identifies the insertion point of the buffer that will be created
 			cmisses++;
 			return false;
 		}

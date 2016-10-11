@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-09-13. Giulio.     @ADDED flag for channel subdirectory name (single channel to tiled 4D format only)
 * 2016-09-13. Giulio.     @ADDED flag for time series
 * 2016-09-04. Giulio.     @ADDED the options for setting the configuration of the LibTIFF library
 * 2016-06-18  Giulio.     @ADDED option for downsampling the reading of data
@@ -59,6 +60,7 @@ class TemplateCLI
 		// int/float/double/string XXXX;	// description
 		string src_root_dir;
 		string dst_root_dir;
+		string ch_dir;                      // name of the subdirectory where image should be saved (only for a single channel converted to tiled 4D format)
 		int slice_depth;
 		int slice_height;
 		int slice_width;

@@ -26,6 +26,8 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2016-10-05. Giulio. @FIXED in 'scan_root' the group 'grpid' has been always closed after scanning
+* 2016-10-05. Giulio. @FIXED added deallocation of 'vol_dimes' in the destructor of class 'BDV_HDF5_fdescr_t'
 * 2015-12-29. Giulio. @ADDED support for extracting 16 bits subvolumed 
 * 2015-12-10. Giulio. @ADDED conditional compilation to exclude HDF5 dependent code
 * 2015-12-09. Giulio. @RELEASED first working version
@@ -232,6 +234,8 @@ BDV_HDF5_fdescr_t::~BDV_HDF5_fdescr_t ( ) {
 			H5Gclose(tp_groups_id[t]);
 		delete[] tp_groups_id;
 	}
+	if ( vol_dims )
+		delete[] vol_dims;
 	if ( vxl_sizes )
 		delete[] vxl_sizes;
 	if ( chunk_dims )
@@ -571,9 +575,10 @@ void BDV_HDF5_fdescr_t::scan_root ( ) {
 						H5Dclose(dset_id);
 					}
 				}
-				else // if it is a time point do nothing now
-					H5Gclose(grpid); 
-				//H5Gclose(grpid);
+				// 2016-10-05. Giluio. Modified to close the group in any case
+				//else // if it is a time point do nothing now
+				//	H5Gclose(grpid); 
+				H5Gclose(grpid); // WARNING: should be closed in any case (not tested)
 				break;
 			case H5G_DATASET:
 				break;

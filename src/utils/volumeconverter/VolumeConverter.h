@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-10-09. Giulio.     @ADDED parameter 'ch_dir' to 'generateTilesVaa3DRawMC' interface
 * 2014-06-20. Giulio.     @ADDED methods for conversion to 'simple' representation (series, 2D), including parallel support
 * 2016-04-13  Giulio.     @ADDED methods to manage parallelization
 */
@@ -140,6 +141,7 @@ class VolumeConverter
         void setSubVolume(int _V0 = -1, int _V1 = -1, int _H0 = -1, int _H1 = -1, int _D0 = -1, int _D1 = -1 ) throw (iim::IOException);
 
         // unified access point for volume conversion (@ADDED by Alessandro on 2014-02-24)
+		// currently it does not support the possibility to provide a name for the subdirectory to store the converted image when output format is tiled 4D and the source has only one channel
         void convertTo(
             std::string output_path,                    // path where to save the converted volume
             std::string output_format,                  // format of the converted volume (see IM_config.h)
@@ -252,6 +254,9 @@ class VolumeConverter
 	   /*************************************************************************************************************
 		* Method to be called for tile generation. <> parameters are mandatory, while [] are optional.
 		* <output_path>			: absolute directory path where generated tiles have to be stored.
+		* [ch_dir]			    : if source has more than one channel it is ignored;
+		*                         it it is not an empty string, it  provides the name of  the  subdirectory  in  which 
+		*                         store the converted image
 		* [resolutions]			: pointer to an array of S_MAX_MULTIRES  size which boolean entries identify the acti-
 		*						  vaction/deactivation of the i-th resolution.  If not given, all resolutions will  be
 		*						  activated.
@@ -265,7 +270,7 @@ class VolumeConverter
 		* [saved_img_format]	: determines saved images format ("raw", "png","tif","jpeg", etc.).
 		* [saved_img_depth]		: determines saved images bitdepth (16 or 8).
 		**************************************************************************************************************/
-		void generateTilesVaa3DRawMC ( std::string output_path, bool* resolutions = NULL, 
+		void generateTilesVaa3DRawMC ( std::string output_path, std::string ch_dir = "", bool* resolutions = NULL, 
 			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool isotropic=false, 
 			bool show_progress_bar = true, const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,
  			std::string frame_dir = "", bool par_mode=false)	throw (iim::IOException, iom::exception);

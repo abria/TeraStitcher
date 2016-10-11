@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-10-09. Giulio.     @ADDED parameter 'ch_dir' to 'generateTilesVaa3DRawMC' interface; the parameter plays a role only if channels are subdirectories (RES_IN_CHANS not defined)
 * 2014-06-20. Giulio.     @ADDED conversion to 'simple' representation (series, 2D), including parallel support
 * 2014-05-11. Giulio.     @ADDED check that the whole volume is processed in makedir/parallel/metadata modes
 * 2014-04-28. Giulio.     @CHANGED output plugin is temporarily substituted to the input plugin to genrate the metadata
@@ -1528,8 +1529,8 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
         }
 	}
 
-	/* The following check verifies that the numeber of slices in the buffer is not higher than the numbero of slices in a block file
-	 * (excluding the last blck in a stack). Indeed if D is the maximum number of slices in a block file (i.e. the value of block_depth)
+	/* The following check verifies that the numeber of slices in the buffer is not higher than the number of slices in a block file
+	 * (excluding the last block in a stack). Indeed if D is the maximum number of slices in a block file (i.e. the value of block_depth)
 	 * and H is the total number of slices at resolution i (i.e. floor(depth/2^i)), the actual minumum number of slices B in a block 
 	 * file at that resolution as computed by the above code is:
 	 *
@@ -2109,7 +2110,7 @@ int VolumeConverter::getMultiresABS_D(int res)
 
 # ifdef RES_IN_CHANS // resolutions directories in channels directories (WARNING: from now on do not define this symbol)
 
-void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* resolutions, 
+void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::string ch_dir, bool* resolutions, 
 				int block_height, int block_width, int block_depth, int method, 
 				bool show_progress_bar, const char* saved_img_format, 
 				int saved_img_depth, std::string frame_dir )	throw (IOExcpetion, iom::exception)
@@ -2723,7 +2724,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 
 # else // channels directories in resolutions directories (WARNING: the following code is the only one supported: leave symbol RES_IN_CHANS undefined)
 
-void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* resolutions, 
+void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::string ch_dir, bool* resolutions, 
 				int block_height, int block_width, int block_depth, int method, bool isotropic, 
 				bool show_progress_bar, const char* saved_img_format, 
                 int saved_img_depth, std::string frame_dir, bool par_mode )	throw (IOException, iom::exception)
@@ -2921,20 +2922,26 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, bool* r
 		}
 	}
 
-	// computing channel directory names
+	// 2016-10-09. Giulio. @ADDED the passed subdirectory name is used in case one channel image has to be converted
 	chans_dir = new std::string[channels];
-	int n_digits = 1;
-	int _channels = channels / 10;	
-	while ( _channels ) {
-		n_digits++;
-		_channels /= 10;
+	if ( ch_dir != "" && channels == 1 ) {
+		chans_dir[0] = "/" + ch_dir;
 	}
-	for ( int c=0; c<channels; c++ ) {
-		std::stringstream dir_name;
-		dir_name.width(n_digits);
-		dir_name.fill('0');
-		dir_name << c;
-        chans_dir[c] = "/" + (iim::CHANNEL_PREFIX + dir_name.str());
+	else { // no subdirectory name has been provided or more than one channel
+		// computing channel directory names
+		int n_digits = 1;
+		int _channels = channels / 10;	
+		while ( _channels ) {
+			n_digits++;
+			_channels /= 10;
+		}
+		for ( int c=0; c<channels; c++ ) {
+			std::stringstream dir_name;
+			dir_name.width(n_digits);
+			dir_name.fill('0');
+			dir_name << c;
+			chans_dir[c] = "/" + (iim::CHANNEL_PREFIX + dir_name.str());
+		}
 	}
 
 	// computing resolutions directory names
@@ -3782,11 +3789,11 @@ void VolumeConverter::convertTo(
             else if(output_format.compare(iim::TILED_FORMAT) == 0)
                 generateTilesVaa3DRaw(output_path, resolutions, block_height, block_width, block_depth, method, false, true, "raw", output_bitdepth, frame_dir, false);
             else if(output_format.compare(iim::TILED_MC_FORMAT) == 0)
-                generateTilesVaa3DRawMC(output_path, resolutions, block_height, block_width, block_depth, method, false, true, "raw", output_bitdepth, frame_dir, false);
+                generateTilesVaa3DRawMC(output_path, "", resolutions, block_height, block_width, block_depth, method, false, true, "raw", output_bitdepth, frame_dir, false);
             else if(output_format.compare(iim::TILED_TIF3D_FORMAT) == 0)
                 generateTilesVaa3DRaw(output_path, resolutions, block_height, block_width, block_depth, method, false, true, "Tiff3D", output_bitdepth, frame_dir, false);
             else if(output_format.compare(iim::TILED_MC_TIF3D_FORMAT) == 0)
-                generateTilesVaa3DRawMC(output_path, resolutions, block_height, block_width, block_depth, method, false, true, "Tiff3D", output_bitdepth, frame_dir, false);
+                generateTilesVaa3DRawMC(output_path, "", resolutions, block_height, block_width, block_depth, method, false, true, "Tiff3D", output_bitdepth, frame_dir, false);
             else if(output_format.compare(iim::SIMPLE_RAW_FORMAT) == 0)
                 generateTilesSimple(output_path, resolutions, block_height, block_width, method, false, true, "raw", output_bitdepth, frame_dir, false);
             else if(output_format.compare(iim::SIMPLE_FORMAT) == 0)
@@ -3803,11 +3810,11 @@ void VolumeConverter::convertTo(
         else if(output_format.compare(iim::TILED_FORMAT) == 0)
             generateTilesVaa3DRaw(output_path, resolutions, block_height, block_width, block_depth, method, false, true, "raw", output_bitdepth, "", false);
         else if(output_format.compare(iim::TILED_MC_FORMAT) == 0)
-            generateTilesVaa3DRawMC(output_path, resolutions, block_height, block_width, block_depth, method, false, true, "raw", output_bitdepth, "", false);
+            generateTilesVaa3DRawMC(output_path, "", resolutions, block_height, block_width, block_depth, method, false, true, "raw", output_bitdepth, "", false);
         else if(output_format.compare(iim::TILED_TIF3D_FORMAT) == 0)
             generateTilesVaa3DRaw(output_path, resolutions, block_height, block_width, block_depth, method, false, true, "Tiff3D", output_bitdepth, "", false);
         else if(output_format.compare(iim::TILED_MC_TIF3D_FORMAT) == 0)
-            generateTilesVaa3DRawMC(output_path, resolutions, block_height, block_width, block_depth, method, false, true, "Tiff3D", output_bitdepth, "", false);
+            generateTilesVaa3DRawMC(output_path, "", resolutions, block_height, block_width, block_depth, method, false, true, "Tiff3D", output_bitdepth, "", false);
         else if(output_format.compare(iim::BDV_HDF5_FORMAT) == 0)
             generateTilesBDV_HDF5(output_path,resolutions, block_height,block_width,block_depth,method, true,"Tiff3D",output_bitdepth);
         else if(output_format.compare(iim::SIMPLE_RAW_FORMAT) == 0)

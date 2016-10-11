@@ -39,6 +39,7 @@
 #include "VirtualVolume.h" 
 #include <list>
 #include <string>
+#include <deque>
 
 #include "../volumemanager/volumemanager.config.h"
 #include "../stitcher/StackStitcher.h"
@@ -145,20 +146,25 @@ class iim::CacheBuffer {
 private:
 	bool enabled;
 	bool printstats;
+	iim::uint64 caccesses;
 	iim::uint64 chits;
 	iim::uint64 cmisses;
 	iim::uint64 crplcmnts;
 
 	UnstitchedVolume *volume;
 	iim::uint64 bufSizeMB;   // maximum size of cache in MB
-	double cachedMB;   // maximum size of cache in MB
+	double cachedMB;         // currently cached in MB
+	double maxCachedMB;      // maximum actually cached in MB
 
 	int N_CHANS;
-	int N_ROWS;
-	int N_COLS;
+
+	struct bufID;
 	
 	struct bufEntry {
 		iom::real_t *buf;
+		uint64 ts;
+		bool valid;
+		bufID *storyEntry;
 		int chan;
 		int VV0;
 		int VV1; 
@@ -168,35 +174,33 @@ private:
 		int DD1; 
 		double sizeMB;
 	};
-	bufEntry **buffers;       // matrix of list of pointer to buffers
-	int *n_buffers;
-	int max_buffers;
+
+	std::deque<bufEntry> *dq_buffers;
+	std::deque<bufEntry>::iterator dq_it;
+	bool it_active;
+	uint64 timestamp;
 
 	/************************************************************************************* 
 	 * data structure to manage the deallocation policy
 	 * simple circular queue to implement a FIFO policy
 	 *************************************************************************************/
-	// circular queue of slices IDs 
-	struct SbvID {
+	// deque of buffer IDs 
+	struct bufID {
+		uint64 ts;
+		bool valid;
 		int chan;
-		int VV0;
-		int VV1; 
-		int HH0;
-		int HH1; 
-		int DD0;
-		int DD1;
-		int index;
+		bufEntry *bufs_entry;
 	};
-	SbvID *cQueue;
-	int cQueueIn;
-	int cQueueOut;
-	int n_cached;           // number of slice cached
-
-	bool cqueueEmpty ( ) { return n_cached == 0; }
-	bool cqueueFull  ( ) { return n_cached == max_buffers; }
+	std::deque<bufID> bufStory; // arranged in decreasing order of timestamps (first the most recent ones)
 	/*************************************************************************************/ 
 
-	bool match_sbvID ( int VV0, int VV1, int HH0, int HH1, int DD0, int DD1, bufEntry *e );
+	bool scan_sbvID ( int VV0, int VV1, int HH0, int HH1, int DD0, int DD1, bufEntry *e, bool &found );
+	/* return true if either buffer e is allocated and it contains the subvolume or it is smaller than the subvolume, false otherwise;
+	 * found is true if buffer e is allocated it contains the subvolume, false otherwise 
+	 */
+
+	bool wider_sbvID ( int VV0, int VV1, int HH0, int HH1, int DD0, int DD1, bufEntry *e );
+	/* return true if the buffer e is contained in the subvolume */
 
 public:
 
@@ -207,13 +211,23 @@ public:
 	void enableCache ( )  { enabled = true; }
 	void disableCache ( ) { enabled = false; }
 
-	void resetCounts ( ) { chits = cmisses = crplcmnts = 0; }
-	void getCounts ( vm::uint64 &_chits, vm::uint64 &_cmisses, vm::uint64 &_crplcmnts ) { 
-		_chits = chits; _cmisses = cmisses; _crplcmnts = crplcmnts; 
+	void resetCounts ( ) { caccesses = chits = cmisses = crplcmnts = 0; }
+	void getCounts ( vm::uint64 &_caccesses, vm::uint64 &_chits, vm::uint64 &_cmisses, vm::uint64 &_crplcmnts ) { 
+		_caccesses = caccesses; _chits = chits; _cmisses = cmisses; _crplcmnts = crplcmnts; 
 	}
 
 	bool cacheSubvolume ( int chan, int VV0, int VV1, int HH0, int HH1, int DD0, int DD1, iom::real_t *sbv, iim::sint64 bufsize );
+	/* cache the buffer sbv of the subvolume of size voxels (the size in bytes is obtained multiplying by the size of iom::real_t)
+	 * defined by vertices (VV0,HH0,DD0) and (VV1,HH1,DD1); the subvolume belongs to channel chan
+	 * older buffers may be disposed if the cache is full
+	 * return true if caching succeded, false otherwise
+	 */
+
 	bool getSubvolume   ( int chan, int &VV0, int &VV1, int &HH0, int &HH1, int &DD0, int &DD1, iom::real_t *&sbv );
+	/* returns a buffer containing the subvolume of channel chan and defined by vertices (VV0,HH0,DD0) and (VV1,HH1,DD1) if it
+	 * found in the cache
+	 * return true if the buffer has been found, false otherwise
+	 */
 };
 
 

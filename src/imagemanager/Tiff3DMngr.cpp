@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2016-10-07. Giulio.     @CHANGED spp is set to 1 if teg SAMPLESPERPIXEL is not defined 
 * 2016-09-10. Giulio.     @ADDED support for reading internally tiled images 
 * 2016-06-17. Giulio.     @ADDED the possibility of performing downsampling on-the-fly when reading an image
 * 2016-06-17. Giulio.     @ADDED the ability to control the number of rows per strip (rps) 
@@ -128,9 +129,10 @@ char *loadTiff3D2Metadata ( char * filename, unsigned int &sz0, unsigned int  &s
 	check=TIFFGetField(input, TIFFTAG_SAMPLESPERPIXEL, &spp);
 	if (!check)
 	{
-		TIFFClose(input);
+		spp = 1;
+		//TIFFClose(input);
 		//throw iim::IOException(strprintf("in IOManager::readTiffMultipage(...): Undefined bits per sample in %s \n", finName).c_str());
-		return ((char *) "Undefined samples per pixel.");
+		//return ((char *) "Undefined samples per pixel.");
 	}
 
 	// Onofri
@@ -549,7 +551,8 @@ char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int i
 	check=TIFFGetField(input, TIFFTAG_SAMPLESPERPIXEL, &spp);
 	if (!check)
 	{
-		return ((char *) "Undefined samples per pixel.");
+		spp = 1;
+		//return ((char *) "Undefined samples per pixel.");
 	}
 
 	check=TIFFGetField(input, TIFFTAG_PHOTOMETRIC, &photo);

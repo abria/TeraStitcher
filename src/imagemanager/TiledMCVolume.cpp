@@ -865,7 +865,7 @@ uint8* TiledMCVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
     sint64 sbv_width  = H1 - H0;
     sint64 sbv_depth  = D1 - D0;
 
-	sint64 sbv_ch_dim = sbv_height * sbv_width * sbv_depth;
+	sint64 sbv_ch_dim = sbv_height * sbv_width * sbv_depth * BYTESxCHAN;
 
 	int dummy_ch;
     uint8 *subvol   = new uint8[n_active*sbv_ch_dim];
