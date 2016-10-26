@@ -60,6 +60,7 @@ class TemplateCLI
 		// int/float/double/string XXXX;	// description
 		string src_root_dir;
 		string dst_root_dir;
+		string mdata_fname;                 // name of the file containing general metadata to be transferred to destination file (used only by some formats)
 		string ch_dir;                      // name of the subdirectory where image should be saved (only for a single channel converted to tiled 4D format)
 		int slice_depth;
 		int slice_height;

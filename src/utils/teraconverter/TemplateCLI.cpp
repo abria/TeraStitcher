@@ -98,6 +98,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	TCLAP::ValueArg<std::string> p_src_root_dir("s","src","Source file / root directory path.",true,"","string");
 	TCLAP::ValueArg<std::string> p_dst_root_dir("d","dst","Destination root directory path.",false,"","string");
+	TCLAP::ValueArg<std::string> p_mdata_fname("","mdata_fname","File containing general metadata of the image.",false,"","string");
 	TCLAP::ValueArg<std::string> p_ch_dir("","ch_dir","subdirectory to store the channel (single channel in tiled 4D format only).",false,"","string");
 	TCLAP::ValueArg<int> p_slice_depth("","depth","Slice depth.",false,-1,"unsigned");
 	TCLAP::ValueArg<int> p_slice_height("","height","Slice height.",false,-1,"unsigned");
@@ -116,6 +117,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		iim::TILED_MC_TIF3D_FORMAT  + "\"/\"" +
 		iim::UNST_TIF3D_FORMAT  + "\"/\"" +
 		iim::BDV_HDF5_FORMAT  + "\"/\"" +
+		iim::IMS_HDF5_FORMAT  + "\"/\"" +
 		iim::MAPPED_FORMAT  + "\")";
 	TCLAP::ValueArg<string> p_src_format("","sfmt",temp.c_str(),true,"","string");
 
@@ -128,7 +130,8 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		iim::STACKED_FORMAT + "\"/\"" + 
 		iim::TILED_TIF3D_FORMAT  + "\"/\"" +
 		iim::TILED_MC_TIF3D_FORMAT  + "\"/\"" +
-		iim::BDV_HDF5_FORMAT  + "\")";
+		iim::BDV_HDF5_FORMAT  + "\"/\"" +
+		iim::IMS_HDF5_FORMAT  + "\")";
 	TCLAP::ValueArg<string> p_dst_format("","dfmt",tempd.c_str(),true,"","string");
 
 	//TCLAP::ValueArg<int> p_n_resolutions("","res","Number of resolutions.",true,2,"unsigned");
@@ -202,6 +205,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_slice_height);
 	cmd.add(p_slice_depth);
 	cmd.add(p_ch_dir);
+	cmd.add(p_mdata_fname);
 	cmd.add(p_dst_root_dir);
 	cmd.add(p_src_root_dir);
 
@@ -239,6 +243,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		 p_src_format.getValue() != iim::TILED_MC_TIF3D_FORMAT  && 
 		 p_src_format.getValue() != iim::UNST_TIF3D_FORMAT  && 
 		 p_src_format.getValue() != iim::BDV_HDF5_FORMAT  && 
+		 p_src_format.getValue() != iim::IMS_HDF5_FORMAT  && 
 		 p_src_format.getValue() != iim::MAPPED_FORMAT ) {
 		temp = "Unknown source format!\nAllowed formats are:\n\t\"" + 
 			iim::RAW_FORMAT + "\"/\"" + 
@@ -253,6 +258,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 			iim::TILED_MC_TIF3D_FORMAT  + "\"/\"" +
 			iim::UNST_TIF3D_FORMAT  + "\"/\"" +
 			iim::BDV_HDF5_FORMAT  + "\"/\"" +
+			iim::IMS_HDF5_FORMAT  + "\"/\"" +
 			iim::MAPPED_FORMAT  + "\"";
 		//sprintf(errMsg, "Unknown source format!\nAllowed formats are:\n\tStacked / Simple / SimpeRaw / Raw / Tiled / TiledMC");
 		sprintf(errMsg, "%s", temp.c_str());
@@ -266,7 +272,8 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		 p_dst_format.getValue() != iim::STACKED_FORMAT && 
 		 p_dst_format.getValue() != iim::TILED_TIF3D_FORMAT  && 
 		 p_dst_format.getValue() != iim::TILED_MC_TIF3D_FORMAT  && 
-		 p_dst_format.getValue() != iim::BDV_HDF5_FORMAT ) {
+		 p_dst_format.getValue() != iim::BDV_HDF5_FORMAT &&
+		 p_dst_format.getValue() != iim::IMS_HDF5_FORMAT ) {
 		tempd = "Unknown destination format!\nAllowed formats are:\n\t\"" + 
 			iim::SIMPLE_RAW_FORMAT + "\"/\"" + 
 			iim::STACKED_RAW_FORMAT + "\"/\"" + 
@@ -276,7 +283,8 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 			iim::STACKED_FORMAT + "\"/\"" + 
 			iim::TILED_TIF3D_FORMAT  + "\"/\"" +
 			iim::TILED_MC_TIF3D_FORMAT  + "\"/\"" +
-			iim::BDV_HDF5_FORMAT  + "\"";
+			iim::BDV_HDF5_FORMAT  + "\"/\"" +
+			iim::IMS_HDF5_FORMAT  + "\"";
 		//sprintf(errMsg, "Unknown output format!\nAllowed formats are:\n\tTiff2DStck / Vaa3DRaw / Vaa3DRawMC / Tiff3D / Tiff3DMC / Fiji_HDF5");
 		sprintf(errMsg, "%s", tempd.c_str());
 		throw iom::exception(errMsg);
@@ -299,8 +307,13 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		throw iom::exception(errMsg);
 	}
 
-	if ( p_dst_format.getValue() == iim::BDV_HDF5_FORMAT && (p_makedirs.isSet() || p_metadata.isSet() || p_parallel.isSet()) ) {
-		sprintf(errMsg, "makedirs, parallel, metadata options are not allowed with Fiji_HDF5 output format");
+	if ( (p_dst_format.getValue() == iim::BDV_HDF5_FORMAT || p_dst_format.getValue() == iim::IMS_HDF5_FORMAT) && (p_makedirs.isSet() || p_metadata.isSet() || p_parallel.isSet()) ) {
+		sprintf(errMsg, "makedirs, parallel, metadata options are not allowed with BDV_HDF5 or IMS_HDF5 output formats");
+		throw iom::exception(errMsg);
+	}
+
+	if ( (p_dst_format.getValue() == iim::IMS_HDF5_FORMAT) && (p_mdata_fname.getValue() == "") ) {
+		sprintf(errMsg, "With IMS_HDF5 output formats the metadata file name must be specified");
 		throw iom::exception(errMsg);
 	}
 
@@ -321,6 +334,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	//importing parameters not set yet
 	this->src_root_dir  = p_src_root_dir.getValue();
 	this->dst_root_dir  = p_dst_root_dir.getValue();
+	this->mdata_fname   = p_mdata_fname.getValue();
 	this->ch_dir        = p_ch_dir.getValue();
 	this->slice_depth   = p_slice_depth.getValue();
 	this->slice_height  = p_slice_height.getValue();

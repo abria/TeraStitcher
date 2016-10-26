@@ -131,6 +131,7 @@ namespace IconImageManager
     const std::string TILED_MC_TIF3D_FORMAT = "TIFF (tiled, 4D)";           // unique ID for multipage TIFF format (nontiled, 4D)
     const std::string UNST_TIF3D_FORMAT     = "TIFF (unstitched, 3D)";      // unique ID for multipage TIFF format (nontiled, 4D)
     const std::string BDV_HDF5_FORMAT       = "HDF5 (BigDataViewer)";       // unique ID for BDV HDF5
+    const std::string IMS_HDF5_FORMAT       = "HDF5 (Imaris IMS)";          // unique ID for IMS HDF5
     const std::string MAPPED_FORMAT         = "Mapped Volume";              // unique ID for mapped volumes
     const std::string TIME_SERIES           = "Time series";               // unique ID for the TimeSeries class
 

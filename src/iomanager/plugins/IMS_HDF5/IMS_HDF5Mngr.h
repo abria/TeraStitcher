@@ -26,12 +26,12 @@
 *    CHANGELOG    *
 *******************
 *******************
-* 2015-12-29. Giulio. @ADDED red_factor parameter to 'BDV_HDF5getSubVolume'
+* 2015-12-29. Giulio. @ADDED red_factor parameter to 'IMS_HDF5getSubVolume'
 * 2015-11-17. Giulio. @CREATED 
 */
 
-#ifndef HDF5_MNGR_H
-#define HDF5_MNGR_H
+#ifndef IMS_HDF5_MNGR_H
+#define IMS_HDF5_MNGR_H
 
 #include "IM_config.h"
 #include <string>
@@ -51,28 +51,43 @@
  */
 
 
-void BDV_HDF5init ( std::string fname, void *&descr, int vxl_nbytes = 1 ) throw (iim::IOException);
+void IMS_HDF5init ( std::string fname, void *&descr, int vxl_nbytes = 1, void *obj_info = (void *)0 ) throw (iim::IOException);
 /* opens or creates an HDF5 file fname according to the BigDataViewer format and returns an opaque descriptor
  *
  * fname:      HDF5 filename
  * vxl_nbytes: number of bytes per voxel of datasets to be stored in the file; it is ignored if the file already exists
  * descr:      pointer to the returned opaque descriptor
+ * obj_info:   to be used only if the file does not exist yet and must be created; is the description of the structure of the 
+ *             file to be created; the description is deallocated after used and cannot be used by the caller
  */
  
- int BDV_HDF5n_resolutions ( void *descr );
+ void *IMS_HDF5get_olist ( void *descr ) throw (iim::IOException);
+/* 
+ */
+
+ int IMS_HDF5n_resolutions ( void *descr );
  /* returns how many resolutions there are in the HDF5 file handled by descr
   * It is assumed that all resolutions from 0 to the interger returned minus 1 are available
   */
 
-void BDV_HDF5close ( void *descr );
+void IMS_HDF5close ( void *descr );
 /* close the HDF5 file represented by descr and deallocates the descriptor
  *
  * descr: opaque descriptor of the HDF5 file
  */
 
-void BDV_HDF5addSetups ( void *file_descr, iim::sint64 height, iim::sint64 width, iim::sint64 depth, 
+void IMS_HDF5addResolution ( void *file_descr, iim::sint64 height, iim::sint64 width, iim::sint64 depth, int nchans, int r = 0 ); 
+/* add resolution r
+ *
+ * height: image height at resolution 0
+ * width:  image width at resolution 0
+ * depth:  image depth at resolution 0
+ */
+
+
+void IMS_HDF5addChans ( void *file_descr, iim::sint64 height, iim::sint64 width, iim::sint64 depth, 
 				 float vxlszV, float vxlszH, float vxlszD, bool *res, int res_size, int chans, int block_height = -1, int block_width = -1, int block_depth = -1 ); 
-/* creates setup descriptors with resolution and subdivisions datasets
+/* creates chan descriptors with resolution and subdivisions datasets
  *
  * file_descr:
  * height:
@@ -90,17 +105,17 @@ void BDV_HDF5addSetups ( void *file_descr, iim::sint64 height, iim::sint64 width
  */
 
 
-void BDV_HDF5addTimepoint ( void *file_descr, int tp = 0 ); 
+void IMS_HDF5addTimepoint ( void *file_descr, int tp = 0 ); 
 /* add time point at time tp (first time point is the default)
  */
 
 
-void BDV_HDF5writeHyperslab ( void *file_descr, iim::uint8 *buf, iim::sint64 *dims, iim::sint64 *hl, int r, int s, int tp = 0 );
-/* write one hiperslab to file  
+void IMS_HDF5writeHyperslab ( void *file_descr, iim::uint8 *buf, iim::sint64 *dims, iim::sint64 *hl, int r, int s, int tp = 0 );
+/* write one hyperslab to file  
  */
 
 
-void BDV_HDF5getVolumeInfo ( void *descr, int tp, int res, void *&volume_descr, 
+void IMS_HDF5getVolumeInfo ( void *descr, int tp, int res, void *&volume_descr, 
 								float &VXL_1, float &VXL_2, float &VXL_3, 
 								float &ORG_V, float &ORG_H, float &ORG_D, 
 								iim::uint32 &DIM_V, iim::uint32 &DIM_H, iim::uint32 &DIM_D,
@@ -109,12 +124,12 @@ void BDV_HDF5getVolumeInfo ( void *descr, int tp, int res, void *&volume_descr,
  */
 
 
-void BDV_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0, int D1, int setup, iim::uint8 *buf, int red_factor = 1 );
+void IMS_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0, int D1, int chan, iim::uint8 *buf, int red_factor = 1 );
 /* must copy a subvolume into buffer buf; voxels have to be converted to 8-bit if needed
  */
 
 
-void BDV_HDF5closeVolume ( void *descr );
+void IMS_HDF5closeVolume ( void *descr );
 
 
  #endif

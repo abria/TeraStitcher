@@ -364,6 +364,10 @@ int main ( int argc, char *argv[] ) {
 			vc.generateTilesBDV_HDF5(cli.dst_root_dir.c_str(),cli.resolutions,
 				cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,
 				cli.show_progress_bar,"Fiji_HDF5",8*vc.getVolume()->getBYTESxCHAN());
+		else if ( cli.dst_format == iim::IMS_HDF5_FORMAT )
+			vc.generateTilesIMS_HDF5(cli.dst_root_dir.c_str(),cli.mdata_fname,cli.resolutions,
+				cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,
+				cli.show_progress_bar,"Fiji_HDF5",8*vc.getVolume()->getBYTESxCHAN());
 	}
 	catch( iom::exception& exception){
 		cout<<"ERROR: "<<exception.what()<<endl<<endl;
