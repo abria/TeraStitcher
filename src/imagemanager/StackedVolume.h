@@ -84,7 +84,7 @@ class iim::StackedVolume : public iim::VirtualVolume
         StackedVolume(const char* _root_dir, iim::ref_sys _reference_system,
 					  float _VXL_1, float _VXL_2, float _VXL_3, 
                       bool overwrite_mdata = false, bool save_mdata=true)  throw (iim::IOException);
-		~StackedVolume(void);
+		virtual ~StackedVolume(void) throw (iim::IOException);
 
 		//GET methods
 		// iannello char* getSTACKS_DIR(){return stacks_dir;}

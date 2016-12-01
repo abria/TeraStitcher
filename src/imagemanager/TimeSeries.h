@@ -19,7 +19,7 @@ class TimeSeries : public iim::VirtualVolume
         //CONSTRUCTORS-DESTRUCTOR
         TimeSeries(void){}
         TimeSeries(const char* rootDir, std::string frames_format = "") throw (iim::IOException);
-        ~TimeSeries(void) throw (iim::IOException);
+        virtual ~TimeSeries(void) throw (iim::IOException);
 
         // get methods
         std::vector<VirtualVolume*> getFrames() {return frames;}

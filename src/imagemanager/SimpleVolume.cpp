@@ -79,7 +79,7 @@ SimpleVolume::SimpleVolume(const char* _root_dir)  throw (IOException)
 }
 
 
-SimpleVolume::~SimpleVolume(void)
+SimpleVolume::~SimpleVolume(void) throw (iim::IOException)
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 

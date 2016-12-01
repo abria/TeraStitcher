@@ -69,7 +69,7 @@ class RawVolume : public iim::VirtualVolume
 
         RawVolume(const char* _file_name)  throw (iim::IOException);
 
-        ~RawVolume(void);
+        virtual ~RawVolume(void) throw (iim::IOException);
 
         // returns a unique ID that identifies the volume format
         std::string getPrintableFormat(){return iim::RAW_FORMAT;}

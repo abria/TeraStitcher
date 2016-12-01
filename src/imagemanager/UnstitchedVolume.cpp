@@ -179,7 +179,7 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir, bool cacheEnabled, int
 	cb = new iim::CacheBuffer(this);
 }
 
-UnstitchedVolume::~UnstitchedVolume(void)
+UnstitchedVolume::~UnstitchedVolume(void) throw (iim::IOException)
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 	if ( stripesCorners ) {

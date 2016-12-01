@@ -152,7 +152,7 @@ StackedVolume::StackedVolume(const char* _root_dir, ref_sys _reference_system, f
 	initChannels();
 }
 
-StackedVolume::~StackedVolume(void)
+StackedVolume::~StackedVolume(void) throw (iim::IOException)
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 

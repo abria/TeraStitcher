@@ -91,7 +91,7 @@ MappedVolume::MappedVolume(VirtualVolume *_vol, MappingViews * _map, bool overwr
 	initChannels();
 }
 
-MappedVolume::~MappedVolume(void)
+MappedVolume::~MappedVolume(void) throw (iim::IOException)
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 

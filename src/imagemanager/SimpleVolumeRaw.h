@@ -59,7 +59,7 @@ class SimpleVolumeRaw : public iim::VirtualVolume
 
         SimpleVolumeRaw(const char* _root_dir)  throw (iim::IOException);
 
-        ~SimpleVolumeRaw(void);
+        virtual ~SimpleVolumeRaw(void) throw (iim::IOException);
 
         // returns a unique ID that identifies the volume format
         std::string getPrintableFormat(){return iim::SIMPLE_RAW_FORMAT;}

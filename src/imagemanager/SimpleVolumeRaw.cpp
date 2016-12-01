@@ -75,7 +75,7 @@ SimpleVolumeRaw::SimpleVolumeRaw(const char* _root_dir)  throw (IOException)
 }
 
 
-SimpleVolumeRaw::~SimpleVolumeRaw(void)
+SimpleVolumeRaw::~SimpleVolumeRaw(void) throw (iim::IOException)
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 

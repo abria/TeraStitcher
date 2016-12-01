@@ -133,7 +133,7 @@ TiledMCVolume::TiledMCVolume(const char* _root_dir, ref_sys _reference_system, f
 	initChannels();
 }
 
-TiledMCVolume::~TiledMCVolume(void)
+TiledMCVolume::~TiledMCVolume(void) throw (iim::IOException)
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 

@@ -98,7 +98,7 @@ public:
 
     }
 
-	virtual ~VirtualVolume() { 
+	virtual ~VirtualVolume()  throw (iim::IOException){ 
 		if(root_dir)
 			delete[] root_dir;
 		if(active)

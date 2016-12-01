@@ -73,7 +73,7 @@ class iim::TiledMCVolume : public iim::VirtualVolume
 					float _VXL_1, float _VXL_2, float _VXL_3, 
                     bool overwrite_mdata = false, bool save_mdata=true)  throw (iim::IOException);
 
-		~TiledMCVolume(void);
+		virtual ~TiledMCVolume(void) throw (iim::IOException);
 
 		//GET methods
         iim::uint16 getN_ROWS(){return N_ROWS;}

@@ -59,7 +59,7 @@ class SimpleVolume : public iim::VirtualVolume
 
         SimpleVolume(const char* _root_dir)  throw (iim::IOException);
 
-        ~SimpleVolume(void);
+        virtual ~SimpleVolume(void) throw (iim::IOException);
 
         // returns a unique ID that identifies the volume format
         std::string getPrintableFormat(){return iim::SIMPLE_FORMAT;}

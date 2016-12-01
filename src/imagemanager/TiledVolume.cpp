@@ -159,7 +159,7 @@ TiledVolume::TiledVolume(const char* _root_dir, ref_sys _reference_system, float
 	initChannels();
 }
 
-TiledVolume::~TiledVolume(void)
+TiledVolume::~TiledVolume(void) throw (iim::IOException)
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 

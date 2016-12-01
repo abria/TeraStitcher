@@ -75,7 +75,7 @@ class MappedVolume : public iim::VirtualVolume
 
         MappedVolume(VirtualVolume * _volume, MappingViews * _map, bool overwrite_mdata = false, bool save_mdata=true)  throw (iim::IOException);
 
-		~MappedVolume(void);
+		virtual ~MappedVolume(void) throw (iim::IOException);
 
 		//GET methods
         float  getVXL_1(){return VXL_1;}

@@ -57,7 +57,7 @@ RawVolume::RawVolume(const char* _file_name)  throw (IOException)
 }
 
 
-RawVolume::~RawVolume(void)
+RawVolume::~RawVolume(void) throw (iim::IOException)
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 

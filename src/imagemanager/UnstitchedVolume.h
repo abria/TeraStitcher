@@ -105,7 +105,7 @@ class UnstitchedVolume : public iim::VirtualVolume
 		//CONSTRUCTORS-DECONSTRUCTOR
         UnstitchedVolume(const char* _root_dir, bool cacheEnabled = true, int _blending_algo = S_SINUSOIDAL_BLENDING )  throw (iim::IOException);
 
-		~UnstitchedVolume(void);
+		virtual ~UnstitchedVolume(void) throw (iim::IOException);
 
 		//GET methods
         float  getVXL_1(){return VXL_V;}
