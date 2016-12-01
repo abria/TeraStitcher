@@ -123,6 +123,9 @@ struct IMS_obj_info_t {
 		//obj_info_cnt++;
 	}
 
+	// @FIXED by Alessandro on 2016-12-01: default constructor required to use this class within STL std::map
+	IMS_obj_info_t(){}
+
 	// this copy constructor must used to pass by value parameters created on the fly that will be immediately released
 	IMS_obj_info_t ( const IMS_obj_info_t &ex ) {
 		otype = ex.otype;
@@ -596,23 +599,24 @@ void IMS_HDF5_fdescr_t::init_voxel_size ( IMS_obj_list_t *obj_info ) {
 	int Y;
 	int Z;
 
-	value_str = obj_info->at("DataSetInfo").olist->at("Image").alist->at("ExtMax0");
+	// @FIXED by Alessandro on 2016-12-01: replaced "at()" (C++ 11 only) with "[]" operator
+	value_str = (*(*(*obj_info)["DataSetInfo"].olist)["Image"].alist)["ExtMax0"];
 	ExtMax0 = atof(value_str.c_str());
-	value_str = obj_info->at("DataSetInfo").olist->at("Image").alist->at("ExtMax1");
+	value_str = (*(*(*obj_info)["DataSetInfo"].olist)["Image"].alist)["ExtMax1"];
 	ExtMax1 = atof(value_str.c_str());
-	value_str = obj_info->at("DataSetInfo").olist->at("Image").alist->at("ExtMax2");
+	value_str = (*(*(*obj_info)["DataSetInfo"].olist)["Image"].alist)["ExtMax2"];
 	ExtMax2 = atof(value_str.c_str());
-	value_str = obj_info->at("DataSetInfo").olist->at("Image").alist->at("ExtMin0");
+	value_str = (*(*(*obj_info)["DataSetInfo"].olist)["Image"].alist)["ExtMin0"];
 	ExtMin0 = atof(value_str.c_str());
-	value_str = obj_info->at("DataSetInfo").olist->at("Image").alist->at("ExtMin1");
+	value_str = (*(*(*obj_info)["DataSetInfo"].olist)["Image"].alist)["ExtMin1"];
 	ExtMin1 = atof(value_str.c_str());
-	value_str = obj_info->at("DataSetInfo").olist->at("Image").alist->at("ExtMin2");
+	value_str = (*(*(*obj_info)["DataSetInfo"].olist)["Image"].alist)["ExtMin2"];
 	ExtMin2 = atof(value_str.c_str());
-	value_str = obj_info->at("DataSetInfo").olist->at("Image").alist->at("X");
+	value_str = (*(*(*obj_info)["DataSetInfo"].olist)["Image"].alist)["X"];
 	X = atoi(value_str.c_str());
-	value_str = obj_info->at("DataSetInfo").olist->at("Image").alist->at("Y");
+	value_str = (*(*(*obj_info)["DataSetInfo"].olist)["Image"].alist)["Y"];
 	Y = atoi(value_str.c_str());
-	value_str = obj_info->at("DataSetInfo").olist->at("Image").alist->at("Z");
+	value_str = (*(*(*obj_info)["DataSetInfo"].olist)["Image"].alist)["Z"];
 	Z = atoi(value_str.c_str());
 
 	vxl_sizes[0][2] = (ExtMax0 - ExtMin0) / X;
