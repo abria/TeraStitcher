@@ -85,7 +85,7 @@ BDVVolume::BDVVolume(const char* _root_dir, int res, int tp, void *_BDV_descr ) 
 		active[c] = c; // all channels are assumed active
 }
 
-BDVVolume::~BDVVolume(void)
+BDVVolume::~BDVVolume(void) throw (iim::IOException)
 {
 	if ( BDV_descr )
 		BDV_HDF5close(BDV_descr);

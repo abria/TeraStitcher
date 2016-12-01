@@ -63,7 +63,7 @@ class BDVVolume : public iim::VirtualVolume
 		//CONSTRUCTORS-DECONSTRUCTOR
         BDVVolume(const char* _root_dir, int res = 0, int tp = 0, void *BDV_descr = 0 )  throw (iim::IOException);
 
-		~BDVVolume(void);
+		virtual ~BDVVolume(void) throw (iim::IOException);
 
 		//GET methods
         float  getVXL_1(){return VXL_1;}
