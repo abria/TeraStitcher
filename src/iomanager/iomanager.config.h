@@ -42,6 +42,7 @@
 #include <algorithm>
 #include <stdlib.h>
 #include <stdio.h>
+#include <cstring>
 
 /******************************************************************************************************************************
  *   Interfaces, constants, enums, parameters, and cross-platform utility functions	                                          *
