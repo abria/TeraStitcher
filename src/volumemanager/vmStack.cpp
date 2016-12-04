@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-11-14. Giulio.     @ADDED management of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
 * 2016-09-01. Giulio.     @ADDED cache management in loadImageStack
 * 2015-08-24. Giulio.     @FIXED memory leak in loadImageStack
 * 2015-02-28. Giulio.     @ADDED saving of fields N_CHANS and N_BYTESxCHAN in the xml files
@@ -83,7 +84,7 @@ Stack::Stack(StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const ch
 }
 
 // 2015-01-17. Alessandro. @ADDED constructor for initialization from XML.
-Stack::Stack(StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlElement* stack_node, int z_end) throw (iom::exception)
+Stack::Stack(StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlElement* stack_node, int &z_end) throw (iom::exception)
 	: VirtualStack()
 {
 	#if VM_VERBOSE > 3
@@ -108,6 +109,11 @@ Stack::Stack(StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlEle
 
 	// then scan folder for images
 	init();
+
+	// 2016-11-14. Giulio. @ADDED to manage the case when z_end has an invalid value and it must be initialized
+	if ( z_end <= 0 ) { // invalid value
+		z_end = DEPTH; 	// WARNING: this works if the volue is not sparse (check is not neeeded: it is done before calling the Stack constructor)
+	}
 
 	// finally load other xml attributes
 	loadXML(stack_node, z_end);

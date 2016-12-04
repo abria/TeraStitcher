@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2016-11-27. Giulio.     @FIXED bug in 'initTiff3DFile': the fake buffer was allocated before updating spp
 * 2016-10-07. Giulio.     @CHANGED spp is set to 1 if teg SAMPLESPERPIXEL is not defined 
 * 2016-09-10. Giulio.     @ADDED support for reading internally tiled images 
 * 2016-06-17. Giulio.     @ADDED the possibility of performing downsampling on-the-fly when reading an image
@@ -215,7 +216,6 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 	uint16 spp    = sz3;
 
 	uint16 bpp=8 * datatype;
-	unsigned char *fakeData=new unsigned char[XSIZE * YSIZE * spp * (bpp/8)];
 	
 	int check;
  
@@ -225,6 +225,8 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 		spp = 3;
 	else
 		return ((char *) "More than 3 channels in Tiff files.");
+
+	unsigned char *fakeData=new unsigned char[XSIZE * YSIZE * spp * (bpp/8)];
 
 	char *completeFilename = (char *) 0;
 	int fname_len = (int) strlen(filename);

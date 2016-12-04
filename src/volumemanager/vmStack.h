@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-11-14. Giulio.     @CHANGED interface of constructor from xml to manage of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
 * 2015-02-26. Giulio.     @ADDED fields N_CHANS and N_BYTESxCHAN
 * 2015-01-17. Alessandro. @ADDED constructor for initialization from XML.
 * 2014-09-05. Alessandro. @ADDED 'z_end' parameter in 'loadXML()' method to support sparse data feature.
@@ -76,7 +77,11 @@ class vm::Stack : public vm::VirtualStack
 		//CONSTRUCTORS
 		Stack(vm::StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char* _DIR_NAME) throw (iom::exception);					// build from scratch
         Stack(vm::StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) throw (iom::exception);						// build from mdata.bin
-		Stack(vm::StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlElement* stack_node, int z_end) throw (iom::exception);	// build from XML
+		Stack(vm::StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlElement* stack_node, int &z_end) throw (iom::exception);	// build from XML
+		/* parameter z_end is passed by reference because it can contain an invalid value (when the xml import file is externally generated)
+		 * in this case the constructor must initialize the parameter
+		 */
+
 		~Stack(void);
 
 		//GET methods

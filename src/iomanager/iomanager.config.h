@@ -160,6 +160,22 @@ namespace iomanager
 		return string;
 	}
 
+	// Utility for extracting additional parameters 
+	// Parameters are assumed to have the form parameter_name=value and that are terminated by commas
+	inline bool getParamValue ( std::string params, std::string param_name, std::string &value ) {
+		const char *sPtr;
+
+		if ( (sPtr = strstr(params.c_str(),param_name.c_str())) == 0 ) {
+			value = "";
+			return false;
+		}
+		else {
+			sPtr = strstr(sPtr,"=") + 1;
+			value = params.substr(sPtr-params.c_str(),strstr(sPtr,",")-sPtr);
+			return true;
+		}
+	}
+
 	//number to string conversion function and vice versa
 	template <typename T>
 	std::string num2str ( T Number ){

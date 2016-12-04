@@ -28,7 +28,8 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2015-11-16. Giulio.     @IMPLEMENTED new plugins interface
+* 2015-10-27. Giulio.     @ADDEDED routines for extracting additional parameters
+* 2016-10-16. Giulio.     @CREATED
 */
 
 #include <cstddef>			// 2014-09-18. Alessandro. @FIXED compilation issue on gcc compilers.
@@ -39,19 +40,20 @@
 // just call this macro to register your plugin
 TERASTITCHER_REGISTER_IO_PLUGIN_3D(IMS_HDF5)
 
+
 // insert here your plugin description that will be displayed on the user interface
 std::string iomanager::IMS_HDF5::desc()
 {
 	return	"******************************************************\n"
-			"* Fiji HDF5 v.1.0                                    *\n"
+			"* Imaris IMS HDF5 v.1.0                                    *\n"
 			"******************************************************\n"
 			"*                                                    *\n"
 			"* 3D image-based I/O plugin that uses the HDF5       *\n"
-			"* library to implement the format used by the Fiji   *\n"
-			"* plugin BigDataViewer                               *\n"
+			"* library to implement the format used by Imaris     *\n"
 			"*                                                    *\n"
 			"* Accepted configuration parameters:                 *\n"
-			"*  - none                                            *\n"
+			"*  - resolution=R                                    *\n"
+			"*  - timepoint=T                                     *\n"
 			"*                                                    *\n"
 			"******************************************************\n";
 }
@@ -97,8 +99,17 @@ throw (iom::exception)
 	iim::uint32 height;
 	iim::uint32 depth;
 
+	int res = 0;
+	int tp  = 0;
+	std::string str_value;
+
+	if ( getParamValue(params,"resolution",str_value) )
+		res = atoi(str_value.c_str());
+	if ( getParamValue(params,"timepoint",str_value) )
+		tp = atoi(str_value.c_str());
+
 	IMS_HDF5init(img_path,file_descr);
-	IMS_HDF5getVolumeInfo(file_descr,0,0,volume_descr,vxl1,vxl2,vxl3,org1,org2,org3,height,width,depth,img_chans,img_bytes_x_chan,n_timepoints,t0,t1);
+	IMS_HDF5getVolumeInfo(file_descr,tp,res,volume_descr,vxl1,vxl2,vxl3,org1,org2,org3,height,width,depth,img_chans,img_bytes_x_chan,n_timepoints,t0,t1);
 	IMS_HDF5closeVolume(volume_descr);
 	IMS_HDF5close(file_descr);
 
@@ -147,8 +158,17 @@ throw (iom::exception)
 	iim::uint8 *ptr;
 	iim::sint64 chan_size;
 
+	int res = 0;
+	int tp  = 0;
+	std::string str_value;
+
+	if ( getParamValue(params,"resolution",str_value) )
+		res = atoi(str_value.c_str());
+	if ( getParamValue(params,"timepoint",str_value) )
+		tp = atoi(str_value.c_str());
+
 	IMS_HDF5init(img_path,file_descr);
-	IMS_HDF5getVolumeInfo(file_descr,0,0,volume_descr,vxl1,vxl2,vxl3,org1,org2,org3,height,width,depth,img_chans,img_bytes_x_chan,n_timepoints,t0,t1);
+	IMS_HDF5getVolumeInfo(file_descr,tp,res,volume_descr,vxl1,vxl2,vxl3,org1,org2,org3,height,width,depth,img_chans,img_bytes_x_chan,n_timepoints,t0,t1);
 	chan_size = ((iim::sint64)height) * ((iim::sint64)width) * depth * img_bytes_x_chan;
 	for ( c=0, ptr=data; c<img_chans; c++, ptr+=chan_size ) {
 		IMS_HDF5getSubVolume(volume_descr,0,height,0,width,z0,z1,c,ptr);
@@ -223,10 +243,7 @@ throw (iom::exception)
 	strncpy(src_value,sPtr,sLen);
 	src_value[sLen] = '\0';
 
-printf("-------> before IMS_HDF5init %s\n",src_value); fflush(stdout);
-
 	IMS_HDF5init(src_value,file_descr);
-printf("-------> after IMS_HDF5init \n"); fflush(stdout);
 
 	void *olist = IMS_HDF5get_olist(file_descr);
 	IMS_HDF5close(file_descr);

@@ -83,6 +83,7 @@
 
 #include "Tiff3DMngr.h"
 #include "HDF5Mngr.h"
+#include "IMS_HDF5Mngr.h"
 
 #include <limits>
 #include <list>
@@ -94,7 +95,6 @@
 // 2016--04-09 Giulio.
 #include "IOPluginAPI.h" 
 
-#include "../iomanager/plugins/IMS_HDF5/IMS_HDF5Mngr.h"    // ********************** TEMP
 
 using namespace iim;
 
@@ -3041,7 +3041,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 		}
 	}
 
-	/* The following check verifies that the numeber of slices in the buffer is not higher than the numbero of slices in a block file
+	/* The following check verifies that the numeber of slices in the buffer is not higher than the number of slices in a block file
 	 * (excluding the last blck in a stack). Indeed if D is the maximum number of slices in a block file (i.e. the value of block_depth)
 	 * and H is the total number of slices at resolution i (i.e. floor(depth/2^i)), the actual minumum number of slices B in a block 
 	 * file at that resolution as computed by the above code is:
@@ -3058,7 +3058,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 
 	//ALLOCATING  the MEMORY SPACE for image buffer
     z_max_res = powInt(2,halve_pow2[resolutions_size-1]);
-	if ( z_max_res > block_depth/2 ) {
+	if ( (z_max_res > 1) && (z_max_res > block_depth/2) ) {
 		char err_msg[STATIC_STRINGS_SIZE];
 		sprintf(err_msg, "in generateTilesVaa3DRaw(...): too much resolutions(%d): too much slices (%lld) in the buffer \n", resolutions_size, z_max_res);
 		throw IOException(err_msg);
@@ -3886,6 +3886,7 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
     //    throw IOException(err_msg);
     //}
 
+
 	if(resolutions == NULL)
 	{
             resolutions = new bool;
@@ -3898,20 +3899,27 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
                     resolutions_size = std::max(resolutions_size, i+1);
 			}
 
+
 	// get metadata to be transferred to image to be generated
 	IMS_HDF5init(metadata_file,file_descr);
-
 	void *olist = IMS_HDF5get_olist(file_descr);
 	IMS_HDF5close(file_descr);
 
+
 	// create output file with acquisition metadata
-	IMS_HDF5init(output_path,file_descr,volume->getBYTESxCHAN(),olist);
-	olist = (void *) 0;
+	IMS_HDF5init(output_path,file_descr,volume->getBYTESxCHAN(),olist); // set the same voxel size of the file containaing metadata 
+ 	olist = (void *) 0;
+
+	// voxel size must be the one corresponding to the height, width and depth used to create resolutions (see call to 'IMS_HDF5addResolution' below)
+	// voxel size must be correctly set before creating resolutions
+	IMS_HDF5setVxlSize(file_descr,fabs(volume->getVXL_1()),fabs(volume->getVXL_2()),fabs(volume->getVXL_3()));
 
 	// create output file structure and add specific image metadata
 	for ( int i=0; i<resolutions_size; i++ ) {
+
 		if(resolutions[i])
-			IMS_HDF5addResolution(file_descr,height,width,depth,volume->getDIM_C(),i);
+			IMS_HDF5addResolution(file_descr,height,width,depth,volume->getDIM_C(),i); 
+
 	}
 
 	// create timepoint groups (default: timepoint 0)
@@ -4030,7 +4038,7 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 						hyperslab_descr[9]  = 1; // [3][0]
 						hyperslab_descr[10] = 1; // [3][1]
 						hyperslab_descr[11] = 1; // [3][2]
-						IMS_HDF5writeHyperslab(file_descr,ubuffer[c],buf_dims,hyperslab_descr,i,c,0); // fixed timepoint: 0
+						IMS_HDF5writeHyperslab(file_descr,ubuffer[c],buf_dims,hyperslab_descr,i,c,0); // fixed timepoint: 0 
 					}
 
 				}

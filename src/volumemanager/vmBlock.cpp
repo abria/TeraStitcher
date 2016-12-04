@@ -28,6 +28,9 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-11-16. Giulio.     @ADDED management of the case when the xml import file is generated externally and attributes BLOCK_SIZES and BLOCK_ABS_D are missing
+* 2016-11-14. Giulio.     @ADDED management of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
+* 2016-10-27. Giulio.     @ADDED additional parameters for subimage specification passed to input plugin calls
 * 2016-09-01. Giulio.     @ADDED cache management in loadImageStack
 * 2016-06-09. Giulio.     @ADDED code to load the buffer when the input plugin does not interleve channels
 * 2016-06-09. Giulio.     @FIXED initialized the buffer 'data' to 0 in 'loadImageStack'
@@ -96,11 +99,14 @@ Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char
     BLOCK_SIZE = 0;
     BLOCK_ABS_D = 0;
 
+	// default value is an invalid value
+	series_no = -1;
+
 	init();
 }
 
 // 2015-01-17. Alessandro. @ADDED constructor for initialization from XML.
-Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlElement* stack_node, int z_end) throw (iom::exception)
+Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlElement* stack_node, int &z_end) throw (iom::exception)
 	: VirtualStack()
 {
 	#if VM_VERBOSE > 3
@@ -124,11 +130,27 @@ Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlEleme
 	BLOCK_SIZE = 0;
 	BLOCK_ABS_D = 0;
 
+	// default value is an invalid value
+	series_no = "-1";
+
 	// first read image regex field (if any) from xml node
 	readImgRegex(stack_node);
 
+	// 2016-11-19. Giulio. @ADDED 'SERIES_NO' attribute in the xml node to identiy stack into multi-stack files
+	const char* series_no_str = stack_node->Attribute("SERIES_NO");
+	if ( series_no_str ) {
+		series_no = series_no_str;
+		if ( atoi(series_no_str) >= 0 ) // additional parameters are not needed if series_no id a valid value
+			CONTAINER->setADDITIONAL_IOPLUGIN_PARAMETERS(true);
+	}
+
 	// then scan folder for images
 	init();
+
+	// 2016-11-14. Giulio. @ADDED to manage the case when z_end has an invalid value and it must be initialized
+	if ( z_end <= 0 ) { // invalid value
+		z_end = DEPTH; 	// WARNING: this works if the volue is not sparse (check is not neeeded: it is done before calling the Stack constructor)
+	}
 
 	// finally load other xml attributes
 	loadXML(stack_node, z_end);
@@ -149,6 +171,9 @@ Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_
 	N_BLOCKS = -1;
     BLOCK_SIZE = 0;
     BLOCK_ABS_D = 0;
+
+	// default value is an invalid value
+	series_no = "-1";
 
 	unBinarizeFrom(bin_file);
 }
@@ -266,8 +291,10 @@ void Block::init() throw (iom::exception)
 	{
 		try {
 			iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->readMetadata(
-				iom::strprintf("%s/%s/%s", CONTAINER->getSTACKS_DIR(), DIR_NAME, FILENAMES[ib]), 
-				WIDTH, HEIGHT, BLOCK_SIZE[ib], N_BYTESxCHAN, N_CHANS);
+				iom::strprintf("%s/%s/%s", CONTAINER->getSTACKS_DIR(), DIR_NAME, FILENAMES[ib]), WIDTH, HEIGHT, BLOCK_SIZE[ib], N_BYTESxCHAN, N_CHANS,
+						CONTAINER->getADDITIONAL_IOPLUGIN_PARAMETERS() ? 
+							"resolution=" + CONTAINER->getACTIVE_RES() + ",timepoint=" + CONTAINER->getACTIVE_TP() + ",series_no=" + series_no + ",": 
+							"");
 		}
 		catch ( iom::exception& exception ) {
 			if ( strstr(exception.what(),"unable to open image") ) // the image is corrupted: capture the exception
@@ -493,8 +520,11 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 				sprintf(slice_fullpath, "%s/%s/%s", CONTAINER->getSTACKS_DIR(), DIR_NAME, FILENAMES[i]);
 
 				// 2014-09-05. Alessandro & Iannello. @MODIFIED to deal with IO plugins
-				//iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->readData(slice_fullpath, WIDTH, HEIGHT, temp, first, last);
-				iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->readData(slice_fullpath,WIDTH,HEIGHT,BLOCK_SIZE[i],N_BYTESxCHAN,N_CHANS,temp,first,last+1);
+				// 2016_10_27. Giulio. @ADDED the string with additional parameters is passed only if they are not the default
+				iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->readData(slice_fullpath,WIDTH,HEIGHT,BLOCK_SIZE[i],N_BYTESxCHAN,N_CHANS,temp,first,last+1,
+						CONTAINER->getADDITIONAL_IOPLUGIN_PARAMETERS() ? 
+							"resolution=" + CONTAINER->getACTIVE_RES() + ",timepoint=" + CONTAINER->getACTIVE_TP() + ",series_no=" + series_no + ",": 
+							"");
 			}
 			temp +=  HEIGHT * WIDTH * (last-first+1) * N_BYTESxCHAN * N_CHANS;
 		}
@@ -664,6 +694,8 @@ TiXmlElement* Block::getXML()
 	xml_representation->SetAttribute("ABS_D",ABS_D);
 	xml_representation->SetAttribute("STITCHABLE",stitchable ? "yes" : "no");
 	xml_representation->SetAttribute("DIR_NAME",DIR_NAME);
+	if ( CONTAINER->getSERIES_NO() )
+		xml_representation->SetAttribute("SERIES_NO",series_no.c_str());
 
 	// 2015-07-22. Giulio. @ADDED 'Z_RANGES' attribute in the xml node
 	std::string z_ranges_string;
@@ -705,31 +737,38 @@ throw (iom::exception)
 
 	stack_node->QueryIntAttribute("N_BLOCKS",&N_BLOCKS);
 
-	const char *BLOCK_SIZES=stack_node->Attribute("BLOCK_SIZES");
-	char *BLOCK_SIZES2 = new char [strlen (BLOCK_SIZES) + 1];
-	strcpy (BLOCK_SIZES2,BLOCK_SIZES);
-	char * pch=strtok (BLOCK_SIZES2,",");
-	int j=0;
-	while (pch != NULL)
-	{
-		BLOCK_SIZE[j]=atoi(pch);
-		j++; //141027_Onofri: added missing increment
-		pch = strtok (NULL, ",");
+	// 2016-11-16. Giulio. @CHANGED if attribute BLOCK_SIZES is missing, it is assumed that 'init' has been previously executed, otherwise member BLOCK_SIZE remains undefined
+	const char *BLOCK_SIZES=stack_node->Attribute("BLOCK_SIZES"); // WARNING: is this a memory leak? probably not because memory is released when the whole xml tree is released
+	if ( BLOCK_SIZES ) { // attribute missing: it is an externally generated xml import file, keep block sizes computed by init
+		char *BLOCK_SIZES2 = new char [strlen (BLOCK_SIZES) + 1];
+		strcpy (BLOCK_SIZES2,BLOCK_SIZES);
+		char *pch=strtok (BLOCK_SIZES2,",");
+		int j=0;
+		while (pch != NULL)
+		{
+			BLOCK_SIZE[j]=atoi(pch);
+			j++; //141027_Onofri: added missing increment
+			pch = strtok (NULL, ",");
+		}
+		delete[] BLOCK_SIZES2; 
 	}
-	delete[] BLOCK_SIZES2; 
 
-	const char *BLOCKS_ABS_D=stack_node->Attribute("BLOCKS_ABS_D");
-	char *BLOCKS_ABS_D2 = new char [strlen (BLOCKS_ABS_D) + 1];
-	strcpy (BLOCKS_ABS_D2,BLOCKS_ABS_D);
-	pch=strtok (BLOCKS_ABS_D2,",");
-	j=0;
-	while (pch != NULL)
-	{
-		BLOCK_ABS_D[j]=atoi(pch);
-		j++;
-		pch = strtok (NULL, ",");
+	// 2016-11-16. Giulio. @CHANGED if attribute BLOCK_ABS_D is missing, it is assumed that 'init' has been previously executed, otherwise member BLOCK_ABS_D remains undefined
+	const char *BLOCKS_ABS_D=stack_node->Attribute("BLOCKS_ABS_D"); // WARNING: is this a memory leak? probably not because memory is released when the whole xml tree is released
+	if ( BLOCKS_ABS_D ) { // attribute missing: it is an externally generated xml import file, keep block sizes computed by init
+		char *BLOCKS_ABS_D2 = new char [strlen (BLOCKS_ABS_D) + 1];
+		strcpy (BLOCKS_ABS_D2,BLOCKS_ABS_D);
+		char *pch=strtok (BLOCKS_ABS_D2,",");
+		int j=0;
+		while (pch != NULL)
+		{
+			BLOCK_ABS_D[j]=atoi(pch);
+			j++;
+			pch = strtok (NULL, ",");
+		}
+		delete[] BLOCKS_ABS_D2;
 	}
-	delete[] BLOCKS_ABS_D2;
+
 	stack_node->QueryIntAttribute("N_CHANS",&N_CHANS);
 	stack_node->QueryIntAttribute("N_BYTESxCHAN",&N_BYTESxCHAN);
 	stack_node->QueryIntAttribute("ABS_V", &ABS_V);
@@ -856,7 +895,6 @@ throw (iom::exception)
         z_ranges.clear();
         z_ranges.push_back(vm::interval<int>(0, DEPTH));
 	}
-	
 
 	TiXmlElement *NORTH_displacements = stack_node->FirstChildElement("NORTH_displacements");
 	for(TiXmlElement *displ_node = NORTH_displacements->FirstChildElement("Displacement"); displ_node; displ_node = displ_node->NextSiblingElement())

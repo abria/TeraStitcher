@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-11-14. Giulio.     @ADDED management of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
 * 2015-06-12. Giulio      @ADDED 'check' method to check completeness and coherence of a volume
 * 2015-02-26. Giulio.     @ADDED implementation of initChannels private method to initialize fields DIM_C and BYTESxCHAN
 * 2015-01-17. Alessandro. @ADDED support for all-in-one-folder data (import from xml only).
@@ -635,10 +636,17 @@ void StackedVolume::initFromXML(const char *xml_filepath) throw (iom::exception)
 	int nrows, ncols, nslices;
 	pelem->QueryIntAttribute("stack_rows", &nrows);
 	pelem->QueryIntAttribute("stack_columns", &ncols);
-	pelem->QueryIntAttribute("stack_slices", &nslices);
 	N_ROWS = nrows;
 	N_COLS = ncols;
+
+	// 2016-11-14. Giulio. @ADDED chdck to manage the case when the number of slices has not been provided in the xml file (because it ah been generated externally)
+	pelem->QueryIntAttribute("stack_slices", &nslices);
 	N_SLICES = nslices;
+	if ( N_SLICES <= 0) { // the value is invalid get the number of slices from the Stack objects after they have been initialized
+		if ( SPARSE_DATA ) {
+			throw iom::exception(vm::strprintf("in StackedVolume::initFromXML(): sparse_data option not supported with externally generated xml import file").c_str());
+		}
+	}
 
 	pelem = hRoot.FirstChildElement("STACKS").Element()->FirstChildElement();
 	STACKS = new Stack **[N_ROWS];
@@ -648,7 +656,7 @@ void StackedVolume::initFromXML(const char *xml_filepath) throw (iom::exception)
 		for(int j = 0; j < N_COLS; j++, pelem = pelem->NextSiblingElement())
 		{
 			// 2015-01-17. Alessandro. @ADDED support for all-in-one-folder data (import from xml only).
-			STACKS[i][j] = new Stack(this, i, j, pelem, N_SLICES);
+			STACKS[i][j] = new Stack(this, i, j, pelem, N_SLICES); // N_SLICES is passed by reference and it is initialized by the Stack constructor if its value is invalid
 
 			//STACKS[i][j] = new Stack(this, i, j, pelem->Attribute("DIR_NAME"));
 			//STACKS[i][j]->loadXML(pelem, N_SLICES);

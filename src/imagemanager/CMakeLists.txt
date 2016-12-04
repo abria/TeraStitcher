@@ -32,6 +32,7 @@ if(WITH_HDF5)
 		
 		# enable HDF5-dependent code
 		add_definitions(-DENABLE_BDV_HDF5)
+		add_definitions(-DENABLE_IMS_HDF5)
 		
 		# override hdf5 target properties to remove target zlib-target that causes conflicts with zlib already present in this project
 		set_target_properties(${HDF5_C_STATIC_LIBRARY} PROPERTIES INTERFACE_LINK_LIBRARIES "szip-static")

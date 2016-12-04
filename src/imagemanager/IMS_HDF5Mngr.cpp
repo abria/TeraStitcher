@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2016-10-27. Giulio. @FIXED n_slices had been initialized to NULL pointers
 * 2016-10-04. Giulio. @CREATED 
 */
 
@@ -34,7 +35,6 @@
 #include <stdlib.h> // needed by clang: defines size_t
 #include <sstream>
 
-#define ENABLE_IMS_HDF5 // to be changed into a cmake flag
 
 #ifdef ENABLE_IMS_HDF5
 #include "hdf5.h"
@@ -68,11 +68,13 @@ typedef hsize_t dims_t[3];
 typedef int subdvsns_t[3];
 
 const char *excluded_attrs[] = { 
+	// CustomData attributes
 	"Height",
 	"Left",
 	"Width",
 	"XPosition",
 	"YPosition",
+	// Image attributes
 	"ExtMax0",
 	"ExtMax1",
 	"ExtMax2",
@@ -81,8 +83,9 @@ const char *excluded_attrs[] = {
 	"ExtMin2",
 	"X",
 	"Y",
-	"Z",                                                                                              // Image metadata
-	"__stop__"               // end list
+	"Z", 
+	// end list
+	"__stop__"     
 };
 
 /* WARNING:
@@ -385,6 +388,9 @@ public:
 	int addTimePoint ( int t );
 	/* add time point t (with all chans and all resolutions) */
 
+	void setVXL_SZ ( double szV, double szH, double szD );
+	/* set voxel size at resolution 0 */
+
 	int writeHyperslab ( int tp, int s, int r, iim::uint8 *buf, hsize_t *dims_buf, hsize_t *hl_buf, hsize_t *hl_file = 0 ); 
 	/* write hyperslab hl_buf stored in buffer buf to hyperslab hl_file at time point tp and resolution r */
 };
@@ -444,8 +450,12 @@ IMS_HDF5_fdescr_t::IMS_HDF5_fdescr_t ( const char *_fname, int _vxl_nbytes, IMS_
 		active_res = active_tp = -1; // initialize with invalid values
 
 		n_slices = new hsize_t **[maxres];
+		memset(n_slices,0,maxres*sizeof(hsize_t **)); 
 			
 		olist = (IMS_obj_list_t *) 0;
+
+		if ( !obj_info )
+			throw iim::IOException(iim::strprintf("the file %s has to be created: a structure description must be passed ",_fname).c_str(),__iim__current__function__);
 
 		herr_t status;
 
@@ -583,6 +593,13 @@ void *IMS_HDF5_fdescr_t::extractOLIST ( ) {
 	obj_info_cnt = 0; // couter is reset because ownership of the object list has been passed to caller
 
 	return tmp_olist;
+}
+
+
+void IMS_HDF5_fdescr_t::setVXL_SZ ( double szV, double szH, double szD ) {
+	vxl_sizes[0][2] = szH;
+	vxl_sizes[0][1] = szV;
+	vxl_sizes[0][0] = szD;
 }
 
 
@@ -753,7 +770,7 @@ int IMS_HDF5_fdescr_t::addResolution ( int r, hsize_t dimV, hsize_t dimH, hsize_
 	else
 		status = H5Aclose(aid);
 
-	if ( (aid = H5Aopen(grpid,"ExtMin1",H5P_DEFAULT)) < 0 ) {
+	if ( (aid = H5Aopen(grpid,"ExtMin0",H5P_DEFAULT)) < 0 ) {
 		status = create_string_attribute(grpid,"ExtMin0","0");
 		H5Aclose(aid);
 	}
@@ -978,10 +995,12 @@ int IMS_HDF5_fdescr_t::addTimePoint ( int t ) {
 
 	n_timepoints++; // timepoins are added in order starting from timepoint 0' 
 
-	// allocate n_slices for timepoint t at each resolution
-	for ( int r=0; r<n_res; r++ ) {
-		n_slices[r][t] = new hsize_t [MAXTPS];
-		memset(n_slices[r][t],0,MAXTPS*sizeof(hsize_t));
+	// allocate n_slices for timepoint t at each existing resolution 
+	for ( int r=0; r<n_res; r++ ) { 
+		if ( n_slices[r] ) { // resolution r exists
+			n_slices[r][t] = new hsize_t [MAXTPS];
+			memset(n_slices[r][t],0,MAXTPS*sizeof(hsize_t));
+		}
 	}
 
 	// set the maximum resolution as current one and t as the current timepoint
@@ -1522,6 +1541,34 @@ int IMS_HDF5n_resolutions ( void *descr ) {
 void IMS_HDF5close ( void *descr ) {
 #ifdef ENABLE_IMS_HDF5
 	delete (IMS_HDF5_fdescr_t *) descr;
+#else
+	throw iim::IOException(iim::strprintf(
+			"Support to IMS_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "
+			"in ""3rdparty/libs"" directory and set the ""ENABLED_IMS_HDF5"" checkbox before configuring CMake project").c_str(),__iim__current__function__);
+#endif
+}
+
+
+void IMS_HDF5setVxlSize ( void *descr, double szV, double szH, double szD ) {
+#ifdef ENABLE_IMS_HDF5
+	IMS_HDF5_fdescr_t *int_descr = (IMS_HDF5_fdescr_t *) descr;
+
+	int_descr->setVXL_SZ(szV,szH,szD);
+#else
+	throw iim::IOException(iim::strprintf(
+			"Support to IMS_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "
+			"in ""3rdparty/libs"" directory and set the ""ENABLED_IMS_HDF5"" checkbox before configuring CMake project").c_str(),__iim__current__function__);
+#endif
+}
+
+
+void IMS_HDF5getVxlSize ( void *descr, double &szV, double &szH, double &szD ){
+#ifdef ENABLE_IMS_HDF5
+	IMS_HDF5_fdescr_t *int_descr = (IMS_HDF5_fdescr_t *) descr;
+
+	szH = int_descr->getVXL_SZ(0)[2];
+	szV = int_descr->getVXL_SZ(0)[1];
+	szD = int_descr->getVXL_SZ(0)[0];
 #else
 	throw iim::IOException(iim::strprintf(
 			"Support to IMS_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "

@@ -58,7 +58,7 @@ void IMS_HDF5init ( std::string fname, void *&descr, int vxl_nbytes = 1, void *o
  * vxl_nbytes: number of bytes per voxel of datasets to be stored in the file; it is ignored if the file already exists
  * descr:      pointer to the returned opaque descriptor
  * obj_info:   to be used only if the file does not exist yet and must be created; is the description of the structure of the 
- *             file to be created; the description is deallocated after used and cannot be used by the caller
+ *             file to be created; the description is deallocated after it is used and cannot be used by the caller
  */
  
  void *IMS_HDF5get_olist ( void *descr ) throw (iim::IOException);
@@ -69,6 +69,12 @@ void IMS_HDF5init ( std::string fname, void *&descr, int vxl_nbytes = 1, void *o
  /* returns how many resolutions there are in the HDF5 file handled by descr
   * It is assumed that all resolutions from 0 to the interger returned minus 1 are available
   */
+
+ void IMS_HDF5setVxlSize ( void *descr, double szV, double szH, double szD );
+ /* set voxel size at resolution 0 */
+
+ void IMS_HDF5getVxlSize ( void *descr, double &szV, double &szH, double &szD );
+ /* return voxel size at resolution 0 */
 
 void IMS_HDF5close ( void *descr );
 /* close the HDF5 file represented by descr and deallocates the descriptor
@@ -82,6 +88,9 @@ void IMS_HDF5addResolution ( void *file_descr, iim::sint64 height, iim::sint64 w
  * height: image height at resolution 0
  * width:  image width at resolution 0
  * depth:  image depth at resolution 0
+ *
+ * WARNING: parameters height, width and depth must refer to dimensions of the highest resolution that can be stired in the file that is resolution 0
+ * These dimensions must be coherent with the voxel size computed for this resolution 0
  */
 
 

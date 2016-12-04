@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-11-14. Giulio.     @CHANGED interface of constructor from xml to manage of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
 * 2015-07-22. Giluio.     @ADDED supporto for spase data.
 * 2015-01-17. Alessandro. @ADDED constructor for initialization from XML.
 * 2015-01-17. Alessandro. @FIXED missing throw(iom::exception) declaration in many methods.
@@ -36,6 +37,7 @@
 #define _VM_BLOCK_H
 
 #include <set>
+#include <string>
 
 #include "volumemanager.config.h"
 #include "iomanager.config.h"
@@ -59,6 +61,11 @@ class vm::Block : public vm::VirtualStack
 		int          N_BLOCKS;                   //number of blocks along z
 		int         *BLOCK_SIZE;                 //dimensions of blocks along z
 		int         *BLOCK_ABS_D;                //absolute D voxel coordinates of blocks
+
+		std::string series_no;  // index into multi-stack files
+		/* default (invalid) value = -1; to be used when multiple stack are in the same  file (3D formats)
+		 * is initialized and actually used only when import is performed from an xml import file
+		 */
 
 		//******** OBJECT PRIVATE METHODS *********
         Block(void){}
@@ -89,7 +96,11 @@ class vm::Block : public vm::VirtualStack
 		//CONSTRUCTORS
 		Block(vm::BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char* _DIR_NAME) throw (iom::exception);				// build from scratch
 		Block(vm::BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) throw (iom::exception);						// build from mdata.bin
-		Block(vm::BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlElement* stack_node, int z_end) throw (iom::exception);	// build from XML
+		Block(vm::BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlElement* stack_node, int &z_end) throw (iom::exception);	// build from XML
+		/* parameter z_end is passed by reference because it can contain an invalid value (when the xml import file is externally generated)
+		 * in this case the constructor must initialize the parameter
+		 */
+
 		~Block(void);
 
 		//GET methods

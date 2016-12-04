@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-10-27. Giulio.     @ADDED string fields for control over the subimage to be exposed through the xml import file  
 * 2015-06-12. Giulio      @ADDED 'check' method to check completeness and coherence of a volume
 * 2015-02-26. Giulio.     @ADDED initChannels private method to initialize fields DIM_C and BYTESxCHAN
 * 2015-01-17. Alessandro. @FIXED missing throw(iom::exception) declaration in loadXML and initFromXML methods.
@@ -56,6 +57,12 @@ class vm::BlockVolume : public vm::VirtualVolume
 		}
 
 		vm::Block ***BLOCKS;			    //2-D array of <Block*>
+
+		// these private fields are initialized internally from the xml import file if specified
+		std::string active_res;   // active resolution (default. 0)
+		std::string active_tp;    // active timepoint (default: 0)
+		bool series_no;
+		bool additionalIOPluginParams;  // to avoid passing unnecessary additional parameters to ioplugins
 
 		//Given the reference system, initializes all object's members using stack's directories hierarchy
         void init() throw (iom::exception);
@@ -94,6 +101,13 @@ class vm::BlockVolume : public vm::VirtualVolume
 		int		 getStacksHeight()   {return BLOCKS[0][0]->getHEIGHT();}
 		int		 getStacksWidth()    {return BLOCKS[0][0]->getWIDTH();}
 		vm::VirtualStack*** getSTACKS()  {return (vm::VirtualStack***)this->BLOCKS;}
+
+		std::string getACTIVE_RES ( ) { return active_res; }
+		std::string getACTIVE_TP  ( ) { return active_tp; }
+		bool getSERIES_NO ( ) { return series_no; }
+		bool getADDITIONAL_IOPLUGIN_PARAMETERS ( ) { return additionalIOPluginParams; }
+
+		void setADDITIONAL_IOPLUGIN_PARAMETERS ( bool _flag) { additionalIOPluginParams = _flag; }
 
 		//loads/saves metadata from/in the given xml filename
 		void loadXML(const char *xml_filename) throw (iom::exception);

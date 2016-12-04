@@ -25,6 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-11-14. Giulio.     @ADDED management of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
+* 2016-10-27. Giulio.     @ADDED control over the subimage to be exposed through the xml import file (default resolution 0 and timestamp 0)  
 * 2015-08-27. Giluio.     @ADDED control on coherence between block lenghts and filenames in 'check' method 
 * 2015-07-30. Giluio.     @FIXED bug in applyReference system.
 * 2015-07-30. Giluio.     @FIXED bug in extractCoordinates.
@@ -90,6 +92,10 @@ BlockVolume::BlockVolume(const char* _stacks_dir, vm::ref_sys _reference_system,
 		  _stacks_dir,reference_system.first, reference_system.second, reference_system.third, VXL_1, VXL_2, VXL_3);
 	#endif
 
+	// in this case active resolution and timepoint are always 0
+	active_res = active_tp = "0";
+	series_no = additionalIOPluginParams = false;
+
 	//trying to unserialize an already existing metadata file, if it doesn't exist the full initialization procedure is performed and metadata is saved
     char mdata_filepath[VM_STATIC_STRINGS_SIZE];
     sprintf(mdata_filepath, "%s/%s", stacks_dir, vm::BINARY_METADATA_FILENAME.c_str());
@@ -133,7 +139,11 @@ BlockVolume::BlockVolume(const char *xml_filepath, bool overwrite_mdata) throw (
 	printf("\t\t\t\tin BlockVolume::BlockVolume(xml_filepath=%s)\n", xml_filepath);
 	#endif
 
-    //extracting <stacks_dir> field from XML
+ 	// in this case active resolution and timepoint set to the dafault, but can be changed when xml import file is loaded
+	active_res = active_tp = "0";
+	series_no = additionalIOPluginParams = false;
+
+   //extracting <stacks_dir> field from XML
     TiXmlDocument xml;
     if(!xml.LoadFile(xml_filepath))
     {
@@ -940,6 +950,33 @@ void BlockVolume::loadXML(const char *xml_filepath) throw (iom::exception)
 		sprintf(errMsg, "in BlockVolume::loadXML(...): Mismatch in <origin> field between xml file (= {%.7f, %.7f, %.7f} ) and %s (= {%.7f, %.7f, %.7f} ).", ORG_V_read, ORG_H_read, ORG_D_read, VM_BIN_METADATA_FILE_NAME, ORG_V, ORG_H, ORG_D);
 		throw iom::iom::exception(errMsg);
 	} @TODO: bug with float precision causes often mismatch */ 
+
+	// 2016-10-27. Giulio. New field in the xml import file to select a subimage (resolution, timepoint, series_no)
+	if ( (pelem = hRoot.FirstChildElement("subimage").Element()) != 0 ) { // skip if not present (for compatibility with previous versions)
+		int value;
+		std::stringstream str;
+		if ( pelem->QueryIntAttribute("resolution", &value) == TIXML_SUCCESS ) {
+			if ( value ) {// additional parameters are not needed if resolution is zero
+				additionalIOPluginParams = true;
+				str << value;
+				active_res = str.str();
+			}
+		}
+		if ( pelem->QueryIntAttribute("timepoint", &value) == TIXML_SUCCESS ) {
+			if ( value ) { // additional parameters are not needed if resolution is zero
+				additionalIOPluginParams = true;
+				str.str("");
+				str << value;
+				active_tp = str.str();
+			}
+		}
+		const char *series_no_flag=pelem->Attribute("series_no");
+		if ( series_no_flag ) {
+			if ( strcmp(series_no_flag,"true") == 0 )
+				series_no = additionalIOPluginParams = true;
+		}
+	}
+
 	pelem = hRoot.FirstChildElement("mechanical_displacements").Element();
 	float MEC_V_read=0.0f, MEC_H_read=0.0f;
 	pelem->QueryFloatAttribute("V", &MEC_V_read);
@@ -964,9 +1001,19 @@ void BlockVolume::loadXML(const char *xml_filepath) throw (iom::exception)
 
 	pelem = hRoot.FirstChildElement("STACKS").Element()->FirstChildElement();
 	int i,j;
-	for(i=0; i<N_ROWS; i++)
-		for(j=0; j<N_COLS; j++, pelem = pelem->NextSiblingElement())
+	for(i=0; i<N_ROWS; i++) {
+		for(j=0; j<N_COLS; j++, pelem = pelem->NextSiblingElement()) {
 			BLOCKS[i][j]->loadXML(pelem, N_SLICES);
+			// 2016-11-27. Giulio. @ADDED 'SERIES_NO' attribute in the xml node to identify stack into multi-stack files
+			if ( series_no ) {
+				const char* series_no_str = pelem->Attribute("SERIES_NO");
+				if ( series_no_str ) {
+					if ( atoi(series_no_str) >= 0 ) // series_no id is a valid value
+						BLOCKS[i][j]->series_no = series_no_str;
+				}
+			}
+		}
+	}
 }
 
 void BlockVolume::initFromXML(const char *xml_filepath) throw (iom::exception)
@@ -1012,6 +1059,33 @@ void BlockVolume::initFromXML(const char *xml_filepath) throw (iom::exception)
 	pelem->QueryFloatAttribute("V", &ORG_V);
 	pelem->QueryFloatAttribute("H", &ORG_H);
 	pelem->QueryFloatAttribute("D", &ORG_D);
+
+	// 2016-10-27. Giulio. New field in the xml import file to select a subimage (resolution, timepoint, series_no)
+	if ( (pelem = hRoot.FirstChildElement("subimage").Element()) != 0 ) { // skip if not present (for compatibility with previous versions)
+		int value;
+		std::stringstream str;
+		if ( pelem->QueryIntAttribute("resolution", &value) == TIXML_SUCCESS ) {
+			if ( value ) {// additional parameters are not needed if resolution is zero
+				additionalIOPluginParams = true;
+				str << value;
+				active_res = str.str();
+			}
+		}
+		if ( pelem->QueryIntAttribute("timepoint", &value) == TIXML_SUCCESS ) {
+			if ( value ) { // additional parameters are not needed if resolution is zero
+				additionalIOPluginParams = true;
+				str.str("");
+				str << value;
+				active_tp = str.str();
+			}
+		}
+		const char *series_no_flag=pelem->Attribute("series_no");
+		if ( series_no_flag ) {
+			if ( strcmp(series_no_flag,"true") == 0 ) 
+				series_no = additionalIOPluginParams = true;
+		}
+	}
+
 	pelem = hRoot.FirstChildElement("mechanical_displacements").Element();
 	pelem->QueryFloatAttribute("V", &MEC_V);
 	pelem->QueryFloatAttribute("H", &MEC_H);
@@ -1019,10 +1093,17 @@ void BlockVolume::initFromXML(const char *xml_filepath) throw (iom::exception)
 	int nrows, ncols, nslices;
 	pelem->QueryIntAttribute("stack_rows", &nrows);
 	pelem->QueryIntAttribute("stack_columns", &ncols);
-	pelem->QueryIntAttribute("stack_slices", &nslices);
 	N_ROWS = nrows;
 	N_COLS = ncols;
+
+	// 2016-11-14. Giulio. @ADDED chdck to manage the case when the number of slices has not been provided in the xml file (because it ah been generated externally)
+	pelem->QueryIntAttribute("stack_slices", &nslices);
 	N_SLICES = nslices;
+	if ( N_SLICES <= 0) { // the value is invalid get the number of slices from the Stack objects after they have been initialized
+		if ( SPARSE_DATA ) {
+			throw iom::exception(vm::strprintf("in StackedVolume::initFromXML(): sparse_data option not supported with externally generated xml import file").c_str());
+		}
+	}
 
 	pelem = hRoot.FirstChildElement("STACKS").Element()->FirstChildElement();
 	BLOCKS = new Block **[N_ROWS];
@@ -1105,6 +1186,16 @@ void BlockVolume::saveXML(const char *xml_filename, const char *xml_filepath) th
 	pelem->SetDoubleAttribute("H", ORG_H);
 	pelem->SetDoubleAttribute("D", ORG_D);
 	root->LinkEndChild(pelem);
+
+	// 2016-11-27. Giulio. @ADDED additional parameters attributes must be saved in the xml
+	if ( additionalIOPluginParams ) {
+		pelem = new TiXmlElement("subimage");
+		pelem->SetAttribute("resolution", active_res.c_str());
+		pelem->SetAttribute("timepoint", active_tp.c_str());
+		pelem->SetAttribute("series_no", (series_no ? "true" : "false"));
+		root->LinkEndChild(pelem);
+	}
+
 	pelem = new TiXmlElement("mechanical_displacements");
 	pelem->SetDoubleAttribute("V", MEC_V);
 	pelem->SetDoubleAttribute("H", MEC_H);

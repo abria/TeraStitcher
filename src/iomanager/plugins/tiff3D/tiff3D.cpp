@@ -164,7 +164,7 @@ throw (iom::exception)
 		}
 		closeTiff3DFile(fhandle);
 
-		data = new unsigned char[_width * _height * _depth * _chans * _bytes_x_chan];
+		data = new unsigned char[((sint64)_width) * ((sint64)_height) * ((sint64)_depth) * _chans * _bytes_x_chan];
 		img_width        = _width;
 		img_height       = _height;
 		img_depth        = _depth;
