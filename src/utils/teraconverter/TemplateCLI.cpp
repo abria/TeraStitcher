@@ -400,7 +400,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	//	this->resolutions[i] = 1;
 	//for ( ; i<S_MAX_MULTIRES; i++ )
 	//	this->resolutions[i] = 0;
-	for(i=0; i<= S_MAX_MULTIRES; i++) {
+	for(i=0; i< S_MAX_MULTIRES; i++) {
 		stringstream buf;
 		buf << i;
 		this->resolutions[i] = p_resolutions.getValue().find(buf.str()) != std::string::npos;
