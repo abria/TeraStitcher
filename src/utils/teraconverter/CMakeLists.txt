@@ -27,3 +27,7 @@ target_link_libraries(teraconverter tinyxml )
 target_link_libraries(teraconverter stitcher )
 target_link_libraries(teraconverter crossmips )
 target_link_libraries(teraconverter common )
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(teraconverter rt)
+endif()
