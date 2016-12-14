@@ -34,6 +34,7 @@
 #include "RawFmtMngr.h"
 #include <stdlib.h> // needed by clang: defines size_t
 #include <sstream>
+#include <algorithm>
 
 
 #ifdef ENABLE_IMS_HDF5
