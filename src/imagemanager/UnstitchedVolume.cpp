@@ -120,7 +120,16 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir, bool cacheEnabled, int
 	if ( !flag )
  		throw iim::IOException(iom::strprintf("cannot determine the type of the input plugin"), __iom__current__function__);
 
-	volume = volumemanager::VirtualVolumeFactory::createFromXML(_root_dir,false);
+    // @FIXED by Alessandro on 2016-12-15. Convert iom::exception to iim::IOException (the only ones this function can throw)
+    try
+    {
+        volume = volumemanager::VirtualVolumeFactory::createFromXML(_root_dir,false);
+    }
+    catch(iom::exception & ex)
+    {
+        throw iim::IOException(ex.what());
+    }
+
 	stitcher = new StackStitcher(volume);
 
 	reference_system.first  = (iim::axis(volume->getREF_SYS().first));
@@ -138,16 +147,24 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir, bool cacheEnabled, int
 	DIM_C = volume->getDIM_C();
 	BYTESxCHAN = volume->getBYTESxCHAN();
 
-	if ( (plugin_type.compare("3D image-based I/O plugin") == 0) ?
-		  iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() :
-		  iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved() ) {
-		if ( DIM_C > 3 || BYTESxCHAN > 2 )
- 			throw iim::IOException(iom::strprintf("image not supported by UnstitchedVolume (DIM_C=%d, BYTESxCHAN=%d)", DIM_C, BYTESxCHAN), __iom__current__function__);
- 	}
-	else { // if channels are not interleaved more than 3 channels are possible
-		if ( BYTESxCHAN > 2 )
- 			throw iim::IOException(iom::strprintf("image not supported by UnstitchedVolume (BYTESxCHAN=%d)", BYTESxCHAN), __iom__current__function__);
- 	}
+    // @FIXED by Alessandro on 2016-12-15. Convert iom::exception to iim::IOException (the only ones this function can throw)
+    try
+    {
+        if ( (plugin_type.compare("3D image-based I/O plugin") == 0) ?
+              iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() :
+              iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved() ) {
+            if ( DIM_C > 3 || BYTESxCHAN > 2 )
+                throw iim::IOException(iom::strprintf("image not supported by UnstitchedVolume (DIM_C=%d, BYTESxCHAN=%d)", DIM_C, BYTESxCHAN), __iom__current__function__);
+        }
+        else { // if channels are not interleaved more than 3 channels are possible
+            if ( BYTESxCHAN > 2 )
+                throw iim::IOException(iom::strprintf("image not supported by UnstitchedVolume (BYTESxCHAN=%d)", BYTESxCHAN), __iom__current__function__);
+        }
+    }
+    catch(iom::exception & ex)
+    {
+        throw iim::IOException(ex.what());
+    }
 
     active = (iim::uint32 *) new iim::uint32[DIM_C];
     n_active = DIM_C;

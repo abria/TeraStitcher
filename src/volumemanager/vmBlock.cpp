@@ -861,9 +861,11 @@ throw (iom::exception)
 			{
 				for(int i=0; i<N_BLOCKS; i++)
 					if(FILENAMES[i] && isEmpty(BLOCK_ABS_D[i],BLOCK_ABS_D[i]+BLOCK_SIZE[i]-1))
-						throw iom::exception(vm::strprintf("in Block(%s)::loadXML(): mismatch between sparse list loaded from mdata.bin and 'Z_RANGES' loaded from xml. Please delete mdata.bin and re-load the xml.", DIR_NAME));
+                        throw iom::exception(vm::strprintf("in Block(%s)::loadXML(): mismatch between sparse list (block %d of %d is NOT empty) loaded from mdata.bin and 'Z_RANGES' ([%d,%d] is empty) loaded from xml. Please delete mdata.bin and re-load the xml.",
+                                                           DIR_NAME, i+1, N_BLOCKS, BLOCK_ABS_D[i],BLOCK_ABS_D[i]+BLOCK_SIZE[i]-1));
 					else if(FILENAMES[i] == 0 && isComplete(BLOCK_ABS_D[i],BLOCK_ABS_D[i]+BLOCK_SIZE[i]-1))
-						throw iom::exception(vm::strprintf("in Block(%s)::loadXML(): mismatch between sparse list loaded from mdata.bin and 'Z_RANGES' loaded from xml. Please delete mdata.bin and re-load the xml.", DIR_NAME));
+                        throw iom::exception(vm::strprintf("in Block(%s)::loadXML(): mismatch between sparse list (block %d of %d is empty) loaded from mdata.bin and 'Z_RANGES' ([%d,%d] is NOT empty) loaded from xml. Please delete mdata.bin and re-load the xml.",
+                                                           DIR_NAME, i+1, N_BLOCKS, BLOCK_ABS_D[i],BLOCK_ABS_D[i]+BLOCK_SIZE[i]-1));
 			}
 		}
 		// 'Z_RANGES' field is present, but is empty: assume empty tile
