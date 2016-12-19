@@ -82,6 +82,12 @@ class RawVolume : public iim::VirtualVolume
         iim::axis getAXS_2() {return iim::vertical;}
         iim::axis getAXS_3() {return iim::depth;}
 
+        // @ADDED by Alessandro on 2016-12-19
+        // return true if the given dimension is tiled
+        virtual bool isTiled(iim::dimension d) {return false;}
+        // return vector of tiles along x-y-z (empty vector if the volume is not tiled)
+        virtual std::vector< iim::voi3D<size_t> > tilesXYZ() {return std::vector< iim::voi3D<size_t> >();}
+
 		std::string getFFMT(){return ffmt;}
         iim::VirtualFmtMngr *getFMT_MNGR(){return fmtMngr;}
 

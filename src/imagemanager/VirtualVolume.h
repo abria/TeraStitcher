@@ -181,16 +181,22 @@ public:
     virtual iim::axis getAXS_2() = 0;
     virtual iim::axis getAXS_3() = 0;
 
-    // set active channels (@MOVED from TileMCVolume.h by Alessandro on 2014-02-20)
+    // set active channels for 4D data (@MOVED from TileMCVolume.h by Alessandro on 2014-02-20)
     virtual void setActiveChannels ( iim::uint32 *_active, int _n_active );
 
-    // set methods (@MOVED from TimeSeries.h by Alessandro on 2014-02-20)
+    // set active frame for 5D data (@MOVED from TimeSeries.h by Alessandro on 2014-02-20)
     void setActiveFrames(int _t0, int _t1)
     {
         t0 = std::max(0, std::min(_t0,DIM_T-1));
         t1 = std::max(0, std::min(_t1,DIM_T-1));
         iim::debug(iim::LEV_MAX, iim::strprintf("asked to set [%d, %d], but set [%d, %d]", _t0, _t1, t0, t1).c_str(), __iim__current__function__);
     }
+
+    // @ADDED by Alessandro on 2016-12-19
+    // return true if the given dimension is tiled
+    virtual bool isTiled(iim::dimension d) = 0;
+    // return vector of tiles along x-y-z (empty vector if the volume is not tiled)
+    virtual std::vector< iim::voi3D<size_t> > tilesXYZ() = 0;
 
 	/*************************************************************************************************************
     * Save image method. <> parameters are mandatory, while [] are optional.

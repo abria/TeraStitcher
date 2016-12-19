@@ -69,9 +69,15 @@ class BDVVolume : public iim::VirtualVolume
         float  getVXL_1(){return VXL_1;}
         float  getVXL_2(){return VXL_2;}
         float  getVXL_3(){return VXL_3;}		
-		iim::axis getAXS_1() {return iim::axis(1);};
-		iim::axis getAXS_2() {return iim::axis(2);};
-		iim::axis getAXS_3() {return iim::axis(3);};
+        iim::axis getAXS_1() {return iim::axis(1);}
+        iim::axis getAXS_2() {return iim::axis(2);}
+        iim::axis getAXS_3() {return iim::axis(3);}
+
+        // @ADDED by Alessandro on 2016-12-19
+        // return true if the given dimension is tiled
+        virtual bool isTiled(iim::dimension d) {return false;}
+        // return vector of tiles along x-y-z (empty vector if the volume is not tiled)
+        virtual std::vector< iim::voi3D<size_t> > tilesXYZ() {return std::vector< iim::voi3D<size_t> >();}
 
         // returns a unique ID that identifies the volume format
         std::string getPrintableFormat(){return iim::BDV_HDF5_FORMAT;}

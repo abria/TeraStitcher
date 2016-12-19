@@ -160,6 +160,7 @@ namespace IconImageManager
     ********************
     ---------------------------------------------------------------------------------------------------------------------------*/
     enum  axis        { vertical=1, inv_vertical=-1, horizontal=2, inv_horizontal=-2, depth=3, inv_depth=-3, axis_invalid=0};
+    enum  dimension   { axis_x, axis_y, axis_z, channel, time};
     enum  debug_level { NO_DEBUG, LEV1, LEV2, LEV3, LEV_MAX };
     enum  channel { ALL, R, G, B };
     /*-------------------------------------------------------------------------------------------------------------------------*/
@@ -180,6 +181,36 @@ namespace IconImageManager
         ref_sys(axis _first, axis _second, axis _third) : first(_first), second(_second), third(_third){}
         ref_sys(const ref_sys &_rvalue) : first(_rvalue.first), second(_rvalue.second), third(_rvalue.third){}
         ref_sys(): first(axis_invalid), second(axis_invalid), third(axis_invalid){}
+    };
+    // triplet (x + y + z)
+    template<class T>
+    struct xyz
+    {
+        T x,y,z;
+        xyz(void) : x(0), y(0), z(0){}
+        xyz(T _x, T _y, T _z) : x(_x), y(_y), z(_z){}
+
+        bool operator <  (const xyz &p) const{
+            return p.x < x && p.y < y && p.z < z;
+        }
+    };
+    // 3D Volume Of Interest
+    template<class T>
+    struct voi3D
+    {
+        xyz<T> start;
+        xyz<T> end;
+        voi3D() : start(0,0,0,0), end(0,0,0,0){}
+        voi3D(xyz<T> _start, xyz<T> _end) : start(_start), end(_end){}
+        xyz<size_t> dims(){
+            return xyz<size_t>(
+                        size_t(end.x > start.x ? end.x-start.x : 0),
+                        size_t(end.y > start.y ? end.y-start.y : 0),
+                        size_t(end.z > start.z ? end.z-start.z : 0));
+        }
+        size_t size(){
+            xyz<size_t> _dims=dims(); return _dims.x*_dims.y*_dims.z;
+        }
     };
 
 

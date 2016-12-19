@@ -1332,3 +1332,29 @@ iim::uint8 *TiledVolume::streamedLoadSubvolume_close ( void *stream_descr, bool 
 		return 0;
 	}
 }
+
+// return vector of tiles along x-y-z (empty vector if the volume is not tiled)
+std::vector< iim::voi3D<size_t> > TiledVolume::tilesXYZ()
+{
+    std::vector< iim::voi3D<size_t> > tiles;
+
+    for(int row_index=0; row_index<N_ROWS; row_index++)
+        for(int col_index=0; col_index<N_COLS; col_index++)
+            for(int block_index = 0; block_index<BLOCKS[row_index][col_index]->getN_BLOCKS(); block_index++)
+                tiles.push_back(
+                    iim::voi3D<size_t> (
+                        iim::xyz<size_t>(
+                            BLOCKS[row_index][col_index]->getABS_H(),
+                            BLOCKS[row_index][col_index]->getABS_V(),
+                            BLOCKS[row_index][col_index]->getBLOCK_ABS_D()[block_index]
+                        ),
+                        iim::xyz<size_t>(
+                            BLOCKS[row_index][col_index]->getABS_H() + BLOCKS[row_index][col_index]->getWIDTH(),
+                            BLOCKS[row_index][col_index]->getABS_V() + BLOCKS[row_index][col_index]->getHEIGHT(),
+                            BLOCKS[row_index][col_index]->getBLOCK_ABS_D()[block_index] + BLOCKS[row_index][col_index]->getBLOCK_SIZE()[block_index]
+                        )
+                    )
+                );
+
+    return tiles;
+}

@@ -38,6 +38,12 @@ class TimeSeries : public iim::VirtualVolume
         iim::axis getAXS_2() {return frames.empty() ? iim::axis_invalid : frames[0]->getAXS_2();}
         iim::axis getAXS_3() {return frames.empty() ? iim::axis_invalid : frames[0]->getAXS_3();}
 
+        // @ADDED by Alessandro on 2016-12-19
+        // return true if the given dimension is tiled
+        virtual bool isTiled(iim::dimension d) {return false;}
+        // return vector of tiles along x-y-z (empty vector if the volume is not tiled)
+        virtual std::vector< iim::voi3D<size_t> > tilesXYZ() {return std::vector< iim::voi3D<size_t> >();}
+
         // @OVERRIDE
         iim::uint32* getActiveChannels(){ if(!frames.empty()) return frames[0]->getActiveChannels(); else return 0;}
         int getNACtiveChannels() { if(!frames.empty()) return frames[0]->getNACtiveChannels(); else return 0;}

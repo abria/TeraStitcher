@@ -1209,3 +1209,28 @@ void StackedVolume::releaseStacks(int first_file, int last_file)
 		for(int col_index=0; col_index<N_COLS; col_index++)
 			STACKS[row_index][col_index]->releaseStack(first_file,last_file);
 }
+
+// return vector of tiles along x-y-z (empty vector if the volume is not tiled)
+std::vector< iim::voi3D<size_t> > StackedVolume::tilesXYZ()
+{
+    std::vector< iim::voi3D<size_t> > tiles;
+
+    for(int row_index=0; row_index<N_ROWS; row_index++)
+        for(int col_index=0; col_index<N_COLS; col_index++)
+            tiles.push_back(
+                iim::voi3D<size_t> (
+                    iim::xyz<size_t>(
+                        STACKS[row_index][col_index]->getABS_H(),
+                        STACKS[row_index][col_index]->getABS_V(),
+                        0
+                    ),
+                    iim::xyz<size_t>(
+                        STACKS[row_index][col_index]->getABS_H() + STACKS[row_index][col_index]->getWIDTH(),
+                        STACKS[row_index][col_index]->getABS_V() + STACKS[row_index][col_index]->getHEIGHT(),
+                        0
+                    )
+                )
+            );
+
+    return tiles;
+}

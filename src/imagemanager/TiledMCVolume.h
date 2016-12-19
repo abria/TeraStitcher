@@ -86,6 +86,12 @@ class iim::TiledMCVolume : public iim::VirtualVolume
         iim::axis   getAXS_3(){return reference_system.third;}
         TiledVolume** getVolumes(){return vol_ch;}
 
+        // @ADDED by Alessandro on 2016-12-19
+        // return true if the given dimension is tiled
+        virtual bool isTiled(iim::dimension d) {return d == iim::axis_x || d == iim::axis_y || d == iim::axis_z || d == iim::channel;}
+        // return vector of tiles along x-y-z (empty vector if the volume is not tiled)
+        virtual std::vector< iim::voi3D<size_t> > tilesXYZ() {return std::vector< iim::voi3D<size_t> >();}
+
         // returns a unique ID that identifies the volume format
         std::string getPrintableFormat(){return iim::TILED_MC_FORMAT;}
 

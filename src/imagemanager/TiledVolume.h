@@ -95,6 +95,12 @@ class iim::TiledVolume : public iim::VirtualVolume
 
         // returns a unique ID that identifies the volume format
         std::string getPrintableFormat(){return iim::TILED_FORMAT;}
+
+        // @ADDED by Alessandro on 2016-12-19
+        // return true if the given dimension is tiled
+        virtual bool isTiled(iim::dimension d) { return d == iim::axis_x || d == iim::axis_y || d == iim::axis_z; }
+        // return vector of tiles along x-y-z (empty vector if the volume is not tiled)
+        virtual std::vector< iim::voi3D<size_t> > tilesXYZ();
         
 		std::string getFFMT(){return ffmt;}
         iim::VirtualFmtMngr *getFMT_MNGR(){return fmtMngr;}
