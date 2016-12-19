@@ -111,7 +111,7 @@ class iim::StackedVolume : public iim::VirtualVolume
 
         // @ADDED by Alessandro on 2016-12-19
         // return true if the given dimension is tiled
-        virtual bool isTiled(iim::dimension d) { return d == iim::axis_x || d == iim::axis_y; }
+        virtual bool isTiled(iim::dimension d) { return d == iim::dimension_x || d == iim::dimension_y; }
         // return vector of tiles along x-y-z (empty vector if the volume is not tiled)
         virtual std::vector< iim::voi3D<size_t> > tilesXYZ();
 

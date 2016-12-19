@@ -160,9 +160,9 @@ namespace IconImageManager
     ********************
     ---------------------------------------------------------------------------------------------------------------------------*/
     enum  axis        { vertical=1, inv_vertical=-1, horizontal=2, inv_horizontal=-2, depth=3, inv_depth=-3, axis_invalid=0};
-    enum  dimension   { axis_x, axis_y, axis_z, channel, time};
+    enum  dimension   { dimension_x, dimension_y, dimension_z, dimension_channel, dimension_time};
     enum  debug_level { NO_DEBUG, LEV1, LEV2, LEV3, LEV_MAX };
-    enum  channel { ALL, R, G, B };
+    enum  dimension_channel { ALL, R, G, B };
     /*-------------------------------------------------------------------------------------------------------------------------*/
 
 

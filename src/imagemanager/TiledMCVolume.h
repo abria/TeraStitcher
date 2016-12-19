@@ -88,7 +88,7 @@ class iim::TiledMCVolume : public iim::VirtualVolume
 
         // @ADDED by Alessandro on 2016-12-19
         // return true if the given dimension is tiled
-        virtual bool isTiled(iim::dimension d) {return d == iim::axis_x || d == iim::axis_y || d == iim::axis_z || d == iim::channel;}
+        virtual bool isTiled(iim::dimension d) {return d == iim::dimension_x || d == iim::dimension_y || d == iim::dimension_z || d == iim::dimension_channel;}
         // return vector of tiles along x-y-z (empty vector if the volume is not tiled)
         virtual std::vector< iim::voi3D<size_t> > tilesXYZ() {return std::vector< iim::voi3D<size_t> >();}
 
