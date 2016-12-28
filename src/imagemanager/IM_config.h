@@ -41,6 +41,7 @@
 #include <limits>
 #include <cstring>
 #include <math.h>
+#include <cmath>
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -188,29 +189,87 @@ namespace IconImageManager
     {
         T x,y,z;
         xyz(void) : x(0), y(0), z(0){}
+        xyz(T _all) : x(_all), y(_all), z(_all){}
         xyz(T _x, T _y, T _z) : x(_x), y(_y), z(_z){}
 
-        bool operator <  (const xyz &p) const{
+        bool operator <  (const xyz<T> &p) const{
             return p.x < x && p.y < y && p.z < z;
+        }
+
+        bool operator == (const xyz<T> &p) const{
+            return p.x == x && p.y == y && p.z == z;
         }
     };
     // 3D Volume Of Interest
-    template<class T>
+    template<class T = size_t>
     struct voi3D
     {
-        xyz<T> start;
-        xyz<T> end;
+        xyz<T> start;       // range [start, end)
+        xyz<T> end;         // range [start, end)
         voi3D() : start(0,0,0,0), end(0,0,0,0){}
         voi3D(xyz<T> _start, xyz<T> _end) : start(_start), end(_end){}
-        xyz<size_t> dims(){
+        xyz<size_t> dims() const{
             return xyz<size_t>(
                         size_t(end.x > start.x ? end.x-start.x : 0),
                         size_t(end.y > start.y ? end.y-start.y : 0),
                         size_t(end.z > start.z ? end.z-start.z : 0));
         }
-        size_t size(){
+        size_t size() const{
             xyz<size_t> _dims=dims(); return _dims.x*_dims.y*_dims.z;
         }
+
+        xyz<T> center() const{
+            return xyz<T> ( (end.x-start.x) / 2 + start.x, (end.y-start.y) / 2 + start.y, (end.z-start.z) / 2 + start.z);
+        }
+
+        T distanceFromPoint(const xyz<T> & p) const{
+            xyz<T> c = center();
+            return std::sqrt( double((p.x-c.x)*(p.x-c.x) + (p.y-c.y)*(p.y-c.y) + (p.z-c.z)*(p.z-c.z)) );
+        }
+
+        bool operator <  (const voi3D<T> &p) const{
+            xyz<T> center_a = center(), center_b = p.center();
+            return  center_a.z <  center_b.z ||
+                   (center_a.z == center_b.z && center_a.y <  center_b.y) ||
+                   (center_a.z == center_b.z && center_a.y == center_b.y && center_a.x < center_b.x) ;
+        }
+
+        bool operator == (const voi3D<T> &p) const{
+            return start == p.start && end == p.end;
+        }
+
+        bool isValid(){
+            return end.x > start.x && end.y > start.y && end.z > start.z;
+        }
+
+        voi3D<T> intersection(const voi3D<T> & voi){
+            return voi3D<T> (
+                        xyz<T>( std::max(voi.start.x, start.x),
+                                std::max(voi.start.y, start.y),
+                                std::max(voi.start.z, start.z)),
+                        xyz<T>( std::min(voi.end.x,   end.x),
+                                std::min(voi.end.y,   end.y),
+                                std::min(voi.end.z,   end.z))
+                        );
+        }
+
+        static voi3D<T> biggest(){
+            return voi3D<T> (
+                        xyz<T>(0),
+                        xyz<T>( std::numeric_limits<T>::has_infinity ? std::numeric_limits<T>::infinity() : std::numeric_limits<T>::max()) );
+        }
+
+        struct distanceFromPointFunctor
+        {
+            distanceFromPointFunctor(const xyz<T>& _p) : p(_p) {}
+
+            bool operator()(const voi3D<T>& lhs, const voi3D<T>& rhs) const{
+                return lhs.distanceFromPoint(p) < rhs.distanceFromPoint(p);
+            }
+
+            private:
+                xyz<T> p;
+        };
     };
 
 
