@@ -7,23 +7,34 @@ include_directories (${TeraStitcher_SOURCE_DIR}/common)
 
 if(APPLE)
 
-set(MATLAB_INCLUDE_DIR "/Applications/MATLAB_R2013a.app/extern/include" CACHE STRING "Include directory for mex")
-set(MATLAB_LD_DIR "/Applications/MATLAB_R2013a.app/bin/maci64" CACHE STRING "Library directory for mex")
+	option (WITH_Matlab "MATLAB Installed" OFF) 
 
-include_directories (${MATLAB_INCLUDE_DIR})
+	if(WITH_Matlab)
+		message(STATUS "Checking Matlab")
+		find_package (Matlab COMPONENTS MX_LIBRARY)
+	
+		if(Matlab_FOUND)
+	
+			include_directories (${Matlab_INCLUDE_DIRS})
 
-# add 3rd party modules to include path
-link_directories (${MATLAB_LD_DIR})
+			# add a library called matlablib (matlablib.so under Linux, matlablib.dll under Windows) from the all .h and .cpp files
+			file(GLOB matlablib_headers *.h)
+			file(GLOB matlablib_sources *.cpp)
+			add_library(matlablib SHARED ${matlablib_headers} ${matlablib_sources})
+			set_target_properties(matlablib PROPERTIES SUFFIX ".${Matlab_MEX_EXTENSION}")
 
-# add a library called matlablib (matlablib.so under Linux, matlablib.dll under Windows) from the all .h and .cpp files
-file(GLOB matlablib_headers *.h)
-file(GLOB matlablib_sources *.cpp)
-add_library(matlablib SHARED ${matlablib_headers} ${matlablib_sources})
-set_target_properties(matlablib PROPERTIES SUFFIX ".mexmaci64")
+			target_link_libraries(matlablib ${Matlab_LIBRARIES} )
+			#target_link_libraries(matlablib mex )
+			#target_link_libraries(matlablib mat )
 
-target_link_libraries(matlablib mx )
-target_link_libraries(matlablib mex )
-target_link_libraries(matlablib mat )
+			# OK
+			message(STATUS "Checking Matlab ... OK!")
+		
+		else(Matlab_FOUND)
+			message(FATAL_ERROR "Checking Matlab ... error!!!")
+		
+		endif(Matlab_FOUND)
+	endif(WITH_Matlab)
 
 elseif(UNIX)
 

@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-01-22. Giulio      @ADDED parameter for standard block depth for efficiency reasons
 * 2016-10-09. Giulio.     @ADDED parameter 'ch_dir' to 'generateTilesVaa3DRawMC' interface
 * 2014-06-20. Giulio.     @ADDED methods for conversion to 'simple' representation (series, 2D), including parallel support
 * 2016-04-13  Giulio.     @ADDED methods to manage parallelization
@@ -85,6 +86,8 @@
 
 #define REAL_INTERNAL_REP      1      // gray level images, pixels are represented ad real numbers in [0,1]
 #define UINT8_INTERNAL_REP     2      // multi-channel images, pixels are represented as 8 bit integers
+
+#define STANDARD_BLOCK_DEPTH   64      // standard block to be used when converting to tiled format (introduced for efficiency)
 
 
 class VolumeConverter

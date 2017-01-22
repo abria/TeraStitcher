@@ -490,6 +490,11 @@ void MultiLayersVolume::insertDisplacement(int i, int j, int k, Displacement *di
 	displacement->evalReliability(dir_horizontal);
 	displacement->evalReliability(dir_depth);
 
+	// we assume that by default corresponding tiles in adjacent layers are aligned with respect to motorized stages coordinates 
+	displacement->setDefaultV(0);	
+	displacement->setDefaultH(0);
+	displacement->setDefaultD(0);
+
 	disps[k]->at(i).at(j) = displacement;
 }
 

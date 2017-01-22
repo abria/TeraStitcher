@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-01-22. Giulio      @CHANGED the setting on z_max_res in tiled formats generation for efficiency reasons
 * 2016-10-12. Giulio.     @FIXED when axes are negative this should be propagated to generated image (in all tiled generators)
 * 2016-10-09. Giulio.     @ADDED parameter 'ch_dir' to 'generateTilesVaa3DRawMC' interface; the parameter plays a role only if channels are subdirectories (RES_IN_CHANS not defined)
 * 2014-06-20. Giulio.     @ADDED conversion to 'simple' representation (series, 2D), including parallel support
@@ -1562,7 +1563,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 	 */ 
 
 	//ALLOCATING  the MEMORY SPACE for image buffer
-    z_max_res = powInt(2,halve_pow2[resolutions_size-1]);
+    z_max_res = std::max(std::min(STANDARD_BLOCK_DEPTH,block_depth/2),powInt(2,halve_pow2[resolutions_size-1]));
 	if ( z_max_res > block_depth/2 ) {
 		char err_msg[STATIC_STRINGS_SIZE];
 		sprintf(err_msg, "in generateTilesVaa3DRaw(...): too much resolutions(%d): too much slices (%lld) in the buffer \n", resolutions_size, z_max_res);
@@ -2358,7 +2359,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 	 */ 
 
 		//ALLOCATING  the MEMORY SPACE for image buffer
-	z_max_res = powInt(2,resolutions_size-1);
+    z_max_res = std::max(std::min(STANDARD_BLOCK_DEPTH,block_depth/2),powInt(2,halve_pow2[resolutions_size-1]));
 	if ( z_max_res > block_depth/2 ) {
 		char err_msg[STATIC_STRINGS_SIZE];
 		sprintf(err_msg, "in generateTilesVaa3DRaw(...): too much resolutions(%d): too much slices (%lld) in the buffer \n", resolutions_size, z_max_res);
@@ -3057,7 +3058,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 	 */ 
 
 	//ALLOCATING  the MEMORY SPACE for image buffer
-    z_max_res = powInt(2,halve_pow2[resolutions_size-1]);
+    z_max_res = std::max(std::min(STANDARD_BLOCK_DEPTH,block_depth/2),powInt(2,halve_pow2[resolutions_size-1]));
 	if ( (z_max_res > 1) && (z_max_res > block_depth/2) ) {
 		char err_msg[STATIC_STRINGS_SIZE];
 		sprintf(err_msg, "in generateTilesVaa3DRaw(...): too much resolutions(%d): too much slices (%lld) in the buffer \n", resolutions_size, z_max_res);

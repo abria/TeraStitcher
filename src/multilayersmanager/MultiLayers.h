@@ -57,7 +57,7 @@ protected:
 
 	int N_LAYERS;
 	iim::VirtualVolume **LAYERS;
-	VHD_coords *layers_coords;
+	VHD_coords *layers_coords;      // elements are triplets (V,H,D)
 	int *nominal_D_overlap;
 	float cut_depth;				// depth in um affected by both fluorescence decay (in the top layer) and the cut between layers (in the bottom layer)
 
