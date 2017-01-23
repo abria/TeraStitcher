@@ -494,7 +494,7 @@ namespace iomanager														\
 				int img_chans,                                          \
 				int y0 = -1,                                            \
 				int y1 = -1,                                            \
-				int x0 = -1,												\
+				int x0 = -1,											\
 				int x1 = -1,                                            \
 				const std::string & params = iom::IMOUT_PLUGIN_PARAMS)  \
 			throw (iom::exception);                                     \
@@ -522,10 +522,10 @@ namespace iomanager														\
 				int img_height,											\
 				int img_width,											\
 				int img_chans,											\
-				int y0 = -1,												\
-				int y1 = -1,												\
-				int x0 = -1,												\
-				int x1 = -1,												\
+				int y0 = -1,											\
+				int y1 = -1,											\
+				int x0 = -1,											\
+				int x1 = -1,											\
 				int bpp = iom::DEF_BPP,									\
 				const std::string & params = iom::IMOUT_PLUGIN_PARAMS)	\
 			throw (iom::exception);										\
@@ -588,12 +588,12 @@ namespace iomanager														\
 				int img_depth,											\
 				int img_bytes_x_chan,									\
 				int img_chans,											\
-				int z0 = -1,												\
-				int z1 = -1,												\
-				int y0 = -1,												\
-				int y1 = -1,												\
-				int x0 = -1,												\
-				int x1 = -1,												\
+				int z0 = -1,											\
+				int z1 = -1,											\
+				int y0 = -1,											\
+				int y1 = -1,											\
+				int x0 = -1,											\
+				int x1 = -1,											\
 				const std::string & params = iom::IMOUT_PLUGIN_PARAMS)	\
 			throw (iom::exception);										\
 																		\
@@ -616,10 +616,10 @@ namespace iomanager														\
 				int img_width,											\
 				int img_bytes_x_chan,									\
 				int img_chans,											\
-				int y0 = -1,												\
-				int y1 = -1,												\
-				int x0 = -1,												\
-				int x1 = -1,												\
+				int y0 = -1,											\
+				int y1 = -1,											\
+				int x0 = -1,											\
+				int x1 = -1,											\
 				int slice = -1,											\
 				const std::string & params = iom::IMOUT_PLUGIN_PARAMS)	\
 			throw (iom::exception);										\

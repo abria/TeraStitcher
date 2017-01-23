@@ -65,7 +65,8 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	//argument objects definitions
 	TCLAP::SwitchArg p_overwrite_mdata("","ovrw","Overwrite data.",false); 
-        /**
+ 	TCLAP::SwitchArg p_update_mdata("","update","Overwrite data.",false); 
+       /**
 		 * SwitchArg constructor.
 		 * \param flag - The one character flag that identifies this
 		 * argument on the command line.
@@ -133,6 +134,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_vxl_size_H);
 	cmd.add(p_vxl_size_V);
 	cmd.add(p_vxl_size);
+	cmd.add(p_update_mdata);
 	cmd.add(p_overwrite_mdata);
 	cmd.add(p_root_dir);
 
@@ -216,6 +218,11 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	this->root_dir = p_root_dir.getValue();
 	this->overwrite_mdata = p_overwrite_mdata.getValue();
+	if ( p_src_format.getValue() == iim::TILED_MC_FORMAT ||
+		 p_src_format.getValue() == iim::TILED_MC_TIF3D_FORMAT )  
+		this->update_mdata = p_update_mdata.getValue();
+	else
+		this->update_mdata = false;
 	this->axis_V = axis(p_axis_V.getValue());
 	this->axis_H = axis(p_axis_H.getValue());
 	this->axis_D = axis(p_axis_D.getValue());

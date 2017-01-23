@@ -60,27 +60,40 @@ int main(int argc, char** argv)
 		// do what you have to do
 
 		char mdata_filepath[1000];
-		sprintf(mdata_filepath, "%s/%s", cli.root_dir.c_str(), MDATA_BIN_FILE_NAME.c_str());
-		if ( !isFile(mdata_filepath) || cli.overwrite_mdata ) { // if metadata file does not exist or must be overw written the full initialization procedure is performaed and metadata saved
-            if(cli.src_format.compare(iim::STACKED_FORMAT) == 0)
-				StackedVolume volume(cli.root_dir.c_str(),ref_sys(cli.axis_V,cli.axis_H,cli.axis_D),cli.vxlsz_V,cli.vxlsz_H,cli.vxlsz_D,cli.overwrite_mdata);
-            else if(cli.src_format.compare(iim::TILED_FORMAT) == 0 || cli.src_format.compare(iim::TILED_TIF3D_FORMAT) == 0)
-				TiledVolume volume(cli.root_dir.c_str(),ref_sys(cli.axis_V,cli.axis_H,cli.axis_D),cli.vxlsz_V,cli.vxlsz_H,cli.vxlsz_D,cli.overwrite_mdata);
-            else if(cli.src_format.compare(iim::TILED_MC_FORMAT) == 0 || cli.src_format.compare(iim::TILED_MC_TIF3D_FORMAT) == 0)
+		if ( cli.src_format.compare(iim::TILED_MC_FORMAT) == 0 || cli.src_format.compare(iim::TILED_MC_TIF3D_FORMAT) == 0 ) {
+			sprintf(mdata_filepath, "%s/%s", cli.root_dir.c_str(), MC_MDATA_BIN_FILE_NAME.c_str());
+			if ( !isFile(mdata_filepath) || cli.overwrite_mdata ) { // if metadata file does not exist or must be overw written the full initialization procedure is performaed and metadata saved
 				TiledMCVolume volume(cli.root_dir.c_str(),ref_sys(cli.axis_V,cli.axis_H,cli.axis_D),cli.vxlsz_V,cli.vxlsz_H,cli.vxlsz_D,cli.overwrite_mdata);
-		}
-		else {  // perform normal initialization and prints metadata if a text file
-           if(cli.src_format.compare(iim::STACKED_FORMAT) == 0) {
-				StackedVolume volume(cli.root_dir.c_str());
-				volume.print();
-		   }
-            else if(cli.src_format.compare(iim::TILED_FORMAT) == 0 || cli.src_format.compare(iim::TILED_TIF3D_FORMAT) == 0) {
-				TiledVolume volume(cli.root_dir.c_str());
-				volume.print();
 			}
-            else if(cli.src_format.compare(iim::TILED_MC_FORMAT) == 0 || cli.src_format.compare(iim::TILED_MC_TIF3D_FORMAT) == 0) {
-				TiledMCVolume volume(cli.root_dir.c_str());
-				volume.print();
+			else {
+				TiledMCVolume volume(cli.root_dir.c_str()); // load available data
+				if ( cli.update_mdata ) {
+					// regenerate metadata
+					TiledMCVolume new_volume(cli.root_dir.c_str(),
+						volume.getVolumes()[0]->getREF_SYS(),volume.getVolumes()[0]->getVXL_1(),volume.getVolumes()[0]->getVXL_2(),volume.getVolumes()[0]->getVXL_3(),true);
+				}
+				else {
+					volume.print();
+				}
+			}
+		}
+		else { // Stacked or Tiled formats
+			sprintf(mdata_filepath, "%s/%s", cli.root_dir.c_str(), MDATA_BIN_FILE_NAME.c_str());
+			if ( !isFile(mdata_filepath) || cli.overwrite_mdata ) { // if metadata file does not exist or must be overw written the full initialization procedure is performaed and metadata saved
+				if(cli.src_format.compare(iim::STACKED_FORMAT) == 0)
+					StackedVolume volume(cli.root_dir.c_str(),ref_sys(cli.axis_V,cli.axis_H,cli.axis_D),cli.vxlsz_V,cli.vxlsz_H,cli.vxlsz_D,cli.overwrite_mdata);
+				else if(cli.src_format.compare(iim::TILED_FORMAT) == 0 || cli.src_format.compare(iim::TILED_TIF3D_FORMAT) == 0)
+					TiledVolume volume(cli.root_dir.c_str(),ref_sys(cli.axis_V,cli.axis_H,cli.axis_D),cli.vxlsz_V,cli.vxlsz_H,cli.vxlsz_D,cli.overwrite_mdata);
+			}
+			else {  // perform normal initialization and prints metadata if a text file
+			   if(cli.src_format.compare(iim::STACKED_FORMAT) == 0) {
+					StackedVolume volume(cli.root_dir.c_str());
+					volume.print();
+			   }
+				else if(cli.src_format.compare(iim::TILED_FORMAT) == 0 || cli.src_format.compare(iim::TILED_TIF3D_FORMAT) == 0) {
+					TiledVolume volume(cli.root_dir.c_str());
+					volume.print();
+				}
 			}
 		}
 	}

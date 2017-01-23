@@ -72,7 +72,6 @@ class vm::VirtualStack
         // 2014-09-01. Alessandro. @ADDED support for sparse data.
         std::vector< vm::interval<int> > z_ranges;	//vector of Z-ranges containing valid data (each range is of type [start, end) )
 													//*** WARNING ***: if vector is empty, the stack is assumed as empty
-
 		// 2015-01-17. Alessandro. @ADDED support for all-in-one-folder data (import from xml only).
 		// Each stack can be associated with a regular expression to filter image filenames. 
 		std::string img_regex;

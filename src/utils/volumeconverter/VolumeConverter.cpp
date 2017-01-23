@@ -25,7 +25,10 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-01-23.  Giulio.    @FIXED bugs of parallel execution in case 4D formats are specified
+
 * 2017-01-22. Giulio      @CHANGED the setting on z_max_res in tiled formats generation for efficiency reasons
+
 * 2016-10-12. Giulio.     @FIXED when axes are negative this should be propagated to generated image (in all tiled generators)
 * 2016-10-09. Giulio.     @ADDED parameter 'ch_dir' to 'generateTilesVaa3DRawMC' interface; the parameter plays a role only if channels are subdirectories (RES_IN_CHANS not defined)
 * 2014-06-20. Giulio.     @ADDED conversion to 'simple' representation (series, 2D), including parallel support
@@ -4161,7 +4164,7 @@ void VolumeConverter::convertTo(
 
 
 
-void VolumeConverter::createDirectoryHierarchy(std::string output_path, bool* resolutions, 
+void VolumeConverter::createDirectoryHierarchy(std::string output_path, std::string ch_dir, bool* resolutions, 
 				int block_height, int block_width, int block_depth, int method, bool isotropic, 
 				bool show_progress_bar, const char* saved_img_format, 
                 int saved_img_depth, std::string frame_dir, bool par_mode)	throw (IOException, iom::exception)
@@ -4290,21 +4293,27 @@ void VolumeConverter::createDirectoryHierarchy(std::string output_path, bool* re
 			halve_pow2[i] = i;
 	}
 
-	if ( strcmp(saved_img_format,"Tiff3DMC") == 0 ) {
-		// computing channel directory names
+	if ( strcmp(saved_img_format,"Tiff3DMC") == 0 || strcmp(saved_img_format,"Vaa3DRawMC") == 0 ) {
+		// 2017-01-23. Giulio. @ADDED the passed subdirectory name is used in case one channel image has to be converted
 		chans_dir = new std::string[channels];
-		int n_digits = 1;
-		int _channels = channels / 10;	
-		while ( _channels ) {
-			n_digits++;
-			_channels /= 10;
+		if ( ch_dir != "" && channels == 1 ) {
+			chans_dir[0] = "/" + ch_dir;
 		}
-		for ( int c=0; c<channels; c++ ) {
-			std::stringstream dir_name;
-			dir_name.width(n_digits);
-			dir_name.fill('0');
-			dir_name << c;
-			chans_dir[c] = "/" + (iim::CHANNEL_PREFIX + dir_name.str());
+		else { // no subdirectory name has been provided or more than one channel
+			// computing channel directory names
+			int n_digits = 1;
+			int _channels = channels / 10;	
+			while ( _channels ) {
+				n_digits++;
+				_channels /= 10;
+			}
+			for ( int c=0; c<channels; c++ ) {
+				std::stringstream dir_name;
+				dir_name.width(n_digits);
+				dir_name.fill('0');
+				dir_name << c;
+				chans_dir[c] = "/" + (iim::CHANNEL_PREFIX + dir_name.str());
+			}
 		}
 	}
 
@@ -4363,7 +4372,7 @@ void VolumeConverter::createDirectoryHierarchy(std::string output_path, bool* re
 				}
             }
 
-			if ( strcmp(saved_img_format,"Tiff3DMC") == 0 ) {
+			if ( strcmp(saved_img_format,"Tiff3DMC") == 0 || strcmp(saved_img_format,"Vaa3DRawMC") == 0 ) {
  				for ( int c=0; c<channels; c++ ) {
 					//creating directory that will contain image data at current resolution
 					resolution_dir = file_path[res_i].str() + chans_dir[c];
@@ -4379,6 +4388,7 @@ void VolumeConverter::createDirectoryHierarchy(std::string output_path, bool* re
        }
 	}
 }
+
 
 
 void VolumeConverter::createDirectoryHierarchySimple(std::string output_path, bool* resolutions, 
@@ -4556,7 +4566,7 @@ void VolumeConverter::createDirectoryHierarchySimple(std::string output_path, bo
 }
 
 
-void VolumeConverter::mdataGenerator(std::string output_path, bool* resolutions, 
+void VolumeConverter::mdataGenerator(std::string output_path, std::string ch_dir, bool* resolutions, 
 				int block_height, int block_width, int block_depth, int method, bool isotropic, 
 				bool show_progress_bar, const char* saved_img_format, 
                 int saved_img_depth, std::string frame_dir, bool par_mode)	throw (IOException, iom::exception)
@@ -4658,21 +4668,27 @@ void VolumeConverter::mdataGenerator(std::string output_path, bool* resolutions,
 			halve_pow2[i] = i;
 	}
 
-	if ( strcmp(saved_img_format,"Tiff3DMC") == 0 ) {
-		// computing channel directory names
+	if ( strcmp(saved_img_format,"Tiff3DMC") == 0 || strcmp(saved_img_format,"Vaa3DRawMC") == 0 ) {
+		// 2017-01-23. Giulio. @ADDED the passed subdirectory name is used in case one channel image has to be converted
 		chans_dir = new std::string[channels];
-		int n_digits = 1;
-		int _channels = channels / 10;	
-		while ( _channels ) {
-			n_digits++;
-			_channels /= 10;
+		if ( ch_dir != "" && channels == 1 ) {
+			chans_dir[0] = "/" + ch_dir;
 		}
-		for ( int c=0; c<channels; c++ ) {
-			std::stringstream dir_name;
-			dir_name.width(n_digits);
-			dir_name.fill('0');
-			dir_name << c;
-			chans_dir[c] = "/" + (iim::CHANNEL_PREFIX + dir_name.str());
+		else { // no subdirectory name has been provided or more than one channel
+			// computing channel directory names
+			int n_digits = 1;
+			int _channels = channels / 10;	
+			while ( _channels ) {
+				n_digits++;
+				_channels /= 10;
+			}
+			for ( int c=0; c<channels; c++ ) {
+				std::stringstream dir_name;
+				dir_name.width(n_digits);
+				dir_name.fill('0');
+				dir_name << c;
+				chans_dir[c] = "/" + (iim::CHANNEL_PREFIX + dir_name.str());
+			}
 		}
 	}
 

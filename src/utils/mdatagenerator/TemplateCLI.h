@@ -42,6 +42,7 @@ class TemplateCLI
 
 		// switch parameters
 		bool overwrite_mdata;						// overwrite data (mdata.bin file)
+		bool update_mdata;							// update data (only tiled 4D, cmap.bin file)
 
 		// other parameters
 		// int/float/double/string XXXX;	// description

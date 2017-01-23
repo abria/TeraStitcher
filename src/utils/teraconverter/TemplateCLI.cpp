@@ -290,10 +290,10 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		throw iom::exception(errMsg);
 	}
 
-	if ( p_ch_dir.getValue() != "" && p_dst_format.getValue() == iim::TILED_MC_TIF3D_FORMAT && (p_makedirs.isSet() || p_metadata.isSet() || p_parallel.isSet())) {
-		sprintf(errMsg, "A subdirectory name for tiled 4D format cannot be provided if options makedirs, parallel or metadata options");
-		throw iom::exception(errMsg);
-	}
+	//if ( p_ch_dir.getValue() != "" && p_dst_format.getValue() == iim::TILED_MC_TIF3D_FORMAT && (p_makedirs.isSet() || p_metadata.isSet() || p_parallel.isSet())) {
+	//	sprintf(errMsg, "A subdirectory name for tiled 4D format cannot be provided if options makedirs, parallel or metadata options");
+	//	throw iom::exception(errMsg);
+	//}
 
 	if ( p_outFmt.getValue() != "intensity" && 
 		 p_outFmt.getValue() != "graylevel" && 
