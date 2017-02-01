@@ -25,10 +25,9 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2017-01-23.  Giulio.    @FIXED bugs of parallel execution in case 4D formats are specified
-
+* 2017-02-01. Giulio.     @FIXED bugs in computing the voxel size along D when isotropic downsizing is set
+* 2017-01-23. Giulio.     @FIXED bugs of parallel execution in case 4D formats are specified
 * 2017-01-22. Giulio      @CHANGED the setting on z_max_res in tiled formats generation for efficiency reasons
-
 * 2016-10-12. Giulio.     @FIXED when axes are negative this should be propagated to generated image (in all tiled generators)
 * 2016-10-09. Giulio.     @ADDED parameter 'ch_dir' to 'generateTilesVaa3DRawMC' interface; the parameter plays a role only if channels are subdirectories (RES_IN_CHANS not defined)
 * 2014-06-20. Giulio.     @ADDED conversion to 'simple' representation (series, 2D), including parallel support
@@ -720,7 +719,7 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 				//system.
 				//---- Giulio 2013-08-23 fixed
 				StackedVolume temp_vol(file_path[res_i].str().c_str(),reference,
-								volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,res_i));
+								volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,halve_pow2[res_i]));
 
 	//			StackedVolume temp_vol(file_path[res_i].str().c_str(),ref_sys(axis(1),axis(2),axis(3)), volume->getVXL_V()*(res_i+1),
 	//							volume->getVXL_H()*(res_i+1),volume->getVXL_D()*(res_i+1));
@@ -1491,7 +1490,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 	{
         n_stacks_V[res_i] = (int) ceil ( (height/powInt(2,res_i)) / (float) block_height );
         n_stacks_H[res_i] = (int) ceil ( (width/powInt(2,res_i))  / (float) block_width  );
-        n_stacks_D[res_i] = (int) ceil ( (depth/powInt(2,res_i))  / (float) block_depth  );
+        n_stacks_D[res_i] = (int) ceil ( (depth/powInt(2,halve_pow2[res_i]))  / (float) block_depth  );
         stacks_height[res_i] = new int **[n_stacks_V[res_i]];
         stacks_width[res_i]  = new int **[n_stacks_V[res_i]]; 
         stacks_depth[res_i]  = new int **[n_stacks_V[res_i]]; 
@@ -2033,7 +2032,8 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 				//system.
 				try {
 					TiledVolume temp_vol(file_path[res_i].str().c_str(),reference,
-							volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,res_i));
+							volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,halve_pow2[res_i]));
+							//volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,res_i));
 				}
 				catch (IOException & ex)
 				{
@@ -2944,7 +2944,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 	{
         n_stacks_V[res_i] = (int) ceil ( (height/powInt(2,res_i)) / (float) block_height );
         n_stacks_H[res_i] = (int) ceil ( (width/powInt(2,res_i))  / (float) block_width  );
-        n_stacks_D[res_i] = (int) ceil ( (depth/powInt(2,res_i))  / (float) block_depth  );
+        n_stacks_D[res_i] = (int) ceil ( (depth/powInt(2,halve_pow2[res_i]))  / (float) block_depth  );
 		stacks_height[res_i] = new int **[n_stacks_V[res_i]];
 		stacks_width[res_i]  = new int **[n_stacks_V[res_i]]; 
 		stacks_depth[res_i]  = new int **[n_stacks_V[res_i]]; 
@@ -3492,7 +3492,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 					//system.
 					try {
 						TiledVolume temp_vol(resolution_dir.c_str(),reference,
-								volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,res_i));
+								volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,halve_pow2[res_i]));
 					}
 					catch (IOException & ex)
 					{
@@ -3510,7 +3510,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 				}
 
 				TiledMCVolume temp_mc_vol(file_path[res_i].str().c_str(),reference,
-						volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,res_i));
+						volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,halve_pow2[res_i]));
 
 			}
 		}

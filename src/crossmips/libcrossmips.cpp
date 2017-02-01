@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-01-27. Giulio.     @CHANGED the way initial checks are managed; the search are is now dynamically resized if overlap is too small
 * 2015-03-20. Giulio.     @CHANGED different dimensions for the new NCC to be computed are passed to compute_Neighborhood
 * 2015-03-20. Giulio.     @CHANGED newu and newv have been moved as parameters in compute_Neighborhood
 */
@@ -203,30 +204,62 @@ NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B,
 		throw iom::exception(err_msg);
 	}
 
-    // skipping check for 2D images: see Alessandro's comment in PDAlgoMIPNCC.cpp on 21/08/2013
-    if(dimk != 1)
-    {
-        // Alessandro - 23/03/2013 - added check to verify precondition written into CrossMIPs.h that says:
-        // "in practice the dimensions of the MIPS (depending on dimi, dimj, dimk, ni, nj, nk) have to be large enough with respect to delayi, delayj, delayk"
-        if(side == NORTH_SOUTH && ((dimi - ni < 2*delayi+1) || (dimj - nj < 2*delayj+1) || (dimk - nk < 2*delayk+1)))
-            throw iom::exception("CrossMIPs: the search region is too big with respect to the overlapping region. "
-                              "Overlapping extent should be > 2*delay+1 for each direction where delay is the "
-                              "search region extent along that direction.");
-        if(side == WEST_EAST   && ((dimj - nj < 2*delayi+1) || (dimi - ni < 2*delayj+1) || (dimk - nk < 2*delayk+1)))
-            throw iom::exception("CrossMIPs: the search region is too big with respect to the overlapping region. "
-                              "Overlapping extent should be > 2*delay+1 for each direction where delay is the "
-                              "search region extent along that direction.");
-    }
+	/************************************************************************************************************************************************
+	 * 2017-01-27. Giulio. OLD CODE - MAINTAIN UNTIL TESTS OF NEW CODE ARE COMPLETED
+	 ***********************************************************************************************************************************************/
+    //// skipping check for 2D images: see Alessandro's comment in PDAlgoMIPNCC.cpp on 21/08/2013
+    //if(dimk != 1)
+    //{
+    //    // Alessandro - 23/03/2013 - added check to verify precondition written into CrossMIPs.h that says:
+    //    // "in practice the dimensions of the MIPS (depending on dimi, dimj, dimk, ni, nj, nk) have to be large enough with respect to delayi, delayj, delayk"
+    //    if(side == NORTH_SOUTH && ((dimi - ni < 2*delayi+1) || (dimj - nj < 2*delayj+1) || (dimk - nk < 2*delayk+1)))
+    //        throw iom::exception("CrossMIPs: the search region is too big with respect to the overlapping region. "
+    //                          "Overlapping extent should be > 2*delay+1 for each direction where delay is the "
+    //                          "search region extent along that direction.");
+    //    if(side == WEST_EAST   && ((dimj - nj < 2*delayi+1) || (dimi - ni < 2*delayj+1) || (dimk - nk < 2*delayk+1)))
+    //        throw iom::exception("CrossMIPs: the search region is too big with respect to the overlapping region. "
+    //                          "Overlapping extent should be > 2*delay+1 for each direction where delay is the "
+    //                          "search region extent along that direction.");
+    //}
+
+ 	/************************************************************************************************************************************************
+	 * 2017-01-27. Giulio. NEW CODE - IMPLEMENT A MORE FLEXIBLE STRATEGY 
+	 ***********************************************************************************************************************************************/
+    // Alessandro - 23/03/2013 - added check to verify precondition written into CrossMIPs.h that says:
+    // "in practice the dimensions of the MIPS (depending on dimi, dimj, dimk, ni, nj, nk) have to be large enough with respect to delayi, delayj, delayk"
+
+	// 2017-01-27. Giulio. Check if search areas are too big with respect to overlap
+	if ( side == NORTH_SOUTH ) { 
+		delayi = MIN(delayi,(dimi - ni - 1) / 2);
+		delayj = MIN(delayj,(dimj - nj - 1) / 2);
+		delayk = MIN(delayk,(dimk - nk - 1) / 2);
+	}
+	else if ( side == WEST_EAST ) {
+		delayi = MIN(delayj,(dimj - nj - 1) / 2);
+		delayj = MIN(delayi,(dimi - ni - 1) / 2);
+		delayk = MIN(delayk,(dimk - nk - 1) / 2);
+	}
+	else
+        throw iom::exception("CrossMIPs: undefined side for tile alignment.");
+
+	// 2017-01-27. Giulio. Check if wRangeThr fields have to be reduced 
+	// Note that if these values are very small it is likely that alignment will be unreliable 
+	// because it is unlikely that values in the NCC map can quickly decrease if the search area is too narrow 
+	NCC_params->wRangeThr_i = MIN(NCC_params->wRangeThr_i,delayi);
+	NCC_params->wRangeThr_j = MIN(NCC_params->wRangeThr_j,delayj);
+	NCC_params->wRangeThr_k = MIN(NCC_params->wRangeThr_k,delayk);
+
+ 	/************************************************************************************************************************************************
+	 * 2017-01-27. Giulio. END NEW CODE 
+	 ***********************************************************************************************************************************************/
 
 
 	/*
-	 *  il seguente codice assume che:
-	 *  - le matrici bidimensionali siano memorizzate secondo l'ultima dimensione
-	 *  ad esempio il MIP proiettato lungo y, che include le dimensioni x e z, e' memorizzato per
-	 *  valori di z consecutivi
-	 *  - gli stack 3D siano memorizzati per piani orizzontali e ciascun piano sia memorizzato
-	 *  come una metrice bidimensionale (secondo l'ultima dimensione); questa ipotesi ha effetto
-	 *  solo nel calcolo delle tre proiezioni MIP
+	 * the following conde assumes that:
+	 * - 2D matrices are stored along their second dimension
+	 *   for instance, in a MIP projected along y, which includes dimensions x and z, the values of z are stored in sequence
+	 * - 3D stacks are stored as a sequence of horizontal planes and each plane is stored as a 2D matrix (along its second dimension)
+	 *   this assumption has effect only in the computation of the three MIP projections
 	 */
 
 # ifdef _PAR_VERSION
@@ -235,7 +268,7 @@ NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B,
 
 # endif
 			
-	// calcola parametri per scandire i volumi
+	// compute parameters to scan the volumes
 	if ( side == NORTH_SOUTH ) {
 		dimk_v = dimk;
 		dimi_v = dimi - ni;
