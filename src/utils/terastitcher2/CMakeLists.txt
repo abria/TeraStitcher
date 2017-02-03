@@ -23,14 +23,9 @@ add_executable(terastitcher2 ${GUI_headers} ${GUI_sources})
 
 # Link the executable to the other modules. 
 target_link_libraries(terastitcher2 multilayersmanager )
-target_link_libraries(terastitcher2 stitcher )
+#target_link_libraries(terastitcher2 stitcher )
 target_link_libraries(terastitcher2 volumemanager )
-target_link_libraries(terastitcher2 crossmips )
+#target_link_libraries(terastitcher2 crossmips )
 target_link_libraries(terastitcher2 iomanager )
 target_link_libraries(terastitcher2 tinyxml )
-#target_link_libraries(terastitcher2 ${OpenCV_LIBS})
-target_link_libraries(terastitcher2 imagemanager )
 target_link_libraries(terastitcher2 common )
-#Onofri
-#target_link_libraries(terastitcher2 libtiff)
-#target_link_libraries(terastitcher2 zlib)

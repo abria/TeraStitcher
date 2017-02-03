@@ -53,3 +53,6 @@ if(WITH_HDF5)
 		
 	endif(HDF5_FOUND)
 endif(WITH_HDF5)
+
+target_link_libraries(imagemanager stitcher )
+target_link_libraries(imagemanager crossmips )
