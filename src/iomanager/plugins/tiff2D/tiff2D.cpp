@@ -399,7 +399,7 @@ throw (iom::exception)
 				image_stack[j] = 0;		// default is 0 (black)
 		}
 		else if(image_stack_width != (uint64)cols || image_stack_height != (uint64)rows)
-			throw iom::exception("images in stack have not the same dimensions", __iom__current__function__);
+			throw iom::exception(iom::strprintf("images in stack have not the same dimensions (%d x %d != %d x %d)", cols, rows, image_stack_width, image_stack_height), __iom__current__function__);
 
 // 		iom::real_t *raw_data = &image_stack[z*image.rows*image.cols];
 // 		if(image.depth == CV_8U)

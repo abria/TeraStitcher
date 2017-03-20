@@ -123,18 +123,18 @@ PTabDisplComp::PTabDisplComp(QMyTabWidget* _container, int _tab_index) : QWidget
     searchregion_label = new QLabel("Search Region (voxels):");
     Ysearch_sbox = new QSpinBox();
     Ysearch_sbox->setAlignment(Qt::AlignCenter);
-    Ysearch_sbox->setMinimum(5);
-    Ysearch_sbox->setValue(20);
+    Ysearch_sbox->setMinimum(0);
+    Ysearch_sbox->setValue(S_DISPL_SEARCH_RADIUS_DEF);
     Ysearch_sbox->setSuffix(" (Y)");
     Xsearch_sbox = new QSpinBox();
     Xsearch_sbox->setAlignment(Qt::AlignCenter);
-    Xsearch_sbox->setMinimum(5);
-    Xsearch_sbox->setValue(20);
+    Xsearch_sbox->setMinimum(0);
+    Xsearch_sbox->setValue(S_DISPL_SEARCH_RADIUS_DEF);
     Xsearch_sbox->setSuffix(" (X)");
     Zsearch_sbox = new QSpinBox();
     Zsearch_sbox->setAlignment(Qt::AlignCenter);
-    Zsearch_sbox->setMinimum(5);
-    Zsearch_sbox->setValue(20);
+    Zsearch_sbox->setMinimum(0);
+    Zsearch_sbox->setValue(S_DISPL_SEARCH_RADIUS_DEF);
     Zsearch_sbox->setSuffix(" (Z)");
     for_label_1 = new QLabel(QChar(0x00D7));
     for_label_1->setAlignment(Qt::AlignCenter);
@@ -420,6 +420,7 @@ void PTabDisplComp::setEnabled(bool enabled)
         QString saveproj_path = CImportUnstitched::instance()->getVolume()->getSTACKS_DIR();
         saveproj_path.append("/xml_displcomp.xml");
         saveproj_field->setText(saveproj_path);
+		subvoldims_sbox->setValue(std::min(100, CImportUnstitched::instance()->getVolume()->getN_SLICES()));
         updateMemoryOccupancy(0);
     }
 }

@@ -606,7 +606,7 @@ iom::real_t* Stack::loadImageStack(int first_file, int last_file) throw (iom::ex
 					STACKED_IMAGE[j] = 0;		// default is 0 (black)
 			}
 			else if(image_stack_width != (uint64)img_width || image_stack_height != (uint64)img_height)
-				throw iom::exception("images in stack have not the same dimensions", __iom__current__function__);
+				throw iom::exception(iom::strprintf("images in stack have not the same dimensions (%d x %d != %d x %d)", img_width, img_height, image_stack_width, image_stack_height), __iom__current__function__);
 
 			int offset;
 
@@ -706,7 +706,7 @@ iom::real_t* Stack::loadImageStack(int first_file, int last_file) throw (iom::ex
 				STACKED_IMAGE[j] = 0;		// default is 0 (black)
 		}
 		else if(image_stack_width != (uint64)img_width || image_stack_height != (uint64)img_height)
-			throw iom::exception("images in stack have not the same dimensions", __iom__current__function__);
+			throw iom::exception(iom::strprintf("images in stack have not the same dimensions (%d x %d != %d x %d)", img_width, img_height, image_stack_width, image_stack_height), __iom__current__function__);
 
 		int offset;
 
