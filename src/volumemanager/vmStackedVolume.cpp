@@ -28,7 +28,9 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-03-26. Giulio      @ADDED deallocation of the cache buffer to avoid a memory leak
 * 2016-11-14. Giulio.     @ADDED management of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
+* 2016-09-01. Giulio.     @ADDED support for cache management in loadImageStack 
 * 2015-06-12. Giulio      @ADDED 'check' method to check completeness and coherence of a volume
 * 2015-02-26. Giulio.     @ADDED implementation of initChannels private method to initialize fields DIM_C and BYTESxCHAN
 * 2015-01-17. Alessandro. @ADDED support for all-in-one-folder data (import from xml only).
@@ -211,6 +213,9 @@ StackedVolume::~StackedVolume()
 		}
 		delete[] STACKS;
 	}
+	
+	if ( cb )
+		delete cb;
 }
 
 //GET METHODS

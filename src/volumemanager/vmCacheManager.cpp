@@ -28,7 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2016-08-28. Alessandro. @CREATED.
+* 2016-08-28. Giulio. @CREATED.
 */
 
 #include "vmCacheManager.h"

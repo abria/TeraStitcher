@@ -29,7 +29,7 @@
 *    CHANGELOG    *
 *******************
 * 2016-11-14. Giulio.     @ADDED management of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
-* 2016-09-01. Giulio.     @ADDED cache management in loadImageStack
+* 2016-09-01. Giulio.     @ADDED cache management in loadImageStack (only if just one slice has to be loaded)
 * 2015-08-24. Giulio.     @FIXED memory leak in loadImageStack
 * 2015-02-28. Giulio.     @ADDED saving of fields N_CHANS and N_BYTESxCHAN in the xml files
 * 2015-02-26. Giulio.     @ADDED initialization of fields N_CHANS and N_BYTESxCHAN in constructor; this information is NOT saved in mdata.bin and xml files

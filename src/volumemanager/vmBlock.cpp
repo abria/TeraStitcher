@@ -31,7 +31,7 @@
 * 2016-11-16. Giulio.     @ADDED management of the case when the xml import file is generated externally and attributes BLOCK_SIZES and BLOCK_ABS_D are missing
 * 2016-11-14. Giulio.     @ADDED management of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
 * 2016-10-27. Giulio.     @ADDED additional parameters for subimage specification passed to input plugin calls
-* 2016-09-01. Giulio.     @ADDED cache management in loadImageStack
+* 2016-09-01. Giulio.     @ADDED cache management in loadImageStack (only if just one slice has to be loaded)
 * 2016-06-09. Giulio.     @ADDED code to load the buffer when the input plugin does not interleve channels
 * 2016-06-09. Giulio.     @FIXED initialized the buffer 'data' to 0 in 'loadImageStack'
 * 2015-08-05. Giulio.     @ADDED detailed error messages in 'loadImageStack' and 'compute_z_ranges's
