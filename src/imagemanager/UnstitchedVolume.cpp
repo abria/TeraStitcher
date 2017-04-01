@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-01. Giulio.     @ADDED support for multi-layer stitching
 * 2016-09-13. Giulio.     @ADDED a cache manager to store stitched subregions
 * 2016-08-30. Giulio.     @FIXED bug in 'internal_loadSubvolume_to_real32': for each row/column both tests have to be performed to check if border tiles have to be added on both sides 
 * 2016-08-30. Giulio.     @FIXED bug in 'internal_loadSubvolume_to_real32': vxl_i was not correctly initialized and it was incorrectly compared with V1/H1
@@ -140,6 +141,7 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir, bool cacheEnabled, int
 	VXL_H = volume->getVXL_H();
 	VXL_D = volume->getVXL_D();
 
+	// these must be corrected after the real size od the stitched volume have been computed
 	ORG_V = volume->getORG_V();
 	ORG_H = volume->getORG_H();
 	ORG_D = volume->getORG_D();
@@ -180,9 +182,14 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir, bool cacheEnabled, int
  	stitcher->computeVolumeDims(false); // set index limits of unstitched volume
 
 	// 2016-03-23. Giulio.     @ADDED offsets of unstitched volume with respect to nominal origin (0,0,0) 
-	V0_offs = stitcher->V0; // may be negative and must be subtracted to map insices of unstitched volume (that may start from a negative value) to indices of stitched volume (starting from 0)
-	H0_offs = stitcher->H0; // may be negative and must be subtracted to map insices of unstitched volume (that may start from a negative value) to indices of stitched volume (starting from 0)
-	D0_offs = stitcher->D0; // may be positive and must be subtracted to map insices of unstitched volume (that may start from a positive value) to indices of stitched volume (starting from 0)
+	V0_offs = stitcher->V0; // may be negative and must be subtracted to map indices of unstitched volume (that may start from a negative value) to indices of stitched volume (starting from 0)
+	H0_offs = stitcher->H0; // may be negative and must be subtracted to map indices of unstitched volume (that may start from a negative value) to indices of stitched volume (starting from 0)
+	D0_offs = stitcher->D0; // may be positive and must be subtracted to map indices of unstitched volume (that may start from a positive value) to indices of stitched volume (starting from 0)
+
+	// correct origin coordinates of the stitched volume
+	ORG_V += V0_offs * VXL_V;
+	ORG_H += H0_offs * VXL_H;
+	ORG_D += D0_offs * VXL_D;
 
 	blending_algo = _blending_algo;
 
@@ -227,6 +234,29 @@ void UnstitchedVolume::initChannels ( ) throw (IOException)
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 }
+
+
+void UnstitchedVolume::updateTilesPositions ( ) 
+{
+    /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
+
+ 	stitcher->computeVolumeDims(false); // set index limits of unstitched volume
+
+	// offsets of unstitched volume with respect to nominal origin (0,0,0) 
+	V0_offs = stitcher->V0; // may be negative and must be subtracted to map indices of unstitched volume (that may start from a negative value) to indices of stitched volume (starting from 0)
+	H0_offs = stitcher->H0; // may be negative and must be subtracted to map indices of unstitched volume (that may start from a negative value) to indices of stitched volume (starting from 0)
+	D0_offs = stitcher->D0; // may be positive and must be subtracted to map indices of unstitched volume (that may start from a positive value) to indices of stitched volume (starting from 0)
+
+	// correct origin coordinates of the stitched volume
+	ORG_V += V0_offs * VXL_V;
+	ORG_H += H0_offs * VXL_H;
+	ORG_D += D0_offs * VXL_D;
+
+	DIM_V = stitcher->V1 - stitcher->V0;
+	DIM_H = stitcher->H1 - stitcher->H0;
+	DIM_D = stitcher->D1 - stitcher->D0;
+}
+
 
 //PRINT method
 void UnstitchedVolume::print()
@@ -483,6 +513,8 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 			blending = StackStitcher::no_blending;
 		else if(blending_algo == S_SHOW_STACK_MARGIN)
 			blending = StackStitcher::stack_margin;
+		else if(blending_algo == S_ENHANCED_NO_BLENDING)
+			blending = StackStitcher::enhanced_no_blending;
 		else
  			throw iim::IOException(iom::strprintf("unrecognized blending function"), __iom__current__function__);
 

@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-01. Giulio.     @CHSNGED the algorithm that computes the peak width
 * 2015-04-06. Giulio.     @CHANGED corrected compute_NCC_alignment to deal with the case widthX = 1 which likely to be an anomaly
 * 2015-03-20. Giulio.     @CHANGED newu and newv have been moved as parameters in compute_Neighborhood
 * 2014-10-31. Giulio.     @CHANGED computations in compute_NCC are performed in double precision (and not in single precision) to avoit roundoff errors
@@ -92,6 +93,8 @@ void binary_search ( iom::real_t *a, int n, iom::real_t x, bool &found, int &pos
 static
 void compute_NCC_width ( NCC_parms_t *NCC_params, iom::real_t *NCC, int dimj, int ind, int wRangeThr1, int wRangeThr2, bool failed, int &width1, int &width2 ) {
 	bool found;
+	iom::real_t prec_val;
+	int dist;
 
 	iom::real_t thr = NCC_params->widthThr * NCC[ind];
 
@@ -102,40 +105,114 @@ void compute_NCC_width ( NCC_parms_t *NCC_params, iom::real_t *NCC, int dimj, in
 	else
 	{
 		// evaluates first maximum width parallel to second dimension (horizontal)
-		found = false;
-		width2 = 1;
-		while ( width2<=wRangeThr2 && !found )
-			if ( NCC[ind-width2] <= thr )
-				found = true;
-			else
-				width2++;
-		found = false;
-		while ( width2<=wRangeThr2 && !found )
-			if ( NCC[ind+width2] <= thr )
-				found = true;
-			else
-				width2++;
-		if ( !found )
+		if ( wRangeThr2 < NCC_params->minDim_NCCmap ) {
+			// the map is too narrow in horizontal direction
 			width2 = NCC_params->INF_W;
+		}
+		else {
+			// try to find a very clear peak
+			found = false;
+			width2 = 1;
+			while ( width2<=wRangeThr2 && !found )
+				if ( NCC[ind-width2] <= thr )
+					found = true;
+				else
+					width2++;
+			found = false;
+			while ( width2<=wRangeThr2 && !found )
+				if ( NCC[ind+width2] <= thr )
+					found = true;
+				else
+					width2++;
+			if ( !found ) { // try to find if there is a peak anyway
+				// skip NCC_params->minPoints points
+				prec_val = NCC[ind-NCC_params->minPoints];
+				dist = NCC_params->minPoints + 1;
+				while ( dist<=wRangeThr2 && !found )
+					if ( NCC[ind-dist] >= prec_val )
+						found = true;
+					else {
+						prec_val = NCC[ind-dist];
+						dist++;
+					}
+				if ( dist < (2*NCC_params->minPoints) ) // not enough points
+					width2 = NCC_params->INF_W;
+				else
+					// project the profile to compute the equivalent width at thr
+					width2 = (int)floor((dist-1) * (NCC[ind] - thr) / (NCC[ind] - prec_val));
+			
+				found = false;
+				prec_val = NCC[ind+NCC_params->minPoints];
+				dist = NCC_params->minPoints + 1; 
+				while ( dist<=wRangeThr2 && !found ) {
+					if ( NCC[ind+dist] >= prec_val ) // NCC increases
+						found = true;
+					else {
+						prec_val = NCC[ind+dist];
+						dist++;
+					}
+				}
+				if ( dist < (2*NCC_params->minPoints) ) // not enough points
+					width2 = NCC_params->INF_W;
+				else
+					// project the profile to compute the equivalent width at thr and compare with the largest width that is not 'infinite'
+					width2 = MIN(MAX(width2,(int)floor((dist-1) * (NCC[ind] - thr) / (NCC[ind] - prec_val))),NCC_params->INF_W-1);			
+			}
+		}
 
 		// evaluates maximum width parallel to first dimension (vertical)
-		found = false;
-		width1 = 1;
-		while ( width1<=wRangeThr1 && !found )
-			if ( NCC[ind-width1*dimj] <= thr )
-				found = true;
-			else
-				width1++;
-		found = false;
-		while ( width1<=wRangeThr1 && !found )
-			if ( NCC[ind+width1*dimj] <= thr )
-				found = true;
-			else
-				width1++;
-		if ( !found )
+		if ( wRangeThr1 < NCC_params->minDim_NCCmap ) {
+			// the map is too narrow in vertical direction
 			width1 = NCC_params->INF_W;
-	}
-	
+		}
+		else {
+			// try to find a very clear peak
+			found = false;
+			width1 = 1;
+			while ( width1<=wRangeThr1 && !found )
+				if ( NCC[ind-width1*dimj] <= thr )
+					found = true;
+				else
+					width1++;
+			found = false;
+			while ( width1<=wRangeThr1 && !found )
+				if ( NCC[ind+width1*dimj] <= thr )
+					found = true;
+				else
+					width1++;
+			if ( !found ) { // try to find if there is a peak anyway
+				prec_val = NCC[ind-NCC_params->minPoints*dimj];
+				dist = NCC_params->minPoints + 1; 
+				while ( dist<=wRangeThr2 && !found )
+					if ( NCC[ind-dist*dimj] >= prec_val )
+						found = true;
+					else {
+						prec_val = NCC[ind-dist*dimj];
+						dist++;
+					}
+				if ( dist < (2*NCC_params->minPoints) ) // not enough points
+					width1 = NCC_params->INF_W;
+				else
+					width1 = (int)floor((dist-1) * (NCC[ind] - thr) / (NCC[ind] - prec_val));
+			
+				found = false;
+				prec_val = NCC[ind+NCC_params->minPoints*dimj];
+				dist = NCC_params->minPoints + 1; 
+				while ( dist<=wRangeThr2 && !found )
+					if ( NCC[ind+dist*dimj] >= prec_val )
+						found = true;
+					else {
+						prec_val = NCC[ind+dist*dimj];
+						dist++;
+					}
+				if ( dist < (2*NCC_params->minPoints) ) // not enough points
+					width1 = NCC_params->INF_W;
+				else
+					// project the profile to compute the equivalent width at thr and compare with the largest width that is not 'infinite'
+					width1 = MIN(MAX(width1,(int)floor((dist-1) * (NCC[ind] - thr) / (NCC[ind] - prec_val))),NCC_params->INF_W-1);			
+			}
+		}
+	}	
 }
 
 /*************************** COMPUTE FINAL ALIGNMENT *****************************************/
@@ -614,8 +691,8 @@ void compute_Neighborhood ( NCC_parms_t *NCC_params, iom::real_t *NCC, int delay
 	// INITIALIZATION
 
 	// fill NCCnew copying useful NCCs that have been already computed from NCC to NCCnew
-	initu = MIN(MAX(0,ind_max/(2*delayv+1) - newu),2*(delayu - newu));
-	initv = MIN(MAX(0,ind_max%(2*delayv+1) - newv),2*(delayv - newv));
+	initu = MIN(MAX(0,ind_max/(2*delayv+1) - newu),2*(delayu - newu)); // initu is at least 2*(delayu - newu) to guarantee that NCCnew can be completely initialized
+	initv = MIN(MAX(0,ind_max%(2*delayv+1) - newv),2*(delayv - newv)); // initv is at least 2*(delayv - newv) to guarantee that NCCnew can be completely initialized
 	initi = initu * (2*delayv+1) + initv;
 	if(initi < 0)
 		throw iom::exception("CrossMIPs: negative index detected (initi)"); // Alessandro - 23/03/2013 - throw exception if initi is negative

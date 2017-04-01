@@ -123,6 +123,10 @@ public:
      *           if the value of this parameter is iim::NATIVE_RTYPE (see IM_config.h for definition) the subvolume is stored in the 
      *           returned buffer using the number of bits per voxel in each channel of the current volume
      *           currently only iim::DEF_IMG_DEPTH and iim::NATIVE_RTYPE are permitted values for this parameter
+     *
+     * WARNING: the method returns a newly allocated buffer whose ownership is transferred to the caller which must provide to its
+     *          deallocation; the size of the returned buffer is (V1-V0)*(H1-H0)*(D1-D0)*(ret_type/8)*n_active, where n_active is the 
+     *          number of channels that have been previously set to be returned by method 'setActiveChannels'
      */
     virtual iim::uint8 *loadSubvolume_to_UINT8(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1,
                                                int *channels=0, int ret_type=iim::DEF_IMG_DEPTH) throw (iim::IOException, iom::exception) = 0;

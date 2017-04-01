@@ -22,6 +22,13 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2017-04-01. Giulio.    @CHANGED the interface of the routines to be used for 2D output formats
+* 2014-10-29. Giulio.    @ADDED fflush after writes
+*/
+
 #ifndef RESUMER_H
 #define RESUMER_H
 
@@ -30,12 +37,12 @@
 
 #include <stdio.h>
 
-bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutions_size,bool* resolutions, 
+bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutions_size, bool* resolutions, 
 				   int slice_height, int slice_width, int method, const char* saved_img_format, int saved_img_depth, FILE *&fhandle ) throw (iim::IOException);
 
-void readVCResumerState ( FILE *&fhandle, const char *output_path, int &resolutions_size, iim::sint64 &z, iim::sint64 &z_parts ) throw (iim::IOException);
+void readVCResumerState ( FILE *&fhandle, const char *output_path, iim::sint64 &z, iim::sint64 &z_parts ) throw (iim::IOException);
 
-void saveVCResumerState ( FILE *fhandle, int resolutions_size, iim::sint64 z, iim::sint64 z_parts ) throw (iim::IOException);
+void saveVCResumerState ( FILE *fhandle, iim::sint64 z, iim::sint64 z_parts ) throw (iim::IOException);
 
 
 

@@ -21,3 +21,4 @@ warnings_disable(CMAKE_CXX_FLAGS /wd4996) # vs2012: complains about unsafe stand
 file(GLOB stitcher_headers *.h)
 file(GLOB stitcher_sources *.cpp)
 add_library(stitcher STATIC ${stitcher_headers} ${stitcher_sources})
+set_target_properties(stitcher PROPERTIES POSITION_INDEPENDENT_CODE ON)

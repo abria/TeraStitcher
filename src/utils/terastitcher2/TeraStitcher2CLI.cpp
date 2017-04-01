@@ -28,6 +28,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-02-10.  Giulio.     @CHANGED the name and the order of some options 
+* 2017-02-10.  Giulio.     @ADDED options to specify the blending algorithm to be used for layers 
 * 2016-09-04.  Giulio.     @ADDED the options for setting the configuration of the LibTIFF library 
 */
 
@@ -50,6 +52,7 @@ TeraStitcher2CLI::TeraStitcher2CLI(void)
 	this->pd_algo = S_NCC_MODE;
 	this->tp_algo = S_FATPM_SP_TREE;
 	this->tm_blending = S_SINUSOIDAL_BLENDING;
+	this->lm_blending = S_SINUSOIDAL_BLENDING;
 }
 
 //reads options and parameters from command line
@@ -63,9 +66,10 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 	TCLAP::SwitchArg p_import("1","import","Step 1: imports a volume to TeraStitcher XML project file.", false);
 	//TCLAP::ValueArg<std::string> p_image_format("f","imfmt","Format of input images (2D/Tiff3D).",false,"2D","string");
 	TCLAP::SwitchArg p_computedisplacements("2","displcompute","Step 2: computes pairwise stacks displacements.", false);
-	TCLAP::SwitchArg p_projdisplacements("3","displproj","Step 3: projects existing displacements along Z axis for each stack by selecting the most reliable one.", false);
-	TCLAP::SwitchArg p_thresholdisplacements("4","displthres","Step 4: thresholds displacements using the given reliability threshold.", false);
-	TCLAP::SwitchArg p_placetiles("5","placetiles","Step 5: places tiles in the image space using a globally optimal tiles placement algorithm.", false);
+	TCLAP::SwitchArg p_projdisplacements("7","displproj","Step 3b: projects existing displacements along Z axis for each stack by selecting the most reliable one.", false);
+	TCLAP::SwitchArg p_thresholdisplacements("3","displthres","Step 3: thresholds displacements using the given reliability threshold.", false);
+	TCLAP::SwitchArg p_placetiles("4","placetiles","Step 4: places tiles in the image space using a globally optimal tiles placement algorithm.", false);
+	TCLAP::SwitchArg p_placelayers("5","placelayers","Step 5: places layers in the image space and determines the final image size.", false);
 	TCLAP::SwitchArg p_merge("6","merge","Step 6: merges tiles at different resolutions.", false);
 	//TCLAP::SwitchArg p_test("t","test","Stitches the middle slice of the whole volume and saves it locally. Stage coordinates will be used, so this can be used to test their precision as well as the selected reference system.",false);
 	//TCLAP::SwitchArg p_dump("d","dump","Print the entire content of metadata file mdata.bin",false);
@@ -168,6 +172,7 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 	//cmd.add(p_dump);
 	cmd.add(p_stitch);
 	cmd.add(p_merge);
+	cmd.add(p_placelayers);
 	cmd.add(p_placetiles);
 	cmd.add(p_thresholdisplacements);
 	cmd.add(p_projdisplacements);
@@ -287,16 +292,6 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 	}
 
 	//STEP 3
-	if(p_projdisplacements.isSet() &&!(p_project_load_path.isSet() && p_project_save_path.isSet()))
-	{
-		sprintf(errMsg, "One or more required arguments missing for --%s!\n\nUSAGE is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s>",
-			    p_projdisplacements.getName().c_str(), p_projdisplacements.getName().c_str(),
-				p_project_load_path.getName().c_str(), cmd.getDelimiter(), "string",
-				p_project_save_path.getName().c_str(), cmd.getDelimiter(), "string");
-		throw IOException(errMsg);
-	}
-
-	//STEP 4
 	if(p_thresholdisplacements.isSet() &&!(p_project_load_path.isSet() && p_project_save_path.isSet() && p_reliability_threshold.isSet()))
 	{
 		sprintf(errMsg, "One or more required arguments missing for --%s!\n\nUSAGE is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s>",
@@ -307,11 +302,22 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 		throw IOException(errMsg);
 	}
 
+	//STEP 4
+	if((p_projdisplacements.isSet() || p_placetiles.isSet()) &&!(p_project_load_path.isSet() && p_project_save_path.isSet()))
+	{
+		sprintf(errMsg, "One or more required arguments missing for --%s!\n\nUSAGE is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s>",
+			    //p_projdisplacements.getName().c_str(), p_projdisplacements.getName().c_str(),
+			    p_placetiles.getName().c_str(), p_placetiles.getName().c_str(),
+				p_project_load_path.getName().c_str(), cmd.getDelimiter(), "string",
+				p_project_save_path.getName().c_str(), cmd.getDelimiter(), "string");
+		throw IOException(errMsg);
+	}
+
 	//STEP 5
-	if(p_placetiles.isSet() && !(p_project_load_path.isSet() && p_project_save_path.isSet()))
+	if(p_placelayers.isSet() && !(p_project_load_path.isSet() && p_project_save_path.isSet()))
 	{
 		sprintf(errMsg, "One or more required arguments missing for --%s!\n\nUSAGE is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s> \n\t[--%s%c<%s>]",
-			p_placetiles.getName().c_str(), p_placetiles.getName().c_str(),
+			p_placelayers.getName().c_str(), p_placelayers.getName().c_str(),
 			p_project_load_path.getName().c_str(), cmd.getDelimiter(), "string",
 			p_project_save_path.getName().c_str(), cmd.getDelimiter(), "string",
 			p_algo.getName().c_str(), cmd.getDelimiter(), "string");
@@ -420,8 +426,8 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 
 	//checking that at least one operation has been selected
 	//if(!(p_test.isSet() || p_import.isSet() || p_computedisplacements.isSet() || p_projdisplacements.isSet() || 
-	if(!(p_import.isSet() || p_computedisplacements.isSet() || p_projdisplacements.isSet() || 
-		p_thresholdisplacements.isSet() || p_placetiles.isSet() || p_merge.isSet() || p_stitch.isSet() ))
+	if(!(p_import.isSet() || p_computedisplacements.isSet() || p_projdisplacements.isSet() || p_placetiles.isSet() || 
+		p_thresholdisplacements.isSet() || p_placelayers.isSet() || p_merge.isSet() || p_stitch.isSet() ))
 		throw IOException("No operation selected. See --help for usage.");
 
 	//importing parameters
@@ -432,8 +438,9 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 	//this->image_format = p_image_format.getValue();
 	this->computedisplacements = p_computedisplacements.getValue();
 	this->projdisplacements = p_projdisplacements.getValue();
-	this->thresholddisplacements = p_thresholdisplacements.getValue();
 	this->placetiles = p_placetiles.getValue();
+	this->thresholddisplacements = p_thresholdisplacements.getValue();
+	this->placelayers = p_placelayers.getValue();
 	this->mergetiles = p_merge.getValue();
 	this->volume_load_path = p_volume_load_path.getValue();
 	this->volume_save_path = p_volume_save_path.getValue();
@@ -491,9 +498,13 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 	else
 		throw iom::exception(iomanager::strprintf("Invalid argument \"%s\" for parameter --%s! Allowed values are {\"all\",\"R\",\"G\",\"B\"}", p_img_channel_select.getValue().c_str(), p_img_channel_select.getName().c_str()).c_str());
 
+	// 2017-02-10. Giulio. A different blending for layer can be specified
+	// the layer blending algorithm is the same used between tiles of the same layer if no specific blending algorithm for layes has benne specified
+	bool layer_blending_init = false; // if a layer blending algorithm has been already found 
+
 	//the [algorithm] parameter is multi-arguments
 	vector<string> algorithms = p_algo.getValue();
-	for(int i = 0; i < algorithms.size(); i++)
+ 	for(int i = 0; i < algorithms.size(); i++)
 		if(algorithms[i].compare(S_NCC_NAME) == 0)
 			this->pd_algo = S_NCC_MODE;
 		else if(algorithms[i].compare(S_PC_NAME) == 0)
@@ -504,12 +515,30 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 			this->tp_algo = S_FATPM_SCAN_V;
 		else if(algorithms[i].compare(S_FATPM_SCAN_H_NAME) == 0)
 			this->tp_algo = S_FATPM_SCAN_H;
-		else if(algorithms[i].compare(S_NO_BLENDING_NAME) == 0)
+		else if(algorithms[i].compare(S_NO_BLENDING_NAME) == 0) {
 			this->tm_blending = S_NO_BLENDING;
-		else if(algorithms[i].compare(S_SINUSOIDAL_BLENDING_NAME) == 0)
+			if ( !layer_blending_init ) 
+				this->lm_blending = S_NO_BLENDING;
+		}
+		else if(algorithms[i].compare(S_SINUSOIDAL_BLENDING_NAME) == 0) {
 			this->tm_blending = S_SINUSOIDAL_BLENDING;
-		else if(algorithms[i].compare(S_SHOW_STACK_MARGIN_NAME) == 0)
+			if ( !layer_blending_init ) 
+				this->lm_blending = S_SINUSOIDAL_BLENDING;
+		}
+		else if(algorithms[i].compare(S_SHOW_STACK_MARGIN_NAME) == 0) {
 			this->tm_blending = S_SHOW_STACK_MARGIN;
+			if ( !layer_blending_init ) 
+				this->lm_blending = S_SHOW_STACK_MARGIN;
+		}
+		else if(algorithms[i].compare(S_ENHANCED_NO_BLENDING_NAME) == 0) {
+			this->tm_blending = S_ENHANCED_NO_BLENDING;
+			if ( !layer_blending_init ) 
+				this->lm_blending = S_ENHANCED_NO_BLENDING;
+		}
+		else if(algorithms[i].compare(S_TOPLAYER_OVERWRITE_NAME) == 0) {
+			this->lm_blending = S_TOPLAYER_OVERWRITE;
+			layer_blending_init = true;
+		}
 		else
 		{
 			sprintf(errMsg, "Invalid argument \"%s\" for parameter --%s! Allowed values are:\n-\"%s\"\n-\"%s\"\n-\"%s\"\n-\"%s\"\n-\"%s\"\n-\"%s\"\n",	algorithms[i].c_str(), p_algo.getName().c_str(), S_NCC_NAME, S_FATPM_SP_TREE_NAME,S_FATPM_SCAN_V_NAME,S_FATPM_SCAN_H_NAME, S_NO_BLENDING_NAME, S_SINUSOIDAL_BLENDING_NAME);
@@ -559,9 +588,10 @@ void TeraStitcher2CLI::print()
 	printf("stitch = \t\t%s\n", stitch ? "ENABLED" : "disabled");
 	printf("import = \t\t%s\n", import ? "ENABLED" : "disabled");
 	printf("computedisplacements = \t%s\n", computedisplacements ? "ENABLED" : "disabled");
-	printf("projdisplacements = \t%s\n", projdisplacements ? "ENABLED" : "disabled");
-	printf("thresholdisplacements = %s\n", thresholddisplacements ? "ENABLED" : "disabled");
+	//printf("projdisplacements = \t%s\n", projdisplacements ? "ENABLED" : "disabled");
 	printf("placetiles = \t\t%s\n", placetiles ? "ENABLED" : "disabled");
+	printf("thresholdisplacements = %s\n", thresholddisplacements ? "ENABLED" : "disabled");
+	printf("placetiles = \t\t%s\n", placelayers ? "ENABLED" : "disabled");
 	printf("mergetiles = \t\t%s\n", mergetiles ? "ENABLED" : "disabled");
 	printf("volume_load_path = \t%s\n", volume_load_path.c_str());
 	printf("volume_save_path = \t%s\n", volume_save_path.c_str());

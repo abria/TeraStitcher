@@ -18,6 +18,9 @@ include_directories (${TeraStitcher_SOURCE_DIR}/3rdparty/tinyxml)
 file(GLOB imagemanager_headers *.h)
 file(GLOB imagemanager_sources *.cpp)
 add_library(imagemanager STATIC ${imagemanager_headers} ${imagemanager_sources})
+set_target_properties(imagemanager PROPERTIES POSITION_INDEPENDENT_CODE ON)
+add_library(imagemanager_obj OBJECT ${imagemanager_headers} ${imagemanager_sources})
+set_target_properties(imagemanager_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # check HDF5 option
 option (WITH_HDF5 "Support to HDF5" OFF) 

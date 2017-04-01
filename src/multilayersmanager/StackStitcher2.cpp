@@ -25,6 +25,14 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2017-04-01.  Giulio.     @ADDED code for completing the management of multi-layer stitching
+* 2017-02-10.  Giulio.     @ADDED in merge methods added a parameter to specify the blending algorithm to be used for layers 
+*/
+
+
 #include "StackStitcher2.h"
 
 #include <iostream>
@@ -36,6 +44,7 @@
 
 #include "ProgressBar.h"
 #include "PDAlgo.h"
+#include "TPAlgo2.h"
 #include "DisplacementMIPNCC.h"
 
 #include "StackedVolume.h"
@@ -73,145 +82,6 @@ StackStitcher2::StackStitcher2(MultiLayersVolume* _volume)
 }
 
 
-/*************************************************************************************************************
-* Method to be called for displacement computation. <> parameters are mandatory, while [] are optional.
-* <algorithm_type>		: ID of the pairwise displacement algorithm to be used.
-* [start/end_...]		: layers interval that possible identify the portion of volume to be processed.
-*						  If not given, all stacks will be processed.
-* [displ_max_...]		: maximum displacements along VHD between two  adjacent stacks  taking the given over-
-*						  lap as reference. These parameters, together with <overlap_...>,can be used to iden-
-*						  tify the region of interest where the correspondence between the given stacks has to
-*						  be found. When used, these parameters have to be tuned with respect to the precision 
-*						  of the motorized stages. 
-*						  If not given, value S_DISPL_MAX_VHD is assigned.
-* [substk_DIM_V ...]	: desired subvolumes dimension  along V and H axis. Each pair of stacks is split  into
-*						  sub-volumes along D axis in order to use memory efficiently. Hence, multiple displa-
-*						  cements for each pair of adjacent stacks are computed. 
-*						  If not given, value S_SUBVOL_DIM_D_DEFAULT is assigned;
-* [show_progress_bar]	: enables/disables progress bar with estimated time remaining.
-**************************************************************************************************************/
-void StackStitcher2::computeDisplacements(int algorithm_type, int start_layer, int end_layer, int displ_max_V, int displ_max_H, int displ_max_D, 
-										   int substk_DIM_V, int substk_DIM_H, bool show_progress_bar) throw (IOException) {
-
-	#if S_VERBOSE>2
-	printf("\t\t\t....in StackStitcher2::computeDisplacements(..., start_layer = %d, end_layer = %d, displ_max_V = %d, displ_max_H = %d, displ_max_D = %d, subvol_DIM_V = %d, subvol_DIM_H = %d)\n",
-		start_layer, end_layer, displ_max_V, displ_max_H, displ_max_D, subvol_DIM_V, subvol_DIM_H);
-	#endif
-
-	//LOCAL VARIABLES
-	char buffer[S_STATIC_STRINGS_SIZE];
-	PDAlgo *algorithm;					//stores the reference to the algorithm to be used for pairwise displacement computation
-	int dim_V, dim_H;			// lowest extension between two adjacent layers
-	int n_substk_V, n_substk_H;
-	int r_substk_V, r_substk_H;
-	int d_substk_V, d_substk_H;
-	int displ_computations;						//stores the number of displacement computations (used for progress bar)
-	int displ_computations_idx;					//counter for displacements computations
-	int i, j, k;
-	iim::real32 *sstk_A, *sstk_B;				//substacks to be aligned 
-	int V0, V1, H0, H1; 
-	int D0_A, D1_A, D0_B, D1_B;
-
-	start_layer	 = start_layer	== -1 ? 0 : start_layer;
-	end_layer	 = end_layer	== -1 ? volume->getN_LAYERS() - 1 : end_layer;
-
-	if(start_layer < 0 || start_layer > end_layer || end_layer >= volume->getN_LAYERS())
-	{
-		sprintf(buffer, "in StackStitcher2::computeDisplacements(...): selected portion of volume layers LAYERS[%d,%d] must be in LAYERS[0,%d]",
-				start_layer, end_layer, volume->getN_LAYERS()-1);
-		throw IOException(buffer);
-	}
-
-	//Pairwise Displacement Algorithm initialization
-	algorithm = PDAlgo::instanceAlgorithm(algorithm_type);
-
-	// computing the number of substacks 
-	n_substk_V = (int) ceil ((double)volume->getDIM_V() / (double)substk_DIM_V);
-	n_substk_H = (int) ceil ((double)volume->getDIM_H() / (double)substk_DIM_H);
-
-	//initializing the progress bar
-    ts::ProgressBar::instance();
-	if(show_progress_bar)
-	{
-		int n_substk = 0;
-		for ( k=0; k<(volume->getN_LAYERS()-1); k++ ) {
-			// computes the lowest extensions between layer k and k+1
-			dim_V = MIN(volume->getLAYER_DIM(k,0),volume->getLAYER_DIM(k+1,0));  
-			dim_H = MIN(volume->getLAYER_DIM(k,1),volume->getLAYER_DIM(k+1,1));  		
-			// computes the number of substacks 
-			n_substk += ((int)ceil((double)dim_V / (double)substk_DIM_V)) * ((int)ceil((double)dim_H / (double)substk_DIM_H));
-		}
-		ts::ProgressBar::instance()->start("Pairwise displacement computation");
-		ts::ProgressBar::instance()->setProgressValue(0,"Initializing...");
-		ts::ProgressBar::instance()->display();
-		displ_computations = n_substk;
-		displ_computations_idx = 1;
-	}
-
-	for ( k=0; k<(volume->getN_LAYERS()-1); k++ ) {
-		D0_A = volume->getLAYER_DIM(k,2) - volume->getOVERLAP_D(k);
-		D1_A = D0_A + volume->getOVERLAP_D(k);
-		D0_B = 0;
-		D1_B = D0_B + volume->getOVERLAP_D(k);
-
-		// computes the lowest extensions between layer k and k+1
-		dim_V = MIN(volume->getLAYER_DIM(k,0),volume->getLAYER_DIM(k+1,0));  
-		dim_H = MIN(volume->getLAYER_DIM(k,1),volume->getLAYER_DIM(k+1,1));  
-		
-		// computes the number of substacks 
-		n_substk_V = (int) ceil((double)dim_V / (double)substk_DIM_V);
-		n_substk_H = (int) ceil((double)dim_H / (double)substk_DIM_H);
-
-		// computes dimensions of last tile
-		d_substk_V = dim_V / n_substk_V;
-		d_substk_H = dim_H / n_substk_H;
-
-		// compute how many tiles have one more element
-		r_substk_V = dim_V % n_substk_V;
-		r_substk_H = dim_H % n_substk_H;
-
-		volume->initDISPS(k,n_substk_V,n_substk_H);
-
-		for ( j=0, H0=0; j<n_substk_H; j++, H0=H1 ) {
-			H1 = H0 + (j<r_substk_H ? d_substk_H+1 : d_substk_H);
-
-			for ( i=0, V0=0; i<n_substk_V; i++, V0=V1 ) {
-				V1 = V0 + (i<r_substk_V ? d_substk_V+1 : d_substk_V);
-
-				if(show_progress_bar)
-				{
-					sprintf(buffer, "Displacement computation %d of %d", displ_computations_idx, displ_computations);
-                                            ts::ProgressBar::instance()->setProgressValue((100.0f/displ_computations)*displ_computations_idx, buffer);
-                                            ts::ProgressBar::instance()->display();
-				}
-				#ifdef S_TIME_CALC
-				double proc_time = -TIME(0);
-				#endif
-
-				sstk_A = volume->getSUBVOL(k,V0,V1,H0,H1,D0_A,D1_A);
-				sstk_B = volume->getSUBVOL(k+1,V0,V1,H0,H1,D0_B,D1_B);
-
-				// insert displacement
-				volume->insertDisplacement(i, j, k,
-					algorithm->execute(sstk_A, (V1 - V0), (H1 - H0), (D1_A - D0_A), sstk_B, (V1 - V0), (H1 - H0), (D1_B - D0_B), 
-																					displ_max_V, displ_max_H, displ_max_D, dir_horizontal, (H1 - H0) ));
-
-				displ_computations_idx++;
-				#ifdef S_TIME_CALC
-				proc_time += TIME(0);
-				StackStitcher2::time_displ_comp+=proc_time;
-				proc_time = -TIME(0);
-				#endif
-			}
-		} 
-	}
-
-	if(show_progress_bar)
-	{
-                ts::ProgressBar::instance()->setProgressValue(100, "Ended!");
-                ts::ProgressBar::instance()->display();
-	}
-}
 
 
 /*************************************************************************************************************
@@ -706,7 +576,7 @@ iim::real32 *StackStitcher2::getStripe(short row_index, short d_index, int resto
 **************************************************************************************************************/
 void StackStitcher2::mergeTiles(std::string output_path, int slice_height, int slice_width, bool* resolutions, 
 							   int _ROW_START, int _ROW_END, int _COL_START,
-							   int _COL_END, int _D0, int _D1, int blending_algo, bool test_mode, bool show_progress_bar, 
+							   int _COL_END, int _D0, int _D1, int blending_algo, int intralayer_blending_algo, bool test_mode, bool show_progress_bar, 
 							   const char* saved_img_format, int saved_img_depth)			throw (IOException)
 {
         #if S_VERBOSE > 2
@@ -722,7 +592,7 @@ void StackStitcher2::mergeTiles(std::string output_path, int slice_height, int s
 	//LOCAL VARIABLES
     iim::sint64 height, width, depth;                                            //height, width and depth of the whole volume that covers all stacks
 	iim::real32* buffer;								//buffer temporary image data are stored
-	iim::real32* stripe_up=NULL, *stripe_down;                                   //will contain up-stripe and down-stripe computed by calling 'getStripe' method
+	iim::real32* stripe_up=NULL;                                   //will contain up-stripe and down-stripe computed by calling 'getStripe' method
 	double angle;								//angle between 0 and PI used to sample overlapping zone in [0,PI]
 	double delta_angle;							//angle step
 	int z_ratio, z_max_res;
@@ -746,7 +616,7 @@ void StackStitcher2::mergeTiles(std::string output_path, int slice_height, int s
 	iim::real32 (*blending)(double& angle, iim::real32& pixel1, iim::real32& pixel2);
 	std::stringstream file_path[S_MAX_MULTIRES];
 
-	//retrieving blending function
+	//retrieving intra layers blending function
 	if(blending_algo == S_SINUSOIDAL_BLENDING)
             blending = sinusoidal_blending;
 	else if(blending_algo == S_NO_BLENDING)
@@ -755,8 +625,16 @@ void StackStitcher2::mergeTiles(std::string output_path, int slice_height, int s
             blending = stack_margin;
 	else if(blending_algo == S_ENHANCED_NO_BLENDING)
             blending = enhanced_no_blending;
+	else if(blending_algo == S_TOPLAYER_OVERWRITE)
+            blending = (iim::real32 (*)(double& angle, iim::real32& pixel1, iim::real32& pixel2)) 0;
 	else
-            throw IOException("in StackStitcher::getStripe(...): unrecognized blending function");
+            throw IOException("in StackStitcher::mergeTiles(...): unrecognized blending function");
+
+	// 2017-02-10. Giulio. @ADDED setting of the blending function to be used for intralayers merging
+	if ( dynamic_cast<UnstitchedVolume *>((volume->getLAYER(0))) ) { // volumes of multilayer volume are unstitched 
+		for ( int i=0; i<volume->getN_LAYERS(); i++ )
+			((UnstitchedVolume *) (volume->getLAYER(i)))->setBLENDING_ALGO(intralayer_blending_algo);
+	}
 
 	// 2015-05-14. Giulio. @ADDED selection of IO plugin if not provided.
 	if(iom::IMOUT_PLUGIN.compare("empty") == 0)
@@ -845,7 +723,17 @@ void StackStitcher2::mergeTiles(std::string output_path, int slice_height, int s
 	//double proc_time;
 	//#endif
 
-
+	// a check should be added to verify that a buffer cannot involve more than two layers
+	// i.e. that z_max_res <= MIN(volume->getLAYER_DIM(i,2), for i=0, ... , volume->N_LAYERS()
+	for ( int layer=1; layer<(volume->getN_LAYERS()-1); layer++ ) {
+		if ( z_max_res > (volume->getLAYER_COORDS(layer+1,2) - volume->getLAYER_COORDS(layer,2)) )
+    	{
+        	char err_msg[5000];
+        	sprintf(err_msg,"The buffer size is too large and may involve more than two layers");
+        	throw IOException(err_msg);
+    	}
+	}
+	
 	/********************************************************************************** 
 	* WARNING: in the following code all slice intervals are represented by two slice 
 	* indices:
@@ -862,11 +750,14 @@ void StackStitcher2::mergeTiles(std::string output_path, int slice_height, int s
 	int cur_layer_start, cur_layer_end;
 	int second_layer_start, second_layer_end;
 	int overlap_start, overlap_end;
-	int offs, offs2;
+	iim::sint64 offs, offs2;
 	bool blending_flag = false;
+	iim::real32 (*saved_blending)(double& angle, iim::real32& pixel1, iim::real32& pixel2) = blending; // to temporarily disable blending
 
 	for(iim::sint64 z = this->D0, z_parts = 1; z < this->D1; z += z_max_res, z_parts++)
 	{   
+		blending = saved_blending; // re-enable blending in case it has been disabled
+
 		// INV: z <= (volume->getLAYER_COORDS(cur_layer,2) + volume->getLAYER_DIM(cur_layer,2))
 
 		// empty the buffer
@@ -878,17 +769,26 @@ void StackStitcher2::mergeTiles(std::string output_path, int slice_height, int s
 		z_next = z + (z_parts <= z_ratio ? z_max_res : depth%z_max_res);
 
 		// compute interval of current layer to be put in the buffer
-		cur_layer_start = (int) z;
+		cur_layer_start = (int) MAX(z,volume->getLAYER_COORDS(cur_layer,2)); 
 		cur_layer_end   = (int) MIN(z_next,(volume->getLAYER_COORDS(cur_layer,2) + volume->getLAYER_DIM(cur_layer,2)));
 
 		// INV: z <= cur_layer_end 
 
-		// load data from current layer and copies it to buffer
-		buf1 = volume->getSUBVOL(cur_layer,-1,-1,-1,-1,(cur_layer_start - volume->getLAYER_COORDS(cur_layer,2)),(cur_layer_end - volume->getLAYER_COORDS(cur_layer,2)));
-		offs = (int) (volume->getLAYER_COORDS(cur_layer,0) * width + volume->getLAYER_COORDS(cur_layer,1));
-		copyBlock2SubBuf(buf1,buffer+offs,
-						 volume->getLAYER_DIM(cur_layer,0),volume->getLAYER_DIM(cur_layer,1),(cur_layer_end - cur_layer_start),
-						 volume->getLAYER_DIM(cur_layer,1),volume->getLAYER_DIM(cur_layer,0) * volume->getLAYER_DIM(cur_layer,1),width,height * width);
+		/* if there are gaps between layers it can happen that z < volume->getLAYER_COORDS(cur_layer,2)
+		 * in this case (volume->getLAYER_COORDS(cur_layer,2) - z) slices should be left empty
+		 */
+		if ( cur_layer_start < cur_layer_end ) { // there are data to be loaded from current layer
+			// load data from current layer and copies it to buffer
+			buf1 = volume->getSUBVOL(cur_layer,-1,-1,-1,-1,(cur_layer_start - volume->getLAYER_COORDS(cur_layer,2)),(cur_layer_end - volume->getLAYER_COORDS(cur_layer,2)));
+			// skip (cur_layer_start - z) empty slices if any
+			offs = (cur_layer_start - z) * width * height + (volume->getLAYER_COORDS(cur_layer,0) * width + volume->getLAYER_COORDS(cur_layer,1));
+			copyBlock2SubBuf(buf1,buffer+offs,
+							 volume->getLAYER_DIM(cur_layer,0),volume->getLAYER_DIM(cur_layer,1),(cur_layer_end - cur_layer_start),
+							 volume->getLAYER_DIM(cur_layer,1),volume->getLAYER_DIM(cur_layer,0) * volume->getLAYER_DIM(cur_layer,1),width,height * width);
+		}
+		else { // the current layer does not contribute to fill the buffer
+			blending = (iim::real32 (*)(double& angle, iim::real32& pixel1, iim::real32& pixel2)) 0; // blending is termporarily disabled
+		}
 
 		// check if there is a second buffer involved 
 		// (current layer is not the last) && the first slice after the buffer is greater than the first slice of next layer (a layer deep 'cut_depth' us is discarded)
@@ -898,19 +798,19 @@ void StackStitcher2::mergeTiles(std::string output_path, int slice_height, int s
 			// second_layer_start < second_layer_end = z_next
 			overlap_start      = second_layer_start;
 			overlap_end        = MAX(second_layer_start,cur_layer_end); // the overlap region cannot end before the second layer (it would mean it is empty and only the copy step has to be performed)
-			if ( blending_algo == S_SINUSOIDAL_BLENDING || blending_algo == S_SHOW_STACK_MARGIN ) {
+			if ( blending_algo == S_SINUSOIDAL_BLENDING || blending_algo == S_SHOW_STACK_MARGIN || blending_algo == S_TOPLAYER_OVERWRITE ) {
 				// check if flag is already set
 				if ( !blending_flag ) {
 					// beginning of blending region
 					blending_flag = true;
-					delta_angle = PI/(volume->getLAYER_COORDS(cur_layer,2) + volume->getLAYER_DIM(cur_layer,2) - volume->getLAYER_COORDS(cur_layer+1,2) - volume->getCUT_DEPTH_PXL()); // a layers deep 'cut_depth' us has been discarded
+					delta_angle = iim::PI/(volume->getLAYER_COORDS(cur_layer,2) + volume->getLAYER_DIM(cur_layer,2) - volume->getLAYER_COORDS(cur_layer+1,2) - volume->getCUT_DEPTH_PXL()); // a layers deep 'cut_depth' us has been discarded
 					angle = 0;
 				}
 
 				buf2 = volume->getSUBVOL(cur_layer+1,-1,-1,-1,-1,(second_layer_start - volume->getLAYER_COORDS(cur_layer+1,2)),(second_layer_end - volume->getLAYER_COORDS(cur_layer+1,2)));
-				// add the first part with blending
+				// add the first part with blending (or overwriting previous buffer if blending in a null pointer, i.e. blending_algo == S_TOPLAYER_OVERWRITE)
 				for ( int s=0; s<(overlap_end - overlap_start); s++, angle+=delta_angle ) {
-					offs = (int) ((height * width * (overlap_start-cur_layer_start+s)) + (volume->getLAYER_COORDS(cur_layer+1,0) * width + volume->getLAYER_COORDS(cur_layer+1,1)));
+					offs = ((height * width * (overlap_start-cur_layer_start+s)) + (volume->getLAYER_COORDS(cur_layer+1,0) * width + volume->getLAYER_COORDS(cur_layer+1,1)));
 					offs2 = (volume->getLAYER_DIM(cur_layer+1,0) * volume->getLAYER_DIM(cur_layer+1,1) * s);
 					addBlock2SubBuf(buf2+offs2,buffer+offs,
 									volume->getLAYER_DIM(cur_layer+1,0),volume->getLAYER_DIM(cur_layer+1,1),1, // merge just one slice
@@ -919,7 +819,7 @@ void StackStitcher2::mergeTiles(std::string output_path, int slice_height, int s
 				}
 				if ( overlap_end < second_layer_end ) {
 					// add the second part 
-					offs = (int) ((height * width * (overlap_end-cur_layer_start)) + (volume->getLAYER_COORDS(cur_layer+1,0) * width + volume->getLAYER_COORDS(cur_layer+1,1)));
+					offs = ((height * width * (overlap_end-cur_layer_start)) + (volume->getLAYER_COORDS(cur_layer+1,0) * width + volume->getLAYER_COORDS(cur_layer+1,1)));
 					offs2 = (volume->getLAYER_DIM(cur_layer+1,0) * volume->getLAYER_DIM(cur_layer+1,1) * (overlap_end - overlap_start));
 					copyBlock2SubBuf(buf2+offs2,buffer+offs,
 									 volume->getLAYER_DIM(cur_layer+1,0),volume->getLAYER_DIM(cur_layer+1,1),(second_layer_end - overlap_end),
@@ -927,8 +827,8 @@ void StackStitcher2::mergeTiles(std::string output_path, int slice_height, int s
 				}
 				delete buf2;
 			}
-			else if ( overlap_end < second_layer_end ) {
-				// only the non+overlapping interval has to be loaded and copied
+			else if ( overlap_end < second_layer_end ) { // blending_algo == S_NO_BLENDING || blending_algo == S_ENHANCED_NO_BLENDING
+				// there is a non overlapping interval and only this has to be loaded and copied 
 				buf2 = volume->getSUBVOL(cur_layer+1,-1,-1,-1,-1,(overlap_end - volume->getLAYER_COORDS(cur_layer+1,2)),(second_layer_end - volume->getLAYER_COORDS(cur_layer+1,2)));
 				copyBlock2SubBuf(buf2,buffer+(volume->getLAYER_COORDS(cur_layer+1,0) * width + volume->getLAYER_COORDS(cur_layer+1,1))+(height * width * (overlap_end-cur_layer_start)),
 								 volume->getLAYER_DIM(cur_layer+1,0),volume->getLAYER_DIM(cur_layer+1,1),(second_layer_end - overlap_end),
@@ -1128,10 +1028,10 @@ void StackStitcher2::halveSample(iim::real32* img, int height, int width, int de
 }
 
 /*************************************************************************************************************
-* For each stack, the vector of redundant displacements along D is projected into the displacement which embe-
-* ds the most reliable parameters. After this operation, such vector will contain only the projected displace-
-* ment. Where for a pair of adjacent stacks no displacement is available,  a displacement  is generated using
-* nominal stage coordinates.
+* For each pair of layers projects the best interlayer displacement and leaves one displacements that  has  to 
+* be applied to the layer as a whole. 
+* WARNING: this mathod it has to be used if layers are already stitched blocks (i.e. their internal diplacements 
+* are not affected by interlayer displacements.
 **************************************************************************************************************/
 void StackStitcher2::projectDisplacements() throw (IOException)
 {
@@ -1164,43 +1064,97 @@ void StackStitcher2::thresholdDisplacements(float reliability_threshold)					   
 
 	vector< vector<Displacement *> > *disp;
 
-    //checking precondition: one and only one displacement must exist for each pair of layers
-    for(int i=0; i<(volume->getN_LAYERS() - 1); i++) {
-		disp = volume->getDISPS(i);
-		if(disp->size() != 1 || disp->at(0).size() != 1)
-            throw IOException("in StackStitcher2::thresholdDisplacements(...): one and only displacement must exist for each pair of adjacent stacks.");
-    }
+	// 2017-02-26. Giulio. This not true any more. With interlayer global optimization all displacement have to be thresholded
+  //  //checking precondition: one and only one displacement must exist for each pair of layers
+  //  for(int i=0; i<(volume->getN_LAYERS() - 1); i++) {
+		//disp = volume->getDISPS(i);
+		//if(disp->size() != 1 || disp->at(0).size() != 1)
+  //          throw IOException("in StackStitcher2::thresholdDisplacements(...): one and only displacement must exist for each pair of adjacent stacks.");
+  //  }
 
 	//thresholding displacements
 	for(int i=0; i<(volume->getN_LAYERS() - 1); i++) {
 		disp = volume->getDISPS(i);
-		disp->at(0).at(0)->threshold(reliability_threshold);
+		for ( int v=0; v<disp->size(); v++) {
+			for ( int h=0; h<disp->at(v).size(); h++) {
+				disp->at(v).at(h)->threshold(reliability_threshold);
+			}
+		}
 	}
 }
 
 /*************************************************************************************************************
-* Executes the compute tiles placement algorithm associated to the given ID <algorithm_type>
+* Compute the tiles placement with a global optimization algorithm taking into account the alignment of the 
+* whole 3D matrix of tiles.
+* Update the internal representation of each layer.
 **************************************************************************************************************/
-void StackStitcher2::computeTilesPlacement()								throw (IOException)
+void StackStitcher2::computeTilesPlacement(int algorithm_type) throw (IOException)
 {
 	#if S_VERBOSE > 3
 	printf("......in StackStitcher2::computeTilesPlacement(algorithm_type = %d)\n", algorithm_type);
 	#endif
 
-	int min_disp[2] = {0, 0};
-	int disp[3]     = {0, 0, 0};
-	int max_disp[2];
-	max_disp[0] = volume->getLAYER_DIM(0,0);
+	TPAlgo2 *algorithm = TPAlgo2::instanceAlgorithm(algorithm_type, volume);
+	int **newABS_VHD = algorithm->execute();
+
+	// recomputes layers size and coords
+	for ( int layer=0; layer<volume->getN_LAYERS(); layer++ ) {
+		((UnstitchedVolume *) (volume->getLAYER(layer)))->updateTilesPositions();
+	}
+
+	// update layers nominal position
+	volume->updateLayerCoords();
+
+	// set displacements of tile (0,0) of each layer (starting from 1) to the correct value (after global optimization)
+	for ( int layer=1; layer<(volume->getN_LAYERS()); layer++ ) {
+		// build a temporary descriptor
+		NCC_descr_t descr;
+		descr.coord[0] = newABS_VHD[layer][0] - volume->getLAYER_COORDS(layer,0); // V displacement
+		descr.coord[1] = newABS_VHD[layer][1] - volume->getLAYER_COORDS(layer,1); // H displacement
+		descr.coord[2] = newABS_VHD[layer][2] - volume->getLAYER_COORDS(layer,2); // D displacement
+		descr.NCC_maxs[0] = descr.NCC_maxs[1] = descr.NCC_maxs[2] = 1.0;
+		descr.NCC_widths[0] = descr.NCC_widths[1] = descr.NCC_widths[2] = 1;
+		DisplacementMIPNCC *temp_disp = new DisplacementMIPNCC(descr); // substitute the displacement descriptor
+		// update layer displacements
+		volume->insertDisplacement(0,0,layer-1,(Displacement *)temp_disp); // displacement of layer i is in interlayer descriptor i-1
+		delete []newABS_VHD[layer];
+	}
+
+	delete []newABS_VHD;
+}
+
+/*************************************************************************************************************
+* Executes the compute tiles placement algorithm associated to the given ID <algorithm_type>
+*
+* Convention: meaning of indices
+* - 0 is V
+* - 1 is H
+* - 2 is D
+**************************************************************************************************************/
+void StackStitcher2::computeLayersPlacement()								throw (IOException)
+{
+	#if S_VERBOSE > 3
+	printf("......in StackStitcher2::computeTilesPlacement(algorithm_type = %d)\n", algorithm_type);
+	#endif
+
+	int min_disp[2] = {0, 0};    // minimum V/H offsets with respect to the coordinates of the first layer (0,0)
+	int disp[3]     = {0, 0, 0}; // cumulative (absolute) displacement of current layer with respect to nominal position 
+	int max_disp[2];             // maximum V/H indices with respect to the coordinates of the first layer (0,0)
+	// displacement of layer 0 is assumed (0,0,0) 
+	max_disp[0] = volume->getLAYER_DIM(0,0); 
 	max_disp[1] = volume->getLAYER_DIM(0,1);
 
+	// layer coords have initially the nominal value
 	for(int i=0; i<(volume->getN_LAYERS() - 1); i++) {
+		// dimensions V and H only
 		for ( int j=0; j<2; j++ ) {
 			disp[j] += volume->getDISPS(i)->at(0).at(0)->getDisplacement((direction) j);
-			// coords[j] is the displacement of direction j at layer i+1
+			// disp[j] is the cumulative displacement of layer i+1 in direction j
 			if ( disp[j] < min_disp[j] ) 
 				min_disp[j] = disp[j];
-			else if ( (disp[j] + volume->getLAYER_DIM(i,j)) > max_disp[j] )
-				max_disp[j] = disp[j] + volume->getLAYER_DIM(i,j);
+			else if ( (disp[j] + volume->getLAYER_DIM(i+1,j)) > max_disp[j] )
+				// layer i+1 has larger indices than previous layers
+				max_disp[j] = disp[j] + volume->getLAYER_DIM(i+1,j);
 			volume->addVHD_COORDS(i+1,j,disp[j]);
 		}
 		// along D we do not need the min/max displacements
@@ -1217,13 +1171,14 @@ void StackStitcher2::computeTilesPlacement()								throw (IOException)
 	int _DIM_D = volume->getDIM_D() + disp[2];
 	volume->setDIMS(_DIM_V,_DIM_H,_DIM_D);
 
+	// correct V and H coordinates only with respect to the new origin 
 	for(int i=0; i<volume->getN_LAYERS(); i++) {
 		for ( int j=0; j<2; j++ ) {
 			volume->addVHD_COORDS(i,j,-min_disp[j]); // all layers have to be placed
 		}
 	}
 
-	// adjust absolute volume coordinates
+	// adjust absolute volume coordinates (V and H only)
 	float new_coord;
 	new_coord = volume->getORG_V();
 	new_coord += min_disp[0] * (volume->getVXL_V() / 1000.0f);
@@ -1387,8 +1342,13 @@ void StackStitcher2::addBlock2SubBuf ( iim::real32 *src, iim::real32 *dst, int d
 	
 	for ( k=0; k<dimk; k++, s_slice+=s_strideij, d_slice+=d_strideij ) {
 		for ( i=0, s_stripe=s_slice, d_stripe=d_slice; i<dimi; i++, s_stripe+=s_stridej, d_stripe+=d_stridej ) {
-			for ( j=0; j<dimj; j++ ) {
-				d_stripe[j] = blending(alpha,d_stripe[j],s_stripe[j]); // for small alpha first parameter (destination buffer) is weighted more
+			if ( blending ) {
+				for ( j=0; j<dimj; j++ ) {
+					d_stripe[j] = blending(alpha,d_stripe[j],s_stripe[j]); // for small alpha first parameter (destination buffer) is weighted more
+				}
+			}
+			else { // overwrite buffer
+				memcpy(d_stripe,s_stripe,(dimj*sizeof(iim::real32)));
 			}
 		}
 	}

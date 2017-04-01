@@ -25,31 +25,32 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
-#include "iomanager.config.h"
-#include "IOPluginAPI.h"
+#include <cstdio>
+#include "TPAlgo2.h"
+#include "TPAlgo2MST.h"
+#include "S_config.h"
 
-/******************
-*    CHANGELOG    *
-*******************
-* 2017-04-01. Giulio. @ADDED global variable CHANS_no to deal with the case of more than three channels
-* 2014-11-25. Giulio. @CHANGED default plugins are set to "empty" because they have to be set by the application
-*/
+//using namespace volumemanager;
 
-// initialize namespace parameters
-namespace iomanager
+TPAlgo2::TPAlgo2(int _TYPE, MultiLayersVolume * _volume)
 {
-    /*******************
-    *    PARAMETERS    *
-    ********************
-    ---------------------------------------------------------------------------------------------------------------------------*/
-    std::string VERSION = "1.1.1";          // version of current module
-    int DEBUG = NO_DEBUG;					// debug level
-    bool TIME_CALC = true;					// whether to enable time measurements
-    channel CHANS = ALL;					// channel to be loaded (default is ALL)
-    int CHANS_no = -1;					    // alternative way to specify a channel to be loaded (must be invalid if CHANS <> NONE, invalid value = -1)
-	std::string IMIN_PLUGIN  = "empty";		// plugin to manage input image format 
-	std::string IMIN_PLUGIN_PARAMS="";		// additional parameters <param1=val,param2=val,...> to the plugin for image input 
-	std::string IMOUT_PLUGIN = "empty";	// plugin to manage output image format (WARNING: must be a 2D pluging to output test image until 3D plugins do not have a write operation)
-	std::string IMOUT_PLUGIN_PARAMS="";		// additional parameters <param1=val,param2=val,...> to the plugin for image output 
-    /*-------------------------------------------------------------------------------------------------------------------------*/
+	TYPE = _TYPE;
+	volume = _volume;
+}
+
+//static method which is responsible to instance and return the algorithm of the given type
+TPAlgo2* TPAlgo2::instanceAlgorithm(int _type, MultiLayersVolume * _volume)
+{
+	#if S_VERBOSE>4
+	printf("........in TPAlgo::instanceAlgorithm(int _type, VirtualVolume * _volume)\n",_type);
+	#endif
+
+	if     (_type == S_FATPM_SP_TREE)
+		return (TPAlgo2*)(new TPAlgo2MST(_volume));
+	else
+	{
+                char err_msg[S_STATIC_STRINGS_SIZE];
+		sprintf(err_msg, "in TPAlgo2::instanceAlgorithm(....): unsupported algorithm type (\"%d\")", _type);
+		throw iom::exception(err_msg);
+	}
 }

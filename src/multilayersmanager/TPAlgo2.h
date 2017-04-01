@@ -25,31 +25,33 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
-#include "iomanager.config.h"
-#include "IOPluginAPI.h"
+#ifndef _TILE_PLACEMENT_ALGORITHM_2_H
+#define _TILE_PLACEMENT_ALGORITHM_2_H
 
-/******************
-*    CHANGELOG    *
-*******************
-* 2017-04-01. Giulio. @ADDED global variable CHANS_no to deal with the case of more than three channels
-* 2014-11-25. Giulio. @CHANGED default plugins are set to "empty" because they have to be set by the application
-*/
+#include "MultiLayers.h"
 
-// initialize namespace parameters
-namespace iomanager
+class TPAlgo2
 {
-    /*******************
-    *    PARAMETERS    *
-    ********************
-    ---------------------------------------------------------------------------------------------------------------------------*/
-    std::string VERSION = "1.1.1";          // version of current module
-    int DEBUG = NO_DEBUG;					// debug level
-    bool TIME_CALC = true;					// whether to enable time measurements
-    channel CHANS = ALL;					// channel to be loaded (default is ALL)
-    int CHANS_no = -1;					    // alternative way to specify a channel to be loaded (must be invalid if CHANS <> NONE, invalid value = -1)
-	std::string IMIN_PLUGIN  = "empty";		// plugin to manage input image format 
-	std::string IMIN_PLUGIN_PARAMS="";		// additional parameters <param1=val,param2=val,...> to the plugin for image input 
-	std::string IMOUT_PLUGIN = "empty";	// plugin to manage output image format (WARNING: must be a 2D pluging to output test image until 3D plugins do not have a write operation)
-	std::string IMOUT_PLUGIN_PARAMS="";		// additional parameters <param1=val,param2=val,...> to the plugin for image output 
-    /*-------------------------------------------------------------------------------------------------------------------------*/
-}
+	protected:
+
+		int TYPE;				//type of algorithm
+		MultiLayersVolume* volume;	//pointer to the object on which the current algorithm has to be executed
+
+	public:
+
+		TPAlgo2(void){};
+		TPAlgo2(int _TYPE, MultiLayersVolume * _volume);
+		virtual ~TPAlgo2(void){};
+
+		/*************************************************************************************************************
+		* Abstract method that all derived classes must implement.
+		* Finds the optimal tile placement on the <volume> object member
+		**************************************************************************************************************/
+		virtual int **execute()																   throw (iom::exception) = 0;
+
+		//static method which is responsible to instance and return the algorithm of the given type
+		static TPAlgo2* instanceAlgorithm(int _type, MultiLayersVolume * _volume);											
+};
+
+#endif /* _TILE_PLACEMENT_ALGORITHM_2_H */
+

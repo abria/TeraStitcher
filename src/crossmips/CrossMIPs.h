@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-02-26. Giulio.     @ADDED in struct NCC_parms_t: parameters minDim_NCCsrc and minDim_NCCmap to better control the reliability of NCC values
 * 2015-03-20. Giulio.     @ADDED in struct NCC_parms_t: wRangeThr has been splitted into three parameters (for V, H and D direntions)
 */
 
@@ -71,6 +72,9 @@ typedef struct {
 	int wRangeThr_i;  // along V (rows)
 	int wRangeThr_j;  // along H (columns)
 	int wRangeThr_k;  // along D (slices)
+	int minPoints;    // minumum number of points to evaluate if a peak is sufficiently isolated and should be considered
+	int minDim_NCCsrc; // minimum dimension for a useful NCC source (i.e. the NCC is not meaningful when the images used to compute it have a dimension less than this value) 
+	int minDim_NCCmap; // minimum dimension for a useful NCC map (i.e. when an NCC mas has a dimension less than this value it should not be considered)
 	iom::real_t UNR_NCC;   // unreliable NCC peak value
 	int INF_W;        // infinite NCC peak width
 	int INV_COORD;    // invalid alignment

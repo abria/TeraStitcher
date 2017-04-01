@@ -25,6 +25,13 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2017-04-01.  Giulio.     @ADDED code for completing multi-layer management
+* 2017-02-10.  Giulio.     @CREATED 
+*/
+
 
 #include "MultiLayers.h"
 #include "VirtualVolume.h"
@@ -67,11 +74,11 @@ MultiLayersVolume::MultiLayersVolume ( string _layers_dir, float _cut_depth, flo
 
 	DIM_V = LAYERS[0]->getDIM_V();
 	for ( int i=1; i<N_LAYERS; i++ ) {
-		DIM_V = ((LAYERS[i]->getDIM_V() > DIM_V) ? LAYERS[i]->getDIM_V() : DIM_V);
+		DIM_V = ((LAYERS[i]->getDIM_V() > (int)DIM_V) ? LAYERS[i]->getDIM_V() : DIM_V);
 	}
 	DIM_H = LAYERS[0]->getDIM_H();
 	for ( int i=1; i<N_LAYERS; i++ ) {
-		DIM_H = ((LAYERS[i]->getDIM_H() > DIM_H) ? LAYERS[i]->getDIM_H() : DIM_H);
+		DIM_H = (iim::uint32) ((LAYERS[i]->getDIM_H() > (int)DIM_H) ? LAYERS[i]->getDIM_H() : DIM_H);
 	}
 
 	normal_factor_D = _norm_factor_D;
@@ -88,7 +95,7 @@ MultiLayersVolume::MultiLayersVolume ( string _layers_dir, float _cut_depth, flo
 		offs = (int) ROUND((LAYERS[i+1]->getORG_D() - LAYERS[i]->getORG_D()) * 1000.0F / VXL_D);
 		DIM_D += offs;
 		layers_coords[i+1][2] = DIM_D; // other nominal coords are 0
-		nominal_D_overlap[i] = LAYERS[i]->getDIM_D() - offs;
+		nominal_D_overlap[i] = LAYERS[i]->getDIM_D() - offs; // nominal overlap may become negative if offset is too large
 	}
 	DIM_D += LAYERS[N_LAYERS-1]->getDIM_D();
 
@@ -98,7 +105,9 @@ MultiLayersVolume::MultiLayersVolume ( string _layers_dir, float _cut_depth, flo
 	}
 
     DIM_C = LAYERS[0]->getDIM_C();	
-    BYTESxCHAN = LAYERS[0]->getBYTESxCHAN();   
+    BYTESxCHAN = LAYERS[0]->getBYTESxCHAN();  
+
+	layers_new_xml_fnames = (std::string *) 0;
 }
 
 MultiLayersVolume::MultiLayersVolume ( const char *xml_filepath ) {
@@ -118,6 +127,8 @@ MultiLayersVolume::MultiLayersVolume ( const char *xml_filepath ) {
 
 	// load xml content and generate mdata.bin
 	initFromXML(xml_filepath);
+
+	layers_new_xml_fnames = (std::string *) 0;
 }
 
 MultiLayersVolume::~MultiLayersVolume ( ) {
@@ -140,6 +151,9 @@ MultiLayersVolume::~MultiLayersVolume ( ) {
 				delete disps[i];
 		delete disps;
 	}
+
+	if ( layers_new_xml_fnames )
+		delete []layers_new_xml_fnames;
 }
 
 void MultiLayersVolume::init ( ) {
@@ -233,6 +247,29 @@ void MultiLayersVolume::init ( ) {
 	entries_lev1.clear();
 }
 
+
+void MultiLayersVolume::updateLayerCoords ( ) {
+
+	int offs;
+
+	DIM_V = LAYERS[0]->getDIM_V();
+	for ( int i=1; i<N_LAYERS; i++ ) {
+		DIM_V = (iim::uint32) ((LAYERS[i]->getDIM_V() > (int)DIM_V) ? LAYERS[i]->getDIM_V() : DIM_V);
+	}
+	DIM_H = LAYERS[0]->getDIM_H();
+	for ( int i=1; i<N_LAYERS; i++ ) {
+		DIM_H = (iim::uint32) ((LAYERS[i]->getDIM_H() > (int)DIM_H) ? LAYERS[i]->getDIM_H() : DIM_H);
+	}
+
+	DIM_D = 0;
+	for ( int i=0; i<(N_LAYERS - 1); i++ ) {
+		offs = (int) ROUND((LAYERS[i+1]->getORG_D() - LAYERS[i]->getORG_D()) * 1000.0F / VXL_D);
+		DIM_D += offs;
+		layers_coords[i+1][2] = DIM_D; // other nominal coords are 0
+		nominal_D_overlap[i] = LAYERS[i]->getDIM_D() - offs; // nominal overlap may become negative if offset is too large
+	}
+	DIM_D += LAYERS[N_LAYERS-1]->getDIM_D();
+}
 
 int	MultiLayersVolume::getLAYER_DIM(int i, int j) {
 	if ( j==0 )
@@ -431,7 +468,11 @@ void MultiLayersVolume::saveXML(const char *xml_filename, const char *xml_filepa
 	for(i=0; i<N_LAYERS; i++) {
 		TiXmlElement * pelem2 = new TiXmlElement("LAYER");
 		pelem2->SetAttribute("INDEX", i);
-		pelem2->SetAttribute("value", LAYERS[i]->getROOT_DIR());
+		if ( layers_new_xml_fnames ) 
+			// use new xml files associated to layers have been generated
+			pelem2->SetAttribute("value", layers_new_xml_fnames[i].c_str());
+		else 
+			pelem2->SetAttribute("value", LAYERS[i]->getROOT_DIR());
 		pelem2->SetAttribute("coord_V", layers_coords[i][0]);
 		pelem2->SetAttribute("coord_H", layers_coords[i][1]);
 		pelem2->SetAttribute("coord_D", layers_coords[i][2]);
@@ -461,8 +502,8 @@ void MultiLayersVolume::saveXML(const char *xml_filename, const char *xml_filepa
 				}
 			}
 			pelem2->SetAttribute("disps", "yes");
-			pelem2->SetAttribute("dim_i", disps[i]->size());
-			pelem2->SetAttribute("dim_j", disps[i]->at(0).size()); // all rows of tiles have the same number of tiles
+			pelem2->SetAttribute("dim_i", (int)disps[i]->size());
+			pelem2->SetAttribute("dim_j", (int)disps[i]->at(0).size()); // all rows of tiles have the same number of tiles
 		}
 		else
 			pelem2->SetAttribute("disps", "no");
@@ -473,6 +514,50 @@ void MultiLayersVolume::saveXML(const char *xml_filename, const char *xml_filepa
 
 	//saving the file
 	xml.SaveFile();
+}
+
+
+void MultiLayersVolume::saveLayersXML(const char *xml_filename, const char *xml_filepath) throw (IOException) {
+	#if VM_VERBOSE > 3
+	printf("\t\t\t\tin MultiLayersVolume::saveLayersXML(char *xml_filename = %s)\n", xml_filename);
+	#endif
+
+	//LOCAL VARIABLES
+    std::string xml_base_abs_path = "";
+
+	//obtaining XML absolute path
+	if(xml_filename)
+		xml_base_abs_path = xml_base_abs_path + layers_dir + xml_filename;
+	else if(xml_filepath)
+		xml_base_abs_path = xml_filepath;
+	else
+		throw IOException("in MultiLayersVolume::saveLayersXML(...): no xml path provided");
+
+	// eliminate suffix if any
+	if ( xml_base_abs_path.find(".xml") == (xml_base_abs_path.size() - 4) )
+		//for ( int i=0; i<4; i++ )
+		//	xml_base_abs_path.pop_back();
+		xml_base_abs_path = xml_base_abs_path.substr(0,xml_base_abs_path.size() - 4);
+
+	// computing channel directory names
+	int n_digits = 1;
+	int _N_LAYERS = N_LAYERS / 10;	
+	while ( _N_LAYERS ) {
+		n_digits++;
+		_N_LAYERS /= 10;
+	}
+
+	// create list of new xml file names associated to layers
+	layers_new_xml_fnames = new std::string [N_LAYERS];
+
+	for ( int i=0; i<N_LAYERS; i++ ) {
+		std::stringstream xmlfile_num;
+		xmlfile_num.width(n_digits);
+		xmlfile_num.fill('0');
+		xmlfile_num << i;
+		layers_new_xml_fnames[i] = xml_base_abs_path + "L" + xmlfile_num.str() + ".xml";
+		((UnstitchedVolume *) LAYERS[i])->volume->saveXML(0,layers_new_xml_fnames[i].c_str());
+	}
 }
 
 
@@ -494,6 +579,9 @@ void MultiLayersVolume::insertDisplacement(int i, int j, int k, Displacement *di
 	displacement->setDefaultV(0);	
 	displacement->setDefaultH(0);
 	displacement->setDefaultD(0);
+
+	if ( disps[k]->at(i).at(j) ) 
+		delete disps[k]->at(i).at(j);
 
 	disps[k]->at(i).at(j) = displacement;
 }

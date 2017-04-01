@@ -25,6 +25,13 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2017-02-10.  Giulio.     @ADDED in merge methods added a parameter to specify the blending algorithm to be used for layers 
+*/
+
+
 # include "StackStitcher2.h"
 
 #include <iostream>
@@ -42,24 +49,25 @@
 #include "IM_config.h"
 #include "VirtualVolume.h"
 #include "TiledVolume.h"
+#include "UnstitchedVolume.h" // 2017-02-10. Giulio. @ADDED
 #include "my_defs.h"
 
 using namespace IconImageManager;
 using namespace iomanager;
 using namespace volumemanager;
 
-struct coord_2D{int V,H;};
-struct stripe_2Dcoords{coord_2D up_left, bottom_right;};
-struct stripe_corner{int h,H; bool up;};
-struct stripe_2Dcorners{std::list<stripe_corner> ups, bottoms, merged;};
-bool compareCorners (stripe_corner first, stripe_corner second);
+//struct coord_2D{int V,H;};
+//struct stripe_2Dcoords{coord_2D up_left, bottom_right;};
+//struct stripe_corner{int h,H; bool up;};
+//struct stripe_2Dcorners{std::list<stripe_corner> ups, bottoms, merged;};
+//bool compareCorners (stripe_corner first, stripe_corner second);
 
 //typedef long V3DLONG;
 
 
 void StackStitcher2::mergeTilesVaa3DRaw(std::string output_path, int block_height, int block_width, int block_depth, bool* resolutions, 
 							   int _ROW_START, int _ROW_END, int _COL_START,
-							   int _COL_END, int _D0, int _D1, int blending_algo, bool test_mode, bool show_progress_bar, 
+							   int _COL_END, int _D0, int _D1, int blending_algo, int intralayer_blending_algo, bool test_mode, bool show_progress_bar, 
 							   const char* saved_img_format, int saved_img_depth)			throw (IOException)
 {
 	//FILE *tmp_file; // TEMP
@@ -77,7 +85,7 @@ void StackStitcher2::mergeTilesVaa3DRaw(std::string output_path, int block_heigh
 	//LOCAL VARIABLES
 	iim::sint64 height, width, depth;                                            //height, width and depth of the whole volume that covers all stacks
 	iim::real32* buffer;								//buffer temporary image data are stored
-	iim::real32* stripe_up=NULL, *stripe_down;                                   //will contain up-stripe and down-stripe computed by calling 'getStripe' method
+	iim::real32* stripe_up=NULL;                                   //will contain up-stripe and down-stripe computed by calling 'getStripe' method
 	double angle;								//angle between 0 and PI used to sample overlapping zone in [0,PI]
 	double delta_angle;							//angle step
 	int z_ratio, z_max_res;
@@ -126,7 +134,7 @@ void StackStitcher2::mergeTilesVaa3DRaw(std::string output_path, int block_heigh
 	 */
 	iim::sint64 n_slices_pred;       
 
-	//retrieving blending function
+	//retrieving intra layers blending function
 	if(blending_algo == S_SINUSOIDAL_BLENDING)
             blending = sinusoidal_blending;
 	else if(blending_algo == S_NO_BLENDING)
@@ -135,8 +143,16 @@ void StackStitcher2::mergeTilesVaa3DRaw(std::string output_path, int block_heigh
             blending = stack_margin;
 	else if(blending_algo == S_ENHANCED_NO_BLENDING)
             blending = enhanced_no_blending;
+	else if(blending_algo == S_TOPLAYER_OVERWRITE)
+            blending = (iim::real32 (*)(double& angle, iim::real32& pixel1, iim::real32& pixel2)) 0;
 	else
-            throw IOException("in StackStitcher::getStripe(...): unrecognized blending function");
+            throw IOException("in StackStitcher::mergeTilesVaa3DRaw(...): unrecognized blending function");
+
+	// 2017-02-10. Giulio. @ADDED setting of the blending function to be used for intralayers merging
+	if ( dynamic_cast<UnstitchedVolume *>((volume->getLAYER(0))) ) { // volumes of multilayer volume are unstitched 
+		for ( int i=0; i<volume->getN_LAYERS(); i++ )
+			((UnstitchedVolume *) (volume->getLAYER(i)))->setBLENDING_ALGO(intralayer_blending_algo);
+	}
 
 	// 2015-05-14. Giulio. @ADDED selection of IO plugin if not provided.
 	if(iom::IMOUT_PLUGIN.compare("empty") == 0)
@@ -235,6 +251,17 @@ void StackStitcher2::mergeTilesVaa3DRaw(std::string output_path, int block_heigh
 	z_ratio=(int)depth/z_max_res;
 	buffer = new iim::real32[height*width*z_max_res];
 
+	// a check should be added to verify that a buffer cannot involve more than two layers
+	// i.e. that z_max_res <= MIN(volume->getLAYER_DIM(i,2), for i=0, ... , volume->N_LAYERS()
+	for ( int layer=1; layer<(volume->getN_LAYERS()-1); layer++ ) {
+		if ( z_max_res > (volume->getLAYER_COORDS(layer+1,2) - volume->getLAYER_COORDS(layer,2)) )
+    	{
+        	char err_msg[5000];
+        	sprintf(err_msg,"The buffer size is too large and may involve more than two layers");
+        	throw IOException(err_msg);
+    	}
+	}
+	
 	//slice_start and slice_end of current block depend on the resolution
 	for(int res_i=0; res_i< resolutions_size; res_i++) {
 		stack_block[res_i] = 0;
@@ -264,11 +291,14 @@ void StackStitcher2::mergeTilesVaa3DRaw(std::string output_path, int block_heigh
 	int cur_layer_start, cur_layer_end;
 	int second_layer_start, second_layer_end;
 	int overlap_start, overlap_end;
-	int offs, offs2;
+	iim::sint64 offs, offs2;
 	bool blending_flag = false;
+	iim::real32 (*saved_blending)(double& angle, iim::real32& pixel1, iim::real32& pixel2) = blending; // to temporarily disable blending
 
 	for(iim::sint64 z = this->D0, z_parts = 1; z < this->D1; z += z_max_res, z_parts++)
 	{
+		blending = saved_blending; // re-enable blending in case it has been disabled
+
 		// INV: z <= (volume->getLAYER_COORDS(cur_layer,2) + volume->getLAYER_DIM(cur_layer,2))
 
 		// empty the buffer
@@ -280,17 +310,26 @@ void StackStitcher2::mergeTilesVaa3DRaw(std::string output_path, int block_heigh
 		z_next = z + (z_parts <= z_ratio ? z_max_res : depth%z_max_res);
 
 		// compute interval of current layer to be put in the buffer
-		cur_layer_start = (int) z;
+		cur_layer_start = (int) MAX(z,volume->getLAYER_COORDS(cur_layer,2)); 
 		cur_layer_end   = (int) MIN(z_next,(volume->getLAYER_COORDS(cur_layer,2) + volume->getLAYER_DIM(cur_layer,2)));
 
 		// INV: z <= cur_layer_end 
 
-		// load data from current layer and copies it to buffer
-		buf1 = volume->getSUBVOL(cur_layer,-1,-1,-1,-1,(cur_layer_start - volume->getLAYER_COORDS(cur_layer,2)),(cur_layer_end - volume->getLAYER_COORDS(cur_layer,2)));
-		offs = (int) (volume->getLAYER_COORDS(cur_layer,0) * width + volume->getLAYER_COORDS(cur_layer,1));
-		copyBlock2SubBuf(buf1,buffer+offs,
-						 volume->getLAYER_DIM(cur_layer,0),volume->getLAYER_DIM(cur_layer,1),(cur_layer_end - cur_layer_start),
-						 volume->getLAYER_DIM(cur_layer,1),volume->getLAYER_DIM(cur_layer,0) * volume->getLAYER_DIM(cur_layer,1),width,height * width);
+		/* if there are gaps between layers it can happen that z < volume->getLAYER_COORDS(cur_layer,2)
+		 * in this case (volume->getLAYER_COORDS(cur_layer,2) - z) slices should be left empty
+		 */
+		if ( cur_layer_start < cur_layer_end ) { // there are data to be loaded from current layer
+			// load data from current layer and copies it to buffer
+			buf1 = volume->getSUBVOL(cur_layer,-1,-1,-1,-1,(cur_layer_start - volume->getLAYER_COORDS(cur_layer,2)),(cur_layer_end - volume->getLAYER_COORDS(cur_layer,2)));
+			// skip (cur_layer_start - z) empty slices if any
+			offs = (cur_layer_start - z) * width * height + (volume->getLAYER_COORDS(cur_layer,0) * width + volume->getLAYER_COORDS(cur_layer,1));
+			copyBlock2SubBuf(buf1,buffer+offs,
+							 volume->getLAYER_DIM(cur_layer,0),volume->getLAYER_DIM(cur_layer,1),(cur_layer_end - cur_layer_start),
+							 volume->getLAYER_DIM(cur_layer,1),volume->getLAYER_DIM(cur_layer,0) * volume->getLAYER_DIM(cur_layer,1),width,height * width);
+		}
+		else { // the current layer does not contribute to fill the buffer
+			blending = (iim::real32 (*)(double& angle, iim::real32& pixel1, iim::real32& pixel2)) 0; // blending is termporarily disabled
+		}
 
 		// check if there is a second buffer involved 
 		// (current layer is not the last) && the first slice after the buffer is greater than the first slice of next layer (a layer deep 'cut_depth' us is discarded)
@@ -300,7 +339,7 @@ void StackStitcher2::mergeTilesVaa3DRaw(std::string output_path, int block_heigh
 			// second_layer_start < second_layer_end = z_next
 			overlap_start      = second_layer_start;
 			overlap_end        = MAX(second_layer_start,cur_layer_end); // the overlap region cannot end before the second layer (it would mean it is empty and only the copy step has to be performed)
-			if ( blending_algo == S_SINUSOIDAL_BLENDING || blending_algo == S_SHOW_STACK_MARGIN ) {
+			if ( blending_algo == S_SINUSOIDAL_BLENDING || blending_algo == S_SHOW_STACK_MARGIN || blending_algo == S_TOPLAYER_OVERWRITE ) {
 				// check if flag is already set
 				if ( !blending_flag ) {
 					// beginning of blending region
@@ -310,9 +349,9 @@ void StackStitcher2::mergeTilesVaa3DRaw(std::string output_path, int block_heigh
 				}
 
 				buf2 = volume->getSUBVOL(cur_layer+1,-1,-1,-1,-1,(second_layer_start - volume->getLAYER_COORDS(cur_layer+1,2)),(second_layer_end - volume->getLAYER_COORDS(cur_layer+1,2)));
-				// add the first part with blending
+				// add the first part with blending (or overwriting previous buffer if blending in a null pointer, i.e. blending_algo == S_TOPLAYER_OVERWRITE)
 				for ( int s=0; s<(overlap_end - overlap_start); s++, angle+=delta_angle ) {
-					offs = (int) (height * width * (overlap_start-cur_layer_start+s)) + (volume->getLAYER_COORDS(cur_layer+1,0) * width + volume->getLAYER_COORDS(cur_layer+1,1));
+					offs = ((height * width * (overlap_start-cur_layer_start+s)) + (volume->getLAYER_COORDS(cur_layer+1,0) * width + volume->getLAYER_COORDS(cur_layer+1,1)));
 					offs2 = (volume->getLAYER_DIM(cur_layer+1,0) * volume->getLAYER_DIM(cur_layer+1,1) * s);
 					addBlock2SubBuf(buf2+offs2,buffer+offs,
 									volume->getLAYER_DIM(cur_layer+1,0),volume->getLAYER_DIM(cur_layer+1,1),1, // merge just one slice
@@ -321,7 +360,7 @@ void StackStitcher2::mergeTilesVaa3DRaw(std::string output_path, int block_heigh
 				}
 				if ( overlap_end < second_layer_end ) {
 					// add the second part 
-					offs = (int) (height * width * (overlap_end-cur_layer_start)) + (volume->getLAYER_COORDS(cur_layer+1,0) * width + volume->getLAYER_COORDS(cur_layer+1,1));
+					offs = ((height * width * (overlap_end-cur_layer_start)) + (volume->getLAYER_COORDS(cur_layer+1,0) * width + volume->getLAYER_COORDS(cur_layer+1,1)));
 					offs2 = (volume->getLAYER_DIM(cur_layer+1,0) * volume->getLAYER_DIM(cur_layer+1,1) * (overlap_end - overlap_start));
 					copyBlock2SubBuf(buf2+offs2,buffer+offs,
 									 volume->getLAYER_DIM(cur_layer+1,0),volume->getLAYER_DIM(cur_layer+1,1),(second_layer_end - overlap_end),
@@ -329,8 +368,8 @@ void StackStitcher2::mergeTilesVaa3DRaw(std::string output_path, int block_heigh
 				}
 				delete buf2;
 			}
-			else if ( overlap_end < second_layer_end ) {
-				// only the non+overlapping interval has to be loaded and copied
+			else if ( overlap_end < second_layer_end ) { // blending_algo == S_NO_BLENDING || blending_algo == S_ENHANCED_NO_BLENDING
+				// there is a non overlapping interval and only this has to be loaded and copied
 				buf2 = volume->getSUBVOL(cur_layer+1,-1,-1,-1,-1,(overlap_end - volume->getLAYER_COORDS(cur_layer+1,2)),(second_layer_end - volume->getLAYER_COORDS(cur_layer+1,2)));
 				copyBlock2SubBuf(buf2,buffer+(volume->getLAYER_COORDS(cur_layer+1,0) * width + volume->getLAYER_COORDS(cur_layer+1,1))+(height * width * (overlap_end-cur_layer_start)),
 								 volume->getLAYER_DIM(cur_layer+1,0),volume->getLAYER_DIM(cur_layer+1,1),(second_layer_end - overlap_end),

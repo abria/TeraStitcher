@@ -25,7 +25,9 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2014-10-29 Giulio. @ADDED fflush after writes
+* 2017-04-01. Giulio.    @CHANGED the interface of the routines to be used for 2D output formats
+* 2017-04-01. Giulio.    @FIXED some bugs
+* 2014-10-29. Giulio.    @ADDED fflush after writes
 */
 
 #include "vcresumer.h"
@@ -40,14 +42,19 @@
 #include <string>
 
 #define RESUMER_STATUS_FILE_NAME   "resume_status.bin"
-#define RECORD_LENGTH(resolutions_size)  (	\
-	sizeof(int) +							\
-	sizeof(int)*resolutions_size +			\
-	sizeof(int)*resolutions_size +			\
-	sizeof(int)*resolutions_size +			\
-	sizeof(sint64) +						\
-	sizeof(sint64)							\
+#define RECORD_LENGTH	(	\
+	sizeof(sint64) +		\
+	sizeof(sint64)			\
 )
+#define RECORD_LENGTH_L(resolutions_size)  (	\
+	sizeof(int) +								\
+	sizeof(int)*resolutions_size +				\
+	sizeof(int)*resolutions_size +				\
+	sizeof(int)*resolutions_size +				\
+	sizeof(sint64) +							\
+	sizeof(sint64)								\
+)
+
 
 using namespace std;
 using namespace iim;
@@ -76,7 +83,7 @@ bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutio
 			int  _method;
 			char _saved_img_format[STATIC_STRINGS_SIZE];
 			int  _saved_img_depth;
-			int dummy;
+			size_t dummy;
 
 			rewind(fhandle);
 			dummy = fread(&str_len,sizeof(size_t),1,fhandle);
@@ -127,7 +134,7 @@ bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutio
 		int headerSize = ftell(fhandle);
 		fseek(fhandle, 0, SEEK_END);
 		int fileSize = ftell(fhandle);
-		fseek(fhandle, fileSize-RECORD_LENGTH(resolutions_size), SEEK_SET);
+		fseek(fhandle, fileSize-RECORD_LENGTH, SEEK_SET);
 
 		return true;
 	}
@@ -159,9 +166,8 @@ bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutio
 }
 
 
-void readVCResumerState ( FILE *&fhandle, const char *output_path, int &resolutions_size, iim::sint64 &z, iim::sint64 &z_parts ) throw (iim::IOException) {
-	int dummy = fread(&resolutions_size,sizeof(int),1,fhandle);
-	dummy = fread(&z,sizeof(sint64),1,fhandle);
+void readVCResumerState ( FILE *&fhandle, const char *output_path, iim::sint64 &z, iim::sint64 &z_parts ) throw (iim::IOException) {
+	size_t dummy = fread(&z,sizeof(sint64),1,fhandle);
 	dummy = fread(&z_parts,sizeof(sint64),1,fhandle);
 
 	fclose(fhandle);
@@ -176,8 +182,7 @@ void readVCResumerState ( FILE *&fhandle, const char *output_path, int &resoluti
 }
 
 
-void saveVCResumerState ( FILE *fhandle, int resolutions_size, iim::sint64 z, iim::sint64 z_parts ) throw (iim::IOException) {
-	fwrite(&resolutions_size,sizeof(int),1,fhandle);
+void saveVCResumerState ( FILE *fhandle, iim::sint64 z, iim::sint64 z_parts ) throw (iim::IOException) {
 	fwrite(&z,sizeof(sint64),1,fhandle);
 	fwrite(&z_parts,sizeof(sint64),1,fhandle);
 	fflush(fhandle);
@@ -210,7 +215,7 @@ bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutio
 			int  _method;
 			char _saved_img_format[STATIC_STRINGS_SIZE];
 			int  _saved_img_depth;
-			int dummy;
+			size_t dummy;
 
 			rewind(fhandle);
 			dummy = fread(&str_len,sizeof(size_t),1,fhandle);
@@ -262,7 +267,7 @@ bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutio
 		int headerSize = ftell(fhandle);
 		fseek(fhandle, 0, SEEK_END);
 		int fileSize = ftell(fhandle);
-		fseek(fhandle, fileSize-RECORD_LENGTH(resolutions_size), SEEK_SET);
+		fseek(fhandle, fileSize-RECORD_LENGTH_L(resolutions_size), SEEK_SET);
 
 		return true;
 	}
@@ -297,7 +302,7 @@ bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutio
 void readVCResumerState ( FILE *&fhandle, const char *output_path, int &resolutions_size, int *stack_block, int *slice_start, int *slice_end, 
                  sint64 &z, sint64 &z_parts ) throw (IOException)
 {
-	int dummy = fread(&resolutions_size,sizeof(int),1,fhandle);
+	size_t dummy = fread(&resolutions_size,sizeof(int),1,fhandle);
 	dummy = fread(stack_block,sizeof(int),resolutions_size,fhandle);
 	dummy = fread(slice_start,sizeof(int),resolutions_size,fhandle);
 	dummy = fread(slice_end,sizeof(int),resolutions_size,fhandle);

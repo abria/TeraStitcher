@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-01. Giulio.     @ADDED ID for 'volatile' format (not implemented yet)
 * 2015-05-11. Giulio.     @ADDED 'Mapped Format' to the list of volume formats 
 * 2015-03-17. Giulio.     @CHANGED includes of standard header files (stdlib.h and stdio.h) moved outside the directive #ifdef _WIN32 
 * 2015-02-18. Giulio.     @ADDED Identifier for unstitched volume
@@ -134,7 +135,8 @@ namespace IconImageManager
     const std::string BDV_HDF5_FORMAT       = "HDF5 (BigDataViewer)";       // unique ID for BDV HDF5
     const std::string IMS_HDF5_FORMAT       = "HDF5 (Imaris IMS)";          // unique ID for IMS HDF5
     const std::string MAPPED_FORMAT         = "Mapped Volume";              // unique ID for mapped volumes
-    const std::string TIME_SERIES           = "Time series";               // unique ID for the TimeSeries class
+    const std::string VOLATILE_FORMAT       = "Volatile Volume";            // unique ID for volatile volumes
+    const std::string TIME_SERIES           = "Time series";                // unique ID for the TimeSeries class
 
     const double      PI = 3.14159265;                          // pi
     const int         TMITREE_MAX_HEIGHT  = 10;                 // maximum depth of the TMITREE

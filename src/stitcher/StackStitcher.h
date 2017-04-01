@@ -150,6 +150,10 @@ class StackStitcher
             }
 		}
 		
+		static inline iom::real_t enhanced_no_blending(double& angle, iom::real_t& pixel1, iom::real_t& pixel2){
+			return (iom::real_t)(  ((cos(angle)+1.0F)*0.5F)*pixel2 + ( 1.0F - ((cos(angle)+1.0F)*0.5F))*pixel1  );
+		}
+
 		/*************************************************************************************************************
 		* Performs downsampling at a halved frequency on the given 3D image.  The given image is overwritten in order
 		* to store its halvesampled version without allocating any additional resources.

@@ -34,3 +34,5 @@ if(WITH_GUI)
 else(WITH_GUI)
 	add_library(common ${tc_headers} ${tc_sources})
 endif(WITH_GUI)
+set_target_properties(common PROPERTIES POSITION_INDEPENDENT_CODE ON)
+

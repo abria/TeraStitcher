@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-01. Giulio.     @ADDED support for multi-layer stitching
 * 2016-09-13. Giulio.     @ADDED a cache manager to store stitched subregions
 * 2016-06-19. Giulio.     @FIXED bug in the call to input plugin (introduced the information on the plugin type: 2D/3D)
 * 2016-05-03. Giulio.     @ADDED field to set the blending algorithm (default: sinousidal blenging) 
@@ -125,6 +126,11 @@ class UnstitchedVolume : public iim::VirtualVolume
 		//SET methods
 		void setBLENDING_ALGO(int _blending_algo){blending_algo = _blending_algo;}
 
+		/* update members controlling the volume size and the mapping from indices of unstitched volume (that may start from a negative value) 
+		 * to indices of stitched volume (starting from 0)
+		 */
+		void updateTilesPositions ( );
+
         // returns a unique ID that identifies the volume format
         std::string getPrintableFormat(){ return iim::UNST_TIF3D_FORMAT; }
         
@@ -142,7 +148,9 @@ class UnstitchedVolume : public iim::VirtualVolume
         friend class iim::VirtualVolume; 
 
 		// needed to enable the extraction of the underlying unstitiched volume
+		friend class MultiLayersVolume; 
 		friend class StackStitcher2; 
+		friend class TPAlgo2MST; 
 		friend class iim::CacheBuffer; 
 };
 

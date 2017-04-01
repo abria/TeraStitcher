@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-01. Giulio.     @ADDED function for enhanced no blending
 * 2016-04-29. Giulio.     @ADDED input plugin substitution before metadata genration (restored afterwards)
 * 2015-08-28. Giulio.     @FIXED reference system of the generated image has always V as a first axis and H as a second axis
 * 2015-08-16. Giulio.     @ADDED method for halvesampling only V and H dimensions
@@ -242,6 +243,12 @@ throw (iom::exception)
 						ts::ProgressBar::instance()->display();
 					}
 
+					//  row_wise -> stkA == stk[i,j], stkB == stk[i,j+1] -> skip if i == row1 && skip_H
+					// !row_wise -> stkA == stk[j,i], stkB == stk[j+1,i] -> skip if i == col1 && skip_V
+// 					if ( i == (row_wise ? row1 : col1) ) // skip
+// 						printf("---> %s: stkA=[%d,%d], stkB=[%d,%d] - skip\n",
+// 							row_wise ? "row wise" : "column wise", row_wise ? i : j, row_wise ? j : i, row_wise ? i : j+1, row_wise ? j+1 : i);
+
 					// 2014-09-09. @ADDED sparse tile support: incomplete or empty substacks are not processed.
 					if(stk_A->isComplete(z_start, z_start+subvol_DIM_D_k-1) && stk_B->isComplete(z_start, z_start+subvol_DIM_D_k-1) )
 					{
@@ -276,6 +283,12 @@ throw (iom::exception)
 						ts::ProgressBar::instance()->setProgressValue((100.0f/displ_computations)*displ_computations_idx, buffer);
 						ts::ProgressBar::instance()->display();
 					}
+
+					//  row_wise -> stkA == stk[i,j], stkB == stk[i+1,j] -> skip if j == col1 && skip_V
+					// !row_wise -> stkA == stk[j,i], stkB == stk[j,i+1] -> skip if j == row1 && skip_H
+// 					if ( j == (row_wise ? col1 : row1) ) // skip
+// 						printf("---> %s: stkA=[%d,%d], stkB=[%d,%d] - skip\n",
+// 							row_wise ? "row wise" : "column wise", row_wise ? i : j, row_wise ? j : i, row_wise ? i+1 : j, row_wise ? j : i+1);
 
 					// 2014-09-09. @ADDED sparse tile support: incomplete or empty substacks are not processed.
 					if(stk_A->isComplete(z_start, z_start+subvol_DIM_D_k-1) && stk_B->isComplete(z_start, z_start+subvol_DIM_D_k-1) )
@@ -598,6 +611,8 @@ iom::real_t* StackStitcher::getStripe(int row_index, int d_index, int restore_di
 		blending = no_blending;
 	else if(blending_algo == S_SHOW_STACK_MARGIN)
 		blending = stack_margin;
+	else if(blending_algo == S_ENHANCED_NO_BLENDING)
+		blending = StackStitcher::enhanced_no_blending;
 	else
 		throw iom::exception("in StackStitcher::getStripe(...): unrecognized blending function");
 

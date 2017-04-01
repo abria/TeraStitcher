@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-01. Giulio.     @ADDED global variable CHANS_no to deal with the case of more than three channels
 * 2014-09-02. Alessandro. @ADDED 'uint64' type.
 */
 
@@ -89,7 +90,7 @@ namespace iomanager
     ********************
     ---------------------------------------------------------------------------------------------------------------------------*/
     enum debug_level { NO_DEBUG, LEV1, LEV2, LEV3, LEV_MAX };
-    enum channel { ALL, R, G, B };
+    enum channel { ALL, R, G, B, NONE }; // NONE means that the channel to be loaded is psecified by global variable 'CHANS_no'
     /*-------------------------------------------------------------------------------------------------------------------------*/
 
 
@@ -101,6 +102,7 @@ namespace iomanager
     extern int DEBUG;                       // debug level of current module
     extern bool TIME_CALC;                  // whether to enable time measurements
     extern channel CHANS;					// channel to be loaded (default is ALL)
+    extern int CHANS_no;					// alternative way to specify a channel to be loaded (must be invalid if CHANS <> NONE, invalid value = -1)
 	extern std::string IMIN_PLUGIN;			// plugin to manage input image format
 	extern std::string IMIN_PLUGIN_PARAMS;	// additional parameters <param1=val,param2=val,...> to the plugin for image input 
 	extern std::string IMOUT_PLUGIN;		// plugin to manage output image format

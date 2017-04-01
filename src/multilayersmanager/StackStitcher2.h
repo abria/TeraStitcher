@@ -25,6 +25,14 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2017-04-01.  Giulio.     @ADDED code for completing the management of multi-layer stitching
+* 2017-02-10.  Giulio.     @ADDED in merge methods added a parameter to specify the blending algorithm to be used for layers 
+*/
+
+
 #ifndef STACK_STITCHER2_H
 #define STACK_STITCHER2_H
 
@@ -167,33 +175,6 @@ public:
 	/*************************************************************************************************************
 	* Method to be called for displacement computation. <> parameters are mandatory, while [] are optional.
 	* <algorithm_type>		: ID of the pairwise displacement algorithm to be used.
-	* [start/end_...]		: rows/columns intervals that possible identify the portion of volume to be processed.
-	*						  If not given, all stacks will be processed.
-	* [overlap_...]			: expected overlaps between the given stacks along V and H directions.These values can
-	*   					  be used to determine the region of interest where the overlapping occurs. If not gi-
-	*   					  ven,  default  values  are  assigned  by  computing the expected  overlaps using the 
-	*   					  <MEC_...> members of the <StackedVolume> object.
-	* [displ_max_...]		: maximum displacements along VHD between two  adjacent stacks  taking the given over-
-	*						  lap as reference. These parameters, together with <overlap_...>,can be used to iden-
-	*						  tify the region of interest where the correspondence between the given stacks has to
-	*						  be found. When used, these parameters have to be tuned with respect to the precision 
-	*						  of the motorized stages. If not given, value S_DISPL_SEARCH_RADIUS_DEF is assigned.
-	* [subvol_DIM_D]		: desired subvolumes dimensions along D axis.  Each pair  of stacks is split into sub-
-	*						  volumes along D axis in order to use memory efficiently.   Hence, multiple displace-
-	*						  ments for each pair of adjacent stacks are computed. 
-	*						  If not given, value S_SUBVOL_DIM_D_DEFAULT is assigned.
-	* [restoreSPIM]			: enables SPIM artifacts removal (zebrated patterns) along the given direction.
-	* [restore_direction]	: direction of SPIM zebrated patterns to be removed.
-	* [show_progress_bar]	: enables/disables progress bar with estimated time remaining.
-	**************************************************************************************************************/
-	void computeDisplacements(int algorithm_type, int start_layer, int end_layer, 
-								int displ_max_V=S_DISPL_SEARCH_RADIUS_DEF, int displ_max_H=S_DISPL_SEARCH_RADIUS_DEF, 
-								int displ_max_D=S_DISPL_SEARCH_RADIUS_DEF, int substk_DIM_V = S_SUBVOL_DIM_D_DEFAULT, 
-								int substk_DIM_H = S_SUBVOL_DIM_D_DEFAULT, bool show_progress_bar=true) throw (iim::IOException);
-
-	/*************************************************************************************************************
-	* Method to be called for displacement computation. <> parameters are mandatory, while [] are optional.
-	* <algorithm_type>		: ID of the pairwise displacement algorithm to be used.
 	* [start/end_...]		: layers interval that possible identify the portion of volume to be processed.
 	*						  If not given, all stacks will be processed.
 	* [displ_max_...]		: maximum displacements along VHD between two  adjacent stacks  taking the given over-
@@ -204,18 +185,26 @@ public:
 	*						  If not given, value S_DISPL_MAX_VHD is assigned.
 	* [tile_idx_V ...]	    : indices of tiles to be aligned
 	* [show_progress_bar]	: enables/disables progress bar with estimated time remaining.
+	*
+	* WARNING: this method should be used when layers are still unstitched matrices of tiles.
 	**************************************************************************************************************/
 	void computeTileDisplacements(int algorithm_type, int start_layer, int end_layer, 
 												  int displ_max_V, int displ_max_H, int displ_max_D, bool show_progress_bar) throw (iim::IOException);
 
 
 	/*************************************************************************************************************
-	* For each stack, the vector of redundant displacements along D is projected into the displacement which embe-
-	* ds the most reliable parameters. After this operation, such vector will contain only the projected displace-
-            * ment. Where for a pair of adjacent stacks no displacement is available,  a displacement  is generated using
-            * nominal stage coordinates.
+	* For each pair of layers projects the best interlayer displacement and leaves one displacements that  has  to 
+	* be applied to the layer as a whole. 
+	* WARNING: this mathod it has to be used if layers are already stitched 3D images.
 	**************************************************************************************************************/
 	void projectDisplacements()																  throw (iim::IOException);
+
+	/*************************************************************************************************************
+	* Compute the tiles placement with a global optimization algorithm taking into account the alignment of the 
+	* whole 3D matrix of tiles.
+	* Update the internal representation of each layer.
+	**************************************************************************************************************/
+	void computeTilesPlacement(int algorithm_type)																  throw (iim::IOException);
 
 	/*************************************************************************************************************
 	* Assuming that for each pair of adjacent stacks  exists one  and only one displacement,  this displacement is 
@@ -230,7 +219,7 @@ public:
 	/*************************************************************************************************************
 	* Executes the compute tiles placement algorithm associated to the given ID <algorithm_type>
 	**************************************************************************************************************/
-	void computeTilesPlacement()											  throw (iim::IOException);
+	void computeLayersPlacement()											  throw (iim::IOException);
 
 
     /*************************************************************************************************************
@@ -267,7 +256,8 @@ public:
 	*						  card rows or columns with no stitchable stacks.
 	* [restoreSPIM]			: enables SPIM artifacts removal (zebrated patterns) along the given direction.
 	* [restore_direction]	: direction of SPIM zebrated patterns to be removed.
-	* [blending_algo]		: ID of the blending algorithm to be used in the overlapping regions.		 
+	* [blending_algo]		: ID of the blending algorithm to be used in the overlapping regions of layers.		 
+	* [intralayer_blending_algo]: ID of the blending algorithm to be used in for merging tiles of each layer.		 
 	* [test_mode]			: if enabled, the middle slice of the whole volume will be stitched and and  saved lo-
 	*						  cally. Stage coordinates will be used, s o this can be used to test  their precision
 	*						  as well as the selected reference system.
@@ -277,8 +267,9 @@ public:
 	**************************************************************************************************************/
 	void mergeTiles(std::string output_path, int slice_height = -1, int slice_width = -1, bool* resolutions = NULL, 
 					int _ROW_START=-1, int _ROW_END=-1, int _COL_START=-1,
-					int _COL_END=-1, int _D0=-1, int _D1=-1, int blending_algo=S_SINUSOIDAL_BLENDING, bool test_mode=false, bool show_progress_bar= true,
-					const char* saved_img_format=iom::DEF_IMG_FORMAT.c_str(), int saved_img_depth=iom::DEF_BPP) throw (iim::IOException);
+					int _COL_END=-1, int _D0=-1, int _D1=-1, int blending_algo=S_SINUSOIDAL_BLENDING, int intralayer_blending_algo=S_SINUSOIDAL_BLENDING, 
+					bool test_mode=false, bool show_progress_bar= true, const char* saved_img_format=iom::DEF_IMG_FORMAT.c_str(), 
+					int saved_img_depth=iom::DEF_BPP) throw (iim::IOException);
 		
 
 	/*************************************************************************************************************
@@ -329,7 +320,8 @@ public:
 	*						  card rows or columns with no stitchable stacks.
 	* [restoreSPIM]			: enables SPIM artifacts removal (zebrated patterns) along the given direction.
 	* [restore_direction]	: direction of SPIM zebrated patterns to be removed.
-	* [blending_algo]		: ID of the blending algorithm to be used in the overlapping regions.
+	* [blending_algo]		: ID of the blending algorithm to be used in the overlapping regions of layers.		 
+	* [intralayer_blending_algo]: ID of the blending algorithm to be used in for merging tiles of each layer.		 
 	* [test_mode]			: if enabled, the middle slice of the whole volume will be stitched and and  saved lo-
 	*						  cally. Stage coordinates will be used, s o this can be used to test  their precision
 	*						  as well as the selected reference system.
@@ -340,8 +332,9 @@ public:
 
 	void mergeTilesVaa3DRaw(std::string output_path, int block_height = -1, int block_width = -1, int block_depth = -1, bool* resolutions = NULL, 
 							int _ROW_START=-1, int _ROW_END=-1, int _COL_START=-1,
-							int _COL_END=-1, int _D0=-1, int _D1=-1, int blending_algo=S_SINUSOIDAL_BLENDING,	bool test_mode=false, bool show_progress_bar= true,
-							const char* saved_img_format=iom::DEF_IMG_FORMAT.c_str(), int saved_img_depth=iom::DEF_BPP) throw (iim::IOException);
+							int _COL_END=-1, int _D0=-1, int _D1=-1, int blending_algo=S_SINUSOIDAL_BLENDING, int intralayer_blending_algo=S_SINUSOIDAL_BLENDING, 
+							bool test_mode=false, bool show_progress_bar= true, const char* saved_img_format=iom::DEF_IMG_FORMAT.c_str(), 
+							int saved_img_depth=iom::DEF_BPP) throw (iim::IOException);
 };
 
 #endif

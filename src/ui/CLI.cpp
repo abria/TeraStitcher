@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-03-27. Giulio.     @ADDED full support for multi-channel images (more than three channels are allowed) 
 * 2016-09-04. Giulio.     @ADDED the options for setting the configuration of the LibTIFF library
 * 2015-08-16. Giulio.     @ADDED the 'method' and 'isotropi' parameters 
 * 2015-06-12. Giulio      @ADDED parameter to specify the path and name of an error log file
@@ -43,6 +44,13 @@
 #include "config.h"
 #include <tclap/CmdLine.h>
 #include <sstream>
+
+bool isNumber ( std::string chan ) {
+	bool isDigit = true;
+	for ( int i=0; i<chan.size() && isDigit; i++ ) 
+		isDigit = isdigit(chan.c_str()[i]) != 0;
+	return isDigit;
+}
 
 TeraStitcherCLI::TeraStitcherCLI(void)
 {
@@ -101,7 +109,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::ValueArg<int> p_search_radius_H("","sH","Displacements search radius along H (in pixels).",false,S_DISPL_SEARCH_RADIUS_DEF,"integer");
 	TCLAP::ValueArg<int> p_search_radius_D("","sD","Displacements search radius along D (in pixels).",false,S_DISPL_SEARCH_RADIUS_DEF,"integer");
 	TCLAP::ValueArg<int> p_subvol_dim_D("","subvoldim","Number of slices per subvolume partition used in the pairwise displacements computation step.",false,S_SUBVOL_DIM_D_DEFAULT,"integer");
-	TCLAP::ValueArg<float> p_reliability_threshold("","threshold","Reliability threshold. Values are in [0.0, 1.0] where 0 = unreliable, 1.0 = totally reliable. Default is 0.7.",false,0.7,"real");
+	TCLAP::ValueArg<float> p_reliability_threshold("","threshold","Reliability threshold. Values are in [0.0, 1.0] where 0 = unreliable, 1.0 = totally reliable. Default is 0.7.",false,(float)0.7,"real");
 	TCLAP::ValueArg<int> p_slice_height("","sliceheight","Desired slice height of merged tiles (in pixels).",false,-1,"integer");
 	TCLAP::ValueArg<int> p_slice_width("","slicewidth","Desired slice width of merged tiles (in pixels).",false,-1,"integer");
 	TCLAP::ValueArg<int> p_slice_depth("","slicedepth","Desired block depth of merged tiles (in pixels).",false,-1,"integer");
@@ -540,6 +548,32 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 		iomanager::CHANS = iomanager::G;
 	else if(p_im_in_channel.getValue().compare("B") == 0)
 		iomanager::CHANS = iomanager::B;
+	// 2017-03-27. Giulio. Added full multi-channel support
+	else if ( isNumber(p_im_in_channel.getValue()) ) {
+		// check if the input plugin support more than three channels
+		bool flag = false;
+		std::string plugin_type;
+		try{
+			plugin_type = "3D image-based I/O plugin";
+			flag = iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->desc().find(plugin_type) != std::string::npos;
+		}
+		catch (...) {
+			plugin_type = "2D image-based I/O plugin";
+			flag = iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->desc().find(plugin_type) != std::string::npos;
+		}
+		if ( !flag )
+ 			throw iom::exception(iomanager::strprintf("cannot determine the type of the input plugin"), __iom__current__function__);
+		if ( (plugin_type.compare("3D image-based I/O plugin") == 0) ?
+								iomanager::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() :
+								iomanager::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved() )
+  			throw iom::exception(iomanager::strprintf("pulgins with interleaved channels do not allow to specify a channel number: use R, G, or B"), __iom__current__function__);
+		else
+			// channels are not interleaved, more than three channels are allowed
+			iomanager::CHANS_no = atoi(p_im_in_channel.getValue().c_str());
+		// channels are specified by a number: variable 'iomanager::CHANS' must be set to invalid value 
+		iomanager::CHANS = iomanager::NONE;
+
+	}
 	else
 		throw iom::exception(iomanager::strprintf("Invalid argument \"%s\" for parameter --%s! Allowed values are {\"all\",\"R\",\"G\",\"B\"}", p_im_in_channel.getValue().c_str(), p_im_in_channel.getName().c_str()).c_str());
 

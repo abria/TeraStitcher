@@ -25,6 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-01. Giulio.     @FIXED some error messages
+* 2017-04-01. Giulio.     @FIXED save state at the beginning of the main for loop in case an error happens during the first cycle
 * 2017-02-01. Giulio.     @FIXED bugs in computing the voxel size along D when isotropic downsizing is set
 * 2017-01-23. Giulio.     @FIXED bugs of parallel execution in case 4D formats are specified
 * 2017-01-22. Giulio      @CHANGED the setting on z_max_res in tiled formats generation for efficiency reasons
@@ -226,16 +228,16 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 	if ( saved_img_depth == 0 ) // default value: output depth is the same of input depth
 		saved_img_depth = (volume->getBYTESxCHAN() * 8);
 		
-	if ( saved_img_depth != 8 && volume->getNACtiveChannels() > 1) {
-		char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"VolumeConverter::generateTilesVaa3DRaw: %d bits per channel of destination is not supported for %d channels",
-			saved_img_depth, volume->getNACtiveChannels());
-		throw IOException(err_msg);
-	}
+// 	if ( saved_img_depth != 8 && volume->getNACtiveChannels() > 1) {
+// 		char err_msg[STATIC_STRINGS_SIZE];
+// 		sprintf(err_msg,"VolumeConverter::generateTilesVaa3DRaw: %d bits per channel of destination is not supported for %d channels",
+// 			saved_img_depth, volume->getNACtiveChannels());
+// 		throw IOException(err_msg);
+// 	}
 	
 	if ( saved_img_depth != (volume->getBYTESxCHAN() * 8) ) { // saveImage_from and saveImage_from_UINT8 do not support depth conversion yet
 		char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"VolumeConverter::generateTilesVaa3DRaw: a mismatch between bits per channel of source (%d) and destination (%d) is not supported",
+		sprintf(err_msg,"VolumeConverter::generateTiles: a mismatch between bits per channel of source (%d) and destination (%d) is not supported",
 			volume->getBYTESxCHAN() * 8, saved_img_depth);
         throw IOException(err_msg);
 	}
@@ -436,7 +438,7 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 			throw IOException(err_msg);
 		}
 		if ( initVCResumer(saved_img_format,output_path_par.str().c_str(),resolutions_size,resolutions,slice_height,slice_width,method,saved_img_format,saved_img_depth,fhandle) ) { // halve_pow2 is not saved
-				readVCResumerState(fhandle,output_path_par.str().c_str(),resolutions_size,z,z_parts); // halve_pow2 is not saved
+				readVCResumerState(fhandle,output_path_par.str().c_str(),z,z_parts); // halve_pow2 is not saved
 		}
 		else { // halve_pow2 is not saved: start form the first slice
 			// z must begin from D0 (absolute index into the volume) since it is used to compute tha file names (containing the absolute position along D)
@@ -446,7 +448,7 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 	}
 	else { // not in parallel mode: use output_path to maintain resume status
 		if ( initVCResumer(saved_img_format,output_path.c_str(),resolutions_size,resolutions,slice_height,slice_width,method,saved_img_format,saved_img_depth,fhandle) ) {
-			readVCResumerState(fhandle,output_path.c_str(),resolutions_size,z,z_parts);
+			readVCResumerState(fhandle,output_path.c_str(),z,z_parts);
 		}
 		else {
 			z = this->D0;
@@ -457,6 +459,10 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 	// z must begin from D0 (absolute index into the volume) since it is used to compute tha file names (containing the absolute position along D)
 	for(/* sint64 z = this->D0, z_parts = 1 */; z < this->D1; z += z_max_res, z_parts++)
 	{
+
+		// save previous group data
+		saveVCResumerState(fhandle,z,z_parts);
+
 		// fill one slice block
 		if ( internal_rep == REAL_INTERNAL_REP )
             rbuffer = volume->loadSubvolume_to_real32(V0,V1,H0,H1,(int)z,(z+z_max_res <= D1) ? (int)(z+z_max_res) : D1);
@@ -646,9 +652,11 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 			delete ubuffer[0]; // other buffer pointers are only offsets
 		
 		// save next group data
-		saveVCResumerState(fhandle,resolutions_size,z+z_max_res,z_parts+1);
+		saveVCResumerState(fhandle,z+z_max_res,z_parts+1);
 	}
-
+	
+	// save last group data
+	saveVCResumerState(fhandle,z+z_max_res,z_parts+1);
 
 	if ( !par_mode ) {
 		// 2016-04-13. Giulio. @ADDED close resume 
@@ -772,7 +780,7 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 				int slice_height, int slice_width, int method, bool isotropic, bool show_progress_bar, 
                 const char* saved_img_format, int saved_img_depth, std::string frame_dir, bool par_mode)	throw (IOException, iom::exception)
 {
-    printf("in VolumeConverter::generateTiles(path = \"%s\", resolutions = ", output_path.c_str());
+    printf("in VolumeConverter::generateTilesSimple(path = \"%s\", resolutions = ", output_path.c_str());
     for(int i=0; i< TMITREE_MAX_HEIGHT; i++)
         printf("%d", resolutions[i]);
     printf(", slice_height = %d, slice_width = %d, method = %d, show_progress_bar = %s, saved_img_format = %s, saved_img_depth = %d, frame_dir = \"%s\")\n",
@@ -781,16 +789,16 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 	if ( saved_img_depth == 0 ) // default value: output depth is the same of input depth
 		saved_img_depth = (volume->getBYTESxCHAN() * 8);
 		
-	if ( saved_img_depth != 8 && volume->getNACtiveChannels() > 1) {
-		char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"VolumeConverter::generateTilesVaa3DRaw: %d bits per channel of destination is not supported for %d channels",
-			saved_img_depth, volume->getNACtiveChannels());
-		throw IOException(err_msg);
-	}
+// 	if ( saved_img_depth != 8 && volume->getNACtiveChannels() > 1) {
+// 		char err_msg[STATIC_STRINGS_SIZE];
+// 		sprintf(err_msg,"VolumeConverter::generateTilesVaa3DRaw: %d bits per channel of destination is not supported for %d channels",
+// 			saved_img_depth, volume->getNACtiveChannels());
+// 		throw IOException(err_msg);
+// 	}
 	
 	if ( saved_img_depth != (volume->getBYTESxCHAN() * 8) ) { // saveImage_from and saveImage_from_UINT8 do not support depth conversion yet
 		char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"VolumeConverter::generateTilesVaa3DRaw: a mismatch between bits per channel of source (%d) and destination (%d) is not supported",
+		sprintf(err_msg,"VolumeConverter::generateTilesSimple: a mismatch between bits per channel of source (%d) and destination (%d) is not supported",
 			volume->getBYTESxCHAN() * 8, saved_img_depth);
         throw IOException(err_msg);
 	}
@@ -819,7 +827,7 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 
 	if ( volume == 0 ) {
 		char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"VolumeConverter::generateTiles: undefined source volume");
+		sprintf(err_msg,"VolumeConverter::generateTilesSimple: undefined source volume");
         throw IOException(err_msg);
 	}
 
@@ -873,7 +881,7 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
     if(slice_height < TMITREE_MIN_BLOCK_DIM || slice_width < TMITREE_MIN_BLOCK_DIM)
     {
         char err_msg[STATIC_STRINGS_SIZE];
-        sprintf(err_msg,"VolumeConverter::generateTiles: The minimum dimension for both slice width and height is %d", TMITREE_MIN_BLOCK_DIM);
+        sprintf(err_msg,"VolumeConverter::generateTilesSimple: The minimum dimension for both slice width and height is %d", TMITREE_MIN_BLOCK_DIM);
         throw IOException(err_msg);
     }
 	if(resolutions == NULL)
@@ -941,7 +949,7 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 					if(!check_and_make_dir(file_path[res_i].str().c_str())) // HP 130914
 					{
 						char err_msg[STATIC_STRINGS_SIZE];
-						sprintf(err_msg, "in generateTiles(...): unable to create DIR = \"%s\"\n", file_path[res_i].str().c_str());
+						sprintf(err_msg, "in generateTilesSimple(...): unable to create DIR = \"%s\"\n", file_path[res_i].str().c_str());
 						throw IOException(err_msg);
 					}
 
@@ -952,7 +960,7 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 							if(!check_and_make_dir(file_path[res_i].str().c_str()))
 							{
 								char err_msg[STATIC_STRINGS_SIZE];
-								sprintf(err_msg, "in generateTiles(...): unable to create DIR = \"%s\"\n", file_path[res_i].str().c_str());
+								sprintf(err_msg, "in generateTilesSimple(...): unable to create DIR = \"%s\"\n", file_path[res_i].str().c_str());
 								throw IOException(err_msg);
 							}
 						}
@@ -968,7 +976,7 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 	// check the number of channels
 	if ( channels > 3 ) {
 		char err_msg[STATIC_STRINGS_SIZE];
-		sprintf(err_msg,"in generateTiles(...): the volume contains too many channels (%d)", channels);
+		sprintf(err_msg,"in generateTilesSimple(...): the volume contains too many channels (%d)", channels);
         throw IOException(err_msg);
 	}
 
@@ -987,11 +995,11 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 		output_path_par << output_path << "/" << "V_" << this->V0 << "-" << this->V1<< "_H_" << this->H0 << "-" << this->H1<< "_D_" << this->D0 << "-" << this->D1;
 		if(!check_and_make_dir(output_path_par.str().c_str())) {  // the directory does nor exist or cannot be created
 			char err_msg[STATIC_STRINGS_SIZE];
-			sprintf(err_msg, "in generateTiles(...): unable to create DIR = \"%s\"\n", output_path_par.str().c_str());
+			sprintf(err_msg, "in generateTilesSimple(...): unable to create DIR = \"%s\"\n", output_path_par.str().c_str());
 			throw IOException(err_msg);
 		}
 		if ( initVCResumer(saved_img_format,output_path_par.str().c_str(),resolutions_size,resolutions,slice_height,slice_width,method,saved_img_format,saved_img_depth,fhandle) ) { // halve_pow2 is not saved
-				readVCResumerState(fhandle,output_path_par.str().c_str(),resolutions_size,z,z_parts); // halve_pow2 is not saved
+				readVCResumerState(fhandle,output_path_par.str().c_str(),z,z_parts); // halve_pow2 is not saved
 		}
 		else { // halve_pow2 is not saved: start form the first slice
 			// z must begin from D0 (absolute index into the volume) since it is used to compute tha file names (containing the absolute position along D)
@@ -1001,7 +1009,7 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 	}
 	else { // not in parallel mode: use output_path to maintain resume status
 		if ( initVCResumer(saved_img_format,output_path.c_str(),resolutions_size,resolutions,slice_height,slice_width,method,saved_img_format,saved_img_depth,fhandle) ) {
-			readVCResumerState(fhandle,output_path.c_str(),resolutions_size,z,z_parts);
+			readVCResumerState(fhandle,output_path.c_str(),z,z_parts);
 		}
 		else {
 			z = this->D0;
@@ -1012,6 +1020,9 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 	// z must begin from D0 (absolute index into the volume) since it is used to compute tha file names (containing the absolute position along D)
 	for(/* sint64 z = this->D0, z_parts = 1 */; z < this->D1; z += z_max_res, z_parts++)
 	{
+		// save previous group data
+		saveVCResumerState(fhandle,z,z_parts);
+
 		// fill one slice block
 		if ( internal_rep == REAL_INTERNAL_REP )
             rbuffer = volume->loadSubvolume_to_real32(V0,V1,H0,H1,(int)z,(z+z_max_res <= D1) ? (int)(z+z_max_res) : D1);
@@ -1075,7 +1086,7 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 				}
 				else {
 					char err_msg[STATIC_STRINGS_SIZE];
-					sprintf(err_msg, "in generateTiles(...): halve sampling level %d not supported at resolution %d\n", halve_pow2[i], i);
+					sprintf(err_msg, "in generateTilesSimple(...): halve sampling level %d not supported at resolution %d\n", halve_pow2[i], i);
 					throw iom::exception(err_msg);
 				}
 			}
@@ -1105,7 +1116,7 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 					if(!check_and_make_dir(base_path.str().c_str())) 
 					{
                         char err_msg[STATIC_STRINGS_SIZE];
-						sprintf(err_msg, "in generateTiles(...): unable to create DIR = \"%s\"\n", base_path.str().c_str());
+						sprintf(err_msg, "in generateTilesSimple(...): unable to create DIR = \"%s\"\n", base_path.str().c_str());
                         throw IOException(err_msg);
 					}
 				}
@@ -1204,11 +1215,10 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 			delete rbuffer;
 		else // internal_rep == UINT8_INTERNAL_REP
 			delete ubuffer[0]; // other buffer pointers are only offsets
-		
-		// save next group data
-		saveVCResumerState(fhandle,resolutions_size,z+z_max_res,z_parts+1);
 	}
-
+	
+	// save last group data
+	saveVCResumerState(fhandle,z+z_max_res,z_parts+1);
 
 	if ( !par_mode ) {
 		// 2016-04-13. Giulio. @ADDED close resume 
@@ -1566,7 +1576,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 
 	//ALLOCATING  the MEMORY SPACE for image buffer
     z_max_res = std::max(std::min(STANDARD_BLOCK_DEPTH,block_depth/2),powInt(2,halve_pow2[resolutions_size-1]));
-	if ( z_max_res > block_depth/2 ) {
+	if ( (z_max_res > 1) && z_max_res > block_depth/2 ) {
 		char err_msg[STATIC_STRINGS_SIZE];
 		sprintf(err_msg, "in generateTilesVaa3DRaw(...): too much resolutions(%d): too much slices (%lld) in the buffer \n", resolutions_size, z_max_res);
 		throw IOException(err_msg);
@@ -1624,6 +1634,9 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 	// z must begin from D0 (absolute index into the volume) since it is used to compute tha file names (containing the absolute position along D)
 	for(/* sint64 z = this->D0, z_parts = 1 */; z < this->D1; z += z_max_res, z_parts++)
 	{
+		// save previous group data
+		saveVCResumerState(fhandle,resolutions_size,stack_block,slice_start,slice_end,z,z_parts);
+
 		//if ( z > (this->D1/2) ) {
 		//	closeResumer(fhandle);
 		//	throw IOExcpetion("interruption for test");
@@ -1964,10 +1977,10 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 			delete rbuffer;
 		else // internal_rep == UINT8_INTERNAL_REP
 			delete ubuffer[0]; // other buffer pointers are only offsets
-		
-		// save next group data
-		saveVCResumerState(fhandle,resolutions_size,stack_block,slice_start,slice_end,z+z_max_res,z_parts+1);
 	}
+		
+	// save last group data
+	saveVCResumerState(fhandle,resolutions_size,stack_block,slice_start,slice_end,z+z_max_res,z_parts+1);
 
 	int n_err = 0; // used to trigger exception in case the .bin file cannot be generated
 
@@ -2363,7 +2376,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 
 		//ALLOCATING  the MEMORY SPACE for image buffer
     z_max_res = std::max(std::min(STANDARD_BLOCK_DEPTH,block_depth/2),powInt(2,halve_pow2[resolutions_size-1]));
-	if ( z_max_res > block_depth/2 ) {
+	if ( (z_max_res > 1) && z_max_res > block_depth/2 ) {
 		char err_msg[STATIC_STRINGS_SIZE];
 		sprintf(err_msg, "in generateTilesVaa3DRaw(...): too much resolutions(%d): too much slices (%lld) in the buffer \n", resolutions_size, z_max_res);
 		throw IOException(err_msg);
@@ -3120,6 +3133,9 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 	// z must begin from D0 (absolute index into the volume) since it is used to compute tha file names (containing the absolute position along D)
 	for(/* sint64 z = this->D0, z_parts = 1 */; z < this->D1; z += z_max_res, z_parts++)
 	{
+		// save previous group data
+		saveVCResumerState(fhandle,resolutions_size,stack_block,slice_start,slice_end,z,z_parts);
+
 		// fill one slice block
 		if ( internal_rep == REAL_INTERNAL_REP )
             rbuffer = volume->loadSubvolume_to_real32(V0,V1,H0,H1,(int)(z-D0),(z-D0+z_max_res <= D1) ? (int)(z-D0+z_max_res) : D1);
@@ -3421,10 +3437,10 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 			delete rbuffer;
 		else // internal_rep == UINT8_INTERNAL_REP
 			delete ubuffer[0]; // other buffer pointers are only offsets
-			
-		// save next group data
-		saveVCResumerState(fhandle,resolutions_size,stack_block,slice_start,slice_end,z+z_max_res,z_parts+1);
 	}
+			
+	// save last group data
+	saveVCResumerState(fhandle,resolutions_size,stack_block,slice_start,slice_end,z+z_max_res,z_parts+1);
 
 	int n_err = 0; // used to trigger exception in case the .bin file cannot be generated
 
@@ -4387,6 +4403,26 @@ void VolumeConverter::createDirectoryHierarchy(std::string output_path, std::str
 			}
        }
 	}
+
+	// deallocate memory
+    for(int res_i=0; res_i< resolutions_size; res_i++)
+	{
+		for(int stack_row = 0; stack_row < n_stacks_V[res_i]; stack_row++)
+		{
+			for(int stack_col = 0; stack_col < n_stacks_H[res_i]; stack_col++)
+			{
+				delete []stacks_height[res_i][stack_row][stack_col];
+				delete []stacks_width [res_i][stack_row][stack_col];
+				delete []stacks_depth [res_i][stack_row][stack_col];
+			}
+			delete []stacks_height[res_i][stack_row];
+			delete []stacks_width [res_i][stack_row];
+			delete []stacks_depth [res_i][stack_row];
+		}
+		delete []stacks_height[res_i];
+		delete []stacks_width[res_i]; 
+		delete []stacks_depth[res_i]; 
+	}
 }
 
 
@@ -4562,6 +4598,23 @@ void VolumeConverter::createDirectoryHierarchySimple(std::string output_path, bo
 				}
             }
 		}
+	}
+
+	// deallocate memory
+    for(int res_i=0; res_i< resolutions_size; res_i++)
+	{
+		for(int stack_row = 0; stack_row < n_stacks_V[res_i]; stack_row++)
+		{
+// 			for(int stack_col = 0; stack_col < n_stacks_H[res_i]; stack_col++)
+// 			{
+// 				delete []stacks_height[res_i][stack_row][stack_col];
+// 				delete []stacks_width [res_i][stack_row][stack_col];
+// 			}
+			delete []stacks_height[res_i][stack_row];
+			delete []stacks_width [res_i][stack_row];
+		}
+		delete []stacks_height[res_i];
+		delete []stacks_width[res_i]; 
 	}
 }
 

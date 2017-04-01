@@ -28,6 +28,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-02-14.  Giulio.     @CHANGED step 3 (place tiles) is executed after step 4 (threshold displacement)
+* 2017-02-13.  Giulio.     @CHANGED step 3 it is now place tiles (3D optimization) and no more project displacements
 * 2016-09-04.  Giulio.     @ADDED the setting of the configuration of the LibTIFF library 
 */
 
@@ -179,7 +181,7 @@ int main(int argc, char** argv)
 			//else // cli.image_format=="2D")
 			//	volume = new StackedVolume(cli.volume_load_path.c_str(), cli.reference_system, cli.VXL_1, cli.VXL_2, cli.VXL_3);
 			volume = new MultiLayersVolume(cli.volume_load_path.c_str(),cli.cut_depth,cli.norm_fact_D);
-		else if( (cli.computedisplacements && cli.volume_load_path.compare("null")==0) || cli.projdisplacements || cli.thresholddisplacements || cli.placetiles || cli.mergetiles) {
+		else if( (cli.computedisplacements && cli.volume_load_path.compare("null")==0) || /*cli.projdisplacements*/ cli.placetiles || cli.thresholddisplacements || cli.placelayers || cli.mergetiles) {
 			//if (cli.image_format=="Tiff3D" || cli.image_format=="Vaa3DRaw")
 			//	volume = new TiledVolume(cli.projfile_load_path.c_str());
 			//else // (cli.image_format=="2D")
@@ -194,35 +196,45 @@ int main(int argc, char** argv)
 			defaultOutputFileName = "xml_import";
 		if(cli.computedisplacements || cli.stitch)
 		{
+			// 2017-02-11. Giulio. the case of layers that are already stitched images is disabled
 			//stitcher->computeDisplacements(cli.pd_algo, cli.start_layer, cli.end_layer, cli.search_radius_V, cli.search_radius_H, 
 			//							   cli.search_radius_D, cli.substk_dim_V, cli.substk_dim_H, cli.show_progress_bar);
 			stitcher->computeTileDisplacements(cli.pd_algo, cli.start_layer, cli.end_layer, cli.search_radius_V, cli.search_radius_H, 
 										   cli.search_radius_D, cli.show_progress_bar);
 			defaultOutputFileName = "xml_displcomp";
 		}
-		if(cli.projdisplacements || cli.stitch)
-		{
-			stitcher->projectDisplacements();
-			defaultOutputFileName = "xml_displproj";
-		}
 		if(cli.thresholddisplacements || cli.stitch)
 		{
 			stitcher->thresholdDisplacements(cli.reliability_threshold);
 			defaultOutputFileName = "xml_displthres";
 		}
-		if(cli.placetiles || cli.stitch)
+		// 2017-02-27. Giulio. There are two strategies
+		// - layers' tiles are assumed already placed and the best interlayer alignement used for layer placement
+		// - a global 3D optimization is performed and the resulting interlayer alignment used for layer placement
+		if(cli.projdisplacements || cli.stitch) {
+			stitcher->projectDisplacements();
+			defaultOutputFileName = "xml_displproj";
+		}
+		else if(cli.placetiles || cli.stitch)
 		{
-			stitcher->computeTilesPlacement();
-			defaultOutputFileName = "xml_merging";
+			stitcher->computeTilesPlacement(cli.tp_algo); // compute optimal placement and set to 1.0 the reliability of displacement of tile (0,0) of each layer
+			stitcher->projectDisplacements();             // maintain only displacement of tile (0,0) of each layer
+			volume->saveLayersXML(0, fillPath(cli.projfile_save_path, volume->getLAYERS_DIR(), defaultOutputFileName, "xml").c_str());
+			defaultOutputFileName = "xml_placetiles";
+		}
+		if(cli.placelayers || cli.stitch)
+		{
+			stitcher->computeLayersPlacement();
+			defaultOutputFileName = "xml_placelayers";
 		}
 		if(cli.mergetiles || cli.stitch)
 		{
 			if ( cli.img_format == "Tiff3D" || cli.img_format == "Vaa3DRaw" )
 				stitcher->mergeTilesVaa3DRaw(cli.volume_save_path, cli.slice_height, cli.slice_width, cli.slice_depth, cli.resolutions, //cli.exclude_nonstitchables, 
-									 -1, -1, -1, -1, cli.D0, cli.D1, cli.tm_blending, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
+									 -1, -1, -1, -1, cli.D0, cli.D1, cli.lm_blending, cli.tm_blending, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
 			else // cli.img_format == "2D"
 				stitcher->mergeTiles(cli.volume_save_path, cli.slice_height, cli.slice_width, cli.resolutions, //cli.exclude_nonstitchables, 
-									 -1, -1, -1, -1, cli.D0, cli.D1, cli.tm_blending, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
+									 -1, -1, -1, -1, cli.D0, cli.D1, cli.lm_blending, cli.tm_blending, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
 		}
 		//if(cli.test)
 		//{

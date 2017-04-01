@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-03-27. Giulio.     @ADDED initialization of 'active_channel' with iom::CHANS_no in case more than three channels are possible (iom::CHANS = NONE)
 * 2016-09-01. Giulio.     @ADDED Cache buffer.
 * 2016-06-09. Giulio      @ADDED the initialization of 'active_channel' in the constructor
 * 2015-02-26. Giulio.     @ADDED dummy initialization of fields DIM_C and BYTESxCHAN in constructor
@@ -107,6 +108,8 @@ void VirtualVolume::init() throw (iom::exception)
 		case iom::B:
 			active_channel = 2;
 			break;
+		case iom::NONE:
+			active_channel = iom::CHANS_no;
 		default:
 			active_channel = 0;
 			break;

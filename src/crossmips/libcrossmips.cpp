@@ -28,6 +28,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2016-01-27. Giulio.     @ADDED   checks to not consider NCC maps when they have a dimension that it is too small
+* 2016-01-27. Giulio.     @CHANGED the way initial checks are managed; the search can now be as much lurge as allowed by NCC parameter minDim_NCCsrc
 * 2016-01-27. Giulio.     @CHANGED the way initial checks are managed; the search are is now dynamically resized if overlap is too small
 * 2015-03-20. Giulio.     @CHANGED different dimensions for the new NCC to be computed are passed to compute_Neighborhood
 * 2015-03-20. Giulio.     @CHANGED newu and newv have been moved as parameters in compute_Neighborhood
@@ -70,6 +72,8 @@
 /* Flag _WRITE_IMGS enables the saving of MIPs and NCCs
  * Flag _WRITE_STKS enables the saving of the input substacks too
  */
+
+//#define _WRITE_IMGS
 
 #ifdef _WRITE_IMGS
 # include <string.h>
@@ -125,6 +129,8 @@ NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B,
 	int dx1, dx2, dy1, dy2, dz1, dz2;
 
 	bool failed_xy=false, failed_xz=false, failed_yz=false;
+
+	//bool NCC_xy_valid = true, NCC_xz_valid = true, NCC_yz_valid = true;
 
 	bool allocated = !NCC_params;
 	if ( !NCC_params ) {
@@ -228,19 +234,32 @@ NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B,
     // Alessandro - 23/03/2013 - added check to verify precondition written into CrossMIPs.h that says:
     // "in practice the dimensions of the MIPS (depending on dimi, dimj, dimk, ni, nj, nk) have to be large enough with respect to delayi, delayj, delayk"
 
-	// 2017-01-27. Giulio. Check if search areas are too big with respect to overlap
-	if ( side == NORTH_SOUTH ) { 
-		delayi = MIN(delayi,(dimi - ni - 1) / 2);
-		delayj = MIN(delayj,(dimj - nj - 1) / 2);
-		delayk = MIN(delayk,(dimk - nk - 1) / 2);
-	}
-	else if ( side == WEST_EAST ) {
-		delayi = MIN(delayj,(dimj - nj - 1) / 2);
-		delayj = MIN(delayi,(dimi - ni - 1) / 2);
-		delayk = MIN(delayk,(dimk - nk - 1) / 2);
-	}
-	else
-        throw iom::exception("CrossMIPs: undefined side for tile alignment.");
+	// 2017-02-26. Giulio. Old code. I do not remember because I distinguish these two cases. Now they look wrong
+	//if ( side == NORTH_SOUTH ) { 
+	//	delayi = MIN(delayi,(dimi - ni - 1) / 2);
+	//	delayj = MIN(delayj,(dimj - nj - 1) / 2);
+	//	delayk = MIN(delayk,(dimk - nk - 1) / 2);
+	//}
+	//else if ( side == WEST_EAST ) {
+	//	delayi = MIN(delayj,(dimj - nj - 1) / 2);
+	//	delayj = MIN(delayi,(dimi - ni - 1) / 2);
+	//	delayk = MIN(delayk,(dimk - nk - 1) / 2);
+	//}
+	//else
+	//	throw iom::exception("CrossMIPs: undefined side for tile alignment.");
+
+	// 2017-02-26. Giulio. Check if search areas are too big with respect to overlap
+	delayi = MIN(delayi,MAX(0,dimi - ni - NCC_params->minDim_NCCsrc));
+	delayj = MIN(delayj,MAX(0,dimj - nj - NCC_params->minDim_NCCsrc));
+	delayk = MIN(delayk,MAX(0,dimk - nk - NCC_params->minDim_NCCsrc));
+
+	// 2017-02-26. Giulio. set flags controlling the computation of NCC maps
+	//if ( delayi < NCC_params->minDim_NCCmap || delayj < NCC_params->minDim_NCCmap )
+	//	NCC_xy_valid = false;
+	//if ( delayi < NCC_params->minDim_NCCmap || delayk < NCC_params->minDim_NCCmap )
+	//	NCC_xz_valid = false;
+	//if ( delayj < NCC_params->minDim_NCCmap || delayk < NCC_params->minDim_NCCmap )
+	//	NCC_yz_valid = false;
 
 	// 2017-01-27. Giulio. Check if wRangeThr fields have to be reduced 
 	// Note that if these values are very small it is likely that alignment will be unreliable 
@@ -331,7 +350,8 @@ NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B,
 		enhance(MIP_xy2,(dimi_v*dimj_v),GRAY_LEVELS,NCC_params);
 	}
 
-	compute_NCC_map(NCC_xy,MIP_xy1,MIP_xy2,dimi_v,dimj_v,delayi,delayj);
+	//if ( NCC_xy_valid )
+		compute_NCC_map(NCC_xy,MIP_xy1,MIP_xy2,dimi_v,dimj_v,delayi,delayj);
 
 	// calcola NCC su xz
 	NCC_xz = new iom::real_t[(2*delayi+1)*(2*delayk+1)];
@@ -343,7 +363,8 @@ NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B,
 		enhance(MIP_xz2,(dimi_v*dimk_v),GRAY_LEVELS,NCC_params);
 	}
 
-	compute_NCC_map(NCC_xz,MIP_xz1,MIP_xz2,dimi_v,dimk_v,delayi,delayk);
+	//if ( NCC_xz_valid )
+		compute_NCC_map(NCC_xz,MIP_xz1,MIP_xz2,dimi_v,dimk_v,delayi,delayk);
 
 	// calcola NCC su yz
 	NCC_yz = new iom::real_t[(2*delayj+1)*(2*delayk+1)];
@@ -355,7 +376,8 @@ NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B,
 		enhance(MIP_yz2,(dimj_v*dimk_v),GRAY_LEVELS,NCC_params);
 	}
 
-	compute_NCC_map(NCC_yz,MIP_yz1,MIP_yz2,dimj_v,dimk_v,delayj,delayk);
+	//if ( NCC_yz_valid )
+		compute_NCC_map(NCC_yz,MIP_yz1,MIP_yz2,dimj_v,dimk_v,delayj,delayk);
 
 #ifdef _WRITE_IMGS
 	if ( NCC_params->enhance ) {
@@ -379,35 +401,52 @@ NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B,
 	ind_xz = compute_MAX_ind(NCC_xz,((2*delayi+1)*(2*delayk+1)));
 	ind_yz = compute_MAX_ind(NCC_yz,((2*delayj+1)*(2*delayk+1)));
 
-	// NCC_xy: check neighborhood of maxima and search for better maxima if any
-	temp = new iom::real_t[(2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_j+1)];;
-	for ( i=0; i<((2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_j+1)); i++ )
-		temp[i] = 0;
-	compute_Neighborhood(NCC_params,NCC_xy,delayi,delayj,NCC_params->wRangeThr_i,NCC_params->wRangeThr_j,ind_xy,MIP_xy1,MIP_xy2,dimi_v,dimj_v,temp,dx1,dy1, failed_xy);
-	// substitute NCC map and delete the old one
-	delete NCC_xy;
-	NCC_xy = temp;
-	temp = (iom::real_t *)0;
+	//if ( NCC_xy_valid ) {
+		// NCC_xy: check neighborhood of maxima and search for better maxima if any
+		temp = new iom::real_t[(2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_j+1)];;
+		for ( i=0; i<((2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_j+1)); i++ )
+			temp[i] = 0;
+		compute_Neighborhood(NCC_params,NCC_xy,delayi,delayj,NCC_params->wRangeThr_i,NCC_params->wRangeThr_j,ind_xy,MIP_xy1,MIP_xy2,dimi_v,dimj_v,temp,dx1,dy1, failed_xy);
+		// substitute NCC map and delete the old one
+		delete NCC_xy;
+		NCC_xy = temp;
+		temp = (iom::real_t *)0;
+	//}
+	//else {
+	//	dx1 = dy1 = 0;
+	//}
 
-	// NCC_xz: check neighborhood of maxima and search for better maxima if any
-	temp = new iom::real_t[(2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_k+1)];;
-	for ( i=0; i<((2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_k+1)); i++ )
-		temp[i] = 0;
-	compute_Neighborhood(NCC_params,NCC_xz,delayi,delayk,NCC_params->wRangeThr_i,NCC_params->wRangeThr_k,ind_xz,MIP_xz1,MIP_xz2,dimi_v,dimk_v,temp,dx2,dz1, failed_xz);
-	// substitute NCC map and delete the old one
-	delete NCC_xz;
-	NCC_xz = temp;
-	temp = (iom::real_t *)0;
+	//if ( NCC_xz_valid ) {
+		// NCC_xz: check neighborhood of maxima and search for better maxima if any
+		temp = new iom::real_t[(2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_k+1)];;
+		for ( i=0; i<((2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_k+1)); i++ )
+			temp[i] = 0;
+		compute_Neighborhood(NCC_params,NCC_xz,delayi,delayk,NCC_params->wRangeThr_i,NCC_params->wRangeThr_k,ind_xz,MIP_xz1,MIP_xz2,dimi_v,dimk_v,temp,dx2,dz1, failed_xz);
+		// substitute NCC map and delete the old one
+		delete NCC_xz;
+		NCC_xz = temp;
+		temp = (iom::real_t *)0;
+	//} 
+	//else {
+	//	dx2 = dz1 = 0;
+	//}
 
-	// NCC_yz: check neighborhood of maxima and search for better maxima if any
-	temp = new iom::real_t[(2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_k+1)];;
-	for ( i=0; i<((2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_k+1)); i++ )
-		temp[i] = 0;
-	compute_Neighborhood(NCC_params,NCC_yz,delayj,delayk,NCC_params->wRangeThr_i,NCC_params->wRangeThr_k,ind_yz,MIP_yz1,MIP_yz2,dimj_v,dimk_v,temp,dy2,dz2, failed_yz);
-	// substitute NCC map and delete the old one
-	delete NCC_yz;
-	NCC_yz = temp;
-	temp = (iom::real_t *)0;
+
+	//if ( NCC_yz_valid ) {
+		// NCC_yz: check neighborhood of maxima and search for better maxima if any
+		temp = new iom::real_t[(2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_k+1)];;
+		for ( i=0; i<((2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_k+1)); i++ )
+			temp[i] = 0;
+		compute_Neighborhood(NCC_params,NCC_yz,delayj,delayk,NCC_params->wRangeThr_i,NCC_params->wRangeThr_k,ind_yz,MIP_yz1,MIP_yz2,dimj_v,dimk_v,temp,dy2,dz2, failed_yz);
+		// substitute NCC map and delete the old one
+		delete NCC_yz;
+		NCC_yz = temp;
+		temp = (iom::real_t *)0;
+	//} 
+	//else {
+	//	dy2 = dz2 = 0;
+	//}
+
 
 	//compute_Alignment(NCC_params,NCC_xy,NCC_xz,NCC_yz,delayi,delayj,delayk,ind_xy,ind_xz,ind_yz,result);
 	

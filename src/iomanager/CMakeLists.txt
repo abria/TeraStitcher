@@ -50,6 +50,7 @@ ENDFOREACH()
 file(GLOB iomanager_headers *.h)
 file(GLOB iomanager_sources *.cpp)
 add_library(iomanager STATIC ${iomanager_headers} ${iomanager_sources} ${plugin_headers} ${plugin_sources})
+set_target_properties(iomanager PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # link with the selected plugins
 FOREACH(subdir ${SUBDIRS})

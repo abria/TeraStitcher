@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-02-10.  Giulio.     @ADDED options to specify the blending algorithm to be used for layers 
 * 2016-09-04.  Giulio.     @ADDED the options for setting the configuration of the LibTIFF library 
 */
 
@@ -55,6 +56,7 @@ class TeraStitcher2CLI
 		bool projdisplacements;					//displacements projection step
 		bool thresholddisplacements;			//displacements thresholding step
 		bool placetiles;						//globally optimal tiles placement step
+		bool placelayers;						//globally optimal layers placement step
 		bool mergetiles;						//tiles merging step
 		//bool dumpMData;							//dump mdata.bin
 		bool ignoreUnequalStacksDepth;			//ignore unequal stacks depth (i.e., number of slices).
@@ -86,6 +88,7 @@ class TeraStitcher2CLI
 		//bool exclude_nonstitchables;			//if enabled, non-stitchable stacks will be excluded from the final stitched volume
 		int D0, D1;								//portion of volume along D axis to be processed
 		int tm_blending;						//tiles merging blending type
+		int lm_blending;						//layers merging blending type
 		//bool enable_restore;					//enable tiles restoring
 		//int restoring_direction;				//restoring direction
 		bool save_execution_times;				//enable execution times saving

@@ -25,6 +25,14 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2017-01-27. Giulio.     @ADDED constant to specify that the top of any layer must completely overwrite the overlapping bottom of the preceding one
+* 2017-01-27. Giulio.     @CHANGED parameter S_OVERLAP_MIN set to 0
+*/
+
+
 #ifndef S_CONFIG_H
 #define S_CONFIG_H
 
@@ -49,7 +57,7 @@ namespace stitcher
 #define S_PC_DISPL_TYPE 2
 #define S_DISPL_SEARCH_RADIUS_DEF 25
 #define S_SUBVOL_DIM_D_DEFAULT 200
-#define S_OVERLAP_MIN 40
+#define S_OVERLAP_MIN 0 // this parameter has been set to 0 to avoid exceptions when the overlap area is very small or even null; negative operlaps (i.e. holes) are still forbidden 
 #define S_SUBVOL_DIM_D_MIN 50
 # define HALVE_BY_MEAN 1
 # define HALVE_BY_MAX  2
@@ -79,6 +87,8 @@ namespace stitcher
 #define S_SHOW_STACK_MARGIN_NAME "STACKMARGIN"
 #define S_ENHANCED_NO_BLENDING	3		//ID associated to inverse sinusoidal blending function enhancing margins
 #define S_ENHANCED_NO_BLENDING_NAME "ENHNOBLEND"
+#define S_TOPLAYER_OVERWRITE	4		//ID specifying that the top of any layer must overwrite the bottom of the preceding one
+#define S_TOPLAYER_OVERWRITE_NAME "TOPLAYEROVERWRITE"
 #define S_SAVED_TIFF_BIT_DEPTH 8		//bit depth of saved images
 #define S_MAX_MULTIRES 10				//in multiresolution mode, images will be downsampled up to 2^(S_MAX_MULTIRES)
 #define S_MIN_SLICE_DIM 100

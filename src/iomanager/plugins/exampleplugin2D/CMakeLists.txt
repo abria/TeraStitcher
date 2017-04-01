@@ -10,3 +10,4 @@ get_filename_component(dirname ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 
 # add static library
 add_library(ioplugin_${dirname} STATIC ${headers} ${sources})
+set_target_properties(ioplugin_${dirname} PROPERTIES POSITION_INDEPENDENT_CODE ON)

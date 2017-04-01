@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-01.  Giulio.     @CHANGED the calls to the routine that creates the directory structure in the case of 'simple' formats
 * 2017-01-23.  Giulio.     @FIXED bugs of parallel execution in case 4D formats are specified
 * 2016-10-09.  Giulio.     @ADDED option ch_dir to calls to 'generateTilesVaa3DRawMC'
 * 2016-09-13.  Giulio.     @ADDED support for time series
@@ -208,9 +209,12 @@ int main ( int argc, char *argv[] ) {
 					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method);
 			}
 			else if ( cli.makeDirs ) {
-				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
+				vc.createDirectoryHierarchySimple(cli.dst_root_dir.c_str(),cli.resolutions,
 					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
 					cli.show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+// 				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
+// 					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
+// 					cli.show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
 			}
 			else if ( cli.metaData ) {
 				//vc.mdataGenerator(cli.dst_root_dir.c_str(),cli.resolutions,
@@ -228,9 +232,12 @@ int main ( int argc, char *argv[] ) {
 					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method);
 			}
 			else if ( cli.makeDirs ) {
-				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
+				vc.createDirectoryHierarchySimple(cli.dst_root_dir.c_str(),cli.resolutions,
 					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
 					cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
+// 				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
+// 					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
+// 					cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
 			}
 			else if ( cli.metaData ) {
 				//vc.mdataGenerator(cli.dst_root_dir.c_str(),cli.resolutions,

@@ -28,6 +28,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-02-26. Giulio.     @ADDED in initialization of new fields minDim_NCCsrc and minDim_NCCmap of struct NCC_parms_t in execute
+* 2017-02-26. Giulio.     @CHANGED the fraction of the peak used to evaluate peak sharpness (from 0.75 to 0.8)
 * 2015-03-20. Giulio.     @ADDED intialization of new fields wRangeThr_i, wRangeThr_j, wRangeThr_k of struct NCC_parms_t in execute
 */
 
@@ -76,17 +78,20 @@ Displacement* PDAlgoMIPNCC::execute(iom::real_t *stk_A, uint32 A_dim_V, uint32 A
 
 	// Alessandro - 31/05/2013 - parameters MUST be passed (and controlled) by the caller
 	NCC_parms_t params;
-	params.enhance      = false;
-	params.maxIter		= 2;
-	params.maxThr       = 0.10f;
-	params.UNR_NCC      = S_NCC_PEAK_MIN;
+	params.enhance       = false;
+	params.maxIter       = 2;
+	params.maxThr        = 0.10f;
+	params.UNR_NCC       = S_NCC_PEAK_MIN;
     //params.wRangeThr    = MIN(std::min(std::min(displ_max_V, displ_max_H), displ_max_D), S_NCC_WIDTH_MAX-1);
-    params.wRangeThr_i  = MIN(displ_max_V, S_NCC_WIDTH_MAX-1);
-    params.wRangeThr_j  = MIN(displ_max_H, S_NCC_WIDTH_MAX-1);
-    params.wRangeThr_k  = MIN(displ_max_D, S_NCC_WIDTH_MAX-1);
-	params.INF_W        = MAX(params.wRangeThr_i,MAX(params.wRangeThr_j,params.wRangeThr_k)) + 1;
-	params.widthThr     = 0.75f;
-	params.INV_COORD    = 0;
+    params.minPoints     = 3;  // minimum number of points to reliably evaluate if a peak is isolated 
+    params.wRangeThr_i   = MIN(displ_max_V, S_NCC_WIDTH_MAX-1);
+    params.wRangeThr_j   = MIN(displ_max_H, S_NCC_WIDTH_MAX-1);
+    params.wRangeThr_k   = MIN(displ_max_D, S_NCC_WIDTH_MAX-1);
+	params.minDim_NCCsrc = 25; // this a tentative value: when an image MIP has a dimension less than this value NCC should not be computed
+	params.minDim_NCCmap = 3;  // this a tentative value: when an NCC map has a dimension less than this value it should not be considered
+	params.INF_W         = MAX(params.wRangeThr_i,MAX(params.wRangeThr_j,params.wRangeThr_k)) + 1;
+	params.widthThr      = 0.80f; //0.75f;
+	params.INV_COORD     = 0;
 
 	NCC_descr_t* descr = norm_cross_corr_mips(stk_A, stk_B, A_dim_D, A_dim_V, A_dim_H, 0, overlap_direction == dir_vertical ? A_dim_V - overlap : 0, 
 											  overlap_direction == dir_horizontal ? A_dim_H - overlap: 0, displ_max_D, displ_max_V, displ_max_H, overlap_direction, &params);

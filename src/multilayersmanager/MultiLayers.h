@@ -25,6 +25,14 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2017-04-01.  Giulio.     @ADDED code for completing multi-layer management
+* 2017-02-10.  Giulio.     @CREATED
+*/
+
+
 #ifndef _MULTILAYERS_MANAGER_H
 #define _MULTILAYERS_MANAGER_H
 
@@ -63,6 +71,9 @@ protected:
 
  	// disps[i] is the displacements of layer i+1 with respect to layer i
 	std::vector< std::vector<Displacement *> > **disps;
+
+	// list of xml files associated to layers to be used for saving the xml file describing the multilayer volume (not active if null)
+	std::string *layers_new_xml_fnames;
 
 	// the default constructor should not be used
 	MultiLayersVolume ( ) { }
@@ -124,6 +135,8 @@ public:
 		disps[i] = disp;
 	};
 
+	void updateLayerCoords ( ) ;
+
 	//int			getDEFAULT_DISPLACEMENT_V(int i) {return 0;}
 	//int			getDEFAULT_DISPLACEMENT_H(int i) {return 0;}
 	//int			getDEFAULT_DISPLACEMENT_D(int i) {return -nominal_D_overlap[i];}
@@ -143,10 +156,12 @@ public:
 	//XML methods
 	void			initFromXML(const char *xml_filename) throw (iim::IOException);
 	void			saveXML(const char *xml_filename=0, const char *xml_filepath=0) throw (iim::IOException);
+	void            saveLayersXML(const char *xml_filename=0, const char *xml_filepath=0) throw (iim::IOException);
 
 	void insertDisplacement(int i, int j, int k, Displacement *displacement) throw (iim::IOException);
 
 	// needed to extract layer volumes
+	friend class TPAlgo2MST; 
 	friend class StackStitcher2;
 };
 

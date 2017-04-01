@@ -25,31 +25,46 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
-#include "iomanager.config.h"
-#include "IOPluginAPI.h"
-
 /******************
 *    CHANGELOG    *
 *******************
-* 2017-04-01. Giulio. @ADDED global variable CHANS_no to deal with the case of more than three channels
-* 2014-11-25. Giulio. @CHANGED default plugins are set to "empty" because they have to be set by the application
+* 2017-02-10.  Giulio.     @CREATED  
 */
 
-// initialize namespace parameters
-namespace iomanager
+#ifndef _TILE_PLACEMENT_ALGORITHM_MINIMUM_SPANNING_TREE_2_H
+#define _TILE_PLACEMENT_ALGORITHM_MINIMUM_SPANNING_TREE_2_H
+
+#include "TPAlgo2.h"
+
+class TPAlgo2MST : public TPAlgo2
 {
-    /*******************
-    *    PARAMETERS    *
-    ********************
-    ---------------------------------------------------------------------------------------------------------------------------*/
-    std::string VERSION = "1.1.1";          // version of current module
-    int DEBUG = NO_DEBUG;					// debug level
-    bool TIME_CALC = true;					// whether to enable time measurements
-    channel CHANS = ALL;					// channel to be loaded (default is ALL)
-    int CHANS_no = -1;					    // alternative way to specify a channel to be loaded (must be invalid if CHANS <> NONE, invalid value = -1)
-	std::string IMIN_PLUGIN  = "empty";		// plugin to manage input image format 
-	std::string IMIN_PLUGIN_PARAMS="";		// additional parameters <param1=val,param2=val,...> to the plugin for image input 
-	std::string IMOUT_PLUGIN = "empty";	// plugin to manage output image format (WARNING: must be a 2D pluging to output test image until 3D plugins do not have a write operation)
-	std::string IMOUT_PLUGIN_PARAMS="";		// additional parameters <param1=val,param2=val,...> to the plugin for image output 
-    /*-------------------------------------------------------------------------------------------------------------------------*/
-}
+	private:
+
+		TPAlgo2MST(void){};			//default constructor is inhibited
+
+	protected:
+
+		//int TYPE;					//INHERITED from TPAlgo
+		//MultiLayersVolume* volume;	//INHERITED from TPAlgo
+
+	public:
+
+		TPAlgo2MST(MultiLayersVolume * _volume);
+		~TPAlgo2MST(void){};
+
+		/*************************************************************************************************************
+		* Finds the optimal tile placement on the <volume> object member via Minimum Spanning Tree.
+		* Stacks matrix is considered as a graph  where  displacements are edges a nd stacks are nodes. The inverse of
+		* displacements reliability factors are  edge weights,  so that a totally unreliable displacement has a weight
+		* 1/0.0 = +inf and a totally reliable displacement has a weight 1/1.0 = 1. Thus, weights will be in [1, +inf].
+		* After computing the MST, the absolute tile positions are obtained from a stitchable source stack by means of
+		* navigating the MST and using the selected displacements.
+		* PROs: very general method; it ignores bad displacements since they have +inf weight.
+		* CONs: the best path between two adjacent stacks can pass through many stacks even if the rejected displacem-
+		*       ent is quite reliable, with a very little reliability gain.  This implies possible bad absolute  posi-
+		*       tions estimations when the path is too long.
+		**************************************************************************************************************/
+		int **execute() throw (iom::exception);
+};
+
+#endif /* _TILE_PLACEMENT_ALGORITHM_MINIMUM_SPANNING_TREE_2_H */

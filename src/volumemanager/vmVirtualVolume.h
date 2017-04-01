@@ -68,7 +68,7 @@ class volumemanager::VirtualVolume
 		int    BYTESxCHAN;              // number of bytes per channel
 
 		int active_channel;             // channel used to load image stacks 
-		                                // it is initialized to channel 0 by default or to one of the first three channels using iom::CHANS
+		                                // it is initialized to channel 0 by default or to one of the first three channels using iom::CHANS or iom::CHANS_no
 		                                // it can be set calling a setter 
 
 		CacheBuffer *cb;
