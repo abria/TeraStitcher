@@ -87,6 +87,7 @@ class TemplateCLI
 
 		// parameters to configure LibTIFF
 		bool libtiff_uncompressed;
+		bool libtiff_bigtiff;
 		int libtiff_rowsPerStrip;
 
 		//constructor - deconstructor

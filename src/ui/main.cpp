@@ -28,6 +28,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-02. Giulio.     @ADDED support for creation of BigTiff files
+* 2017-04-02. Giulio.     @ADDED setting of the input channel in case the plugin is not interleaved (allow more than 3 channels)
 * 2016-09-04. Giulio.     @ADDED the setting of the configuration of the LibTIFF library
 * 2015-08-16. Giulio.     @ADDED the 'method' and 'isotropi' parameters to calls to methods merging 3D tiled images
 * 2015-06-12. Giulio.     @ADDED calla to check method on the imported/tested volume
@@ -152,7 +154,7 @@ int main(int argc, char** argv)
 		cli.checkParams();
 		string defaultOutputFileName = "null";
 
-		setLibTIFFcfg(!cli.libtiff_uncompressed,cli.libtiff_rowsPerStrip);
+		setLibTIFFcfg(!cli.libtiff_uncompressed,cli.libtiff_bigtiff,cli.libtiff_rowsPerStrip);
 
 		// redirect progress bar output to command line
 		terastitcher::ProgressBar::instance()->setToGUI(false);
@@ -190,6 +192,52 @@ int main(int argc, char** argv)
             volume = volumemanager::VirtualVolumeFactory::createFromXML(cli.projfile_load_path.c_str(), cli.rescanFiles || !vm::IMG_FILTER_REGEX.empty());
 			if ( !volume->check() )
 				throw iom::exception(vm::strprintf("Volume \"%s\" is incomplete or not coherent", volume->getSTACKS_DIR()).c_str());
+		}
+
+		// set input channel if image data has to be read
+		if ( cli.test || cli.import || cli.computedisplacements || cli.mergetiles || cli.stitch ) {
+			// check if the input plugin support more than three channels
+			bool flag = false;
+			std::string plugin_type;
+			try{
+				plugin_type = "3D image-based I/O plugin";
+				flag = iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->desc().find(plugin_type) != std::string::npos;
+			}
+			catch (...) {
+				plugin_type = "2D image-based I/O plugin";
+				flag = iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->desc().find(plugin_type) != std::string::npos;
+			}
+			if ( !flag )
+ 				throw iom::exception(iomanager::strprintf("cannot determine the type of the input plugin"), __iom__current__function__);
+			if ( (plugin_type.compare("3D image-based I/O plugin") == 0) ?
+									iomanager::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() :
+									iomanager::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved() )
+
+  				; // channels are interleaved: do nothing
+			else {
+				// channels are not interleaved 'active' channel has to be set after checking that the channel exists
+				if ( iom::CHANS == iom::NONE ) { // no R,G, or B have been specified
+					if ( iom::CHANS_no < volume->getDIM_C() ) 
+						volume->setACTIVE_CHAN(iom::CHANS_no);
+					else
+						throw iom::exception(vm::strprintf("Channel %d does not exist", iom::CHANS_no).c_str());
+				}
+				else {
+					if ( iom::CHANS == iom::ALL ) {
+						if ( volume->getDIM_C() > 1 )
+							throw iom::exception(vm::strprintf("Conversion from multi-channel to intensity images not supported").c_str());
+					}
+					else if ( iom::CHANS == iom::G ) {
+						if ( volume->getDIM_C() < 2 )
+							throw iom::exception(vm::strprintf("Green channel does not exist").c_str());
+					}
+					else if ( iom::CHANS == iom::B ) {
+						if ( volume->getDIM_C() < 3 )
+							throw iom::exception(vm::strprintf("Blue channel does not exist").c_str());
+					}
+					volume->setACTIVE_CHAN(iom::CHANS);
+				}
+			}
 		}
 
 		// process volume		

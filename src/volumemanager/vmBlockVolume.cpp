@@ -25,7 +25,6 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2017-03-26. Giulio      @ADDED deallocation of the cache buffer to avoid a memory leak
 * 2016-11-14. Giulio.     @ADDED management of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
 * 2016-10-27. Giulio.     @ADDED control over the subimage to be exposed through the xml import file (default resolution 0 and timestamp 0)  
 * 2016-09-01. Giulio.     @ADDED support for cache management in loadImageStack 
@@ -216,8 +215,7 @@ BlockVolume::~BlockVolume()
 		delete[] BLOCKS;
 	}
 	
-	if ( cb )
-		delete cb;
+	// cb is already deleted in base class
 }
 
 

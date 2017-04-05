@@ -120,9 +120,13 @@ class VolumeConverter
 
 		/*************************************************************************************************************
 		* Method to set (create) the source volume to be converted
-		* _root_dir     : directory path where the volume is stored
-		* _fmt          : format in which the source volume is stored (default: STACKED_FORMAT)            
-		* _internal_fmt : format in which the pixels are represented internally (default: REAL_REPRESENTATION)
+		* _root_dir          : directory path where the volume is stored
+		* _fmt               : format in which the source volume is stored (default: STACKED_FORMAT)            
+		* _out_fmt           : format in which the pixels are represented internally (default: REAL_REPRESENTATION)
+		* time_series        :
+		* downsamplingFactor :
+		* _res               : resolution
+		* _timepoint         : time point
 		*
 		* The parameter 'downdamplingFactor' can be different from 1 used only if the internal volume is a 
 		* serie of 2D slices (derived classes: SimpleVolume / SimpleVolumeRaw)
@@ -133,7 +137,8 @@ class VolumeConverter
 		* of original image are two, the third RGB channel (Blue channel) is set to all zero
 		*************************************************************************************************************/
         void setSrcVolume(const char* _root_dir, const char* _fmt = iim::STACKED_FORMAT.c_str(),
-                          const char* _out_fmt = REAL_REPRESENTATION, bool time_series = false, int downsamplingFactor = 1) throw (iim::IOException, iom::exception);
+                          const char* _out_fmt = REAL_REPRESENTATION, bool time_series = false, 
+						  int downsamplingFactor = 1, int _res = 0, int _timepoint = 0) throw (iim::IOException, iom::exception);
 
 		/*************************************************************************************************************
 		* Method to set the subvolume to be converted

@@ -339,7 +339,7 @@ public:
     static VirtualVolume* instance(const char* path) throw (iim::IOException, iom::exception);
 
 	// should be used to instantiate BDV HDF5 volumes
-    static VirtualVolume* instance(const char* fname, int res, void *descr) throw (iim::IOException);
+    static VirtualVolume* instance(const char* fname, int res, void *descr, int timepoint = 0) throw (iim::IOException);
 
     // returns the imported volume if succeeds (otherwise returns 0)
     // WARNING: no assumption is made on metadata files, which are possibly (re-)generated using the additional informations provided.

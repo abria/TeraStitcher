@@ -77,6 +77,7 @@
 * StackedVolume: bidimensional matrix of 3D stacks stored in a hierarchical structure of directories
 *
 *******************************************************************************************************/
+#include "BDVVolume.h"
 #include "SimpleVolume.h"
 #include "SimpleVolumeRaw.h"
 #include "RawVolume.h"
@@ -121,7 +122,8 @@ VolumeConverter::~VolumeConverter()
 
 
 void VolumeConverter::setSrcVolume(const char* _root_dir, const char* _fmt, const char* _out_fmt, 
-								   bool time_series /* = false */, int downsamplingFactor /* = 1 */) throw (IOException, iom::exception)
+								   bool time_series /* = false */, int downsamplingFactor /* = 1 */,
+								   int _res /* = 0*/, int _timepoint /* = 0*/) throw (IOException, iom::exception)
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir = %s, _fmt = %s, _out_fmt = %s, time_series = %s",
                                          _root_dir, _fmt, _out_fmt, time_series ? "true" : "false").c_str(), __iim__current__function__);
@@ -129,10 +131,14 @@ void VolumeConverter::setSrcVolume(const char* _root_dir, const char* _fmt, cons
     if(time_series)
         volume = new TimeSeries(_root_dir, _fmt);
     else {
-        //volume = VirtualVolume::instance(_root_dir, _fmt, vertical, horizontal, depth, 1.0f, 1.0f, 1.0f);
-        //volume = VirtualVolume::instance_format(_root_dir);
-        // 2015-04-14. Alessandro. @FIXED misleading usage of 'VirtualVolume::instance' w/o format argument in 'setSrcVolume'
-        volume = VirtualVolume::instance_format(_root_dir, _fmt);
+		std::string format = _fmt;
+		if ( format.compare((BDVVolume().getPrintableFormat())) == 0 )
+			volume = VirtualVolume::instance(_root_dir,_res,(void *)0,_timepoint);
+		else
+			//volume = VirtualVolume::instance(_root_dir, _fmt, vertical, horizontal, depth, 1.0f, 1.0f, 1.0f);
+			//volume = VirtualVolume::instance_format(_root_dir);
+			// 2015-04-14. Alessandro. @FIXED misleading usage of 'VirtualVolume::instance' w/o format argument in 'setSrcVolume'
+			volume = VirtualVolume::instance_format(_root_dir, _fmt);
 	}
     
     // 2015-04-14 Alessandro. @FIXED bug-crash when the volume has not been imported correctly in setSrcVolume.
@@ -1894,7 +1900,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 						bool block_changed = false;                                 // true if block is changed executing the next for cycle
 						// fhandle = open file corresponding to current block 
 						if ( strcmp(saved_img_format,"Tiff3D") == 0 )
-							openTiff3DFile((char *)img_path.str().c_str(),(char *)(slice_ind ? "a" : "w"),fhandle);
+							openTiff3DFile((char *)img_path.str().c_str(),(char *)(slice_ind ? "a" : "w"),fhandle,true);
 
 						// WARNING: assumes that block size along z is not less that z_size/(powInt(2,i))
                         for(int buffer_z=0; buffer_z<z_size/(powInt(2,halve_pow2[i])); buffer_z++, slice_ind++)
@@ -1917,7 +1923,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 									closeTiff3DFile(fhandle);
 								// fhandle = open file corresponding to next block
 								if ( strcmp(saved_img_format,"Tiff3D") == 0 )
-									openTiff3DFile((char *)img_path.str().c_str(),(char *)"w",fhandle);
+									openTiff3DFile((char *)img_path.str().c_str(),(char *)"w",fhandle,true);
 								n_pages_block = stacks_depth[i][0][0][stack_block[i]+1];
 								block_changed = true;
 							}
@@ -2606,7 +2612,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 							bool block_changed = false;                                 // true if block is changed executing the next for cycle
 							// fhandle = open file corresponding to current block 
 							if ( strcmp(saved_img_format,"Tiff3D") == 0 )
-								openTiff3DFile((char *)img_path.str().c_str(),(char *)(slice_ind ? "a" : "w"),fhandle);
+								openTiff3DFile((char *)img_path.str().c_str(),(char *)(slice_ind ? "a" : "w"),fhandle,true);
 
 							// WARNING: assumes that block size along z is not less that z_size/(powInt(2,i))
 							for(int buffer_z=0; buffer_z<z_size/(POW_INT(2,i)); buffer_z++, slice_ind++) 
@@ -2629,8 +2635,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 										closeTiff3DFile(fhandle);
 									// fhandle = open file corresponding to next block
 									if ( strcmp(saved_img_format,"Tiff3D") == 0 )
-										openTiff3DFile((char *)img_path.str().c_str(),(char *)"w",fhandle);
-									openTiff3DFile((char *)img_path.str().c_str(),(char *)"w",fhandle);
+										openTiff3DFile((char *)img_path.str().c_str(),(char *)"w",fhandle,true);
 									n_pages_block = stacks_depth[i][0][0][stack_block[i]+1];
 									block_changed = true;
 								}
@@ -3357,7 +3362,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 							bool block_changed = false;                                 // true if block is changed executing the next for cycle
 							// fhandle = open file corresponding to current block 
 							if ( strcmp(saved_img_format,"Tiff3D") == 0 )
-								openTiff3DFile((char *)img_path.str().c_str(),(char *)(slice_ind ? "a" : "w"),fhandle);
+								openTiff3DFile((char *)img_path.str().c_str(),(char *)(slice_ind ? "a" : "w"),fhandle,true);
 
 							// WARNING: assumes that block size along z is not less that z_size/(powInt(2,i))
 							for(int buffer_z=0; buffer_z<z_size/(powInt(2,halve_pow2[i])); buffer_z++, slice_ind++)
@@ -3380,7 +3385,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 										closeTiff3DFile(fhandle);
 									// fhandle = open file corresponding to next block
 									if ( strcmp(saved_img_format,"Tiff3D") == 0 )
-										openTiff3DFile((char *)img_path.str().c_str(),(char *)"w",fhandle);
+										openTiff3DFile((char *)img_path.str().c_str(),(char *)"w",fhandle,true);
 									n_pages_block = stacks_depth[i][0][0][stack_block[i]+1];
 									block_changed = true;
 								}

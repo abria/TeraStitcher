@@ -162,10 +162,12 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::ValueArg<int> p_dwnsmplngFactor("","dsfactor","Dowsampling factor to be used to read the source volume (only for serie of 2D slices).",false,1,"unsigned");
 
 	TCLAP::SwitchArg p_libtiff_uncompressed("","libtiff_uncompress","Configure libtiff library to not compress output files (default: compression enabled).", false);
+	TCLAP::SwitchArg p_libtiff_bigtiff("","libtiff_bigtiff","Foces the creation of BigTiff files (default: BigTiff disabled).", false);
 	TCLAP::ValueArg<int> p_libtiff_rowsperstrip("","libtiff_rowsperstrip","Configure libtiff library to pack n rows per strip when compression is enabled (default: 1 row per strip).",false,1,"integer");
 
 	//argument objects must be inserted using LIFO policy (last inserted, first shown)
 	cmd.add(p_libtiff_rowsperstrip);
+	cmd.add(p_libtiff_bigtiff);
 	cmd.add(p_libtiff_uncompressed);
 
 	cmd.add(p_timeseries);
@@ -433,6 +435,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		this->downsamplingFactor = 1;
 
 	this->libtiff_uncompressed = p_libtiff_uncompressed.getValue();
+	this->libtiff_bigtiff = p_libtiff_bigtiff.getValue();
 	this->libtiff_rowsPerStrip = p_libtiff_rowsperstrip.getValue();
 
 	if(p_verbose.getValue())

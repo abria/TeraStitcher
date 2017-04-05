@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-02.  Giulio.     @ADDED support for creation of BigTiff files
 * 2017-04-01.  Giulio.     @CHANGED the calls to the routine that creates the directory structure in the case of 'simple' formats
 * 2017-01-23.  Giulio.     @FIXED bugs of parallel execution in case 4D formats are specified
 * 2016-10-09.  Giulio.     @ADDED option ch_dir to calls to 'generateTilesVaa3DRawMC'
@@ -174,7 +175,7 @@ int main ( int argc, char *argv[] ) {
 		// start timer
 		double proctime = -TIME(0);
 
-		setLibTIFFcfg(!cli.libtiff_uncompressed,cli.libtiff_rowsPerStrip);
+		setLibTIFFcfg(!cli.libtiff_uncompressed,cli.libtiff_bigtiff,cli.libtiff_rowsPerStrip);
 
 		// perform simple tasks
 		if ( cli.infofile_path != "" ) {

@@ -101,7 +101,7 @@ class BDVVolume : public iim::VirtualVolume
 
     	// needed to enable the detection by the factory of volume format through use of the default constructor
         friend class iim::VirtualVolume; 
-
+        friend class VolumeConverter; 
 };
 
 #endif //_BDV_VOLUME_H

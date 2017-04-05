@@ -45,7 +45,7 @@ TERASTITCHER_REGISTER_IO_PLUGIN_3D(IMS_HDF5)
 std::string iomanager::IMS_HDF5::desc()
 {
 	return	"******************************************************\n"
-			"* Imaris IMS HDF5 v.1.0                                    *\n"
+			"* Imaris IMS HDF5 v.1.0                              *\n"
 			"******************************************************\n"
 			"*                                                    *\n"
 			"* 3D image-based I/O plugin that uses the HDF5       *\n"
@@ -162,6 +162,13 @@ throw (iom::exception)
 	int tp  = 0;
 	std::string str_value;
 
+	// set the ROI
+	z0 = (z0 < 0) ? 0: z0;
+	z1 = (z1 < 0) ? img_depth : z1;
+
+	if ( z0 >= z1 )
+		throw iom::exception(iom::strprintf("wrong slice indices (z0 = %d, z1 = %d)",z0, z1), __iom__current__function__);
+
 	if ( getParamValue(params,"resolution",str_value) )
 		res = atoi(str_value.c_str());
 	if ( getParamValue(params,"timepoint",str_value) )
@@ -169,7 +176,7 @@ throw (iom::exception)
 
 	IMS_HDF5init(img_path,file_descr);
 	IMS_HDF5getVolumeInfo(file_descr,tp,res,volume_descr,vxl1,vxl2,vxl3,org1,org2,org3,height,width,depth,img_chans,img_bytes_x_chan,n_timepoints,t0,t1);
-	chan_size = ((iim::sint64)height) * ((iim::sint64)width) * depth * img_bytes_x_chan;
+	chan_size = ((iim::sint64)height) * ((iim::sint64)width) * (z1-z0) * img_bytes_x_chan;
 	for ( c=0, ptr=data; c<img_chans; c++, ptr+=chan_size ) {
 		IMS_HDF5getSubVolume(volume_descr,0,height,0,width,z0,z1,c,ptr);
 	}

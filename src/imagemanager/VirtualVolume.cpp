@@ -1312,10 +1312,10 @@ VirtualVolume* VirtualVolume::instance(const char* path) throw (IOException, iom
 
 
 // this version if "instance" methods should be used to create a BDVVolume since at least the 'res' parameter is needed
-VirtualVolume* VirtualVolume::instance(const char* fname, int res, void *descr) throw (iim::IOException) {
+VirtualVolume* VirtualVolume::instance(const char* fname, int res, void *descr, int timepoint) throw (iim::IOException) {
     /**/iim::debug(iim::LEV3, strprintf("fname = \"%s\", res = %d, descr = %p", fname, res, descr).c_str(), __iim__current__function__);
 
-	return new BDVVolume(fname,res,0,descr); // assumes there is only time point 0
+	return new BDVVolume(fname,res,timepoint,descr); 
 }
 
 

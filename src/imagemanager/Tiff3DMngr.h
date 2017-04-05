@@ -38,11 +38,12 @@
 #define TIFF3D_SUFFIX   "tif"
 
 
-void setLibTIFFcfg ( bool cmprssd = true, int rps = 1 );
+void setLibTIFFcfg ( bool cmprssd = true, bool _bigtiff = false, int rps = 1 );
 /* the interface to LibTIFF can be configured once to:
  * - enable compression (cmprssd = true, default) of desable compression (cmprssd = false)
  * - if compression is enabled, set the rows per strip in case of compression (rps = i means that strips are groups of i rows, 
  *   rps = -1 means that each slice is just one strip); this parameter has no effect if comprssd = false
+ * - force the creation of BigTiff files
  * WARNINIG: if slices are big, setting rps to -1 (or to large values) may lead to very slow access to images, 
  * or even to memory explosion; this is why the default is 1
  */
@@ -62,8 +63,11 @@ char *loadTiff3D2Metadata ( char * filename, unsigned int &sz0, unsigned int  &s
  * if there are no exceptions
  */
 
-char *openTiff3DFile ( char *filename, char *mode, void *&fhandle );
-/* opens the file 'filename' in mode 'mode' and returns a fhandle which is a pointer to an opaque structure */
+char *openTiff3DFile ( char *filename, char *mode, void *&fhandle, bool reopen = false );
+/* opens the file 'filename' in mode 'mode' and returns a fhandle which is a pointer to an opaque structure
+ * if mode is 'w', the file already exists, and reopen is true, the file is re-created as a classic tiff or as 
+ * a bigtiff depending on the format of the existing file
+ */
 
 void closeTiff3DFile ( void *fhandle );
 /* closes the file associated to fhandle which is a pointer to a FILE structure */

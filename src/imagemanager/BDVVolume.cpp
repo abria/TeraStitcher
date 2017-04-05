@@ -51,6 +51,22 @@
 using namespace std;
 using namespace iim;
 
+BDVVolume::BDVVolume(void) : VirtualVolume()
+{
+    /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
+    
+	BDV_descr  = (void *) 0;
+	HDF5_descr = (void *) 0;
+
+    VXL_V = VXL_2 ;
+    VXL_H = VXL_1 ;
+    VXL_D = VXL_3 ;
+
+	n_active = 0;
+	active = (uint32 *) 0;
+
+}
+
 BDVVolume::BDVVolume(const char* _root_dir, int res, int tp, void *_BDV_descr )  throw (IOException)
 : VirtualVolume() // _root_dir can be NULL
 {

@@ -26,6 +26,8 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2017-04-02. Giulio.     @ADDED support for creation of BigTiff files
+* 2017-04-02. Giulio.     @FIXED a memory leak in 'openTiff3DFile'
 * 2016-11-27. Giulio.     @FIXED bug in 'initTiff3DFile': the fake buffer was allocated before updating spp
 * 2016-10-07. Giulio.     @CHANGED spp is set to 1 if teg SAMPLESPERPIXEL is not defined 
 * 2016-09-10. Giulio.     @ADDED support for reading internally tiled images 
@@ -44,6 +46,7 @@
 #include <stdlib.h> // needed by clang: defines size_t
 #include <string.h>
 #include "tiffio.h"
+#include "tiffiop.h"
 #include "IM_config.h"
 
 #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
@@ -51,6 +54,8 @@
 #include "PLog.h"
 #include "COperation.h"
 #endif
+
+#define GBSIZE ((iim::sint64) (1024*1024*1024))
 
 static
 void copydata ( unsigned char *psrc, uint32 stride_src, unsigned char *pdst, uint32 stride_dst, uint32 width, uint32 len ) {
@@ -62,8 +67,10 @@ void copydata ( unsigned char *psrc, uint32 stride_src, unsigned char *pdst, uin
 static bool unconfigured = true;
 static bool compressed = true;
 static int32 rowsPerStrip = 1;
+static bool bigtiff = false;
 
-void setLibTIFFcfg ( bool cmprssd, int rps ) {
+void setLibTIFFcfg ( bool cmprssd,  bool _bigtiff,  int rps ) {
+	bigtiff = _bigtiff;
 	if ( unconfigured ) {
 		compressed = cmprssd;
 		if ( compressed ) {
@@ -168,8 +175,9 @@ char *loadTiff3D2Metadata ( char * filename, unsigned int &sz0, unsigned int  &s
 	return ((char *) 0);
 }
 
-char *openTiff3DFile ( char *filename, char *mode, void *&fhandle ) {
+char *openTiff3DFile ( char *filename, char *mode, void *&fhandle, bool reopen ) {
 	char *completeFilename = (char *) 0;
+	char *completeMode     = (char *) 0;
 	int fname_len = (int) strlen(filename);
 	char *suffix = strstr(filename,".tif");
 	while ( suffix && (fname_len - (suffix-filename) > 5) )
@@ -190,7 +198,33 @@ char *openTiff3DFile ( char *filename, char *mode, void *&fhandle ) {
 	TIFFSetWarningHandler(0);
 	TIFFSetErrorHandler(0);
 
-	fhandle = TIFFOpen(completeFilename,mode);
+	// if mode is 'w' and reopen is true check if the file esists
+	bool mybigtiff = bigtiff;
+	if ( mode[0] == 'w' && reopen ) {
+		fhandle = TIFFOpen(completeFilename,"r");
+		if ( fhandle ) {
+			// get the file format (classic tiff of bigtiff)
+			if ( ((TIFF *) fhandle)->tif_flags&TIFF_BIGTIFF ) 
+				mybigtiff = true;
+			TIFFClose((TIFF *) fhandle);
+		}
+	}
+
+	if ( mybigtiff && !strstr(mode,"8") ) {
+		completeMode = new char[strlen(mode)+2];
+		strcpy(completeMode,mode);
+		strcat(completeMode,"8");
+	}
+	else {
+		completeMode = new char[strlen(mode)+2];
+		strcpy(completeMode,mode);
+	}
+
+	fhandle = TIFFOpen(completeFilename,completeMode);
+
+	delete completeFilename;
+	delete completeMode;
+
 	if (!fhandle)
     {
 		return ((char *) "Cannot open the file.");
@@ -245,7 +279,8 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 		strcat(completeFilename,TIFF3D_SUFFIX);
 	}
 
-    // 2015-01-30. Alessandro. @ADDED performance (time) measurement in all most time-consuming methods.
+
+	// 2015-01-30. Alessandro. @ADDED performance (time) measurement in all most time-consuming methods.
     #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
     TERAFLY_TIME_STOP(TiffInitData, tf::CPU, tf::strprintf("generated fake data for 3D tiff \"%s\"", completeFilename))
     TERAFLY_TIME_RESTART(TiffInitData)
@@ -256,48 +291,65 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 	TIFFSetErrorHandler(0);
 
 	TIFF *output;
-	output = TIFFOpen(completeFilename,"w");
+	
+	iim::sint64 expectedSize = ((iim::sint64) sz0) * ((iim::sint64) sz1) * ((iim::sint64) sz2) * ((iim::sint64) sz3) * ((iim::sint64) datatype); 
+
+	if ( bigtiff || expectedSize > (4*GBSIZE) )
+		output = TIFFOpen(completeFilename,"w8");
+	else
+		output = TIFFOpen(completeFilename,"w");
+
+
 	if (!output) {
+		delete completeFilename;
 		return ((char *) "Cannot open the file.");
     }
 
 	check = TIFFSetField(output, TIFFTAG_IMAGEWIDTH, XSIZE);
 	if (!check) {
+		delete completeFilename;
 		return ((char *) "Cannot set the image width.");
     }
 
 	check = TIFFSetField(output, TIFFTAG_IMAGELENGTH, YSIZE);
 	if (!check) {
+		delete completeFilename;
 		return ((char *) "Cannot set the image height.");
     }
 
 	check = TIFFSetField(output, TIFFTAG_BITSPERSAMPLE, bpp); 
 	if (!check) {
+		delete completeFilename;
 		return ((char *) "Cannot set the image bit per sample.");
     }
 
 	check = TIFFSetField(output, TIFFTAG_SAMPLESPERPIXEL, spp);
 	if (!check) {
+		delete completeFilename;
 		return ((char *) "Cannot set the image sample per pixel.");
     }
 
 	check = TIFFSetField(output, TIFFTAG_ROWSPERSTRIP, (rowsPerStrip == -1) ? YSIZE : (uint32)rowsPerStrip); 
 	if (!check) {
+		delete completeFilename;
 		return ((char *) "Cannot set the image rows per strip.");
     }
 
 	check = TIFFSetField(output, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT); 
 	if (!check) {
+		delete completeFilename;
 		return ((char *) "Cannot set the image orientation.");
     }
 
 	check = TIFFSetField(output, TIFFTAG_COMPRESSION, compressed ? COMPRESSION_LZW : COMPRESSION_NONE);
 	if (!check) {
+		delete completeFilename;
 		return ((char *) "Cannot set the compression tag.");
     }
 
 	check = TIFFSetField(output, TIFFTAG_PLANARCONFIG,PLANARCONFIG_CONTIG);
 	if (!check) {
+		delete completeFilename;
 		return ((char *) "Cannot set the planarconfig tag.");
     }
 
@@ -306,29 +358,34 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 	else // spp == 3
 		check = TIFFSetField(output, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);	
 	if (!check) {
+		delete completeFilename;
 		return ((char *) "Cannot set the photometric tag.");
     }
 
 	/* We are writing single page of the multipage file */
 	check = TIFFSetField(output, TIFFTAG_SUBFILETYPE, FILETYPE_PAGE);
 	if (!check) {
+		delete completeFilename;
 		return ((char *) "Cannot set the subfiletype tag.");
     }
 
 	check = TIFFSetField(output, TIFFTAG_PAGENUMBER, 0, Npages); 
 	if (!check) {
+		delete completeFilename;
 		return ((char *) "Cannot set the page number.");
     }
 
 
 	//check = (int)TIFFWriteEncodedStrip(output, 0, fakeData, XSIZE * YSIZE);
 	//if (!check) {
+	//	delete completeFilename;
 	//	return ((char *) "Cannot write encoded strip to file.");
  //   }
 
 	if ( rowsPerStrip == -1 ) {
 		check = TIFFWriteEncodedStrip(output, 0, fakeData, XSIZE * YSIZE * spp * (bpp/8));
 		if (!check) {
+			delete completeFilename;
 			return ((char *) "Cannot write encoded strip to file.");
 		}
 	}
@@ -345,6 +402,7 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 		for (int i=0; i < StripsPerImage-1; i++){
 			check = TIFFWriteEncodedStrip(output, i, buf, spp * rps * XSIZE * (bpp/8));
 			if (!check) {
+				delete completeFilename;
 				return ((char *) "Cannot write encoded strip to file.");
 			}
 			buf = buf + spp * rps * XSIZE * (bpp/8);
@@ -352,6 +410,7 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 
 		check = TIFFWriteEncodedStrip(output, StripsPerImage-1, buf, spp * LastStripSize * XSIZE * (bpp/8));
 		if (!check) {
+			delete completeFilename;
 			return ((char *) "Cannot write encoded strip to file.");
 		}
 		//}
@@ -359,10 +418,10 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 	}
 
 	delete[] fakeData;
-	delete []completeFilename;
 
 	check = TIFFWriteDirectory(output);
 	if (!check) {
+		delete completeFilename;
 		return ((char *) "Cannot write a new directory.");
     }
 
@@ -372,6 +431,8 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
     #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
     TERAFLY_TIME_STOP(TiffInitData, tf::IO, tf::strprintf("written initialized 3D tiff \"%s\"", completeFilename))
     #endif
+
+	delete completeFilename;
 
 	return (char *) 0;
 }
@@ -400,8 +461,13 @@ char *appendSlice2Tiff3DFile ( char *filename, int slice, unsigned char *img, un
 	TIFFGetField(output, TIFFTAG_COMPRESSION, &cmprssd);
 	TIFFGetField(output, TIFFTAG_PHOTOMETRIC, &photomtrcintrp);
 	TIFFClose(output);
-	// since we are 
-	output = (slice==0)? TIFFOpen(filename,"w") : TIFFOpen(filename,"a");
+
+	iim::sint64 expectedSize = ((iim::sint64) img_width) * ((iim::sint64) img_height) * ((iim::sint64) NPages) * ((iim::sint64) spp) * ((iim::sint64) (bpp/8)); 
+
+	if ( bigtiff || expectedSize > (4*GBSIZE) )
+		output = (slice==0)? TIFFOpen(filename,"w8") : TIFFOpen(filename,"a8");
+	else
+		output = (slice==0)? TIFFOpen(filename,"w") : TIFFOpen(filename,"a");
 
 	TIFFSetDirectory(output,slice); // WARNING: slice must be the first page after the last, otherwise the file can be corrupted
 
