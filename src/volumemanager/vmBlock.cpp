@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-07. Giluio.     @ADDED ability to load only one channel when channels are stored in separate planes (non-interleaved input plugin) 
 * 2016-11-16. Giulio.     @ADDED management of the case when the xml import file is generated externally and attributes BLOCK_SIZES and BLOCK_ABS_D are missing
 * 2016-11-14. Giulio.     @ADDED management of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
 * 2016-10-27. Giulio.     @ADDED additional parameters for subimage specification passed to input plugin calls
@@ -78,6 +79,7 @@
 using namespace std;
 using namespace iom;
 using namespace vm;
+
 
 //CONSTRUCTOR WITH ARGUMENTS
 Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char* _DIR_NAME) throw (iom::exception)
@@ -479,6 +481,11 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 	if(first_file < 0 || last_file < 0 || first_file > last_file)
 		throw iom::exception(vm::strprintf("in Block[%s]::loadImageStack(): invalid file selection [%d,%d]", DIR_NAME, first_file, last_file).c_str());
 
+	string chan_select_str = "";
+	bool chan_select = !iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() && (iom::IMIN_PLUGIN == "IMS_HDF5");
+	if ( chan_select ) {
+		chan_select_str = "channel=" + num2str<int>(this->CONTAINER->getACTIVE_CHAN()) + ",";
+	}
 
 	// 2014-09-09. Alessandro. @FIXED 'loadImageStack()' method to deal with empty tiles.
 	// if stack is empty in the given range, just return a black image
@@ -493,8 +500,8 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 		return STACKED_IMAGE;
 	}
 
-	unsigned char *data = new unsigned char[HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN * N_CHANS];
-	memset(data,0,sizeof(unsigned char) * (HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN * N_CHANS));
+	unsigned char *data = new unsigned char[HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN * (chan_select ? 1 : N_CHANS)];
+	memset(data,0,sizeof(unsigned char) * (HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN * (chan_select ? 1 : N_CHANS)));
 
 	bool inCache = false;
 	if ( first_file == last_file ) { // only one slice has been requested
@@ -522,11 +529,11 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 				// 2014-09-05. Alessandro & Iannello. @MODIFIED to deal with IO plugins
 				// 2016_10_27. Giulio. @ADDED the string with additional parameters is passed only if they are not the default
 				iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->readData(slice_fullpath,WIDTH,HEIGHT,BLOCK_SIZE[i],N_BYTESxCHAN,N_CHANS,temp,first,last+1,
-						CONTAINER->getADDITIONAL_IOPLUGIN_PARAMETERS() ? 
+						(CONTAINER->getADDITIONAL_IOPLUGIN_PARAMETERS() ? 
 							"resolution=" + CONTAINER->getACTIVE_RES() + ",timepoint=" + CONTAINER->getACTIVE_TP() + ",series_no=" + series_no + ",": 
-							"");
+							"") + chan_select_str);
 			}
-			temp +=  HEIGHT * WIDTH * (last-first+1) * N_BYTESxCHAN * N_CHANS;
+			temp +=  HEIGHT * WIDTH * (last-first+1) * N_BYTESxCHAN * (chan_select ? 1 : N_CHANS);
 		}
 	}
 
@@ -598,7 +605,7 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 			//throw iom::exception(errMsg);
 			// 2016-06-09. Giulio. @ADDED
 
-			offset = this->CONTAINER->getACTIVE_CHAN(); 
+			offset = chan_select ? 0 : this->CONTAINER->getACTIVE_CHAN(); 
 			if ( N_BYTESxCHAN == 1 ) {
 				temp = data + (offset * HEIGHT * WIDTH * (last_file-first_file+1));
 				for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)

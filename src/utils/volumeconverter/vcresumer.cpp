@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-07. Giulio.    @CHANGED some error message (more informative)
 * 2017-04-01. Giulio.    @CHANGED the interface of the routines to be used for 2D output formats
 * 2017-04-01. Giulio.    @FIXED some bugs
 * 2014-10-29. Giulio.    @ADDED fflush after writes
@@ -110,8 +111,9 @@ bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutio
 				 slice_height!=_slice_height || slice_width!=_slice_width ||
 				 strcmp(saved_img_format,_saved_img_format) || saved_img_depth!=_saved_img_depth ) {
 				fclose(fhandle);
-				sprintf(err_msg, "in initResumer: saved parameters differ from current parameters (%s vs. %s)", 
-					_out_fmt,out_fmt);
+				sprintf(err_msg, "in initResumer: saved parameters differ from current parameters "
+					"(output path: %s vs. %s, height: %d vs. %d, width: %d vs. %d, saved format: %s vs. %s, image depth: %d vs. %d)", 
+					output_path,_output_path,slice_height,_slice_height,slice_width,_slice_width,saved_img_format,_saved_img_format,saved_img_depth,_saved_img_depth);
                 throw IOException(err_msg);
 			}
 
@@ -124,7 +126,7 @@ bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutio
 
 			if ( res_err ) {
 				fclose(fhandle);
-				sprintf(err_msg, "in initResumer: saved resolutions differ from requested resoolutions (%s vs. %s)", 
+				sprintf(err_msg, "in initResumer: saved resolutions differ from requested resolutions (%s vs. %s)", 
 					_out_fmt,out_fmt);
                 throw IOException(err_msg);
 			}
@@ -243,8 +245,9 @@ bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutio
 				 block_height!=_block_height || block_width!=_block_width || block_depth!=_block_depth ||
 				 strcmp(saved_img_format,_saved_img_format) || saved_img_depth!=_saved_img_depth ) {
 				fclose(fhandle);
-				sprintf(err_msg, "in initResumer: saved parameters differ from current parameters (%s vs. %s)", 
-					_out_fmt,out_fmt);
+				sprintf(err_msg, "in initResumer: saved parameters differ from current parameters "
+					"(output path: %s vs. %s, height: %d vs. %d, width: %d vs. %d, depth: %d vs. %d, saved format: %s vs. %s, image depth: %d vs. %d)", 
+					output_path,_output_path,block_height,_block_height,block_width,_block_width,block_depth,_block_depth,saved_img_format,_saved_img_format,saved_img_depth,_saved_img_depth);
                 throw IOException(err_msg);
 			}
 
@@ -257,7 +260,7 @@ bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutio
 
 			if ( res_err ) {
 				fclose(fhandle);
-				sprintf(err_msg, "in initResumer: saved resolutions differ from requested resoolutions (%s vs. %s)", 
+				sprintf(err_msg, "in initResumer: saved resolutions differ from requested resolutions (%s vs. %s)", 
 					_out_fmt,out_fmt);
                 throw IOException(err_msg);
 			}

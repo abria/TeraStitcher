@@ -90,7 +90,6 @@ class SimpleVolume : public iim::VirtualVolume
     	// needed to enable the detection by the factory of volume format through use of the default constructor
         friend class iim::VirtualVolume; 
         friend class VolumeConverter; 
-
 };
 
 # endif // _SIMPLE_VOLUME

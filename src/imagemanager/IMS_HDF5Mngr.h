@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2017-04-08. Giulio. @ADDED support for additional attributes required by the IMS format
 * 2015-12-29. Giulio. @ADDED red_factor parameter to 'IMS_HDF5getSubVolume'
 * 2015-11-17. Giulio. @CREATED 
 */
@@ -51,7 +52,43 @@
  */
 
 
-void IMS_HDF5init ( std::string fname, void *&descr, int vxl_nbytes = 1, void *obj_info = (void *)0 ) throw (iim::IOException);
+// structure representing histograms
+struct histogram_t {
+	int hmin;
+	int hmax;
+	int hlen;
+	iim::uint64 *hist;
+
+	histogram_t ( int _hmin, int _hmax, int _hlen, iim::uint64 *_hist ) {
+		hmin = _hmin;
+		hmax = _hmax;
+		hlen = _hlen;
+		hist = _hist;
+	}
+
+	histogram_t(){
+		hmin = hmax = hlen = 0;
+		hist = (iim::uint64 *) 0;
+	}
+
+	// this copy constructor must used to pass by value parameters created on the fly that will be immediately released
+	histogram_t ( const histogram_t &ex ) {
+		hmin = ex.hmin;
+		hmax = ex.hmax;
+		hlen = ex.hlen;
+		hist = new iim::uint64[hlen];
+		memcpy(hist,ex.hist,hlen*sizeof(iim::uint64));
+	}
+
+	~histogram_t ( ) {
+		if ( hist )
+			delete hist;
+	}
+};
+
+
+
+void IMS_HDF5init ( std::string fname, void *&descr, int vxl_nbytes = 1, void *obj_info = (void *)0, void *root_attr_info = (void *)0  ) throw (iim::IOException);
 /* opens or creates an HDF5 file fname according to the BigDataViewer format and returns an opaque descriptor
  *
  * fname:      HDF5 filename
@@ -65,24 +102,36 @@ void IMS_HDF5init ( std::string fname, void *&descr, int vxl_nbytes = 1, void *o
 /* 
  */
 
- int IMS_HDF5n_resolutions ( void *descr );
+ void *IMS_HDF5get_rootalist ( void *descr ) throw (iim::IOException);
+/* 
+ */
+
+ int IMS_HDF5n_resolutions ( void *descr ) throw (iim::IOException);
  /* returns how many resolutions there are in the HDF5 file handled by descr
   * It is assumed that all resolutions from 0 to the interger returned minus 1 are available
   */
 
- void IMS_HDF5setVxlSize ( void *descr, double szV, double szH, double szD );
+ void IMS_HDF5setVxlSize ( void *descr, double szV, double szH, double szD ) throw (iim::IOException);
  /* set voxel size at resolution 0 */
 
- void IMS_HDF5getVxlSize ( void *descr, double &szV, double &szH, double &szD );
+ void IMS_HDF5getVxlSize ( void *descr, double &szV, double &szH, double &szD ) throw (iim::IOException);
  /* return voxel size at resolution 0 */
 
-void IMS_HDF5close ( void *descr );
+void IMS_HDF5close ( void *descr ) throw (iim::IOException);
 /* close the HDF5 file represented by descr and deallocates the descriptor
  *
  * descr: opaque descriptor of the HDF5 file
  */
 
-void IMS_HDF5addResolution ( void *file_descr, iim::sint64 height, iim::sint64 width, iim::sint64 depth, int nchans, int r = 0 ); 
+void IMS_HDF5set_histogram ( void *descr, histogram_t *buf, int r = 0, int ch = 0, int tp = 0 ) throw (iim::IOException);
+/* set the histogram of channel ch at time point tp at resolution r to be saved when the file is closed 
+ * (has effect only if the file is being created) 
+ */
+
+void IMS_HDF5set_thumbnail ( void *descr, iim::uint8 *buf, iim::uint32 thumbnail_sz ) throw (iim::IOException);
+/* set the thumbnail to be saved when the file is closed (has effect only if the file is being created) */
+
+void IMS_HDF5addResolution ( void *file_descr, iim::sint64 height, iim::sint64 width, iim::sint64 depth, int nchans, int r = 0 ) throw (iim::IOException); 
 /* add resolution r
  *
  * height: image height at resolution 0
@@ -95,7 +144,7 @@ void IMS_HDF5addResolution ( void *file_descr, iim::sint64 height, iim::sint64 w
 
 
 void IMS_HDF5addChans ( void *file_descr, iim::sint64 height, iim::sint64 width, iim::sint64 depth, 
-				 float vxlszV, float vxlszH, float vxlszD, bool *res, int res_size, int chans, int block_height = -1, int block_width = -1, int block_depth = -1 ); 
+				 float vxlszV, float vxlszH, float vxlszD, bool *res, int res_size, int chans, int block_height = -1, int block_width = -1, int block_depth = -1 ) throw (iim::IOException); 
 /* creates chan descriptors with resolution and subdivisions datasets
  *
  * file_descr:
@@ -114,12 +163,12 @@ void IMS_HDF5addChans ( void *file_descr, iim::sint64 height, iim::sint64 width,
  */
 
 
-void IMS_HDF5addTimepoint ( void *file_descr, int tp = 0 ); 
+void IMS_HDF5addTimepoint ( void *file_descr, int tp = 0 ) throw (iim::IOException); 
 /* add time point at time tp (first time point is the default)
  */
 
 
-void IMS_HDF5writeHyperslab ( void *file_descr, iim::uint8 *buf, iim::sint64 *dims, iim::sint64 *hl, int r, int s, int tp = 0 );
+void IMS_HDF5writeHyperslab ( void *file_descr, iim::uint8 *buf, iim::sint64 *dims, iim::sint64 *hl, int r, int s, int tp = 0 ) throw (iim::IOException);
 /* write one hyperslab to file  
  */
 
@@ -128,17 +177,17 @@ void IMS_HDF5getVolumeInfo ( void *descr, int tp, int res, void *&volume_descr,
 								float &VXL_1, float &VXL_2, float &VXL_3, 
 								float &ORG_V, float &ORG_H, float &ORG_D, 
 								iim::uint32 &DIM_V, iim::uint32 &DIM_H, iim::uint32 &DIM_D,
-							    int &DIM_C, int &BYTESxCHAN, int &DIM_T, int &t0, int &t1 );
+							    int &DIM_C, int &BYTESxCHAN, int &DIM_T, int &t0, int &t1 ) throw (iim::IOException);
 /* Open a volume (i.e. a resolution) and return corresponding metadata 
  */
 
 
-void IMS_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0, int D1, int chan, iim::uint8 *buf, int red_factor = 1 );
+void IMS_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0, int D1, int chan, iim::uint8 *buf, int red_factor = 1 ) throw (iim::IOException);
 /* must copy a subvolume into buffer buf; voxels have to be converted to 8-bit if needed
  */
 
 
-void IMS_HDF5closeVolume ( void *descr );
+void IMS_HDF5closeVolume ( void *descr ) throw (iim::IOException);
 
 
  #endif

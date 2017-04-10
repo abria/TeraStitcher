@@ -658,7 +658,12 @@ iom::real_t* StackStitcher::getStripe(int row_index, int d_index, int restore_di
 	stripe_ptr = stripe;
 	for(int column_index=COL_START; column_index<=COL_END; column_index++, angle=0)
 	{
+		// INV: column_index !=COL_START -> is allocated only data of stack (row_index,column_index-1)
+
 		l_stk  =  column_index !=COL_START ? volume->getSTACKS()[row_index][column_index-1] : NULL;
+
+		// INV: column_index !=COL_START -> slice_left points to data of l_stk 
+
 		r_stk  =  volume->getSTACKS()[row_index][column_index];
 		rr_stk =  column_index !=COL_END   ? volume->getSTACKS()[row_index][column_index+1] : NULL;
 
@@ -671,6 +676,8 @@ iom::real_t* StackStitcher::getStripe(int row_index, int d_index, int restore_di
 
 		//loading right slice (slice_right) into memory
 		slice_right = r_stk->loadImageStack(d_index-r_stk->getABS_D(), d_index-r_stk->getABS_D());
+
+		// INV: column_index !=COL_START -> slice_left points to data of l_stk AND slice_right points to data of r_stk
 
 		#ifdef S_TIME_CALC
 		double proc_time = -TIME(0);
@@ -731,11 +738,15 @@ iom::real_t* StackStitcher::getStripe(int row_index, int d_index, int restore_di
 
 		//moving to right slice_left
 		slice_left=slice_right;
+
+		// INV: is allocated only data of stack (row_index,column_index)
 	}
 
 	//releasing memory allocated for last right VirtualStack
 	slice_right = NULL;
 	volume->getSTACKS()[row_index][COL_END]->releaseImageStack();
+
+	// no more data is allocated
 
 	//iomanager::IOManager::saveImage(vm::strprintf("C:/debug/stripe_Z%04d_R%02d.tif", d_index, row_index), stripe, height, width);
 	//system("pause");

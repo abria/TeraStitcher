@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-07  Giulio.     @ADDED the opssibility to specify a subset of channels to be converted
 * 2016-09-13. Giulio.     @ADDED flag for channel subdirectory name (single channel to tiled 4D format only)
 * 2016-09-13. Giulio.     @ADDED flag for time series
 * 2016-09-04. Giulio.     @ADDED the options for setting the configuration of the LibTIFF library
@@ -68,6 +69,7 @@ class TemplateCLI
 		string src_format;
 		string dst_format;
 		bool resolutions[S_MAX_MULTIRES];
+		string chanlist;
 		int halving_method;
 		bool show_progress_bar;					//enables/disables progress bar with estimated time remaining
 

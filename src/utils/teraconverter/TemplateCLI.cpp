@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-07  Giulio.     @ADDED the opssibility to specify a subset of channels to be converted
 * 2016-09-13. Giulio.     @ADDED flag for channel subdirectory name (single channel to tiled 4D format only)
 * 2016-09-13. Giulio.     @FIXED initialized flag for time series
 * 2016-09-13. Giulio.     @ADDED flag for time series
@@ -136,6 +137,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	//TCLAP::ValueArg<int> p_n_resolutions("","res","Number of resolutions.",true,2,"unsigned");
 	TCLAP::ValueArg<std::string> p_resolutions("","resolutions","Resolutions to be produced. Possible values are [[i]...] where i = 0,..,5 and 2^i is the subsampling factor.",false,"0","string");
+	TCLAP::ValueArg<std::string> p_chanlist("","clist","Subset of channel to be converted (default: all).",false,"","string");
 	TCLAP::ValueArg<string> p_halving_method("","halve","Halving method (mean/max, default: mean).",false,"mean","unsigned");
 
 	TCLAP::ValueArg<string> p_outFmt("f","outFmt","Voxel format (graylevel or RGB (default)/intensity.",false,"RGB","string");
@@ -200,6 +202,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_halving_method);
 	//cmd.add(p_highest_resolution);
 	//cmd.add(p_n_resolutions);
+	cmd.add(p_chanlist);
 	cmd.add(p_resolutions);
 	cmd.add(p_dst_format);
 	cmd.add(p_src_format);
@@ -407,6 +410,8 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		buf << i;
 		this->resolutions[i] = p_resolutions.getValue().find(buf.str()) != std::string::npos;
 	}
+
+	this->chanlist = p_chanlist.getValue();
 
 	if ( p_halving_method.getValue() == "mean" )
 		this->halving_method = HALVE_BY_MEAN;

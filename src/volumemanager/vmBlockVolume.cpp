@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-09. Giulio.     @FIXED the case when the xml file is incoplete in method 'loadXML'
 * 2016-11-14. Giulio.     @ADDED management of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
 * 2016-10-27. Giulio.     @ADDED control over the subimage to be exposed through the xml import file (default resolution 0 and timestamp 0)  
 * 2016-09-01. Giulio.     @ADDED support for cache management in loadImageStack 
@@ -995,10 +996,12 @@ void BlockVolume::loadXML(const char *xml_filepath) throw (iom::exception)
 	pelem->QueryIntAttribute("stack_rows", &N_ROWS_read);
 	pelem->QueryIntAttribute("stack_columns", &N_COLS_read);
 	pelem->QueryIntAttribute("stack_slices", &N_SLICES_read);
+	if ( N_SLICES_read <= 0 ) // the xml file is an incomplete one: data loaded from mdata.bin wins
+		N_SLICES_read = N_SLICES;
 	if(N_ROWS_read != N_ROWS || N_COLS_read != N_COLS || N_SLICES_read != N_SLICES)
 	{
 		char errMsg[2000];
-		sprintf(errMsg, "in BlockVolume::loadXML(...): Mismatch between in <dimensions> field xml file (= %d x %d ) and %s (= %d x %d ).", N_ROWS_read, N_COLS_read, vm::BINARY_METADATA_FILENAME.c_str(), N_ROWS, N_COLS);
+		sprintf(errMsg, "in BlockVolume::loadXML(...): Mismatch between in <dimensions> field xml file (= %d x %d x %d ) and %s (= %d x %d x %d).", N_ROWS_read, N_COLS_read, N_SLICES_read, vm::BINARY_METADATA_FILENAME.c_str(), N_ROWS, N_COLS, N_SLICES);
 		throw iom::exception(errMsg);
 	}
 

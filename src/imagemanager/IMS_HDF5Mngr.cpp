@@ -26,11 +26,13 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2017-04-09. Giulio. @FIXED include the correct header file 'IMS_HDF5Mngr.h'
+* 2017-04-08. Giulio. @ADDED support for additional attributes required by the IMS format
 * 2016-10-27. Giulio. @FIXED n_slices had been initialized to NULL pointers
 * 2016-10-04. Giulio. @CREATED 
 */
 
-#include "HDF5Mngr.h"
+#include "IMS_HDF5Mngr.h"
 #include "RawFmtMngr.h"
 #include <stdlib.h> // needed by clang: defines size_t
 #include <sstream>
@@ -70,6 +72,7 @@ typedef int subdvsns_t[3];
 
 const char *excluded_attrs[] = { 
 	// CustomData attributes
+	"DimensionInformation",
 	"Height",
 	"Left",
 	"Width",
@@ -128,7 +131,11 @@ struct IMS_obj_info_t {
 	}
 
 	// @FIXED by Alessandro on 2016-12-01: default constructor required to use this class within STL std::map
-	IMS_obj_info_t(){}
+	IMS_obj_info_t(){
+		otype = -1;
+		olist = (IMS_obj_list_t *) 0;
+		alist = (IMS_attr_list_t *) 0;
+	}
 
 	// this copy constructor must used to pass by value parameters created on the fly that will be immediately released
 	IMS_obj_info_t ( const IMS_obj_info_t &ex ) {
@@ -155,7 +162,7 @@ struct IMS_obj_info_t {
 };
 
 
-
+// return the list of attributed of object obj
 IMS_attr_list_t *get_attr_list ( hid_t obj ) {
 
 	herr_t status;
@@ -178,7 +185,7 @@ IMS_attr_list_t *get_attr_list ( hid_t obj ) {
 		//attr_name = strdup(name);
 		typid = H5Aget_type(attrid);
 		if ( H5Tget_class(typid) != H5T_STRING )
-			throw iim::IOException(iim::strprintf("No char type: all attributes should be strings of characters").c_str(),__iim__current__function__);
+			throw iim::IOException(iim::strprintf("No string type: all attributes should be strings of characters").c_str(),__iim__current__function__);
 		spaceid = H5Aget_space(attrid);
 		len = H5Sget_simple_extent_npoints(spaceid);
 		value_str = new char[len+1];
@@ -191,7 +198,49 @@ IMS_attr_list_t *get_attr_list ( hid_t obj ) {
 	return alist;
 }
 
+// return the list of attributed of object obj
+IMS_attr_list_t *get_root_attributes ( hid_t root ) {
 
+	herr_t status;
+	hsize_t nattr;
+	size_t len;
+	char name[MAX_NAME];
+	//char *attr_name;
+	char *value_str;
+	hid_t attrid;
+	hid_t typid;
+	hid_t spaceid;
+
+	IMS_attr_list_t *alist = new IMS_attr_list_t;
+
+	nattr = H5Aget_num_attrs(root);
+
+	for ( unsigned int i=0; i<nattr; i++ ) {
+		attrid = H5Aopen_idx(root, (hsize_t)i);
+		H5Aget_name(attrid,MAX_NAME,name);
+		if ( strcmp(name,"ImarisDataSet") == 0 || strcmp(name,"ImarisVersion") == 0  || strcmp(name,"FormatVersion") == 0) {
+			// is an attribute requested by the format IMARIS 5.5 (IMS)
+			typid = H5Aget_type(attrid);
+			if ( H5Tget_class(typid) != H5T_STRING )
+				throw iim::IOException(iim::strprintf("No string type: all attributes should be strings of characters").c_str(),__iim__current__function__);
+			spaceid = H5Aget_space(attrid);
+			len = H5Sget_simple_extent_npoints(spaceid);
+			value_str = new char[len+1];
+			status = H5Aread(attrid,typid,value_str);
+			value_str[len] = '\0';
+			alist->insert(std::make_pair(name,value_str));
+			delete value_str;
+		}
+	}
+
+	alist->insert(std::make_pair("DataSetDirectoryName","DataSet"));
+	alist->insert(std::make_pair("DataSetInfoDirectoryName","DataSetInfo"));
+	alist->insert(std::make_pair("ThimbnailDirectoryName","Thimbnail"));
+
+	return alist;
+}
+
+// return the list of objects in group 
 IMS_obj_list_t *get_obj_list ( hid_t group ) {
 
 	herr_t status;
@@ -230,7 +279,7 @@ IMS_obj_list_t *get_obj_list ( hid_t group ) {
 	return olist;
 }
 
-
+//creates and associates the attributes <name,value_str> to node parent
 herr_t create_string_attribute ( hid_t parent, const char *name, const char *value_str ) {
 
 	herr_t status;
@@ -254,7 +303,7 @@ herr_t create_string_attribute ( hid_t parent, const char *name, const char *val
 	return status;
 }
 
-
+//creates and associates the list of attributes alist to node parent
 herr_t create_attributes ( hid_t parent, IMS_attr_list_t *alist ) {
 
 	herr_t status = 0;
@@ -282,7 +331,7 @@ herr_t create_attributes ( hid_t parent, IMS_attr_list_t *alist ) {
 	return status;
 }
 
-
+// creates the list of objects olist with their attributes in group group_id
 herr_t create_file_struct ( hid_t group_id, IMS_obj_list_t *olist ) {
 
 	herr_t status = 0;
@@ -330,6 +379,13 @@ class IMS_HDF5_fdescr_t {
 	hsize_t  ***n_slices;        // number of slices of each time point at each resolutions at each chan (all channels should have the same number of slices)
 
 	IMS_obj_list_t *olist;       // hierarchy of objects in the file with their type, value and attributes
+	IMS_attr_list_t *rootalist;      // list of attributes of root group ("/")
+
+	// info required by IMS file format
+	histogram_t ***hist; // histograms of each time point at each resolutions at each chan
+	iim::uint8 *thumbnail;
+	iim::uint32 thumbnail_sz;
+	bool creating;        // if true means that the object represent a file that is being created 
 	
 	// private methods
 	void scan_root ( );
@@ -338,12 +394,14 @@ class IMS_HDF5_fdescr_t {
 	herr_t get_string_attribute ( hid_t parent, const char *name, char *&value_str );
 
 	IMS_obj_list_t *getOLIST ( );
+	IMS_attr_list_t *getROOTALIST ( );
 
 public:
 	IMS_HDF5_fdescr_t ( );
 	/* default constructor: returns and empty descriptor */
 
-	IMS_HDF5_fdescr_t ( const char *_fname, int _vxl_nbytes = 2, IMS_obj_list_t *obj_info = (IMS_obj_list_t *)0, int maxstp = MAXSTP, int maxres = MAXRES, int maxtps = MAXTPS );
+	IMS_HDF5_fdescr_t ( const char *_fname, int _vxl_nbytes = 2, IMS_obj_list_t *obj_info = (IMS_obj_list_t *)0, 
+		IMS_attr_list_t *root_attr_info = (IMS_attr_list_t *)0, int maxstp = MAXSTP, int maxres = MAXRES, int maxtps = MAXTPS );
 	/*  */
 
 	~IMS_HDF5_fdescr_t ( );
@@ -370,6 +428,7 @@ public:
 	   if get = true, otherwise returns a null pointer */
 
 	void *extractOLIST ( );
+	void *extractROOTALIST ( );
 
 	// other operations	
 	int addChan ( int s );
@@ -394,6 +453,17 @@ public:
 
 	int writeHyperslab ( int tp, int s, int r, iim::uint8 *buf, hsize_t *dims_buf, hsize_t *hl_buf, hsize_t *hl_file = 0 ); 
 	/* write hyperslab hl_buf stored in buffer buf to hyperslab hl_file at time point tp and resolution r */
+
+	void setHistogram ( histogram_t *buf, int r, int ch, int tp );
+	/* set the histogram of channel ch at time point tp at resolution r to be saved when the file is closed 
+	 * (has effect only if the file is being created) 
+	 */
+
+	void setThumbnail ( iim::uint8 *buf, iim::uint32 _thumbnail_sz );
+	/* set the thumbnail to be saved when the file is closed (has effect only if the file is being created) */
+
+	herr_t addFinalInfo ( );
+	/* add complete histogram information and the thumbnail */
 };
 
 
@@ -426,10 +496,16 @@ IMS_HDF5_fdescr_t::IMS_HDF5_fdescr_t ( ) {
 	vxl_type = -1;
 	n_slices = (hsize_t ***) 0;
 	olist = (IMS_obj_list_t *) 0;
+	rootalist = (IMS_attr_list_t *) 0;
+
+	hist         = (histogram_t ***)0;
+	thumbnail    = (iim::uint8 *) 0;
+	thumbnail_sz = 0;
+	creating     = false;
 }
 
 
-IMS_HDF5_fdescr_t::IMS_HDF5_fdescr_t ( const char *_fname, int _vxl_nbytes, IMS_obj_list_t *obj_info, int maxstp, int maxres, int maxtps ) {
+IMS_HDF5_fdescr_t::IMS_HDF5_fdescr_t ( const char *_fname, int _vxl_nbytes, IMS_obj_list_t *obj_info, IMS_attr_list_t *root_attr_info, int maxstp, int maxres, int maxtps ) {
 	if ( (file_id = H5Fopen(_fname, H5F_ACC_RDWR, H5P_DEFAULT)) < 0 ) { // non existing file: create it empty
 
 		file_id = H5Fcreate(_fname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
@@ -454,16 +530,28 @@ IMS_HDF5_fdescr_t::IMS_HDF5_fdescr_t ( const char *_fname, int _vxl_nbytes, IMS_
 		memset(n_slices,0,maxres*sizeof(hsize_t **)); 
 			
 		olist = (IMS_obj_list_t *) 0;
+		rootalist = (IMS_attr_list_t *) 0;
+
+		hist = new histogram_t **[maxres];
+		memset(hist,0,maxres*sizeof(histogram_t **)); 
+		thumbnail    = (iim::uint8 *) 0;
+		thumbnail_sz = 0;
+		creating     = true;
 
 		if ( !obj_info )
 			throw iim::IOException(iim::strprintf("the file %s has to be created: a structure description must be passed ",_fname).c_str(),__iim__current__function__);
 
 		herr_t status;
 
+		// creates in the file root the same attributes described by the attribute list attr_info
+		status = create_attributes(file_id,root_attr_info);
+
+		// creates in the file the same hierarchy of object described by the object list obj_info
 		status = create_file_struct(file_id,obj_info);
 
 		init_voxel_size(obj_info);
 
+		delete root_attr_info;
 		delete obj_info;
 		obj_info_cnt = 0; // releasing obj_info (which has not been created) makes the counter negative
 	}
@@ -471,6 +559,8 @@ IMS_HDF5_fdescr_t::IMS_HDF5_fdescr_t ( const char *_fname, int _vxl_nbytes, IMS_
 
 		if ( obj_info )
 			throw iim::IOException(iim::strprintf("the file %s already exists. no structure description should be passed ",_fname).c_str(),__iim__current__function__);
+		if ( root_attr_info )
+			throw iim::IOException(iim::strprintf("the file %s already exists. no root attributes should be passed ",_fname).c_str(),__iim__current__function__);
 
 		fname = new char[strlen(_fname)+1];
 		strcpy(fname,_fname);
@@ -484,6 +574,12 @@ IMS_HDF5_fdescr_t::IMS_HDF5_fdescr_t ( const char *_fname, int _vxl_nbytes, IMS_
 		scan_root();
 
 		olist = getOLIST();
+		rootalist = getROOTALIST();
+
+		hist         = (histogram_t ***)0;
+		thumbnail    = (iim::uint8 *) 0;
+		thumbnail_sz = 0;
+		creating     = false;
 	}
 
 	if ( vxl_nbytes == 1 )
@@ -533,8 +629,25 @@ IMS_HDF5_fdescr_t::~IMS_HDF5_fdescr_t ( ) {
 	if ( olist )
 		delete olist;
 
+	if ( rootalist )
+		delete rootalist;
+
 	if ( obj_info_cnt )
 		throw iim::IOException(iim::strprintf("there are still %d object info records not released",obj_info_cnt).c_str(),__iim__current__function__);
+
+	if ( hist ) {
+		for ( int r=0; r<n_res; r++ )
+			if ( hist[r] ) {
+				for ( int t=0; t<n_timepoints; t++ )
+					if ( hist[r][t] )
+						delete [] hist[r][t];
+				delete[]  hist[r];
+			}
+		delete[] hist;
+	}
+
+	if ( thumbnail )
+		delete thumbnail;
 
 	H5Fclose(file_id);
 }
@@ -565,7 +678,7 @@ herr_t IMS_HDF5_fdescr_t::get_string_attribute ( hid_t parent, const char *name,
 	return status;
 }
 
-
+// return the list of object in group "/"
 IMS_obj_list_t *IMS_HDF5_fdescr_t::getOLIST ( ) {
 
 	hid_t root_group_id = H5Gopen(file_id,"/", H5P_DEFAULT);
@@ -586,6 +699,16 @@ IMS_obj_list_t *IMS_HDF5_fdescr_t::getOLIST ( ) {
 	return olist;
 }
 
+// return the list of attributes of group "/"
+IMS_attr_list_t *IMS_HDF5_fdescr_t::getROOTALIST ( ) {
+
+	hid_t root_group_id = H5Gopen(file_id,"/", H5P_DEFAULT);
+	IMS_attr_list_t *alist = get_root_attributes(root_group_id);
+	H5Gclose(root_group_id);
+
+	return alist;
+}
+
 
 void *IMS_HDF5_fdescr_t::extractOLIST ( ) {
 
@@ -594,6 +717,16 @@ void *IMS_HDF5_fdescr_t::extractOLIST ( ) {
 	obj_info_cnt = 0; // couter is reset because ownership of the object list has been passed to caller
 
 	return tmp_olist;
+}
+
+
+void *IMS_HDF5_fdescr_t::extractROOTALIST ( ) {
+
+	IMS_attr_list_t *tmp_rootalist = rootalist;
+	rootalist = (IMS_attr_list_t *) 0;
+	obj_info_cnt = 0; // couter is reset because ownership of the object list has been passed to caller
+
+	return tmp_rootalist;
 }
 
 
@@ -826,6 +959,14 @@ int IMS_HDF5_fdescr_t::addResolution ( int r, hsize_t dimV, hsize_t dimH, hsize_
 		memset(n_slices[r][t],0,MAXSTP*sizeof(hsize_t));
 	}
 
+	// initialize hist[r]
+	hist[r] = new histogram_t *[MAXTPS];
+	memset(hist[r],0,MAXTPS*sizeof(histogram_t *));
+	for ( int t=0; t<n_timepoints; t++ ) {
+		hist[r][t] = new histogram_t[MAXSTP];
+		memset(hist[r][t],0,MAXSTP*sizeof(histogram_t));
+	}
+
 	return r;
 }
 
@@ -1001,6 +1142,14 @@ int IMS_HDF5_fdescr_t::addTimePoint ( int t ) {
 		if ( n_slices[r] ) { // resolution r exists
 			n_slices[r][t] = new hsize_t [MAXTPS];
 			memset(n_slices[r][t],0,MAXTPS*sizeof(hsize_t));
+		}
+	}
+
+	// allocate hists for timepoint t at each existing resolution 
+	for ( int r=0; r<n_res; r++ ) { 
+		if ( hist[r] ) { // resolution r exists
+			hist[r][t] = new histogram_t [MAXTPS];
+			memset(hist[r][t],0,MAXTPS*sizeof(histogram_t));
 		}
 	}
 
@@ -1323,7 +1472,7 @@ int IMS_HDF5_fdescr_t::writeHyperslab ( int tp, int s, int r, iim::uint8 *buf, h
      * Define hyperslab in the dataset. 
      */
     if ( hl_file ) // data have not to be appended
-		throw iim::IOException(iim::strprintf("File hiperslab provided: only append operation is supported").c_str(),__iim__current__function__);
+		throw iim::IOException(iim::strprintf("File hyperslab provided: only append operation is supported").c_str(),__iim__current__function__);
     else { // append slice
     	start_file[0] = n_slices[r][tp][s];
     	start_file[1] = 0;
@@ -1499,6 +1648,113 @@ hid_t *IMS_HDF5_fdescr_t::getDATASETS_ID ( int tp, int r, bool get ) {
 		return (hid_t *) 0;
 }
 
+
+void IMS_HDF5_fdescr_t::setHistogram ( histogram_t *buf, int r, int ch, int tp ) {
+	if ( creating ) {
+		hist[r][tp][ch].hmin = buf->hmin;
+		hist[r][tp][ch].hmax = buf->hmax;
+		hist[r][tp][ch].hlen = buf->hlen;
+		hist[r][tp][ch].hist = buf->hist;
+		buf->hist = (iim::uint64 *) 0;
+	}
+}
+
+	
+void IMS_HDF5_fdescr_t::setThumbnail ( iim::uint8 *buf, iim::uint32 _thumbnail_sz ) {
+	if ( creating ) {
+		thumbnail = buf;
+		thumbnail_sz = _thumbnail_sz;
+	}
+}
+
+
+herr_t IMS_HDF5_fdescr_t::addFinalInfo ( ) {
+
+	hid_t thumbnail_group_id;
+
+    hsize_t maxdims[2] = {H5S_UNLIMITED, H5S_UNLIMITED};
+
+	hsize_t dims[2];
+	hid_t dataspace_id;
+	hid_t cparms;
+	hid_t dataset_id;
+
+	herr_t status;
+
+	if ( !creating )
+		return 0;
+
+	for ( int r=0; r<n_res; r++ ) {
+		if ( res_groups_id[r] ) {
+			for ( int t=0; t<n_timepoints; t++ ) {
+				getDATASETS_ID(t,r,false);
+				for ( int c=0; c<n_chans; c++ ) {
+					/* Create the data space for the Data datasets. */
+					dims[0] = hist[r][t][c].hlen;
+					dataspace_id = H5Screate_simple(1, dims, maxdims);
+
+					/* Create the parameter list for cells datasets. */
+					cparms = H5Pcreate(H5P_DATASET_CREATE);
+					status = H5Pset_chunk(cparms, 1, dims);
+					status = H5Pset_fill_time(cparms,H5D_FILL_TIME_NEVER);
+
+					/* Create the cells dataset. */
+					dataset_id = H5Dcreate(chan_groups_id[c], "Histogram", H5T_NATIVE_ULLONG, dataspace_id, H5P_DEFAULT, cparms, H5P_DEFAULT);
+
+					/* Write data */
+					status = H5Dwrite (dataset_id, H5T_NATIVE_ULLONG, H5S_ALL, H5S_ALL, H5P_DEFAULT, hist[r][t][c].hist);
+
+					/* Terminate access to the parameters. */ 
+					status = H5Pclose(cparms);
+
+					/* Terminate access to the data space. */ 
+					status = H5Sclose(dataspace_id);
+
+					/* End access to the dataset and release resources used by it. */
+					status = H5Dclose(dataset_id);
+
+					/* chan_groups_id[c] shold not be closed */
+					//status = H5Gclose(chan_groups_id[c]);
+				}
+			}
+		}
+	}
+
+	if ( thumbnail ) {
+		thumbnail_group_id = H5Gopen(file_id,"/Thumbnail", H5P_DEFAULT);
+
+		/* Create the data space for the Data datasets. */
+		dims[0] = thumbnail_sz;
+		dims[1] = thumbnail_sz * 4;
+		dataspace_id = H5Screate_simple(2, dims, maxdims);
+
+		/* Create the parameter list for cells datasets. */
+		cparms = H5Pcreate(H5P_DATASET_CREATE);
+		status = H5Pset_chunk(cparms, 2, dims);
+	    status = H5Pset_fill_time(cparms,H5D_FILL_TIME_NEVER);
+
+		/* Create the cells dataset. */
+		dataset_id = H5Dcreate(thumbnail_group_id, "Data", H5T_NATIVE_UCHAR, dataspace_id, H5P_DEFAULT, cparms, H5P_DEFAULT);
+
+		/* Write data */
+		status = H5Dwrite (dataset_id, H5T_NATIVE_UCHAR, H5S_ALL, H5S_ALL, H5P_DEFAULT, thumbnail);
+
+		/* Terminate access to the parameters. */ 
+		status = H5Pclose(cparms);
+
+		/* Terminate access to the data space. */ 
+		status = H5Sclose(dataspace_id);
+
+		/* End access to the dataset and release resources used by it. */
+		status = H5Dclose(dataset_id);
+
+		/* Close the subsubgroup. */
+		status = H5Gclose(thumbnail_group_id);
+	}
+
+	return 0;
+}
+
 #endif // ENABLE_IMS_HDF5
 
 
@@ -1506,9 +1762,9 @@ hid_t *IMS_HDF5_fdescr_t::getDATASETS_ID ( int tp, int r, bool get ) {
 * HDF5 Manager implementation
 ****************************************************************************/
 
-void IMS_HDF5init ( std::string fname, void *&descr, int vxl_nbytes, void *obj_info ) throw (iim::IOException) {
+void IMS_HDF5init ( std::string fname, void *&descr, int vxl_nbytes, void *obj_info, void *root_attr_info ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
-	IMS_HDF5_fdescr_t *int_descr = new IMS_HDF5_fdescr_t(fname.c_str(),vxl_nbytes,(IMS_obj_list_t *)obj_info);
+	IMS_HDF5_fdescr_t *int_descr = new IMS_HDF5_fdescr_t(fname.c_str(),vxl_nbytes,(IMS_obj_list_t *)obj_info,(IMS_attr_list_t *)root_attr_info);
 	descr = int_descr;
 #else
 	throw iim::IOException(iim::strprintf(
@@ -1517,7 +1773,7 @@ void IMS_HDF5init ( std::string fname, void *&descr, int vxl_nbytes, void *obj_i
 #endif
 }
 
-void *IMS_HDF5get_olist ( void *descr ) {
+void *IMS_HDF5get_olist ( void *descr ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
 	return ((IMS_HDF5_fdescr_t *) descr)->extractOLIST();
 #else
@@ -1527,8 +1783,17 @@ void *IMS_HDF5get_olist ( void *descr ) {
 #endif
 }
 
+void *IMS_HDF5get_rootalist ( void *descr ) throw (iim::IOException) {
+#ifdef ENABLE_IMS_HDF5
+	return ((IMS_HDF5_fdescr_t *) descr)->extractROOTALIST();
+#else
+	throw iim::IOException(iim::strprintf(
+			"Support to IMS_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "
+			"in ""3rdparty/libs"" directory and set the ""ENABLED_IMS_HDF5"" checkbox before configuring CMake project").c_str(),__iim__current__function__);
+#endif
+}
 
-int IMS_HDF5n_resolutions ( void *descr ) { 
+int IMS_HDF5n_resolutions ( void *descr ) throw (iim::IOException) { 
 #ifdef ENABLE_IMS_HDF5
 	return ((IMS_HDF5_fdescr_t *) descr)->getN_RES();
 #else
@@ -1539,8 +1804,32 @@ int IMS_HDF5n_resolutions ( void *descr ) {
 }
 
 
-void IMS_HDF5close ( void *descr ) {
+void IMS_HDF5set_histogram ( void *descr, histogram_t *buf, int r, int ch, int tp ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
+	((IMS_HDF5_fdescr_t *) descr)->setHistogram(buf,r,ch,tp);
+#else
+	throw iim::IOException(iim::strprintf(
+			"Support to IMS_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "
+			"in ""3rdparty/libs"" directory and set the ""ENABLED_IMS_HDF5"" checkbox before configuring CMake project").c_str(),__iim__current__function__);
+#endif
+}
+
+
+void IMS_HDF5set_thumbnail ( void *descr, iim::uint8 *buf, iim::uint32 thumbnail_sz ) throw (iim::IOException) {
+#ifdef ENABLE_IMS_HDF5
+	((IMS_HDF5_fdescr_t *) descr)->setThumbnail(buf,thumbnail_sz);
+#else
+	throw iim::IOException(iim::strprintf(
+			"Support to IMS_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "
+			"in ""3rdparty/libs"" directory and set the ""ENABLED_IMS_HDF5"" checkbox before configuring CMake project").c_str(),__iim__current__function__);
+#endif
+}
+
+
+
+void IMS_HDF5close ( void *descr ) throw (iim::IOException) {
+#ifdef ENABLE_IMS_HDF5
+	((IMS_HDF5_fdescr_t *) descr)->addFinalInfo();
 	delete (IMS_HDF5_fdescr_t *) descr;
 #else
 	throw iim::IOException(iim::strprintf(
@@ -1550,7 +1839,7 @@ void IMS_HDF5close ( void *descr ) {
 }
 
 
-void IMS_HDF5setVxlSize ( void *descr, double szV, double szH, double szD ) {
+void IMS_HDF5setVxlSize ( void *descr, double szV, double szH, double szD ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
 	IMS_HDF5_fdescr_t *int_descr = (IMS_HDF5_fdescr_t *) descr;
 
@@ -1563,7 +1852,7 @@ void IMS_HDF5setVxlSize ( void *descr, double szV, double szH, double szD ) {
 }
 
 
-void IMS_HDF5getVxlSize ( void *descr, double &szV, double &szH, double &szD ){
+void IMS_HDF5getVxlSize ( void *descr, double &szV, double &szH, double &szD ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
 	IMS_HDF5_fdescr_t *int_descr = (IMS_HDF5_fdescr_t *) descr;
 
@@ -1578,7 +1867,7 @@ void IMS_HDF5getVxlSize ( void *descr, double &szV, double &szH, double &szD ){
 }
 
 
-void IMS_HDF5addResolution ( void *file_descr, iim::sint64 height, iim::sint64 width, iim::sint64 depth, int nchans, int r ) {
+void IMS_HDF5addResolution ( void *file_descr, iim::sint64 height, iim::sint64 width, iim::sint64 depth, int nchans, int r ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
 	IMS_HDF5_fdescr_t *int_descr = (IMS_HDF5_fdescr_t *) file_descr;
 
@@ -1593,7 +1882,7 @@ void IMS_HDF5addResolution ( void *file_descr, iim::sint64 height, iim::sint64 w
 
 
 void IMS_HDF5addChans ( void *file_descr, iim::sint64 height, iim::sint64 width, iim::sint64 depth, 
-				 float vxlszV, float vxlszH, float vxlszD, bool *res, int res_size, int chans, int block_height, int block_width, int block_depth ) {
+				 float vxlszV, float vxlszH, float vxlszD, bool *res, int res_size, int chans, int block_height, int block_width, int block_depth ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
 
 	IMS_HDF5_fdescr_t *int_descr = (IMS_HDF5_fdescr_t *) file_descr;
@@ -1619,7 +1908,7 @@ void IMS_HDF5addChans ( void *file_descr, iim::sint64 height, iim::sint64 width,
 }
 
 
-void IMS_HDF5addTimepoint ( void *file_descr, int tp ) {
+void IMS_HDF5addTimepoint ( void *file_descr, int tp ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
 	IMS_HDF5_fdescr_t *int_descr = (IMS_HDF5_fdescr_t *) file_descr;
 
@@ -1633,7 +1922,7 @@ void IMS_HDF5addTimepoint ( void *file_descr, int tp ) {
 }
 
 
-void IMS_HDF5writeHyperslab ( void *file_descr, iim::uint8 *buf, iim::sint64 *dims_buf, iim::sint64 *hl, int r, int s, int tp ) {
+void IMS_HDF5writeHyperslab ( void *file_descr, iim::uint8 *buf, iim::sint64 *dims_buf, iim::sint64 *hl, int r, int s, int tp ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
 	IMS_HDF5_fdescr_t *int_descr = (IMS_HDF5_fdescr_t *) file_descr;
 
@@ -1653,7 +1942,7 @@ void IMS_HDF5getVolumeInfo ( void *descr, int tp, int res, void *&volume_descr,
 								float &VXL_1, float &VXL_2, float &VXL_3, 
 								float &ORG_V, float &ORG_H, float &ORG_D, 
 								iim::uint32 &DIM_V, iim::uint32 &DIM_H, iim::uint32 &DIM_D,
-							    int &DIM_C, int &BYTESxCHAN, int &DIM_T, int &t0, int &t1 ) {
+							    int &DIM_C, int &BYTESxCHAN, int &DIM_T, int &t0, int &t1 ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
 
 	
@@ -1700,7 +1989,7 @@ void IMS_HDF5getVolumeInfo ( void *descr, int tp, int res, void *&volume_descr,
 }
 
 
-void IMS_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0, int D1, int chan, iim::uint8 *buf, int red_factor ) {
+void IMS_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0, int D1, int chan, iim::uint8 *buf, int red_factor ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
 
 	IMS_volume_descr_t *int_volume_descr = (IMS_volume_descr_t *) descr;
@@ -1764,7 +2053,7 @@ void IMS_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0,
 #endif
 }
 
-void IMS_HDF5closeVolume ( void *descr ) {
+void IMS_HDF5closeVolume ( void *descr ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
 	IMS_volume_descr_t *int_volume_descr = (IMS_volume_descr_t *) descr;
 	if ( int_volume_descr->datasets_id )

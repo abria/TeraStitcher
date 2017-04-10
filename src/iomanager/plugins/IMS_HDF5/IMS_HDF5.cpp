@@ -28,7 +28,8 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2015-10-27. Giulio.     @ADDEDED routines for extracting additional parameters
+* 2017-04-07. Giulio.     @ADDED ability to return a selected channel instead of all channels
+* 2016-10-27. Giulio.     @ADDED routines for extracting additional parameters
 * 2016-10-16. Giulio.     @CREATED
 */
 
@@ -160,6 +161,7 @@ throw (iom::exception)
 
 	int res = 0;
 	int tp  = 0;
+	int chID = -1; // invalid value: return all channels
 	std::string str_value;
 
 	// set the ROI
@@ -173,12 +175,19 @@ throw (iom::exception)
 		res = atoi(str_value.c_str());
 	if ( getParamValue(params,"timepoint",str_value) )
 		tp = atoi(str_value.c_str());
+	if ( getParamValue(params,"channel",str_value) )
+		chID = atoi(str_value.c_str());
 
 	IMS_HDF5init(img_path,file_descr);
 	IMS_HDF5getVolumeInfo(file_descr,tp,res,volume_descr,vxl1,vxl2,vxl3,org1,org2,org3,height,width,depth,img_chans,img_bytes_x_chan,n_timepoints,t0,t1);
-	chan_size = ((iim::sint64)height) * ((iim::sint64)width) * (z1-z0) * img_bytes_x_chan;
-	for ( c=0, ptr=data; c<img_chans; c++, ptr+=chan_size ) {
-		IMS_HDF5getSubVolume(volume_descr,0,height,0,width,z0,z1,c,ptr);
+	if ( chID == -1 ) {
+		chan_size = ((iim::sint64)height) * ((iim::sint64)width) * (z1-z0) * img_bytes_x_chan;
+		for ( c=0, ptr=data; c<img_chans; c++, ptr+=chan_size ) {
+			IMS_HDF5getSubVolume(volume_descr,0,height,0,width,z0,z1,c,ptr);
+		}
+	}
+	else {
+		IMS_HDF5getSubVolume(volume_descr,0,height,0,width,z0,z1,chID,data);
 	}
 	IMS_HDF5closeVolume(volume_descr);
 	IMS_HDF5close(file_descr);

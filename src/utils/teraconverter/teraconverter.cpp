@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-07   Giulio.     @ADDED the opssibility to specify a subset of channels to be converted
 * 2017-04-02.  Giulio.     @ADDED support for creation of BigTiff files
 * 2017-04-01.  Giulio.     @CHANGED the calls to the routine that creates the directory structure in the case of 'simple' formats
 * 2017-01-23.  Giulio.     @FIXED bugs of parallel execution in case 4D formats are specified
@@ -201,7 +202,7 @@ int main ( int argc, char *argv[] ) {
 		}
 
 		
-		vc.setSrcVolume(cli.src_root_dir.c_str(),cli.src_format.c_str(),cli.outFmt.c_str(),cli.timeseries,cli.downsamplingFactor);
+		vc.setSrcVolume(cli.src_root_dir.c_str(),cli.src_format.c_str(),cli.outFmt.c_str(),cli.timeseries,cli.downsamplingFactor,cli.chanlist);
 		vc.setSubVolume(cli.V0,cli.V1,cli.H0,cli.H1,cli.D0,cli.D1);
 
 		if ( cli.dst_format == iim::SIMPLE_RAW_FORMAT )

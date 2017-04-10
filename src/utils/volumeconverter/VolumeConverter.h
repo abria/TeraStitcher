@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-09. Giulio.     @ADDED the ability to convert a subset of channels
 * 2017-01-22. Giulio      @ADDED parameter for standard block depth for efficiency reasons
 * 2016-10-09. Giulio.     @ADDED parameter 'ch_dir' to 'generateTilesVaa3DRawMC' interface
 * 2014-06-20. Giulio.     @ADDED methods for conversion to 'simple' representation (series, 2D), including parallel support
@@ -138,7 +139,7 @@ class VolumeConverter
 		*************************************************************************************************************/
         void setSrcVolume(const char* _root_dir, const char* _fmt = iim::STACKED_FORMAT.c_str(),
                           const char* _out_fmt = REAL_REPRESENTATION, bool time_series = false, 
-						  int downsamplingFactor = 1, int _res = 0, int _timepoint = 0) throw (iim::IOException, iom::exception);
+						  int downsamplingFactor = 1, std::string chanlist = "", int _res = 0, int _timepoint = 0) throw (iim::IOException, iom::exception);
 
 		/*************************************************************************************************************
 		* Method to set the subvolume to be converted

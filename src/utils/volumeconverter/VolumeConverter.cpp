@@ -25,6 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-09. Giulio.     @ADDED the ability to convert a subset of channels
+* 2017-04-08. Giulio.     @ADDED support for additional attributes required by the IMS format
 * 2017-04-01. Giulio.     @FIXED some error messages
 * 2017-04-01. Giulio.     @FIXED save state at the beginning of the main for loop in case an error happens during the first cycle
 * 2017-02-01. Giulio.     @FIXED bugs in computing the voxel size along D when isotropic downsizing is set
@@ -123,7 +125,7 @@ VolumeConverter::~VolumeConverter()
 
 void VolumeConverter::setSrcVolume(const char* _root_dir, const char* _fmt, const char* _out_fmt, 
 								   bool time_series /* = false */, int downsamplingFactor /* = 1 */,
-								   int _res /* = 0*/, int _timepoint /* = 0*/) throw (IOException, iom::exception)
+								   std::string chanlist /* = ""*/, int _res /* = 0*/, int _timepoint /* = 0*/) throw (IOException, iom::exception)
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir = %s, _fmt = %s, _out_fmt = %s, time_series = %s",
                                          _root_dir, _fmt, _out_fmt, time_series ? "true" : "false").c_str(), __iim__current__function__);
@@ -155,8 +157,19 @@ void VolumeConverter::setSrcVolume(const char* _root_dir, const char* _fmt, cons
 			throw iim::IOException(iim::strprintf("in VolumeConverter::setSrcVolume(): source volume (\"%s\") cannot be downsampled", _fmt));
 	}
 
-	//channels = (volume->getDIM_C()>1) ? 3 : 1; // only 1 or 3 channels supported
-	channels = volume->getDIM_C();
+	if ( chanlist == "" )
+		channels = volume->getDIM_C();
+	else { // a channel list has been specified
+		channels = (int) chanlist.size();
+		uint32 *active_chans = new uint32(channels);
+		for ( int i=0; i<channels; i++) {
+			if ( isdigit(chanlist.at(i)) )
+				active_chans[i] = chanlist.at(i) - '0';
+			else
+				throw iim::IOException(iim::strprintf("in VolumeConverter::setSrcVolume(): the channel list contains a non-digit character (%c)", chanlist.at(i)));
+		}
+		volume->setActiveChannels(active_chans,channels);
+	}
 
 	if ( strcmp(_out_fmt,REAL_REPRESENTATION) == 0 ) {
 		if ( channels > 1 ) {
@@ -3914,26 +3927,52 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 
 	if(resolutions == NULL)
 	{
-            resolutions = new bool;
-            *resolutions = true;
-            resolutions_size = 1;
+        resolutions = new bool;
+        *resolutions = true;
+        resolutions_size = 1;
 	}
-	else
-            for(int i=0; i<TMITREE_MAX_HEIGHT; i++) {
-                if(resolutions[i])
-                    resolutions_size = std::max(resolutions_size, i+1);
-			}
+	else {
+        for (int i=0; i<TMITREE_MAX_HEIGHT; i++) {
+            if(resolutions[i])
+                resolutions_size = std::max(resolutions_size, i+1);
+		}
+	}
 
+	// allocate the buffers for the histograms
+	int hist_len = 256;
+	histogram_t *hist[TMITREE_MAX_HEIGHT];
+	for (int i=0; i<TMITREE_MAX_HEIGHT; i++) {
+		if(resolutions[i]) {
+			hist[i] = new histogram_t[channels];
+			for (int j=0; j<channels; j++) {
+				hist[i][j].hmin = 0;
+				hist[i][j].hmax = 0;
+				hist[i][j].hlen = hist_len;
+				hist[i][j].hist = new iim::uint64[hist_len];
+				memset(hist[i][j].hist,0,hist_len*sizeof(iim::uint64));
+			}
+		}
+		else
+			hist[i] = (histogram_t *) 0;
+	}
+	
+	// allocate the buffer for the thuumnail
+	iim::uint32 thumbnail_size = (std::min(width,height) < 512) ? 256 : 512;
+	int total_size = thumbnail_size * thumbnail_size * 4;
+	iim::uint8 *thumbnail_buf = new iim::uint8[total_size];
+	memset(thumbnail_buf,0,total_size*sizeof(iim::uint8));
 
 	// get metadata to be transferred to image to be generated
 	IMS_HDF5init(metadata_file,file_descr);
 	void *olist = IMS_HDF5get_olist(file_descr);
+	void *rootalist = IMS_HDF5get_rootalist(file_descr);
 	IMS_HDF5close(file_descr);
 
 
 	// create output file with acquisition metadata
-	IMS_HDF5init(output_path,file_descr,volume->getBYTESxCHAN(),olist); // set the same voxel size of the file containaing metadata 
- 	olist = (void *) 0;
+	IMS_HDF5init(output_path,file_descr,volume->getBYTESxCHAN(),olist,rootalist); // set the same voxel size of the file containaing metadata 
+ 	olist     = (void *) 0;
+ 	rootalist = (void *) 0;
 
 	// voxel size must be the one corresponding to the height, width and depth used to create resolutions (see call to 'IMS_HDF5addResolution' below)
 	// voxel size must be correctly set before creating resolutions
@@ -4104,6 +4143,18 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 
 	delete hyperslab_descr;
 	delete buf_dims;
+
+	for (int i=0; i<TMITREE_MAX_HEIGHT; i++) {
+		if(resolutions[i]) {
+			for (int j=0; j<channels; j++) {
+				IMS_HDF5set_histogram(file_descr,&hist[i][j],i,j,0);
+				hist[i][j].hist = (iim::uint64 *) 0;
+			}
+			delete []hist[i];
+		}
+	}
+
+	IMS_HDF5set_thumbnail(file_descr,thumbnail_buf,thumbnail_size);
 
 	IMS_HDF5close(file_descr);
 
