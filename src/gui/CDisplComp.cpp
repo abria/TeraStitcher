@@ -26,6 +26,12 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2017-04-12. Giulio.     @FIXED the release all buffers allocated when it is catched exeption from 'computeDisplacements'
+*/
+
 #include "CDisplComp.h"
 #include "CImportUnstitched.h"
 #include "IM_config.h"
@@ -66,7 +72,17 @@ void CDisplComp::run()
 
         //launching pairwise displacements computation
         StackStitcher stitcher(volume);
-        stitcher.computeDisplacements(algo, row0, col0, row1, col1, Voverlap, Hoverlap, Vrad, Hrad, Drad, subvol_dim, restoreSPIM, 1, 1, z0, z1);
+        // 2017-04-12. Giulio. Catched exeption from 'computeDisplacements' to release all buffers allocated
+        try
+        {
+        	stitcher.computeDisplacements(algo, row0, col0, row1, col1, Voverlap, Hoverlap, Vrad, Hrad, Drad, subvol_dim, restoreSPIM, 1, 1, z0, z1);
+    	}
+    	catch( iom::exception& exception)
+    	{
+    	
+    		volume->releaseBuffers();
+        	throw iom::exception(iom::exception(exception.what()));
+    	}
 
         //saving into XML project file
         volume->saveXML(0,saveproj_path.c_str());
@@ -76,7 +92,7 @@ void CDisplComp::run()
     }
     catch( iim::IOException& exception)
     {
-        /**/ts::warning(strprintf("exception thrown in CMergeTiles::run(): \"%s\"", exception.what()).c_str());
+        /**/ts::warning(strprintf("exception thrown in CDisplComp::run(): \"%s\"", exception.what()).c_str());
         emit sendOperationOutcome(new iom::exception(exception.what()));
     }
     catch( iom::exception& exception)

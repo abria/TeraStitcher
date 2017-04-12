@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-12. Giulio.     @ADDED release of allocated buffers if an exception is raised in 'getStripe' (prevent further exceptions in the GUI version)
 * 2017-04-01. Giulio.     @ADDED support for multi-layer stitching
 * 2016-09-13. Giulio.     @ADDED a cache manager to store stitched subregions
 * 2016-08-30. Giulio.     @FIXED bug in 'internal_loadSubvolume_to_real32': for each row/column both tests have to be performed to check if border tiles have to be added on both sides 
@@ -544,7 +545,15 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 			{
 				//loading down stripe
 				if(row_index==stitcher->ROW_START) stripe_up = NULL;
-				stripe_down = stitcher->getStripe(row_index,(int)(z+k), restore_direction, stk_rst, blending_algo);
+
+				// 2017-04-12. Giulio. @ADDED release of allocated buffers if an exception is raised in 'getStripe' (prevent further exceptions in the GUI version)
+				try {
+					stripe_down = stitcher->getStripe(row_index,(int)(z+k), restore_direction, stk_rst, blending_algo);
+				}
+    			catch( iom::exception& exception) {
+    				stitcher->volume->releaseBuffers();
+        			throw iom::exception(iom::exception(exception.what()));
+    			}
 
 				if(stripe_up) u_strp_bottom_displ	= stripesCoords[row_index-1].bottom_right.V	 - V0;
 				d_strp_top_displ					= stripesCoords[row_index  ].up_left.V	     - V0;

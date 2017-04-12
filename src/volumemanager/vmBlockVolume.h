@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-12. Giulio.     @ADDED method to release all buffers allocated in VirtualStack
 * 2016-10-27. Giulio.     @ADDED string fields for control over the subimage to be exposed through the xml import file  
 * 2015-06-12. Giulio      @ADDED 'check' method to check completeness and coherence of a volume
 * 2015-02-26. Giulio.     @ADDED initChannels private method to initialize fields DIM_C and BYTESxCHAN
@@ -114,6 +115,7 @@ class vm::BlockVolume : public vm::VirtualVolume
 		void initFromXML(const char *xml_filename) throw (iom::exception);
         void saveXML(const char *xml_filename=0, const char *xml_filepath=0) throw (iom::exception);
 
+		void releaseBuffers() throw (iom::exception);
 
         /**********************************************************************************
         * UTILITY methods

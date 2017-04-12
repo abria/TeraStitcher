@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-12. Giulio.     @ADDED method to release all buffers allocated in VirtualStack
 * 2017-04-09. Giulio.     @FIXED the case when the xml file is incoplete in method 'loadXML'
 * 2016-11-14. Giulio.     @ADDED management of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
 * 2016-10-27. Giulio.     @ADDED control over the subimage to be exposed through the xml import file (default resolution 0 and timestamp 0)  
@@ -1220,6 +1221,12 @@ void BlockVolume::saveXML(const char *xml_filename, const char *xml_filepath) th
 	root->LinkEndChild(pelem);
 	//saving the file
 	xml.SaveFile();
+}
+
+void BlockVolume::releaseBuffers() throw (iom::exception) {
+	for ( int r=0; r<N_ROWS; r++ )
+		for ( int c=0; c<N_COLS; c++ )
+			BLOCKS[r][c]->releaseImageStack();
 }
 
 //counts the total number of displacements and the number of displacements per stack

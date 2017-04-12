@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-12. Giulio.     @ADDED method to release all buffers allocated in VirtualStack
 * 2016-11-14. Giulio.     @ADDED management of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
 * 2016-09-01. Giulio.     @ADDED support for cache management in loadImageStack 
 * 2015-06-12. Giulio      @ADDED 'check' method to check completeness and coherence of a volume
@@ -748,6 +749,12 @@ void StackedVolume::saveXML(const char *xml_filename, const char *xml_filepath) 
 	root->LinkEndChild(pelem);
 	//saving the file
 	xml.SaveFile();
+}
+
+void StackedVolume::releaseBuffers() throw (iom::exception) {
+	for ( int r=0; r<N_ROWS; r++ )
+		for ( int c=0; c<N_COLS; c++ )
+			STACKS[r][c]->releaseImageStack();
 }
 
 void StackedVolume::saveBinaryMetadata(char *metadata_filepath) throw (iom::exception)

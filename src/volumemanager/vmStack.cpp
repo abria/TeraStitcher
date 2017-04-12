@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-12. Giulio.     @ADDED check on a precondition of 'loadImageStack'
 * 2016-11-14. Giulio.     @ADDED management of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
 * 2016-09-01. Giulio.     @ADDED cache management in loadImageStack (only if just one slice has to be loaded)
 * 2015-08-24. Giulio.     @FIXED memory leak in loadImageStack
@@ -569,6 +570,12 @@ iom::real_t* Stack::loadImageStack(int first_file, int last_file) throw (iom::ex
 	int img_height;
 	int img_bytes_x_chan;
 	int img_chans;
+
+	if ( STACKED_IMAGE ) {
+		delete[] STACKED_IMAGE;
+    	STACKED_IMAGE=0;
+		throw iom::exception(iom::strprintf("precondition violated in Stack [%d,%d] loading slices [%d,%d]: buffer is already allocated", ROW_INDEX, COL_INDEX,first_file, last_file), __iom__current__function__);
+	}
 
 	// check and adjust file selection
 	first_file = (first_file == -1 ? 0 : first_file);

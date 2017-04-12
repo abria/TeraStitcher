@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-12. Giulio.     @ADDED check on a precondition of 'loadImageStack'
 * 2017-04-07. Giluio.     @ADDED ability to load only one channel when channels are stored in separate planes (non-interleaved input plugin) 
 * 2016-11-16. Giulio.     @ADDED management of the case when the xml import file is generated externally and attributes BLOCK_SIZES and BLOCK_ABS_D are missing
 * 2016-11-14. Giulio.     @ADDED management of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
@@ -474,6 +475,12 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 	int first, last;
 	float scale_factor;
 	char slice_fullpath[2000];
+
+	if ( STACKED_IMAGE ) {
+		delete[] STACKED_IMAGE;
+    	STACKED_IMAGE=0;
+		throw iom::exception(iom::strprintf("precondition violated in Block [%d,%d] loading slices [%d,%d]: buffer is already allocated", ROW_INDEX, COL_INDEX,first_file, last_file), __iom__current__function__);
+	}
 
 	// 2014-09-09. Alessandro. @BUG. 'first_file' and 'last_file' are set to '-1' by default. But here, they are never checked nor corrected. 
 	// I added a very simple (but not complete) check here.

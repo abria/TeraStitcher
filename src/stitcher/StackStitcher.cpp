@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-12. Giulio.     @ADDED release of allocated buffers if an exception is raised in 'getStripe' (prevent further exceptions in the GUI version)
 * 2017-04-01. Giulio.     @ADDED function for enhanced no blending
 * 2016-04-29. Giulio.     @ADDED input plugin substitution before metadata genration (restored afterwards)
 * 2015-08-28. Giulio.     @FIXED reference system of the generated image has always V as a first axis and H as a second axis
@@ -1048,7 +1049,15 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 			{
 				//loading down stripe
 				if(row_index==ROW_START) stripe_up = NULL;
-				stripe_down = this->getStripe(row_index,(int)(z+k), restore_direction, stk_rst, blending_algo);
+
+				// 2017-04-12. Giulio. @ADDED release of allocated buffers if an exception is raised in 'getStripe' (prevent further exceptions in the GUI version)
+				try {
+					stripe_down = this->getStripe(row_index,(int)(z+k), restore_direction, stk_rst, blending_algo);
+				}
+    			catch( iom::exception& exception) {
+    				this->volume->releaseBuffers();
+        			throw iom::exception(iom::exception(exception.what()));
+    			}
 
 				#ifdef S_TIME_CALC
 				proc_time = -TIME(0);

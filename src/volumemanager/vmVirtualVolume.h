@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-12. Giulio.     @ADDED method to release all buffers allocated in VirtualStack
 * 2016-09-01. Giulio.     @ADDED Cache buffer.
 * 2016-06-09. Giulio      @ADDED the 'active_channel' field and corresponding getter and setter
 * 2015-06-12. Giulio      @ADDED 'check' method to check completeness and coherence of a volume
@@ -159,6 +160,8 @@ class volumemanager::VirtualVolume
 		virtual void loadXML(const char *xml_filename) = 0;
 		virtual void initFromXML(const char *xml_filename) = 0;
         virtual void saveXML(const char *xml_filename=0, const char *xml_filepath=0) throw (iom::exception) = 0;
+
+		virtual void releaseBuffers() = 0;
 
 		// 2014-09-10. Alessandro. @ADDED 'getVolumeFormat' method to be applied on xml file.
 		// return 'volume_format' attribute of <TeraStitcher> node from the given xml. 
