@@ -184,10 +184,12 @@ throw (iom::exception)
 		chan_size = ((iim::sint64)height) * ((iim::sint64)width) * (z1-z0) * img_bytes_x_chan;
 		for ( c=0, ptr=data; c<img_chans; c++, ptr+=chan_size ) {
 			IMS_HDF5getSubVolume(volume_descr,0,height,0,width,z0,z1,c,ptr);
+			//printf("---> [multiple] c=%d z=%d\n",c,z0);
 		}
 	}
 	else {
 		IMS_HDF5getSubVolume(volume_descr,0,height,0,width,z0,z1,chID,data);
+		//printf("---> [single] c=%d z=%d\n",chID,z0);
 	}
 	IMS_HDF5closeVolume(volume_descr);
 	IMS_HDF5close(file_descr);

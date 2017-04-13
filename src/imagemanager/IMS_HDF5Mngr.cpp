@@ -294,7 +294,12 @@ herr_t create_string_attribute ( hid_t parent, const char *name, const char *val
 	dspace_id = H5Screate(H5S_SIMPLE);
 	len[0] = strlen(value_str);
 	status = H5Sset_extent_simple(dspace_id,1,len,len);
-	attr_id = H5Acreate2(parent,name, type_id,dspace_id,H5P_DEFAULT,H5P_DEFAULT);
+	if ( (attr_id = H5Acreate2(parent,name, type_id,dspace_id,H5P_DEFAULT,H5P_DEFAULT)) < 0 ) {
+		// the attribute already exist: do nothing
+		status = H5Sclose(dspace_id);
+		status = H5Tclose(type_id);
+		iim::warning(iim::strprintf("attribute %s already exists",name).c_str());
+	}
 	status = H5Awrite(attr_id, type_id,value_str);
 	status = H5Sclose(dspace_id);
 	status = H5Tclose(type_id);
@@ -506,7 +511,8 @@ IMS_HDF5_fdescr_t::IMS_HDF5_fdescr_t ( ) {
 
 
 IMS_HDF5_fdescr_t::IMS_HDF5_fdescr_t ( const char *_fname, int _vxl_nbytes, IMS_obj_list_t *obj_info, IMS_attr_list_t *root_attr_info, int maxstp, int maxres, int maxtps ) {
-	if ( (file_id = H5Fopen(_fname, H5F_ACC_RDWR, H5P_DEFAULT)) < 0 ) { // non existing file: create it empty
+	if ( !iim::isFile(_fname) ) { // non existing file: create it empty
+	//if ( (file_id = H5Fopen(_fname, H5F_ACC_RDWR, H5P_DEFAULT)) < 0 ) { // non existing file: create it empty
 
 		file_id = H5Fcreate(_fname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
@@ -514,8 +520,10 @@ IMS_HDF5_fdescr_t::IMS_HDF5_fdescr_t ( const char *_fname, int _vxl_nbytes, IMS_
 		strcpy(fname,_fname);
 		n_chans = 0;
 		chan_groups_id = new hid_t[maxstp];
+		memset(chan_groups_id,0,(maxstp*sizeof(hid_t))); // initialize with invalid hid values
 		n_timepoints = 0;
 		tp_groups_id = new hid_t[maxtps];
+		memset(tp_groups_id,0,(maxtps*sizeof(hid_t))); // initialize with invalid hid values
 		n_res = 0;
 		res_groups_id = new hid_t[maxres];
 		memset(res_groups_id,0,(maxres*sizeof(hid_t))); // initialize with invalid hid values
@@ -556,6 +564,9 @@ IMS_HDF5_fdescr_t::IMS_HDF5_fdescr_t ( const char *_fname, int _vxl_nbytes, IMS_
 		obj_info_cnt = 0; // releasing obj_info (which has not been created) makes the counter negative
 	}
 	else { // existing file: initialize descriptor
+
+		if ( (file_id = H5Fopen(_fname, H5F_ACC_RDWR, H5P_DEFAULT)) < 0 ) // non existing file
+			throw iim::IOException(iim::strprintf("file %s does not exist",_fname).c_str(),__iim__current__function__);
 
 		if ( obj_info )
 			throw iim::IOException(iim::strprintf("the file %s already exists. no structure description should be passed ",_fname).c_str(),__iim__current__function__);
@@ -881,73 +892,67 @@ int IMS_HDF5_fdescr_t::addResolution ( int r, hsize_t dimV, hsize_t dimH, hsize_
 	// set /DataSetInfo/Image attributes if not yet defined
 	grpid = H5Gopen(file_id,"/DataSetInfo/Image",H5P_DEFAULT);
 	hid_t aid;
-	if ( (aid = H5Aopen(grpid,"ExtMax0",H5P_DEFAULT)) < 0 ) {
+
+	// according to HDF5 reference if the attributes already exist the attempt to create them leave things unchanged
+	//if ( (aid = H5Aopen(grpid,"ExtMax0",H5P_DEFAULT)) < 0 ) {
 		sprintf(value_str,"%.3f",vxl_sizes[0][2]*dimH);
 		status = create_string_attribute(grpid,"ExtMax0",value_str);
-	}
-	else
-		status = H5Aclose(aid);
+	//}
+	//else
+	//	status = H5Aclose(aid);
 
-	if ( (aid = H5Aopen(grpid,"ExtMax1",H5P_DEFAULT)) < 0 ) {
+	//if ( (aid = H5Aopen(grpid,"ExtMax1",H5P_DEFAULT)) < 0 ) {
 		sprintf(value_str,"%.3f",vxl_sizes[0][1]*dimV);
 		status = create_string_attribute(grpid,"ExtMax1",value_str);
-		H5Aclose(aid);
-	}
-	else
-		status = H5Aclose(aid);
+	//}
+	//else
+	//	status = H5Aclose(aid);
 
-	if ( (aid = H5Aopen(grpid,"ExtMax2",H5P_DEFAULT)) < 0 ) {
+	//if ( (aid = H5Aopen(grpid,"ExtMax2",H5P_DEFAULT)) < 0 ) {
 		sprintf(value_str,"%.3f",vxl_sizes[0][0]*dimD);
 		status = create_string_attribute(grpid,"ExtMax2",value_str);
-		H5Aclose(aid);
-	}
-	else
-		status = H5Aclose(aid);
+	//}
+	//else
+	//	status = H5Aclose(aid);
 
-	if ( (aid = H5Aopen(grpid,"ExtMin0",H5P_DEFAULT)) < 0 ) {
+	//if ( (aid = H5Aopen(grpid,"ExtMin0",H5P_DEFAULT)) < 0 ) {
 		status = create_string_attribute(grpid,"ExtMin0","0");
-		H5Aclose(aid);
-	}
-	else
-		status = H5Aclose(aid);
+	//}
+	//else
+	//	status = H5Aclose(aid);
 
-	if ( (aid = H5Aopen(grpid,"ExtMin1",H5P_DEFAULT)) < 0 ) {
+	//if ( (aid = H5Aopen(grpid,"ExtMin1",H5P_DEFAULT)) < 0 ) {
 		status = create_string_attribute(grpid,"ExtMin1","0");
-		H5Aclose(aid);
-	}
-	else
-		status = H5Aclose(aid);
+	//}
+	//else
+	//	status = H5Aclose(aid);
 
-	if ( (aid = H5Aopen(grpid,"ExtMin2",H5P_DEFAULT)) < 0 ) {
+	//if ( (aid = H5Aopen(grpid,"ExtMin2",H5P_DEFAULT)) < 0 ) {
 		status = create_string_attribute(grpid,"ExtMin2","0");
-		H5Aclose(aid);
-	}
-	else
-		status = H5Aclose(aid);
+	//}
+	//else
+	//	status = H5Aclose(aid);
 
-	if ( (aid = H5Aopen(grpid,"X",H5P_DEFAULT)) < 0 ) {
+	//if ( (aid = H5Aopen(grpid,"X",H5P_DEFAULT)) < 0 ) {
 		sprintf(value_str,"%d",(int)dimH);
 		status = create_string_attribute(grpid,"X",value_str);
-		H5Aclose(aid);
-	}
-	else
-		status = H5Aclose(aid);
+	//}
+	//else
+	//	status = H5Aclose(aid);
 
-	if ( (aid = H5Aopen(grpid,"Y",H5P_DEFAULT)) < 0 ) {
+	//if ( (aid = H5Aopen(grpid,"Y",H5P_DEFAULT)) < 0 ) {
 		sprintf(value_str,"%d",(int)dimV);
 		status = create_string_attribute(grpid,"Y",value_str);
-		H5Aclose(aid);
-	}
-	else
-		status = H5Aclose(aid);
+	//}
+	//else
+	//	status = H5Aclose(aid);
 
-	if ( (aid = H5Aopen(grpid,"Z",H5P_DEFAULT)) < 0 ) {
+	//if ( (aid = H5Aopen(grpid,"Z",H5P_DEFAULT)) < 0 ) {
 		sprintf(value_str,"%d",(int)dimD);
 		status = create_string_attribute(grpid,"Z",value_str);
-		H5Aclose(aid);
-	}
-	else
-		status = H5Aclose(aid);
+	//}
+	//else
+	//	status = H5Aclose(aid);
 
 	H5Gclose(grpid);
 
@@ -1524,7 +1529,8 @@ hid_t *IMS_HDF5_fdescr_t::getDATASETS_ID ( int tp, int r, bool get ) {
 			otype =  H5Gget_objtype_by_idx(res_groups_id[r], (size_t)k);
 			if ( otype == H5G_GROUP ) {
 				// get the number of chans
-				err = H5Gclose(tp_groups_id[k]); // close the timepoint of previous resolution
+				if ( tp_groups_id[k] > 0 ) 
+					err = H5Gclose(tp_groups_id[k]); // close the timepoint of previous resolution
 				tp_groups_id[k] = H5Gopen(res_groups_id[r],memb_name, H5P_DEFAULT);
 				if ( k == tp ) { // process only channels at timepoint tp
 					err = H5Gget_num_objs(tp_groups_id[k], &n_chans);
@@ -1532,7 +1538,8 @@ hid_t *IMS_HDF5_fdescr_t::getDATASETS_ID ( int tp, int r, bool get ) {
 						len = H5Gget_objname_by_idx(tp_groups_id[k], (hsize_t)m, submemb_name, (size_t)MAX_NAME );
 						otype =  H5Gget_objtype_by_idx(tp_groups_id[k], (size_t)m);
 						if ( otype == H5G_GROUP ) {
-							err = H5Gclose(chan_groups_id[m]); // close the channel of previous resolution
+							if ( chan_groups_id[m] > 0 )
+								err = H5Gclose(chan_groups_id[m]); // close the channel of previous resolution
 							chan_groups_id[m] = H5Gopen(tp_groups_id[k],submemb_name, H5P_DEFAULT);
 							dset_id = H5Dopen(chan_groups_id[m],"Data",H5P_DEFAULT);
 

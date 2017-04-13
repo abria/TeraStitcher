@@ -3857,11 +3857,11 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 				bool show_progress_bar, const char* saved_img_format, 
                 int saved_img_depth, std::string frame_dir )	throw (IOException, iom::exception)
 {
-    printf("in VolumeConverter::generateTilesBDV_HDF5(path = \"%s\", resolutions = ", output_path.c_str());
-    for(int i=0; i< TMITREE_MAX_HEIGHT; i++)
-        printf("%d", resolutions[i]);
-    printf(", block_height = %d, block_width = %d, block_depth = %d, method = %d, show_progress_bar = %s, saved_img_format = %s, saved_img_depth = %d, frame_dir = \"%s\")\n",
-           block_height, block_width, block_depth, method, show_progress_bar ? "true" : "false", saved_img_format, saved_img_depth, frame_dir.c_str());
+    //printf("in VolumeConverter::generateTilesBDV_HDF5(path = \"%s\", resolutions = ", output_path.c_str());
+    //for(int i=0; i< TMITREE_MAX_HEIGHT; i++)
+    //    printf("%d", resolutions[i]);
+    //printf(", block_height = %d, block_width = %d, block_depth = %d, method = %d, show_progress_bar = %s, saved_img_format = %s, saved_img_depth = %d, frame_dir = \"%s\")\n",
+    //       block_height, block_width, block_depth, method, show_progress_bar ? "true" : "false", saved_img_format, saved_img_depth, frame_dir.c_str());
 
 	if ( saved_img_depth == 0 ) // default is to generate an image with the same depth of the source
 		saved_img_depth = volume->getBYTESxCHAN() * 8;
