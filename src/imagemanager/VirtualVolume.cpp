@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-13. Giulio.     @ADDED the case 2D slices multi-channel 16 bit in 'saveImage_from_UINT8'
 * 2016-05-11. Giluio.     @FIXED a bug in 'halveSample2D_UINT8' ('img16' in plage of 'img' at line 1085)
 * 2016-04-15. Giluio.     @FIXED in 'saveImage_from_UINT8' offset must not be doubled when color depth is 16 bits
 * 2015-12-10. Giluio.     @FIXED added several volume creation alternatives in "instance" methods to include new formats 
@@ -250,7 +251,7 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
         throw IOException(buffer);
     }
     //if(img_depth != 8 && nchannels == 3) // nchannels may be also 2
-    if(img_depth != 8 && nchannels > 1)
+    if(img_depth != 8 && img_depth != 16 && nchannels > 1)
     {
         sprintf(buffer,"in saveImage_from_UINT8(..., img_depth=%d, ...): unsupported bit depth for multi-channels images\n",img_depth);
         throw IOException(buffer);
@@ -273,42 +274,74 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
 		//converting raw data into tif image data
 		if(nchannels == 3)
 		{
-			img = new uint8[img_width * img_height * nchannels]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 3);
+			img = new uint8[img_width * img_height * nchannels * (img_depth/8)]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 3);
 			int img_data_step = img_width * nchannels;
-			for(int i = 0; i <img_height; i++)
+			if(img_depth == 8)
 			{
-				uint8* row_data_8bit = img + i*img_data_step;
-				for(int j1 = 0, j2 = start_width; j1 < img_width*3; j1+=3, j2++)
+				for(int i = 0; i <img_height; i++)
 				{
-					row_data_8bit[j1  ] = raw_ch1[(i+start_height)*raw_img_width + j2];
-					row_data_8bit[j1+1] = raw_ch2[(i+start_height)*raw_img_width + j2];
-					row_data_8bit[j1+2] = raw_ch3[(i+start_height)*raw_img_width + j2];
+					uint8* row_data_8bit = img + i*img_data_step;
+					for(int j1 = 0, j2 = start_width; j1 < img_width*3; j1+=3, j2++)
+					{
+						row_data_8bit[j1  ] = raw_ch1[(i+start_height)*raw_img_width + j2];
+						row_data_8bit[j1+1] = raw_ch2[(i+start_height)*raw_img_width + j2];
+						row_data_8bit[j1+2] = raw_ch3[(i+start_height)*raw_img_width + j2];
+					}
 				}
 			}
-	   }
-		if(nchannels == 2)
+			else // img->depth == 16
+			{
+				for(int i = 0; i <img_height; i++)
+				{
+					uint16* row_data_16bit = ((uint16*)img) + i*img_data_step;
+					for(int j1 = 0, j2 = start_width; j1 < img_width*3; j1+=3, j2++) {
+						// row_data_16bit[j] = (uint16) (raw_ch1[(i+start_height)*raw_img_width+j+start_width] * scale_factor_16b); // conversion is not supported yet
+						row_data_16bit[j1  ] = ((uint16 *) raw_ch1)[(i+start_height)*raw_img_width+j2];
+						row_data_16bit[j1+1] = ((uint16 *) raw_ch2)[(i+start_height)*raw_img_width+j2];
+						row_data_16bit[j1+2] = ((uint16 *) raw_ch3)[(i+start_height)*raw_img_width+j2];
+					}
+				}
+			}
+		}
+		else if(nchannels == 2)
 		{
 			// stores in any case as a 3 channels image (RGB)
-			img = new uint8[img_width * img_height * (nchannels+1)]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 3);
+			img = new uint8[img_width * img_height * (nchannels+1) * (img_depth/8)]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 3);
 			int img_data_step = img_width * (nchannels+1); 
-			for(int i = 0; i <img_height; i++)
+			if(img_depth == 8)
 			{
-				uint8* row_data_8bit = img + i*img_data_step;
-				for(int j1 = 0, j2 = start_width; j1 < img_width*3; j1+=3, j2++)
+				for(int i = 0; i <img_height; i++)
 				{
-					row_data_8bit[j1  ] = raw_ch1[(i+start_height)*raw_img_width + j2];
-					row_data_8bit[j1+1] = raw_ch2[(i+start_height)*raw_img_width + j2];
-					row_data_8bit[j1+2] = 0;
+					uint8* row_data_8bit = img + i*img_data_step;
+					for(int j1 = 0, j2 = start_width; j1 < img_width*3; j1+=3, j2++)
+					{
+						row_data_8bit[j1  ] = raw_ch1[(i+start_height)*raw_img_width + j2];
+						row_data_8bit[j1+1] = raw_ch2[(i+start_height)*raw_img_width + j2];
+						row_data_8bit[j1+2] = 0;
+					}
+				}
+			}
+			else // img->depth == 16
+			{
+				for(int i = 0; i <img_height; i++)
+				{
+					uint16* row_data_16bit = ((uint16*)img) + i*img_data_step;
+					for(int j1 = 0, j2 = start_width; j1 < img_width*3; j1+=3, j2++) {
+						// row_data_16bit[j] = (uint16) (raw_ch1[(i+start_height)*raw_img_width+j+start_width] * scale_factor_16b); // conversion is not supported yet
+						row_data_16bit[j1  ] = ((uint16 *) raw_ch1)[(i+start_height)*raw_img_width+j2];
+						row_data_16bit[j1+1] = ((uint16 *) raw_ch2)[(i+start_height)*raw_img_width+j2];
+						row_data_16bit[j1+2] = 0;
+					}
 				}
 			}
 		}
 		else if(nchannels == 1) // source and destination depths are guarenteed to be the same
 		{
 			img = new uint8[img_width * img_height * nchannels * (img_depth/8)]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), (img_depth == 8 ? IPL_DEPTH_8U : IPL_DEPTH_16U), 1);
+			int img_data_step = img_width * nchannels;
 			//float scale_factor_16b = 65535.0F/255; // conversion is not supported yet
 			if(img_depth == 8)
 			{
-				int img_data_step = img_width * nchannels;
 				for(int i = 0; i <img_height; i++)
 				{
 					uint8* row_data_8bit = img + i*img_data_step;
@@ -320,7 +353,6 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
 			{
 				//int img_data_step = img_width * nchannels * 2;
 				// 2016-04-15. Giulio. @FIXED offset is applied to uint16 pointers: is must not be doubled
-				int img_data_step = img_width * nchannels;
 				for(int i = 0; i <img_height; i++)
 				{
 					uint16* row_data_16bit = ((uint16*)img) + i*img_data_step;
