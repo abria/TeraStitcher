@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-17. Giulio.     @ADDED the possibility to generate an IMS file with default metadata
 * 2017-04-09. Giulio.     @ADDED the ability to convert a subset of channels
 * 2017-04-08. Giulio.     @ADDED support for additional attributes required by the IMS format
 * 2017-04-01. Giulio.     @FIXED some error messages
@@ -3963,14 +3964,22 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 	memset(thumbnail_buf,0,total_size*sizeof(iim::uint8));
 
 	// get metadata to be transferred to image to be generated
-	IMS_HDF5init(metadata_file,file_descr);
-	void *olist = IMS_HDF5get_olist(file_descr);
-	void *rootalist = IMS_HDF5get_rootalist(file_descr);
-	IMS_HDF5close(file_descr);
+	void *olist;
+	void *rootalist;
+	if ( metadata_file == "default" || metadata_file == "null" ) {
+		olist = IMS_HDF5get_olist((void *)0,channels,1); // assumes 1 timepoint
+		rootalist = IMS_HDF5get_rootalist((void *)0);
+	}
+	else {
+		IMS_HDF5init(metadata_file,file_descr,true);
+		olist = IMS_HDF5get_olist(file_descr);
+		rootalist = IMS_HDF5get_rootalist(file_descr);
+		IMS_HDF5close(file_descr);
+	}
 
 
 	// create output file with acquisition metadata
-	IMS_HDF5init(output_path,file_descr,volume->getBYTESxCHAN(),olist,rootalist); // set the same voxel size of the file containaing metadata 
+	IMS_HDF5init(output_path,file_descr,false,volume->getBYTESxCHAN(),olist,rootalist); // set the same voxel size of the file containaing metadata 
  	olist     = (void *) 0;
  	rootalist = (void *) 0;
 

@@ -25,7 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2016-04-27 Pierangelo.      @CREATED
+* 2017-04-17. Giulio.          @ADDED check on the number of channels returned by internal volume
+* 2016-04-27. Pierangelo.      @CREATED
 */
 
 #include <iostream>
@@ -365,6 +366,12 @@ iim::uint8* MappedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, 
 
 	// NOTE: buffers are filled with volume data in the order H first, then V, then D
 	iim::uint8 *tempbuf = volume->loadSubvolume_to_UINT8(V0,V1,H0,H1,D0,D1,channels,ret_type); // buffer containing feature volume
+	
+	if ( n_active != *channels ) {
+		char msg[STATIC_STRINGS_SIZE];
+		sprintf(msg,"in MappedVolume::loadSubvolume_to_UINT8(...): mismatch between requested channels (%d) and returned channels from internal volume (%d)",n_active,*channels);
+		throw IOException(msg);
+	}
 
 	// reset all channels of volume as active
 	set_active = new iim::uint32[DIM_C];

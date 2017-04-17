@@ -26,6 +26,8 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2017-04-17. Giulio. @ADDED generation of a default file structure 
+* 2017-04-17. Giulio. @ADDED in 'IMS_HDF5init' file structure is extracted only upon request
 * 2017-04-09. Giulio. @FIXED include the correct header file 'IMS_HDF5Mngr.h'
 * 2017-04-08. Giulio. @ADDED support for additional attributes required by the IMS format
 * 2016-10-27. Giulio. @FIXED n_slices had been initialized to NULL pointers
@@ -162,6 +164,70 @@ struct IMS_obj_info_t {
 };
 
 
+// return a standard list of attributed of root object
+IMS_attr_list_t *build_std_rootattributes ( ) {
+
+	IMS_attr_list_t *alist = new IMS_attr_list_t;
+
+	alist->insert(std::make_pair("DataSetDirectoryName","DataSet"));
+	alist->insert(std::make_pair("DataSetInfoDirectoryName","DataSetInfo"));
+	alist->insert(std::make_pair("ThimbnailDirectoryName","Thimbnail"));
+	alist->insert(std::make_pair("ImarsiDataSet","ImarsiDataSet"));
+	alist->insert(std::make_pair("FormatVersion","5.5.0"));
+
+	return alist;
+}
+
+
+// return a standard IMS file structure
+IMS_obj_list_t *build_std_filestruct ( int n_chans = 1, int n_timepoints = 1 ) {
+
+	IMS_obj_list_t *olist;
+	IMS_attr_list_t *alist;
+	char num_str[10];
+
+	IMS_obj_list_t *rootlist = new IMS_obj_list_t;
+
+	rootlist->insert(std::make_pair("DataSet",IMS_obj_info_t(H5G_GROUP,new IMS_obj_list_t,new IMS_attr_list_t)));
+
+	olist = new IMS_obj_list_t; // DataSetInfo list
+
+	alist = new IMS_attr_list_t; // ImarisDataSet attribute info list
+	alist->insert(std::make_pair("Creator",""));
+	alist->insert(std::make_pair("NumberOfImages","1"));
+	alist->insert(std::make_pair("Version","5.5"));
+	olist->insert(std::make_pair("ImarisDataSet",IMS_obj_info_t(H5G_GROUP,new IMS_obj_list_t,alist)));
+
+	alist = new IMS_attr_list_t; // Image attribute info list
+	alist->insert(std::make_pair("Description",""));
+	alist->insert(std::make_pair("Name",""));
+	alist->insert(std::make_pair("RecordingDate",""));
+	alist->insert(std::make_pair("Unit","um"));
+	olist->insert(std::make_pair("Image",IMS_obj_info_t(H5G_GROUP,new IMS_obj_list_t,alist)));
+
+	for ( int c=0; c<n_chans; c++ ) {
+		alist = new IMS_attr_list_t; // ChannelX attribute info list
+		alist->insert(std::make_pair("Description",""));
+		alist->insert(std::make_pair("Name",""));
+		sprintf(num_str,"%u",c);
+		olist->insert(std::make_pair("Channel " + std::string(num_str),IMS_obj_info_t(H5G_GROUP,new IMS_obj_list_t,alist)));
+	}
+
+	alist = new IMS_attr_list_t; // TimeInfo attribute info list
+	alist->insert(std::make_pair("DataSetTimePoints","1"));
+	alist->insert(std::make_pair("FileTimePoints","1"));
+	sprintf(num_str,"%u",n_timepoints);
+	alist->insert(std::make_pair("TimePoints",std::string(num_str)));
+	olist->insert(std::make_pair("TimeInfo",IMS_obj_info_t(H5G_GROUP,new IMS_obj_list_t,alist)));
+
+	rootlist->insert(std::make_pair("DataSetInfo",IMS_obj_info_t(H5G_GROUP,olist,new IMS_attr_list_t)));
+
+	rootlist->insert(std::make_pair("Thumbnail",IMS_obj_info_t(H5G_GROUP,new IMS_obj_list_t,new IMS_attr_list_t)));
+
+	return rootlist;
+}
+
+
 // return the list of attributed of object obj
 IMS_attr_list_t *get_attr_list ( hid_t obj ) {
 
@@ -198,7 +264,7 @@ IMS_attr_list_t *get_attr_list ( hid_t obj ) {
 	return alist;
 }
 
-// return the list of attributed of object obj
+// return the list of attributed of root object
 IMS_attr_list_t *get_root_attributes ( hid_t root ) {
 
 	herr_t status;
@@ -405,7 +471,7 @@ public:
 	IMS_HDF5_fdescr_t ( );
 	/* default constructor: returns and empty descriptor */
 
-	IMS_HDF5_fdescr_t ( const char *_fname, int _vxl_nbytes = 2, IMS_obj_list_t *obj_info = (IMS_obj_list_t *)0, 
+	IMS_HDF5_fdescr_t ( const char *_fname, bool loadstruct = false, int _vxl_nbytes = 2, IMS_obj_list_t *obj_info = (IMS_obj_list_t *)0, 
 		IMS_attr_list_t *root_attr_info = (IMS_attr_list_t *)0, int maxstp = MAXSTP, int maxres = MAXRES, int maxtps = MAXTPS );
 	/*  */
 
@@ -510,7 +576,7 @@ IMS_HDF5_fdescr_t::IMS_HDF5_fdescr_t ( ) {
 }
 
 
-IMS_HDF5_fdescr_t::IMS_HDF5_fdescr_t ( const char *_fname, int _vxl_nbytes, IMS_obj_list_t *obj_info, IMS_attr_list_t *root_attr_info, int maxstp, int maxres, int maxtps ) {
+IMS_HDF5_fdescr_t::IMS_HDF5_fdescr_t ( const char *_fname, bool loadstruct, int _vxl_nbytes, IMS_obj_list_t *obj_info, IMS_attr_list_t *root_attr_info, int maxstp, int maxres, int maxtps ) {
 	if ( !iim::isFile(_fname) ) { // non existing file: create it empty
 	//if ( (file_id = H5Fopen(_fname, H5F_ACC_RDWR, H5P_DEFAULT)) < 0 ) { // non existing file: create it empty
 
@@ -546,8 +612,8 @@ IMS_HDF5_fdescr_t::IMS_HDF5_fdescr_t ( const char *_fname, int _vxl_nbytes, IMS_
 		thumbnail_sz = 0;
 		creating     = true;
 
-		if ( !obj_info )
-			throw iim::IOException(iim::strprintf("the file %s has to be created: a structure description must be passed ",_fname).c_str(),__iim__current__function__);
+		if ( !obj_info || !root_attr_info )
+			throw iim::IOException(iim::strprintf("the file %s has to be created: a structure description and a root attribute list must be passed ",_fname).c_str(),__iim__current__function__);
 
 		herr_t status;
 
@@ -584,8 +650,15 @@ IMS_HDF5_fdescr_t::IMS_HDF5_fdescr_t ( const char *_fname, int _vxl_nbytes, IMS_
 		chunk_dims = (subdvsns_t *) 0;	
 		scan_root();
 
-		olist = getOLIST();
-		rootalist = getROOTALIST();
+		if ( loadstruct ) {
+			olist = getOLIST();
+			rootalist = getROOTALIST();
+		}
+		else {
+			olist = (IMS_obj_list_t *) 0;
+			rootalist = (IMS_attr_list_t *) 0;
+		}
+
 
 		hist         = (histogram_t ***)0;
 		thumbnail    = (iim::uint8 *) 0;
@@ -891,7 +964,7 @@ int IMS_HDF5_fdescr_t::addResolution ( int r, hsize_t dimV, hsize_t dimH, hsize_
 
 	// set /DataSetInfo/Image attributes if not yet defined
 	grpid = H5Gopen(file_id,"/DataSetInfo/Image",H5P_DEFAULT);
-	hid_t aid;
+	//hid_t aid;
 
 	// according to HDF5 reference if the attributes already exist the attempt to create them leave things unchanged
 	//if ( (aid = H5Aopen(grpid,"ExtMax0",H5P_DEFAULT)) < 0 ) {
@@ -1686,6 +1759,8 @@ herr_t IMS_HDF5_fdescr_t::addFinalInfo ( ) {
 	hid_t cparms;
 	hid_t dataset_id;
 
+	char num_str[64]; // num to string conversion
+
 	herr_t status;
 
 	if ( !creating )
@@ -1696,6 +1771,12 @@ herr_t IMS_HDF5_fdescr_t::addFinalInfo ( ) {
 			for ( int t=0; t<n_timepoints; t++ ) {
 				getDATASETS_ID(t,r,false);
 				for ( int c=0; c<n_chans; c++ ) {
+					/* add histogram attributes to channel group */
+					sprintf(num_str,"%.2f",(double)hist[r][t][c].hmax);
+					create_string_attribute(chan_groups_id[c],"HistogramMax",std::string(num_str).c_str());
+					sprintf(num_str,"%.2f",(double)hist[r][t][c].hmin);
+					create_string_attribute(chan_groups_id[c],"HistogramMin",std::string(num_str).c_str());
+
 					/* Create the data space for the Data datasets. */
 					dims[0] = hist[r][t][c].hlen;
 					dataspace_id = H5Screate_simple(1, dims, maxdims);
@@ -1769,9 +1850,9 @@ herr_t IMS_HDF5_fdescr_t::addFinalInfo ( ) {
 * HDF5 Manager implementation
 ****************************************************************************/
 
-void IMS_HDF5init ( std::string fname, void *&descr, int vxl_nbytes, void *obj_info, void *root_attr_info ) throw (iim::IOException) {
+void IMS_HDF5init ( std::string fname, void *&descr, bool loadstruct, int vxl_nbytes, void *obj_info, void *root_attr_info ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
-	IMS_HDF5_fdescr_t *int_descr = new IMS_HDF5_fdescr_t(fname.c_str(),vxl_nbytes,(IMS_obj_list_t *)obj_info,(IMS_attr_list_t *)root_attr_info);
+	IMS_HDF5_fdescr_t *int_descr = new IMS_HDF5_fdescr_t(fname.c_str(),loadstruct,vxl_nbytes,(IMS_obj_list_t *)obj_info,(IMS_attr_list_t *)root_attr_info);
 	descr = int_descr;
 #else
 	throw iim::IOException(iim::strprintf(
@@ -1780,9 +1861,12 @@ void IMS_HDF5init ( std::string fname, void *&descr, int vxl_nbytes, void *obj_i
 #endif
 }
 
-void *IMS_HDF5get_olist ( void *descr ) throw (iim::IOException) {
+void *IMS_HDF5get_olist ( void *descr, int n_chans, int n_timepoints ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
-	return ((IMS_HDF5_fdescr_t *) descr)->extractOLIST();
+	if ( descr )
+		return ((IMS_HDF5_fdescr_t *) descr)->extractOLIST();
+	else
+		return (void *) build_std_filestruct(n_chans,n_timepoints);
 #else
 	throw iim::IOException(iim::strprintf(
 			"Support to IMS_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "
@@ -1792,7 +1876,10 @@ void *IMS_HDF5get_olist ( void *descr ) throw (iim::IOException) {
 
 void *IMS_HDF5get_rootalist ( void *descr ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
-	return ((IMS_HDF5_fdescr_t *) descr)->extractROOTALIST();
+	if ( descr )
+		return ((IMS_HDF5_fdescr_t *) descr)->extractROOTALIST();
+	else
+		return (void *) build_std_rootattributes();
 #else
 	throw iim::IOException(iim::strprintf(
 			"Support to IMS_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "

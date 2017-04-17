@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-17. Giulio.     @ADDED the generation of IMS files with default metadata
 * 2017-04-07. Giulio.     @ADDED ability to return a selected channel instead of all channels
 * 2016-10-27. Giulio.     @ADDED routines for extracting additional parameters
 * 2016-10-16. Giulio.     @CREATED
@@ -261,14 +262,25 @@ throw (iom::exception)
 	strncpy(src_value,sPtr,sLen);
 	src_value[sLen] = '\0';
 
-	IMS_HDF5init(src_value,file_descr);
+	void *olist;
+	void *rootalist;
+	if ( strcmp(src_value,"default") == 0 || strcmp(src_value,"null") == 0 ) {
+		olist = IMS_HDF5get_olist((void *)0,img_chans,1); // assumes 1 timepoint
+		rootalist = IMS_HDF5get_rootalist((void *)0);
+	}
+	else {
+		IMS_HDF5init(src_value,file_descr,true);
+		olist = IMS_HDF5get_olist(file_descr);
+		rootalist = IMS_HDF5get_rootalist(file_descr);
+		IMS_HDF5close(file_descr);
+	}
 
-	void *olist = IMS_HDF5get_olist(file_descr);
+	olist = IMS_HDF5get_olist(file_descr);
 	IMS_HDF5close(file_descr);
 
 	delete src_value;
 
-	IMS_HDF5init(img_path,file_descr,img_bytes_x_chan,olist);
+	IMS_HDF5init(img_path,file_descr,false,img_bytes_x_chan,olist);
 	olist = (void *) 0;
 
 	// set the resolutions

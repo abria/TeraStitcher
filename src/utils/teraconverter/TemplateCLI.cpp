@@ -318,7 +318,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	}
 
 	if ( (p_dst_format.getValue() == iim::IMS_HDF5_FORMAT) && (p_mdata_fname.getValue() == "") ) {
-		sprintf(errMsg, "With IMS_HDF5 output formats the metadata file name must be specified");
+		sprintf(errMsg, "With IMS_HDF5 output formats the metadata file name must be specified or explicitly set to 'null'");
 		throw iom::exception(errMsg);
 	}
 

@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2017-04-17. Giulio. @CHENGED 'IMS_HDF5init' interface to extract file structure only upon request
 * 2017-04-08. Giulio. @ADDED support for additional attributes required by the IMS format
 * 2015-12-29. Giulio. @ADDED red_factor parameter to 'IMS_HDF5getSubVolume'
 * 2015-11-17. Giulio. @CREATED 
@@ -88,7 +89,7 @@ struct histogram_t {
 
 
 
-void IMS_HDF5init ( std::string fname, void *&descr, int vxl_nbytes = 1, void *obj_info = (void *)0, void *root_attr_info = (void *)0  ) throw (iim::IOException);
+void IMS_HDF5init ( std::string fname, void *&descr, bool loadstruct = false, int vxl_nbytes = 1, void *obj_info = (void *)0, void *root_attr_info = (void *)0  ) throw (iim::IOException);
 /* opens or creates an HDF5 file fname according to the BigDataViewer format and returns an opaque descriptor
  *
  * fname:      HDF5 filename
@@ -98,12 +99,12 @@ void IMS_HDF5init ( std::string fname, void *&descr, int vxl_nbytes = 1, void *o
  *             file to be created; the description is deallocated after it is used and cannot be used by the caller
  */
  
- void *IMS_HDF5get_olist ( void *descr ) throw (iim::IOException);
+ void *IMS_HDF5get_olist ( void *descr, int n_chans = 1 , int n_timepoints = 1 ) throw (iim::IOException);
 /* 
  */
 
  void *IMS_HDF5get_rootalist ( void *descr ) throw (iim::IOException);
-/* 
+/*
  */
 
  int IMS_HDF5n_resolutions ( void *descr ) throw (iim::IOException);
