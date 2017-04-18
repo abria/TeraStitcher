@@ -25,6 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+
+* 2017-04-18. Alessandro. @ADDED setSrcVolume that directly takes vm::VirtualVolume in input, and added 'volume_external' attribute
 * 2017-04-09. Giulio.     @ADDED the ability to convert a subset of channels
 * 2017-01-22. Giulio      @ADDED parameter for standard block depth for efficiency reasons
 * 2016-10-09. Giulio.     @ADDED parameter 'ch_dir' to 'generateTilesVaa3DRawMC' interface
@@ -96,8 +98,9 @@ class VolumeConverter
 	private:
 
 		/******OBJECT MEMBERS******/
-        iim::VirtualVolume *volume;           //pointer to the <EmptyVolume> object to be stitched
-		int V0, V1, H0, H1, D0, D1;				//voxel intervals that identify the final stitched volume
+        iim::VirtualVolume *volume;             // pointer to the <EmptyVolume> object to be stitched
+		bool volume_external;				    // whether 'volume' has been provided by an external caller (in which case it must not be deallocated / modified)
+		int V0, V1, H0, H1, D0, D1;				// voxel intervals that identify the final stitched volume
         int ROW_START, COL_START, ROW_END, COL_END;             //stack indexes that identify the stacks involved in stitching
 
 		int internal_rep; // internal representation of pixels: 
@@ -140,6 +143,12 @@ class VolumeConverter
         void setSrcVolume(const char* _root_dir, const char* _fmt = iim::STACKED_FORMAT.c_str(),
                           const char* _out_fmt = REAL_REPRESENTATION, bool time_series = false, 
 						  int downsamplingFactor = 1, std::string chanlist = "", int _res = 0, int _timepoint = 0) throw (iim::IOException, iom::exception);
+
+		// additional setSrcVolume @ADDED by Alessandro on 2014-04-18: takes an external vm::VirtualVolume in input
+		void setSrcVolume(iim::VirtualVolume * _imported_volume,
+			const char* _out_fmt = REAL_REPRESENTATION, bool time_series = false, 
+			int downsamplingFactor = 1, std::string chanlist = "", int _res = 0, int _timepoint = 0) throw (iim::IOException, iom::exception);
+
 
 		/*************************************************************************************************************
 		* Method to set the subvolume to be converted

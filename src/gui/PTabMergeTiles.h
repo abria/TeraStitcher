@@ -67,13 +67,11 @@ class terastitcher::PTabMergeTiles : public QWidget
     QLabel* resolutions_label;
     QLabel* resolutions_size_label;
     QLabel* resolutions_save_label;
-    QLabel* resolutions_view_label;
     QLabel* outputs_label;
     QLabel* resolutions_fields[S_MAX_MULTIRES];
     QLabel* resolutions_sizes[S_MAX_MULTIRES];
     QButtonGroup* resolutions_save_selection;
-    QCheckBox* resolutions_save_cboxs[S_MAX_MULTIRES];
-    QCheckBox* resolutions_view_cboxs[S_MAX_MULTIRES];
+	QCheckBox* resolutions_save_cboxs[S_MAX_MULTIRES];
     QButtonGroup* volumeformat_selection;
     QLabel* volumeformat_label;
     QComboBox* vol_format_cbox;
@@ -82,20 +80,18 @@ class terastitcher::PTabMergeTiles : public QWidget
     QSpinBox* block_depth_field;
     QLineEdit* memocc_field;
     QPushButton* showAdvancedButton;
+	QCheckBox *libtiff_uncompressed_checkbox;
+	QCheckBox *libtiff_bigtiff_checkbox;
+
 
     //advanced settings panel widgets
     QWidget* advanced_panel;
-    QLabel* volumeportion_label;
-    QSpinBox *row0_field, *row1_field, *col0_field, *col1_field;
-    QSpinBox *slice0_field, *slice1_field;
-    QCheckBox* excludenonstitchables_cbox;
+    QSpinBox *y0_field, *y1_field, *x0_field, *x1_field;
+    QSpinBox *z0_field, *z1_field;
     QLabel* blendingalgo_label;
     QComboBox* blendingalbo_cbox;
     QLabel* restoreSPIM_label;
     QComboBox* restoreSPIM_cbox;
-    QLabel* imgformat_label;
-    QComboBox* img_format_cbox;
-    QComboBox* imout_plugin_cbox;
     QComboBox* imgdepth_cbox;
     QComboBox* channel_selection;
 
@@ -152,8 +148,6 @@ public:
 
 public slots:
 
-
-
     /**********************************************************************************
     * Opens the dialog to select the directory where the stitched volume has to be saved.
     * Called when user clicks on "browse_button".
@@ -161,36 +155,9 @@ public slots:
     void browse_button_clicked();
 
     /**********************************************************************************
-    * Called when <excludenonstitchables_cbox> combobox state changed.
-    * Inferior and superior limits of spinboxes are recomputed.
-    ***********************************************************************************/
-    void excludenonstitchables_changed();
-
-    /**********************************************************************************
-    * Called when <row0_field>, <row1_field>, <col0_field> or <col1_field> changed.
-    * Inferior and superior limits of <slice_[]_cbox> spinboxes are recomputed.
-    ***********************************************************************************/
-    void stacksinterval_changed();
-
-    /**********************************************************************************
     * Called when <multistack_cbox> or <multistack_cbox> state changed.
     ***********************************************************************************/
     void volumeformat_changed(QString);
-
-    /**********************************************************************************
-    * Called when <imout_plugin_cbox> state changed
-    ***********************************************************************************/
-    void imout_plugin_changed(QString);
-
-    /**********************************************************************************
-    * Called when <resolutions_view_cboxs[i]> changed
-    ***********************************************************************************/
-    void viewinVaa3D_changed(int checked);
-
-    /**********************************************************************************
-    * Called when <resolutions_save_cboxs[i]> changed
-    ***********************************************************************************/
-    void save_changed(int checked);
 
     /**********************************************************************************
     * Updates widgets contents
@@ -206,12 +173,12 @@ public slots:
     * Called when the corresponding spinboxes changed.
     * New maximum/minimum values are set according to the status of spinboxes.
     ***********************************************************************************/
-    void row0_field_changed(int val);
-    void row1_field_changed(int val);
-    void col0_field_changed(int val);
-    void col1_field_changed(int val);
-    void slice0_field_changed(int val);
-    void slice1_field_changed(int val);
+    void y0_field_changed(int val);
+    void y1_field_changed(int val);
+    void x0_field_changed(int val);
+    void x1_field_changed(int val);
+    void z0_field_changed(int val);
+    void z1_field_changed(int val);
 
     /**********************************************************************************
     * Called by <CMergeTiles> when the associated operation has been performed.

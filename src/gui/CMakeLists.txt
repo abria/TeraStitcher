@@ -1,9 +1,10 @@
 # add used modules to include path
-include_directories (${TeraStitcher_SOURCE_DIR}/iomanager)
 include_directories (${TeraStitcher_SOURCE_DIR}/imagemanager)
+include_directories (${TeraStitcher_SOURCE_DIR}/iomanager)
+include_directories (${TeraStitcher_SOURCE_DIR}/stitcher)
+include_directories (${TeraStitcher_SOURCE_DIR}/utils/volumeconverter)
 include_directories (${TeraStitcher_SOURCE_DIR}/volumemanager)
 include_directories (${TeraStitcher_SOURCE_DIR}/crossmips)
-include_directories (${TeraStitcher_SOURCE_DIR}/stitcher)
 include_directories (${TeraStitcher_SOURCE_DIR}/common)
 
 
@@ -74,6 +75,7 @@ if(WITH_QT4)
 endif()
 
 # link to internal dependencies
+target_link_libraries(terastitcher-gui volumeconverter )
 target_link_libraries(terastitcher-gui imagemanager )
 target_link_libraries(terastitcher-gui iomanager )
 target_link_libraries(terastitcher-gui volumemanager )

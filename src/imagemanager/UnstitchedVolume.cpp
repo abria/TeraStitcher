@@ -95,7 +95,7 @@ UnstitchedVolume::UnstitchedVolume(void) : VirtualVolume()
 
 
 UnstitchedVolume::UnstitchedVolume(const char* _root_dir, bool cacheEnabled, int _blending_algo)  throw (IOException)
-: VirtualVolume(_root_dir) 
+: VirtualVolume(_root_dir), volume_external(false)
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir=%s", _root_dir).c_str(), __iim__current__function__);
 
@@ -204,6 +204,107 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir, bool cacheEnabled, int
 	cb = new iim::CacheBuffer(this);
 }
 
+// constructor 2 @ADDED by Alessandro on 2014-04-18: takes vm::VirtualVolume in input
+UnstitchedVolume::UnstitchedVolume(vm::VirtualVolume * _imported_volume, bool cacheEnabled, int _blending_algo)  throw (iim::IOException)
+	: VirtualVolume(_imported_volume->getSTACKS_DIR()), volume(_imported_volume), volume_external(true) 
+{
+	/**/iim::debug(iim::LEV3, strprintf("_root_dir=%s", volume->getSTACKS_DIR()).c_str(), __iim__current__function__);
+
+	// 2014-09-29. Alessandro. @ADDED automated selection of IO plugin if not provided.
+	if(iom::IMIN_PLUGIN.compare("empty") == 0)
+	{
+		if(dynamic_cast<vm::StackedVolume*>(volume))
+			iom::IMIN_PLUGIN = "tiff2D";
+		else if(dynamic_cast<vm::BlockVolume*>(volume))
+			iom::IMIN_PLUGIN = "tiff3D";
+	}
+
+	bool flag = false;
+	try{
+		plugin_type = "3D image-based I/O plugin";
+		flag = iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->desc().find(plugin_type) != std::string::npos;
+	}
+	catch (...) {
+		plugin_type = "2D image-based I/O plugin";
+		flag = iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->desc().find(plugin_type) != std::string::npos;
+	}
+	if ( !flag )
+		throw iim::IOException(iom::strprintf("cannot determine the type of the input plugin"), __iom__current__function__);
+
+	
+
+	stitcher = new StackStitcher(volume);
+
+	reference_system.first  = (iim::axis(volume->getREF_SYS().first));
+	reference_system.second = (iim::axis(volume->getREF_SYS().second));
+	reference_system.third  = (iim::axis(volume->getREF_SYS().third));
+
+	VXL_V = volume->getVXL_V();
+	VXL_H = volume->getVXL_H();
+	VXL_D = volume->getVXL_D();
+
+	// these must be corrected after the real size od the stitched volume have been computed
+	ORG_V = volume->getORG_V();
+	ORG_H = volume->getORG_H();
+	ORG_D = volume->getORG_D();
+
+	DIM_C = volume->getDIM_C();
+	BYTESxCHAN = volume->getBYTESxCHAN();
+
+	// @FIXED by Alessandro on 2016-12-15. Convert iom::exception to iim::IOException (the only ones this function can throw)
+	try
+	{
+		if ( (plugin_type.compare("3D image-based I/O plugin") == 0) ?
+			iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() :
+			iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved() ) {
+				if ( DIM_C > 3 || BYTESxCHAN > 2 )
+					throw iim::IOException(iom::strprintf("image not supported by UnstitchedVolume (DIM_C=%d, BYTESxCHAN=%d)", DIM_C, BYTESxCHAN), __iom__current__function__);
+		}
+		else { // if channels are not interleaved more than 3 channels are possible
+			if ( BYTESxCHAN > 2 )
+				throw iim::IOException(iom::strprintf("image not supported by UnstitchedVolume (BYTESxCHAN=%d)", BYTESxCHAN), __iom__current__function__);
+		}
+	}
+	catch(iom::exception & ex)
+	{
+		throw iim::IOException(ex.what());
+	}
+
+	active = (iim::uint32 *) new iim::uint32[DIM_C];
+	n_active = DIM_C;
+	for ( int i=0; i<DIM_C; i++ )
+		active[i] = i;
+
+	current_channel = -1;
+	internal_buffer_deallocate = true;
+
+	t0 = t1 = 0;
+	DIM_T = 1;
+
+	stitcher->computeVolumeDims(false); // set index limits of unstitched volume
+
+	// 2016-03-23. Giulio.     @ADDED offsets of unstitched volume with respect to nominal origin (0,0,0) 
+	V0_offs = stitcher->V0; // may be negative and must be subtracted to map indices of unstitched volume (that may start from a negative value) to indices of stitched volume (starting from 0)
+	H0_offs = stitcher->H0; // may be negative and must be subtracted to map indices of unstitched volume (that may start from a negative value) to indices of stitched volume (starting from 0)
+	D0_offs = stitcher->D0; // may be positive and must be subtracted to map indices of unstitched volume (that may start from a positive value) to indices of stitched volume (starting from 0)
+
+	// correct origin coordinates of the stitched volume
+	ORG_V += V0_offs * VXL_V;
+	ORG_H += H0_offs * VXL_H;
+	ORG_D += D0_offs * VXL_D;
+
+	blending_algo = _blending_algo;
+
+	DIM_V = stitcher->V1 - stitcher->V0;
+	DIM_H = stitcher->H1 - stitcher->H0;
+	DIM_D = stitcher->D1 - stitcher->D0;
+
+	stripesCoords = new stripe_2Dcoords[volume->getN_ROWS()];
+	stripesCorners = new stripe_2Dcorners[volume->getN_ROWS()];
+
+	cb = new iim::CacheBuffer(this);
+}
+
 UnstitchedVolume::~UnstitchedVolume(void) throw (iim::IOException)
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
@@ -217,7 +318,7 @@ UnstitchedVolume::~UnstitchedVolume(void) throw (iim::IOException)
 	}
 	if ( stripesCoords )
 		delete stripesCoords;
-	if ( volume ) // stitcher does not deallocate its volume
+	if ( volume && !volume_external) // stitcher does not deallocate its volume
 		delete volume;
 	if ( stitcher )
 		delete stitcher;

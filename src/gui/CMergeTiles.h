@@ -35,6 +35,7 @@
 #include "StackStitcher.h"
 #include "CTeraStitcher.h"
 #include "PTabMergeTiles.h"
+#include "UnstitchedVolume.h"
 
 class terastitcher::CMergeTiles : public QThread
 {
@@ -47,7 +48,7 @@ class terastitcher::CMergeTiles : public QThread
         * instantiated by calling static method "istance(...)"
         **********************************************************************************/
         static CMergeTiles* uniqueInstance;
-        CMergeTiles() : QThread()
+        CMergeTiles() : QThread(), _unstitchedVolume(0)
         {
             #ifdef TSP_DEBUG
             printf("TeraStitcher plugin [thread %d] >> CMergeTiles created\n", this->thread()->currentThreadId());
@@ -62,13 +63,15 @@ class terastitcher::CMergeTiles : public QThread
         //members
         PTabMergeTiles* pMergeTiles;
         bool resolutions[S_MAX_MULTIRES];
-        int resolution_index_vaa3D;
+
+		// volume that has to be stitched
+		UnstitchedVolume * _unstitchedVolume;
 
     public:
 
         /*********************************************************************************
         * Singleton design pattern: this class can have one instance only,  which must be
-        * instantiated by calling static method "istance(...)"
+        * instantiated by calling static method "instance(...)"
         **********************************************************************************/
         static CMergeTiles* instance()
         {
@@ -79,11 +82,14 @@ class terastitcher::CMergeTiles : public QThread
         static void uninstance();
         ~CMergeTiles();
 
+		// get methods
+		UnstitchedVolume* unstitchedVolume() throw (iim::IOException);
+
+		// set methods
         void setPMergeTiles(PTabMergeTiles* handle){pMergeTiles = handle;}
         void setResolution(int index, bool enabled){resolutions[index] = enabled;}
-        void setResolutionToShow(int index);
 
-        //reset method
+        // reset method
         void reset();
 
     signals:

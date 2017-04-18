@@ -34,6 +34,8 @@
 #include "ProgressBar.h"
 #include "IM_config.h"
 #include "vmBlockVolume.h"
+#include "Tiff3DMngr.h"
+#include "VolumeConverter.h"
 
 using namespace terastitcher;
 
@@ -55,6 +57,24 @@ CMergeTiles::~CMergeTiles()
     #endif
 }
 
+UnstitchedVolume* CMergeTiles::unstitchedVolume() throw (iim::IOException)
+{
+	try
+	{
+		if(!_unstitchedVolume)
+			_unstitchedVolume = new UnstitchedVolume(CImportUnstitched::instance()->getVolume());
+		return _unstitchedVolume;
+	}
+	catch (iim::IOException & e)
+	{
+		throw e;
+	}
+	catch(...)
+	{
+		throw iim::IOException("Unhandled exception in CMergeTiles::unstitchedVolume()");
+	}
+}
+
 //automatically called when current thread is started
 void CMergeTiles::run()
 {
@@ -69,50 +89,210 @@ void CMergeTiles::run()
         Image4DSimple* img = 0;
 #endif
 
-        //checking that a volume has been imported first
-        vm::VirtualVolume* volume = CImportUnstitched::instance()->getVolume();
-        if(!volume)
-            throw iom::exception("Unable to start this step. A volume must be properly imported first.");
+        // check preconditions
+        unstitchedVolume();
+		if(!pMergeTiles)
+			throw iim::IOException("in CMergeTiles::run(): invalid reference to GUI");
+
 #ifdef VAA3D_TERASTITCHER
         V3DPluginCallback* V3D_env = 0;
 #endif
         if(pMergeTiles != 0)
         {
-            // retrieve user's input
-            StackStitcher stitcher(volume);
-            int sliceheight =  pMergeTiles->block_height_field->value();
-            int slicewidth = pMergeTiles->block_width_field->value();
-            int slicedepth =pMergeTiles->block_depth_field->value();
-            bool restoreSPIM = pMergeTiles->restoreSPIM_cbox->currentIndex() != 0;
-            std::string volumedir = pMergeTiles->savedir_field->text().toStdString();
-            bool excludenonstitchables = pMergeTiles->excludenonstitchables_cbox->isChecked();
-            int row0 = pMergeTiles->row0_field->value();
-            int row1 = pMergeTiles->row1_field->value();
-            int col0 = pMergeTiles->col0_field->value();
-            int col1 = pMergeTiles->col1_field->value();
-            int slice0 = pMergeTiles->slice0_field->value();
-            int slice1 = pMergeTiles->slice1_field->value();
-            int restore_direction = pMergeTiles->restoreSPIM_cbox->currentIndex();
-            int blending_algo = pMergeTiles->blendingalbo_cbox->currentIndex();
-            std::string img_format = pMergeTiles->img_format_cbox->currentText().toStdString().c_str();
-            int img_depth = pMergeTiles->imgdepth_cbox->currentText().section(" ", 0, 0).toInt();
-#ifdef VAA3D_TERASTITCHER
-            V3D_env = pMergeTiles->V3D_env;
-#endif
+			// set libtiff flags
+			setLibTIFFcfg(!pMergeTiles->libtiff_uncompressed_checkbox->isChecked(), pMergeTiles->libtiff_bigtiff_checkbox->isChecked());
 
-            // launch merging
-            if ( vm::VOLUME_OUTPUT_FORMAT_PLUGIN.compare(vm::BlockVolume::id)==0 )
-                stitcher.mergeTilesVaa3DRaw(volumedir, sliceheight, slicewidth, slicedepth, resolutions,excludenonstitchables, row0, row1, col0, col1,
-                                    slice0, slice1+1,restoreSPIM,restore_direction, blending_algo, HALVE_BY_MEAN, false, false, true, img_format.c_str(), img_depth, false );
-            else if ( vm::VOLUME_OUTPUT_FORMAT_PLUGIN.compare(vm::StackedVolume::id)==0 )
-                stitcher.mergeTiles(volumedir, sliceheight, slicewidth, resolutions,excludenonstitchables, row0, row1, col0, col1,
-                                    slice0, slice1+1,restoreSPIM,restore_direction, blending_algo, HALVE_BY_MEAN, false, true, img_format.c_str(), img_depth );
-            else
-                throw iom::exception(vm::strprintf("Unsupported output volume format plugin \"%s\"", vm::VOLUME_OUTPUT_FORMAT_PLUGIN.c_str()).c_str());
+			// get other info from GUI
+			int slice_height =  pMergeTiles->block_height_field->value();
+			int slice_width = pMergeTiles->block_width_field->value();
+			int slice_depth = pMergeTiles->block_depth_field->value();
+			int x0 = pMergeTiles->x0_field->value();
+			int x1 = pMergeTiles->x1_field->value()+1;
+			int y0 = pMergeTiles->y0_field->value();
+			int y1 = pMergeTiles->y1_field->value()+1;
+			int z0 = pMergeTiles->z0_field->value();
+			int z1 = pMergeTiles->z1_field->value()+1;
+			bool restoreSPIM = pMergeTiles->restoreSPIM_cbox->currentIndex() != 0;
+			std::string dst_root_dir = pMergeTiles->savedir_field->text().toStdString();
+			int restore_direction = pMergeTiles->restoreSPIM_cbox->currentIndex();
+			int blending_algo = pMergeTiles->blendingalbo_cbox->currentIndex();
+			int img_depth = pMergeTiles->imgdepth_cbox->currentText().section(" ", 0, 0).toInt();
+			std::string dst_format = pMergeTiles->vol_format_cbox->currentText().toStdString();
+			bool parallel = false;
+			bool isotropic = false;
+			bool show_progress_bar = true;
+			bool timeseries = false;
+			bool makeDirs = false;
+			bool metaData = false;
+			bool halving_method = HALVE_BY_MEAN;
+			std::string ch_dir = "";
+			std::string mdata_fname = "null";
+			std::string outFmt = "RGB";
 
-            // check that a volume with non-zero dimensions has been produced
-            if(stitcher.getV1()-stitcher.getV0() <= 0 || stitcher.getH1()-stitcher.getH0() <= 0 || stitcher.getD1()-stitcher.getD0() <= 0)
-                throw iom::exception("Empty volume selected");
+			// create volume converter
+			VolumeConverter vc;
+			vc.setSrcVolume(_unstitchedVolume, outFmt.c_str());
+			vc.setSubVolume(y0, y1, x0, x1, z0, z1);
+
+			if ( dst_format == iim::SIMPLE_RAW_FORMAT )
+			{
+					vc.generateTilesSimple(dst_root_dir.c_str(),resolutions,
+						slice_height,slice_width,halving_method,isotropic,
+						show_progress_bar,"raw",img_depth,"",parallel);
+			}
+			else if ( dst_format == iim::SIMPLE_FORMAT )
+				if ( timeseries ) {
+					vc.convertTo(dst_root_dir.c_str(),dst_format,img_depth,true,resolutions,
+						slice_height,slice_width,slice_depth,halving_method);
+				}
+				else if ( makeDirs ) {
+					vc.createDirectoryHierarchySimple(dst_root_dir.c_str(),resolutions,
+						slice_height,slice_width,-1,halving_method,isotropic,
+						show_progress_bar,"tif",img_depth,"",parallel);
+					// 				vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
+					// 					slice_height,slice_width,-1,halving_method,isotropic,
+					// 					show_progress_bar,"tif",img_depth,"",parallel);
+				}
+				else if ( metaData ) {
+					//vc.mdataGenerator(dst_root_dir.c_str(),resolutions,
+					//	slice_height,slice_width,-1,halving_method,isotropic,
+					//	show_progress_bar,"tif",img_depth,"",parallel);
+				}
+				else {
+					vc.generateTilesSimple(dst_root_dir.c_str(),resolutions,
+						slice_height,slice_width,halving_method,isotropic,
+						show_progress_bar,"tif",img_depth,"",parallel);
+				}
+			else if ( dst_format == iim::STACKED_RAW_FORMAT )
+				if ( timeseries ) {
+					vc.convertTo(dst_root_dir.c_str(),dst_format,img_depth,true,resolutions,
+						slice_height,slice_width,slice_depth,halving_method);
+				}
+				else if ( makeDirs ) {
+					vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
+						slice_height,slice_width,-1,halving_method,isotropic,
+						show_progress_bar,"raw",img_depth,"",parallel);
+				}
+				else if ( metaData ) {
+					vc.mdataGenerator(dst_root_dir.c_str(),ch_dir,resolutions,
+						slice_height,slice_width,-1,halving_method,isotropic,
+						show_progress_bar,"raw",img_depth,"",parallel);
+				}
+				else {
+					vc.generateTiles(dst_root_dir.c_str(),resolutions,
+						slice_height,slice_width,halving_method,isotropic,
+						show_progress_bar,"raw",img_depth,"",parallel);
+				}
+			else if ( dst_format == iim::STACKED_FORMAT )
+				if ( timeseries ) {
+					vc.convertTo(dst_root_dir.c_str(),dst_format,img_depth,true,resolutions,
+						slice_height,slice_width,slice_depth,halving_method);
+				}
+				else if ( makeDirs ) {
+					vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
+						slice_height,slice_width,-1,halving_method,isotropic,
+						show_progress_bar,"tif",img_depth,"",parallel);
+				}
+				else if ( metaData ) {
+					vc.mdataGenerator(dst_root_dir.c_str(),ch_dir,resolutions,
+						slice_height,slice_width,-1,halving_method,isotropic,
+						show_progress_bar,"tif",img_depth,"",parallel);
+				}
+				else {
+					vc.generateTiles(dst_root_dir.c_str(),resolutions,
+						slice_height,slice_width,halving_method,isotropic,
+						show_progress_bar,"tif",img_depth,"",parallel);
+				}
+			else if ( dst_format == iim::TILED_FORMAT ) {
+				if ( timeseries ) {
+					vc.convertTo(dst_root_dir.c_str(),dst_format,img_depth,true,resolutions,
+						slice_height,slice_width,slice_depth,halving_method);
+				}
+				else if ( makeDirs ) {
+					vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
+						slice_height,slice_width,slice_depth,halving_method,isotropic,
+						show_progress_bar,"Vaa3DRaw",img_depth,"",parallel);
+				}
+				else if ( metaData ) {
+					vc.mdataGenerator(dst_root_dir.c_str(),ch_dir,resolutions,
+						slice_height,slice_width,slice_depth,halving_method,isotropic,
+						show_progress_bar,"Vaa3DRaw",img_depth,"",parallel);
+				}
+				else {
+					vc.generateTilesVaa3DRaw(dst_root_dir.c_str(),resolutions,
+						slice_height,slice_width,slice_depth,halving_method,isotropic,
+						show_progress_bar,"Vaa3DRaw",img_depth,"",parallel);
+				}
+			}
+			else if ( dst_format == iim::TILED_TIF3D_FORMAT ) {
+				if ( timeseries ) {
+					vc.convertTo(dst_root_dir.c_str(),dst_format,img_depth,true,resolutions,
+						slice_height,slice_width,slice_depth,halving_method);
+				}
+				else if ( makeDirs ) {
+					vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
+						slice_height,slice_width,slice_depth,halving_method,isotropic,
+						show_progress_bar,"Tiff3D",img_depth,"",parallel);
+				}
+				else if ( metaData ) {
+					vc.mdataGenerator(dst_root_dir.c_str(),ch_dir,resolutions,
+						slice_height,slice_width,slice_depth,halving_method,isotropic,
+						show_progress_bar,"Tiff3D",img_depth,"",parallel);
+				}
+				else {
+					vc.generateTilesVaa3DRaw(dst_root_dir.c_str(),resolutions,
+						slice_height,slice_width,slice_depth,halving_method,isotropic,
+						show_progress_bar,"Tiff3D",img_depth,"",parallel);
+				}
+			}
+			else if ( dst_format == iim::TILED_MC_FORMAT )
+				if ( timeseries ) {
+					vc.convertTo(dst_root_dir.c_str(),dst_format,img_depth,true,resolutions,
+						slice_height,slice_width,slice_depth,halving_method);
+				}
+				else if ( makeDirs ) {
+					vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
+						slice_height,slice_width,slice_depth,halving_method,isotropic,
+						show_progress_bar,"Vaa3DRawMC",img_depth,"",parallel);
+				}
+				else if ( metaData ) {
+					vc.mdataGenerator(dst_root_dir.c_str(),ch_dir,resolutions,
+						slice_height,slice_width,slice_depth,halving_method,isotropic,
+						show_progress_bar,"Vaa3DRawMC",img_depth,"",parallel);
+				}
+				else {
+					vc.generateTilesVaa3DRawMC(dst_root_dir.c_str(),ch_dir,resolutions,
+						slice_height,slice_width,slice_depth,halving_method,isotropic,
+						show_progress_bar,"Vaa3DRaw",img_depth,"",false);
+				}
+			else if ( dst_format == iim::TILED_MC_TIF3D_FORMAT )
+				if ( timeseries ) {
+					vc.convertTo(dst_root_dir.c_str(),dst_format,img_depth,true,resolutions,
+						slice_height,slice_width,slice_depth,halving_method);
+				}
+				else if ( makeDirs ) {
+					vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
+						slice_height,slice_width,slice_depth,halving_method,isotropic,
+						show_progress_bar,"Tiff3DMC",img_depth,"",parallel);
+				}
+				else if ( metaData ) {
+					vc.mdataGenerator(dst_root_dir.c_str(),ch_dir,resolutions,
+						slice_height,slice_width,slice_depth,halving_method,isotropic,
+						show_progress_bar,"Tiff3DMC",img_depth,"",parallel);
+				}
+				else {
+					vc.generateTilesVaa3DRawMC(dst_root_dir.c_str(),ch_dir,resolutions,
+						slice_height,slice_width,slice_depth,halving_method,isotropic,
+						show_progress_bar,"Tiff3D",img_depth,"",parallel);
+				}
+			else if ( dst_format == iim::BDV_HDF5_FORMAT )
+				vc.generateTilesBDV_HDF5(dst_root_dir.c_str(),resolutions,
+				slice_height,slice_width,slice_depth,halving_method,
+				show_progress_bar,"Fiji_HDF5",img_depth);
+			else if ( dst_format == iim::IMS_HDF5_FORMAT )
+				vc.generateTilesIMS_HDF5(dst_root_dir.c_str(),mdata_fname,resolutions,
+				slice_height,slice_width,slice_depth,halving_method,
+				show_progress_bar,"Fiji_HDF5",img_depth);
 
             //if a resolution has be selected to be shown in Vaa3D, it is necessary to load each slice and to create a new Image4DSimple object
 #ifdef VAA3D_TERASTITCHER
@@ -214,15 +394,10 @@ void CMergeTiles::reset()
 
     for(int i=0; i<S_MAX_MULTIRES; i++)
         resolutions[i] = i==0;
-    resolution_index_vaa3D = -1;
     pMergeTiles = 0;
-}
-
-void CMergeTiles::setResolutionToShow(int index)
-{
-    #ifdef TSP_DEBUG
-    printf("TeraStitcher plugin [thread %d] >> CMergeTiles::setResolutionToShow(%d)\n", this->thread()->currentThreadId(), index);
-    #endif
-
-    resolution_index_vaa3D = index;
+	if(_unstitchedVolume)
+	{
+		delete _unstitchedVolume;
+		_unstitchedVolume = 0;
+	}
 }

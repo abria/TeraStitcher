@@ -31,7 +31,8 @@
 #include "PTabImport.h"
 #include "PTeraStitcher.h"
 #include "StackStitcher.h"
-#include "IM_config.h"
+#include "S_config.h"
+#include "VirtualVolume.h"
 
 using namespace terastitcher;
 

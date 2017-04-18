@@ -490,10 +490,10 @@ void PTabImport::voldir_button_clicked()
     //obtaining volume's directory
     //---- Alessandro 2013-05-20: obtaining volume's directory with QFileDialog instead of platform native file dialogs
     //                            since a strange behaviour has been shown by native file dialogs on MacOS X.
-    QFileDialog dialog(0);
+    QFileDialog dialog(this);
     dialog.setFileMode(QFileDialog::DirectoryOnly);
     dialog.setViewMode(QFileDialog::Detail);
-    dialog.setWindowFlags(Qt::WindowStaysOnTopHint);
+    //dialog.setWindowFlags(Qt::WindowStaysOnTopHint);
     dialog.setWindowTitle("Select volume's directory");
     dialog.setDirectory(QDir::currentPath());
     if(dialog.exec())
@@ -513,10 +513,10 @@ void PTabImport::projfile_button_clicked()
     //obtaining TeraStitcher XML project file
     //---- Alessandro 2013-05-20: obtaining volume's directory with QFileDialog instead of platform native file dialogs
     //                            since a strange behaviour has been shown by native file dialogs on MacOS X.
-    QFileDialog dialog(0);
+    QFileDialog dialog(this);
     dialog.setFileMode(QFileDialog::ExistingFile);
     dialog.setViewMode(QFileDialog::Detail);
-    dialog.setWindowFlags(Qt::WindowStaysOnTopHint);
+    //dialog.setWindowFlags(Qt::WindowStaysOnTopHint);
     dialog.setWindowTitle("Select TeraStitcher XML project file");
     dialog.setDirectory(QDir::currentPath());
     dialog.setNameFilter(tr("XML files (*.xml *.XML)"));

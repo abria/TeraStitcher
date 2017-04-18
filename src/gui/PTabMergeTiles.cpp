@@ -88,9 +88,6 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     resolutions_save_label = new QLabel("Save to disk");
     resolutions_save_label->setFont(smallFont);
     resolutions_save_label->setAlignment(Qt::AlignCenter);
-    resolutions_view_label = new QLabel("Open");
-    resolutions_view_label->setFont(smallFont);
-    resolutions_view_label->setAlignment(Qt::AlignCenter);
     outputs_label      = new QLabel("Outputs:");
     outputs_label->setAlignment(Qt::AlignVCenter);
     resolutions_save_selection = new QButtonGroup();
@@ -102,11 +99,9 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
         resolutions_sizes[i] = new QLabel();
         resolutions_sizes[i]->setAlignment(Qt::AlignCenter);
         resolutions_save_cboxs[i] = new QCheckBox("");
-        resolutions_save_cboxs[i]->setChecked(true);
+        resolutions_save_cboxs[i]->setChecked(i==0);
         resolutions_save_cboxs[i]->setStyleSheet("::indicator {subcontrol-position: center; subcontrol-origin: padding;}");
         resolutions_save_selection->addButton(resolutions_save_cboxs[i]);
-        resolutions_view_cboxs[i] = new QCheckBox("");
-        resolutions_view_cboxs[i]->setStyleSheet("::indicator {subcontrol-position: center; subcontrol-origin: padding;}");
     }
     volumeformat_label      = new QLabel("Format:");
     vol_format_cbox = new QComboBox();
@@ -114,28 +109,27 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     vol_format_cbox->setEditable(true);
     vol_format_cbox->lineEdit()->setReadOnly(true);
     vol_format_cbox->lineEdit()->setAlignment(Qt::AlignCenter);
-    vol_format_cbox->addItem("--- Volume format ---");
-    vol_format_cbox->addItem("2Dseries");
-    vol_format_cbox->addItem("3Dseries");
-    std::vector <std::string> volformats = vm::VirtualVolumeFactory::registeredPluginsList();
-    for(int i=0; i<volformats.size(); i++)
-        vol_format_cbox->addItem(volformats[i].c_str());
+	vol_format_cbox->addItem("--- Volume format ---");
+	vol_format_cbox->addItem(iim::SIMPLE_FORMAT.c_str());
+	vol_format_cbox->addItem(iim::STACKED_FORMAT.c_str());
+	vol_format_cbox->addItem(iim::TILED_TIF3D_FORMAT.c_str());
+	vol_format_cbox->addItem(iim::TILED_MC_TIF3D_FORMAT.c_str());
+	//vol_format_cbox->addItem(iim::TIF3D_FORMAT.c_str());
+	vol_format_cbox->addItem(iim::SIMPLE_RAW_FORMAT.c_str());
+	vol_format_cbox->addItem(iim::STACKED_RAW_FORMAT.c_str());
+	vol_format_cbox->addItem(iim::TILED_FORMAT.c_str());
+	vol_format_cbox->addItem(iim::TILED_MC_FORMAT.c_str());
+	//vol_format_cbox->addItemiim::RAW_FORMAT.c_str());
+	vol_format_cbox->addItem(iim::BDV_HDF5_FORMAT.c_str());
+	vol_format_cbox->addItem(iim::IMS_HDF5_FORMAT.c_str());
+    //vol_format_cbox->addItem("2Dseries");
+    //vol_format_cbox->addItem("3Dseries");
+    //std::vector <std::string> volformats = vm::VirtualVolumeFactory::registeredPluginsList();
+    //for(int i=0; i<volformats.size(); i++)
+    //    vol_format_cbox->addItem(volformats[i].c_str());
     for(int i = 0; i < vol_format_cbox->count(); i++)
         vol_format_cbox->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);
     PTeraStitcher::setEnabledComboBoxItem(vol_format_cbox, 0, false);
-
-    imout_plugin_cbox = new QComboBox();
-    imout_plugin_cbox->setFont(smallFont);
-    std::vector<std::string> ioplugins = iom::IOPluginFactory::registeredPluginsList();
-    imout_plugin_cbox->addItem("--- I/O plugin: ---");
-    for(int i=0; i<ioplugins.size(); i++)
-        imout_plugin_cbox->addItem(ioplugins[i].c_str());
-    imout_plugin_cbox->setEditable(true);
-    imout_plugin_cbox->lineEdit()->setReadOnly(true);
-    imout_plugin_cbox->lineEdit()->setAlignment(Qt::AlignCenter);
-    for(int i = 0; i < imout_plugin_cbox->count(); i++)
-        imout_plugin_cbox->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);
-    PTeraStitcher::setEnabledComboBoxItem(imout_plugin_cbox, 0, false);
 
     block_height_field       = new QSpinBox();
     block_height_field->setAlignment(Qt::AlignCenter);
@@ -164,52 +158,40 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     memocc_field->setFont(smallFont);
     memocc_field->setStyleSheet("background-color: #ACDCA5");
     memocc_field->setTextMargins(5,0,0,0);
+	libtiff_uncompressed_checkbox = new QCheckBox("uncompressed", this);
+	libtiff_uncompressed_checkbox->setToolTip("Disable libTIFF compression");
+	libtiff_bigtiff_checkbox = new QCheckBox("bigtiff", this);
+	libtiff_bigtiff_checkbox->setToolTip("Force BigTIFF mode for files > 4 GB");
     showAdvancedButton = new QPushButton(QString("Advanced options ").append(QChar(0x00BB)), this);
     showAdvancedButton->setCheckable(true);
 
     //advanced panel widgets
     advanced_panel = new QWidget();
-    volumeportion_label = new QLabel("Portion to be stitched:");
-    row0_field = new QSpinBox();
-    row0_field->setAlignment(Qt::AlignCenter);
-    row0_field->setMinimum(-1);
-    row0_field->setValue(-1);
-    row0_field->setFont(smallFont);
-    row0_field->setPrefix("[");
-    row1_field = new QSpinBox();
-    row1_field->setAlignment(Qt::AlignCenter);
-    row1_field->setMinimum(-1);
-    row1_field->setValue(-1);
-    row1_field->setFont(smallFont);
-    row1_field->setSuffix("]");
-    col0_field = new QSpinBox();
-    col0_field->setAlignment(Qt::AlignCenter);
-    col0_field->setMinimum(-1);
-    col0_field->setValue(-1);
-    col0_field->setFont(smallFont);
-    col0_field->setPrefix("[");
-    col1_field = new QSpinBox();
-    col1_field->setAlignment(Qt::AlignCenter);
-    col1_field->setMinimum(-1);
-    col1_field->setValue(-1);
-    col1_field->setFont(smallFont);
-    col1_field->setSuffix("]");
-    slice0_field = new QSpinBox();
-    slice0_field->setAlignment(Qt::AlignCenter);
-    slice0_field->setMinimum(-1);
-    slice0_field->setMaximum(-1);
-    slice0_field->setValue(-1);
-    slice0_field->setFont(smallFont);
-    slice0_field->setPrefix("[");
-    slice1_field = new QSpinBox();
-    slice1_field->setAlignment(Qt::AlignCenter);
-    slice1_field->setMinimum(-1);
-    slice1_field->setMaximum(-1);
-    slice1_field->setValue(-1);
-    slice1_field->setFont(smallFont);
-    slice1_field->setSuffix("]");
-    excludenonstitchables_cbox = new QCheckBox("stitchables only");
-    excludenonstitchables_cbox->setFont(smallFont);
+    y0_field = new QSpinBox();
+    y0_field->setAlignment(Qt::AlignCenter);
+    y0_field->setFont(smallFont);
+    y0_field->setPrefix("[");
+    y1_field = new QSpinBox();
+    y1_field->setAlignment(Qt::AlignCenter);
+    y1_field->setValue(-1);
+    y1_field->setFont(smallFont);
+    y1_field->setSuffix("]");
+    x0_field = new QSpinBox();
+    x0_field->setAlignment(Qt::AlignCenter);
+    x0_field->setFont(smallFont);
+    x0_field->setPrefix("[");
+    x1_field = new QSpinBox();
+    x1_field->setAlignment(Qt::AlignCenter);
+    x1_field->setFont(smallFont);
+    x1_field->setSuffix("]");
+    z0_field = new QSpinBox();
+    z0_field->setAlignment(Qt::AlignCenter);
+    z0_field->setFont(smallFont);
+    z0_field->setPrefix("[");
+    z1_field = new QSpinBox();
+    z1_field->setAlignment(Qt::AlignCenter);
+    z1_field->setFont(smallFont);
+    z1_field->setSuffix("]");
     blendingalgo_label = new QLabel("Blending:");
     blendingalbo_cbox = new QComboBox();
     blendingalbo_cbox->insertItem(0, "No Blending");
@@ -235,27 +217,6 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     for(int i = 0; i < restoreSPIM_cbox->count(); i++)
         restoreSPIM_cbox->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);
     restoreSPIM_cbox->setFont(smallFont);
-    imgformat_label = new QLabel("");
-    img_format_cbox = new QComboBox();
-    img_format_cbox->insertItem(0, "tif");
-    img_format_cbox->insertItem(1, "tiff");
-    img_format_cbox->insertItem(2, "v3draw");
-    img_format_cbox->insertItem(3, "png");
-    img_format_cbox->insertItem(4, "bmp");
-    img_format_cbox->insertItem(5, "jpeg");
-    img_format_cbox->insertItem(6, "jpg");
-    img_format_cbox->insertItem(7, "dib");
-    img_format_cbox->insertItem(8, "pbm");
-    img_format_cbox->insertItem(9, "pgm");
-    img_format_cbox->insertItem(10, "ppm");
-    img_format_cbox->insertItem(11, "sr");
-    img_format_cbox->insertItem(12, "ras");
-    img_format_cbox->setFont(smallFont);
-    img_format_cbox->setEditable(true);
-    img_format_cbox->lineEdit()->setReadOnly(true);
-    img_format_cbox->lineEdit()->setAlignment(Qt::AlignCenter);
-    for(int i = 0; i < img_format_cbox->count(); i++)
-        img_format_cbox->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);
     imgdepth_cbox = new QComboBox();
     imgdepth_cbox->insertItem(0, "8 bits");
     imgdepth_cbox->insertItem(1, "16 bits");
@@ -267,9 +228,6 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
         imgdepth_cbox->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);
     channel_selection = new QComboBox();
     channel_selection->addItem("all channels");
-    channel_selection->addItem("channel R");
-    channel_selection->addItem("channel G");
-    channel_selection->addItem("channel B");
     channel_selection->setFont(smallFont);
     channel_selection->setEditable(true);
     channel_selection->lineEdit()->setReadOnly(true);
@@ -307,7 +265,6 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     basic_panel_row_2->addWidget(resolutions_size_label,        0,      7,   1,              3);
     resolutions_size_label->setFixedWidth(120);
     basic_panel_row_2->addWidget(resolutions_save_label,        0,      10,  1,              1);
-    basic_panel_row_2->addWidget(resolutions_view_label,        0,      11,  1,              1);
     outputs_label->setFixedWidth(left_margin);
     basic_panel_row_2->addWidget(outputs_label,                 1,      0,   n_max_resolutions, 1);
     for(int i=0; i<n_max_resolutions; i++)
@@ -319,7 +276,6 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
         basic_panel_row_2->addWidget(resolutions_fields[i],     1+i,    1,  1, 6);
         basic_panel_row_2->addWidget(resolutions_sizes[i],      1+i,    7,  1, 3);
         basic_panel_row_2->addWidget(resolutions_save_cboxs[i], 1+i,    10, 1, 1);
-        basic_panel_row_2->addWidget(resolutions_view_cboxs[i], 1+i,    11, 1, 1);
     }
     basicpanel_layout->addLayout(basic_panel_row_2);
     /**/
@@ -330,37 +286,43 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     basic_panel_row_3->setSpacing(0);
     volumeformat_label->setFixedWidth(left_margin);
     basic_panel_row_3->addWidget(volumeformat_label);
-    vol_format_cbox->setFixedWidth(150);
+    vol_format_cbox->setFixedWidth(300);
     basic_panel_row_3->addWidget(vol_format_cbox);
-    imout_plugin_cbox->setFixedWidth(130);
-    basic_panel_row_3->addSpacing(10);
-    basic_panel_row_3->addWidget(imout_plugin_cbox);
     basic_panel_row_3->addSpacing(20);
     basic_panel_row_3->addWidget(block_height_field, 1);
     basic_panel_row_3->addSpacing(5);
     basic_panel_row_3->addWidget(block_width_field, 1);
     basic_panel_row_3->addSpacing(5);
-    basic_panel_row_3->addWidget(block_depth_field, 1);
+	basic_panel_row_3->addWidget(block_depth_field, 1);
+	basic_panel_row_3->addStretch(1);
     basicpanel_layout->addLayout(basic_panel_row_3);
     /**/
     QHBoxLayout* basic_panel_row_4 = new QHBoxLayout();
     basic_panel_row_4->setContentsMargins(0,0,0,0);
     basic_panel_row_4->setSpacing(0);
-    imgformat_label->setFixedWidth(left_margin);
-    basic_panel_row_4->addWidget(imgformat_label);
-    img_format_cbox->setFixedWidth(80);
-    basic_panel_row_4->addWidget(img_format_cbox);
-    basic_panel_row_4->addSpacing(5);
-    imgdepth_cbox->setFixedWidth(90);
+    basic_panel_row_4->addSpacing(left_margin);
+    imgdepth_cbox->setFixedWidth(100);
     basic_panel_row_4->addWidget(imgdepth_cbox);
     basic_panel_row_4->addSpacing(5);
-    channel_selection->setFixedWidth(110);
+    channel_selection->setFixedWidth(200);
     basic_panel_row_4->addWidget(channel_selection);
     basic_panel_row_4->addSpacing(20);
     basic_panel_row_4->addWidget(memocc_field, 1);
     basicpanel_layout->addLayout(basic_panel_row_4);
     basicpanel_layout->addSpacing(5);
     /**/
+	QHBoxLayout* basic_panel_row_5 = new QHBoxLayout();
+	basic_panel_row_5->setContentsMargins(0,0,0,0);
+	basic_panel_row_5->setSpacing(0);
+	basic_panel_row_5->addSpacing(left_margin);
+	libtiff_uncompressed_checkbox->setFixedWidth(140);
+	libtiff_bigtiff_checkbox->setFixedWidth(140);
+	basic_panel_row_5->addWidget(libtiff_uncompressed_checkbox);
+	basic_panel_row_5->setSpacing(10);
+	basic_panel_row_5->addWidget(libtiff_bigtiff_checkbox);
+	basic_panel_row_5->addStretch(1);
+	basicpanel_layout->addLayout(basic_panel_row_5);
+	/**/
     basicpanel_layout->addWidget(showAdvancedButton);
     /**/
     basicpanel_layout->setContentsMargins(10,0,10,0);
@@ -375,32 +337,25 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     QLabel* selection_label = new QLabel("Selection:");
     selection_label->setFixedWidth(left_margin);
     advancedpanel_row1->addWidget(selection_label);
-    QLabel* rowLabel = new QLabel(" (rows)");
-    rowLabel->setFont(smallFont);
-    QLabel* colLabel = new QLabel(" (cols)");
-    colLabel->setFont(smallFont);
-    QLabel* sliceLabel = new QLabel(" (slices)");
-    sliceLabel->setFont(smallFont);
-    rowLabel->setFixedWidth(60);
-    colLabel->setFixedWidth(60);
-    sliceLabel->setFixedWidth(60);
-    row0_field->setFixedWidth(50);
-    row1_field->setFixedWidth(50);
-    col0_field->setFixedWidth(50);
-    col1_field->setFixedWidth(50);
-    slice0_field->setFixedWidth(75);
-    slice1_field->setFixedWidth(75);
-    advancedpanel_row1->addWidget(row0_field);
-    advancedpanel_row1->addWidget(row1_field);
-    advancedpanel_row1->addWidget(rowLabel);
-    advancedpanel_row1->addWidget(col0_field);
-    advancedpanel_row1->addWidget(col1_field);
-    advancedpanel_row1->addWidget(colLabel);
-    advancedpanel_row1->addWidget(slice0_field);
-    advancedpanel_row1->addWidget(slice1_field);
-    advancedpanel_row1->addWidget(sliceLabel);
+    QLabel* yRangeLabel = new QLabel(" (Y)");
+    yRangeLabel->setFont(smallFont);
+    QLabel* xRangeLabel = new QLabel(" (X)");
+    xRangeLabel->setFont(smallFont);
+    QLabel* zRangeLabel = new QLabel(" (Z)");
+    zRangeLabel->setFont(smallFont);
+    yRangeLabel->setFixedWidth(60);
+    xRangeLabel->setFixedWidth(60);
+    zRangeLabel->setFixedWidth(60);
+    advancedpanel_row1->addWidget(x0_field);
+    advancedpanel_row1->addWidget(x1_field);
+	advancedpanel_row1->addWidget(xRangeLabel);
+	advancedpanel_row1->addWidget(y0_field);
+	advancedpanel_row1->addWidget(y1_field);
+	advancedpanel_row1->addWidget(yRangeLabel);
+    advancedpanel_row1->addWidget(z0_field);
+    advancedpanel_row1->addWidget(z1_field);
+    advancedpanel_row1->addWidget(zRangeLabel);
     advancedpanel_row1->addStretch(1);
-    advancedpanel_row1->addWidget(excludenonstitchables_cbox);
     advancedpanel_layout->addLayout(advancedpanel_row1);
     /**/
     QHBoxLayout* advancedpanel_row2 = new QHBoxLayout();
@@ -408,7 +363,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     advancedpanel_row2->setContentsMargins(0,0,0,0);
     blendingalgo_label->setFixedWidth(left_margin);
     advancedpanel_row2->addWidget(blendingalgo_label);
-    blendingalbo_cbox->setFixedWidth(260);
+    blendingalbo_cbox->setFixedWidth(300);
     advancedpanel_row2->addWidget(blendingalbo_cbox);
     advancedpanel_row2->addSpacing(60);
     advancedpanel_row2->addWidget(restoreSPIM_label);
@@ -432,27 +387,17 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
 
     // signals and slots
     connect(browse_button, SIGNAL(clicked()), this, SLOT(browse_button_clicked()));
-    connect(row0_field, SIGNAL(valueChanged(int)), this, SLOT(stacksinterval_changed()));
-    connect(row0_field, SIGNAL(valueChanged(int)), this, SLOT(row0_field_changed(int)));
-    connect(row1_field, SIGNAL(valueChanged(int)), this, SLOT(stacksinterval_changed()));
-    connect(row1_field, SIGNAL(valueChanged(int)), this, SLOT(row1_field_changed(int)));
-    connect(col0_field, SIGNAL(valueChanged(int)), this, SLOT(stacksinterval_changed()));
-    connect(col0_field, SIGNAL(valueChanged(int)), this, SLOT(col0_field_changed(int)));
-    connect(col1_field, SIGNAL(valueChanged(int)), this, SLOT(stacksinterval_changed()));
-    connect(col1_field, SIGNAL(valueChanged(int)), this, SLOT(col1_field_changed(int)));
-    connect(slice0_field, SIGNAL(valueChanged(int)), this, SLOT(updateContent()));
-    connect(slice0_field, SIGNAL(valueChanged(int)), this, SLOT(slice0_field_changed(int)));
-    connect(slice1_field, SIGNAL(valueChanged(int)), this, SLOT(updateContent()));
-    connect(slice1_field, SIGNAL(valueChanged(int)), this, SLOT(slice1_field_changed(int)));
-    connect(excludenonstitchables_cbox, SIGNAL(stateChanged(int)),this, SLOT(excludenonstitchables_changed()));
+    connect(y0_field, SIGNAL(valueChanged(int)), this, SLOT(y0_field_changed(int)));
+    connect(y1_field, SIGNAL(valueChanged(int)), this, SLOT(y1_field_changed(int)));
+    connect(x0_field, SIGNAL(valueChanged(int)), this, SLOT(x0_field_changed(int)));
+    connect(x1_field, SIGNAL(valueChanged(int)), this, SLOT(x1_field_changed(int)));
+    connect(z0_field, SIGNAL(valueChanged(int)), this, SLOT(updateContent()));
+    connect(z0_field, SIGNAL(valueChanged(int)), this, SLOT(z0_field_changed(int)));
+    connect(z1_field, SIGNAL(valueChanged(int)), this, SLOT(updateContent()));
+    connect(z1_field, SIGNAL(valueChanged(int)), this, SLOT(z1_field_changed(int)));
     connect(vol_format_cbox, SIGNAL(currentIndexChanged(QString)), this, SLOT(volumeformat_changed(QString)));
-    connect(imout_plugin_cbox, SIGNAL(currentIndexChanged(QString)), this, SLOT(imout_plugin_changed(QString)));
     for(int i=0; i<n_max_resolutions; i++)
-    {
         connect(resolutions_save_cboxs[i], SIGNAL(stateChanged(int)), this, SLOT(updateContent()));
-        connect(resolutions_save_cboxs[i], SIGNAL(stateChanged(int)), this, SLOT(save_changed(int)));
-        connect(resolutions_view_cboxs[i], SIGNAL(stateChanged(int)), this, SLOT(viewinVaa3D_changed(int)));
-    }
 #ifdef VAA3D_TERASTITCHER
     connect(CMergeTiles::instance(), SIGNAL(sendOperationOutcome(iom::exception*, Image4DSimple*)), this, SLOT(merging_done(iom::exception*, Image4DSimple*)), Qt::QueuedConnection);
 #else 
@@ -483,19 +428,10 @@ void PTabMergeTiles::reset()
     {
         resolutions_fields[i]->setText(QString("n.a. ").append(QChar(0x00D7)).append(QString(" n.a. ").append(QChar(0x00D7)).append(" n.a.")));
         resolutions_sizes[i]->setText("n.a.");
-        resolutions_save_cboxs[i]->setChecked(true);
-        resolutions_view_cboxs[i]->setChecked(false);
+        resolutions_save_cboxs[i]->setChecked(i==0);
     }
 
     vol_format_cbox->setCurrentIndex(0);
-    imout_plugin_cbox->setCurrentIndex(0);
-//    int index = vol_format_cbox->findText(BlockVolume::id.c_str());
-//    if ( index != -1 )
-//       vol_format_cbox->setCurrentIndex(index);
-
-//    index = imout_plugin_cbox->findText("tiff3D");
-//        if ( index != -1 )
-//           imout_plugin_cbox->setCurrentIndex(index);
 
     block_height_field->setMinimum(-1);
     block_height_field->setMaximum(4096);
@@ -507,34 +443,6 @@ void PTabMergeTiles::reset()
     block_depth_field->setMaximum(1024);
     block_depth_field->setValue(256);
     memocc_field->setText("Memory usage: ");
-    excludenonstitchables_cbox->setChecked(false);
-
-    row0_field->setMinimum(-1);
-    row0_field->setValue(-1);
-    row1_field->setMinimum(-1);
-    row1_field->setValue(-1);
-    col0_field->setMinimum(-1);
-    col0_field->setValue(-1);
-    col1_field->setMinimum(-1);
-    col1_field->setValue(-1);
-    slice0_field->setMinimum(-1);
-    slice0_field->setMaximum(-1);
-    slice0_field->setValue(-1);
-    slice1_field->setMinimum(-1);
-    slice1_field->setMaximum(-1);
-    slice1_field->setValue(-1);
-    row0_field->setMinimum(-1);
-    row0_field->setMaximum(-1);
-    row0_field->setValue(-1);
-    row1_field->setMinimum(-1);
-    row1_field->setMaximum(-1);
-    row1_field->setValue(-1);
-    col0_field->setMinimum(-1);
-    col0_field->setMaximum(-1);
-    col0_field->setValue(-1);
-    col1_field->setMinimum(-1);
-    col1_field->setMaximum(-1);
-    col1_field->setValue(-1);
 
     showAdvancedButton->setChecked(false);
     advanced_panel->setVisible(false);
@@ -559,10 +467,8 @@ void PTabMergeTiles::start()
             throw iom::exception("A volume must be properly imported first. Please perform the Import step.");
 
         // check user input
-        if(imout_plugin_cbox->currentIndex() == 0)
-            throw iom::exception("Please select an image I/O plugin from the combolist");
         if(vol_format_cbox->currentIndex() == 0)
-            throw iom::exception("Please select the volume format from the combolist");
+            throw iom::exception("Please select the volume format from the pull-down menu");
 
         //verifying that directory is readable
         QDir directory(savedir_field->text());
@@ -577,34 +483,6 @@ void PTabMergeTiles::start()
             PTeraStitcher::instance()->setToReady();
             return;
         }
-
-        //if basic mode is active, automatically performing the hidden steps (Projecting, Thresholding, Placing) if necessary
-//        if(PTeraStitcher::instance()->modeBasicAction->isChecked())
-//        {
-//            //asking confirmation to continue if no displacements were found
-//            if(PTeraStitcher::instance()->tabDisplProj->total_displ_number_field->text().toInt() == 0 &&
-//               QMessageBox::information(this, "Warning", "No computed displacements found. \n\nDisplacements will be generated using nominal stage coordinates.", "Continue", "Cancel"))
-//            {
-//                PTeraStitcher::instance()->setToReady();
-//                return;
-//            }
-
-//            //performing operation
-//            StackedVolume* volume = CImport::instance()->getVolume();
-//            if(!volume)
-//                throw iom::exception("Unable to start this step. A volume must be properly imported first.");
-//            //Alessandro 2013-07-08: this causes crash and it is not needed (nominal stage coordinates are already ready for merging)
-////            StackStitcher stitcher(volume);
-////            stitcher.projectDisplacements();
-////            stitcher.thresholdDisplacements(PTeraStitcher::instance()->tabDisplThres->threshold_field->value());
-////            stitcher.computeTilesPlacement(PTeraStitcher::instance()->tabPlaceTiles->algo_cbox->currentIndex());
-
-//            //enabling (and updating) other tabs
-//            PTabDisplProj::getInstance()->setEnabled(true);
-//            PTabDisplThresh::getInstance()->setEnabled(true);
-//            PTabPlaceTiles::getInstance()->setEnabled(true);
-//            PTabMergeTiles::getInstance()->setEnabled(true);
-//        }
 
         //disabling import form and enabling progress bar animation and tab wait animation
         PTeraStitcher::instance()->getProgressBar()->setEnabled(true);
@@ -621,11 +499,7 @@ void PTabMergeTiles::start()
         //propagating options and parameters and launching task
         CMergeTiles::instance()->setPMergeTiles(this);
         for(int i=0; i<n_max_resolutions; i++)
-        {
             CMergeTiles::instance()->setResolution(i, resolutions_save_cboxs[i]->isChecked());
-            if(vol_format_cbox->currentText().compare("2Dseries")==0 && resolutions_view_cboxs[i]->isChecked())
-                CMergeTiles::instance()->setResolutionToShow(i);
-        }
         CMergeTiles::instance()->start();
     }
     catch(iom::exception &ex)
@@ -678,30 +552,30 @@ void PTabMergeTiles::setEnabled(bool enabled)
     /**/ts::debug(ts::LEV_MAX, 0, __tsp__current__function__);
 
     //then filling widget fields
-    if(enabled && CImportUnstitched::instance()->getVolume())
+    if(enabled && CImportUnstitched::instance()->getVolume() && CMergeTiles::instance()->unstitchedVolume())
     {
-        vm::VirtualVolume* volume = CImportUnstitched::instance()->getVolume();
+        UnstitchedVolume* volume = CMergeTiles::instance()->unstitchedVolume();
 
         //inserting volume dimensions
         QWidget::setEnabled(false);
-        row0_field->setMinimum(0);
-        row0_field->setMaximum(volume->getN_ROWS()-1);
-        row0_field->setValue(0);
-        row1_field->setMinimum(0);
-        row1_field->setMaximum(volume->getN_ROWS()-1);
-        row1_field->setValue(volume->getN_ROWS()-1);
-        col0_field->setMinimum(0);
-        col0_field->setMaximum(volume->getN_COLS()-1);
-        col0_field->setValue(0);
-        col1_field->setMinimum(0);
-        col1_field->setMaximum(volume->getN_COLS()-1);
-        col1_field->setValue(volume->getN_COLS()-1);
-        slice0_field->setMaximum(volume->getN_SLICES()-1);
-        slice0_field->setMinimum(0);
-        slice0_field->setValue(0);
-        slice1_field->setMaximum(volume->getN_SLICES()-1);
-        slice1_field->setMinimum(0);
-        slice1_field->setValue(volume->getN_SLICES()-1);
+        y0_field->setMinimum(0);
+        y0_field->setMaximum(volume->getDIM_V()-1);
+        y0_field->setValue(0);
+        y1_field->setMinimum(0);
+        y1_field->setMaximum(volume->getDIM_V()-1);
+        y1_field->setValue(volume->getDIM_V()-1);
+        x0_field->setMinimum(0);
+        x0_field->setMaximum(volume->getDIM_H()-1);
+        x0_field->setValue(0);
+        x1_field->setMinimum(0);
+        x1_field->setMaximum(volume->getDIM_H()-1);
+        x1_field->setValue(volume->getDIM_H()-1);
+        z0_field->setMaximum(volume->getDIM_D()-1);
+        z0_field->setMinimum(0);
+        z0_field->setValue(0);
+        z1_field->setMaximum(volume->getDIM_D()-1);
+        z1_field->setMinimum(0);
+        z1_field->setValue(volume->getDIM_D()-1);
         volumeformat_changed(vol_format_cbox->currentText());
         QWidget::setEnabled(true);
 
@@ -723,10 +597,10 @@ void PTabMergeTiles::browse_button_clicked()
     #endif
 
     //obtaining volume's directory
-    QFileDialog dialog(0);
+    QFileDialog dialog(this);
     dialog.setFileMode(QFileDialog::DirectoryOnly);
     dialog.setAcceptMode(QFileDialog::AcceptSave);
-    dialog.setWindowFlags(Qt::WindowStaysOnTopHint);
+    //dialog.setWindowFlags(Qt::WindowStaysOnTopHint);
     dialog.setDirectory(CImportUnstitched::instance()->getVolume()->getSTACKS_DIR());
     dialog.setWindowTitle("Please select an EMPTY directory");
     if (dialog.exec())
@@ -748,41 +622,6 @@ void PTabMergeTiles::browse_button_clicked()
 }
 
 /**********************************************************************************
-* Called when <excludenonstitchables_cbox> combobox state changed.
-* Inferior and superior limits of spinboxes are recomputed.
-***********************************************************************************/
-void PTabMergeTiles::excludenonstitchables_changed()
-{
-    try
-    {
-        if(this->isEnabled() && CImportUnstitched::instance()->getVolume())
-            updateContent();
-    }
-    catch(iom::exception &ex)
-    {
-        QMessageBox::critical(this,QObject::tr("Error"), QObject::tr(ex.what()),QObject::tr("Ok"));
-    }
-}
-
-
-/**********************************************************************************
-* Called when <row0_field>, <row1_field>, <col0_field> or <col1_field> changed.
-* Inferior and superior limits of <slice_[]_cbox> spinboxes are recomputed.
-***********************************************************************************/
-void PTabMergeTiles::stacksinterval_changed()
-{
-    try
-    {
-        if(this->isEnabled() && CImportUnstitched::instance()->getVolume())
-            updateContent();
-    }
-    catch(iom::exception &ex)
-    {
-        QMessageBox::critical(this,QObject::tr("Error"), QObject::tr(ex.what()),QObject::tr("Ok"));
-    }
-}
-
-/**********************************************************************************
 * Updates widgets contents
 ***********************************************************************************/
 void PTabMergeTiles::updateContent()
@@ -791,179 +630,122 @@ void PTabMergeTiles::updateContent()
 
     try
     {
-        if(this->isEnabled() && CImportUnstitched::instance()->getVolume())
+        if(this->isEnabled() && CImportUnstitched::instance()->getVolume() && CMergeTiles::instance()->unstitchedVolume())
         {
-            vm::VirtualVolume* volume = CImportUnstitched::instance()->getVolume();
-
-            StackStitcher stitcher(volume);
-            stitcher.computeVolumeDims(excludenonstitchables_cbox->isChecked(), row0_field->value(), row1_field->value(),
-                                       col0_field->value(), col1_field->value(), slice0_field->value(), slice1_field->value()+1);
+            UnstitchedVolume* volume = CMergeTiles::instance()->unstitchedVolume();
 
             int max_res = 0;
-            for(int i=0; i<n_max_resolutions; i++)
-            {
-                int height = (stitcher.getV1()-stitcher.getV0())/pow(2.0f, i);
-                int width = (stitcher.getH1()-stitcher.getH0())/pow(2.0f, i);
-                int depth = (stitcher.getD1()-stitcher.getD0())/pow(2.0f, i);
+			for(int i=0; i<n_max_resolutions; i++)
+			{
+				int height = (y1_field->value()-y0_field->value()+1)/pow(2.0f, i);
+                int width  = (x1_field->value()-x0_field->value()+1)/pow(2.0f, i);
+                int depth  = (z1_field->value()-z0_field->value()+1)/pow(2.0f, i);
                 float GVoxels = (height/1024.0f)*(width/1024.0f)*(depth/1024.0f);
                 resolutions_fields[i]->setText(QString::number(width).append(" ").append(QChar(0x00D7)).append(" ").append(QString::number(height)).append(" ").append(QChar(0x00D7)).append(" ").append(QString::number(depth)));
                 resolutions_sizes[i]->setText(QString::number(GVoxels,'f',3));
 
-				if(!height || !width || !depth)
-				{
-					resolutions_fields[i]->setVisible(false);
-					resolutions_sizes[i]->setVisible(false);
-					resolutions_save_cboxs[i]->setVisible(false);
-					resolutions_view_cboxs[i]->setVisible(false);
-					resolutions_save_cboxs[i]->setChecked(false);
-					resolutions_view_cboxs[i]->setChecked(false);
-				}
+				resolutions_fields[i]->setVisible(height && width && depth);
+				resolutions_sizes[i]->setVisible(height && width && depth);
+				resolutions_save_cboxs[i]->setVisible(height && width && depth);
 
 				if(resolutions_save_cboxs[i]->isChecked())
 					max_res = std::max(max_res, i);
             }
 
             //updating RAM usage estimation
-            int layer_height = stitcher.getV1()-stitcher.getV0();
-            int layer_width = stitcher.getH1()-stitcher.getH0();
+			int layer_height = (y1_field->value()-y0_field->value()+1);
+			int layer_width  = (x1_field->value()-x0_field->value()+1);
             int layer_depth = pow(2.0f, max_res);
             float MBytes = (layer_height/1024.0f)*(layer_width/1024.0f)*layer_depth*4;
             memocc_field->setText(QString("Memory usage: ")+QString::number(MBytes, 'f', 0).append(" MB"));
 
             // update ranges
-            slice0_field->setValue(stitcher.getD0());
-            slice1_field->setValue(stitcher.getD1()-1);
-            row0_field->setValue(stitcher.getROW0());
-            row1_field->setValue(stitcher.getROW1());
-            col0_field->setValue(stitcher.getCOL0());
-            col1_field->setValue(stitcher.getCOL1());
+           /* z0_field->setValue(0);
+            z1_field->setValue(volume->getDIM_D()-1);
+            y0_field->setValue(0);
+            y1_field->setValue(volume->getDIM_V()-1);
+            x0_field->setValue(0);
+            x1_field->setValue(volume->getDIM_H()-1);*/
         }
     }
     catch(iom::exception &ex)
     {
         QMessageBox::critical(this,QObject::tr("Error"), strprintf("An error occurred while preparing the stitcher for the Merging step: \n\n\"%s\"\n\nPlease check the previous steps before you can perform the Merging step.", ex.what()).c_str(),QObject::tr("Ok"));
         this->setEnabled(false);
-    }
+	}
+	catch(iim::IOException &ex)
+	{
+		QMessageBox::critical(this,QObject::tr("Error"), strprintf("An error occurred while preparing the stitcher for the Merging step: \n\n\"%s\"\n\nPlease check the previous steps before you can perform the Merging step.", ex.what()).c_str(),QObject::tr("Ok"));
+		this->setEnabled(false);
+	}
 }
 
 /**********************************************************************************
 * Called when the corresponding spinboxes changed.
 * New maximum/minimum values are set according to the status of spinboxes.
 ***********************************************************************************/
-void PTabMergeTiles::row0_field_changed(int val){row1_field->setMinimum(val);}
-void PTabMergeTiles::row1_field_changed(int val){row0_field->setMaximum(val);}
-void PTabMergeTiles::col0_field_changed(int val){col1_field->setMinimum(val);}
-void PTabMergeTiles::col1_field_changed(int val){col0_field->setMaximum(val);}
-void PTabMergeTiles::slice0_field_changed(int val){slice1_field->setMinimum(val);}
-void PTabMergeTiles::slice1_field_changed(int val){slice0_field->setMaximum(val);}
+void PTabMergeTiles::y0_field_changed(int val){y1_field->setMinimum(val); updateContent();}
+void PTabMergeTiles::y1_field_changed(int val){y0_field->setMaximum(val); updateContent();}
+void PTabMergeTiles::x0_field_changed(int val){x1_field->setMinimum(val); updateContent();}
+void PTabMergeTiles::x1_field_changed(int val){x0_field->setMaximum(val); updateContent();}
+void PTabMergeTiles::z0_field_changed(int val){z1_field->setMinimum(val); updateContent();}
+void PTabMergeTiles::z1_field_changed(int val){z0_field->setMaximum(val); updateContent();}
 
 /**********************************************************************************
 * Called when <multistack_cbox> or <signlestack_cbox> state changed.
 ***********************************************************************************/
 void PTabMergeTiles::volumeformat_changed(QString str)
 {
-    if(str.compare("2Dseries") == 0)
+	std::string stdstr = str.toStdString();
+   if(
+		stdstr.compare(iim::STACKED_RAW_FORMAT) == 0 || 
+		stdstr.compare(iim::STACKED_FORMAT) == 0)
     {
-        vm::VOLUME_OUTPUT_FORMAT_PLUGIN = vm::StackedVolume::id;
-        block_height_field->setEnabled(false);
-        block_height_field->setValue(-1);
-        block_width_field->setEnabled(false);
-        block_width_field->setValue(-1);
-        block_depth_field->setEnabled(false);
-        block_depth_field->setValue(-1);
+		block_height_field->setEnabled(true);
+		block_height_field->setVisible(true);
+		block_width_field->setEnabled(true);
+		block_width_field->setVisible(true);
+		block_depth_field->setEnabled(false);
+		block_depth_field->setVisible(false);
+		block_height_field->setValue(512);
+		block_width_field->setValue(512);
+		block_depth_field->setValue(-1);
     }
-    else if(str.compare("3Dseries") == 0)
+	else if(
+		stdstr.compare(iim::TILED_FORMAT) == 0 || 
+		stdstr.compare(iim::TILED_MC_FORMAT) == 0 || 
+		stdstr.compare(iim::TILED_TIF3D_FORMAT) == 0 || 
+		stdstr.compare(iim::TILED_MC_TIF3D_FORMAT) == 0 || 
+		stdstr.compare(iim::BDV_HDF5_FORMAT) == 0 || 
+		stdstr.compare(iim::IMS_HDF5_FORMAT) == 0)
     {
-        vm::VOLUME_OUTPUT_FORMAT_PLUGIN = vm::BlockVolume::id;
-        block_height_field->setEnabled(false);
-        block_height_field->setValue(-1);
-        block_width_field->setEnabled(false);
-        block_width_field->setValue(-1);
-        block_depth_field->setEnabled(true);
-        block_depth_field->setValue(256);
+		block_height_field->setEnabled(true);
+		block_height_field->setVisible(true);
+		block_width_field->setEnabled(true);
+		block_width_field->setVisible(true);
+		block_depth_field->setEnabled(true);
+		block_depth_field->setVisible(true);
+		block_height_field->setValue(512);
+		block_width_field->setValue(512);
+		block_depth_field->setValue(512);
     }
-    else if(str.compare(vm::StackedVolume::id.c_str()) == 0)
-    {
-        vm::VOLUME_OUTPUT_FORMAT_PLUGIN = vm::StackedVolume::id;
-        block_height_field->setEnabled(true);
-        block_height_field->setValue(512);
-        block_width_field->setEnabled(true);
-        block_width_field->setValue(512);
-        block_depth_field->setEnabled(false);
-        block_depth_field->setValue(-1);
-    }
-    else if(str.compare(vm::BlockVolume::id.c_str()) == 0)
-    {
-        vm::VOLUME_OUTPUT_FORMAT_PLUGIN = vm::BlockVolume::id;
-        block_height_field->setEnabled(true);
-        block_height_field->setValue(512);
-        block_width_field->setEnabled(true);
-        block_width_field->setValue(512);
-        block_depth_field->setEnabled(true);
-        block_depth_field->setValue(256);
-    }
+	else
+	{
+		block_height_field->setEnabled(false);
+		block_height_field->setVisible(false);
+		block_width_field->setEnabled(false);
+		block_width_field->setVisible(false);
+		block_depth_field->setEnabled(false);
+		block_depth_field->setVisible(false);
+		block_height_field->setValue(-1);
+		block_width_field->setValue(-1);
+		block_depth_field->setValue(-1);
+	}
 
-    for(int i=0; i<n_max_resolutions; i++)
-        resolutions_view_cboxs[i]->setEnabled(vol_format_cbox->currentText().compare("2Dseries")==0);
-
-//    PTeraStitcher::setEnabledComboBoxItem(img_format_cbox, 2, i == 2);
-//    PTeraStitcher::setEnabledComboBoxItem(img_format_cbox, 3, i != 2);
-//    PTeraStitcher::setEnabledComboBoxItem(img_format_cbox, 4, i != 2);
-//    PTeraStitcher::setEnabledComboBoxItem(img_format_cbox, 5, i != 2);
-//    PTeraStitcher::setEnabledComboBoxItem(img_format_cbox, 6, i != 2);
-//    PTeraStitcher::setEnabledComboBoxItem(img_format_cbox, 7, i != 2);
-//    PTeraStitcher::setEnabledComboBoxItem(img_format_cbox, 8, i != 2);
-//    PTeraStitcher::setEnabledComboBoxItem(img_format_cbox, 9, i != 2);
-//    PTeraStitcher::setEnabledComboBoxItem(img_format_cbox, 10, i != 2);
-//    PTeraStitcher::setEnabledComboBoxItem(img_format_cbox, 11, i != 2);
-//    PTeraStitcher::setEnabledComboBoxItem(img_format_cbox, 12, i != 2);
-
-//    if(i == 2 && img_format_cbox->currentIndex() >= 3)
-//        img_format_cbox->setCurrentIndex(0);
-//    else if(i < 2 && img_format_cbox->currentIndex() == 2)
-//        img_format_cbox->setCurrentIndex(0);
-
-
+	libtiff_bigtiff_checkbox->setVisible(stdstr.find("TIFF") != std::string::npos);
+	libtiff_uncompressed_checkbox->setVisible(stdstr.find("TIFF") != std::string::npos);
 }
 
-/**********************************************************************************
-* Called when <imout_plugin_cbox> state changed
-***********************************************************************************/
-void PTabMergeTiles::imout_plugin_changed(QString str)
-{
-    iom::IMOUT_PLUGIN = str.toStdString();
-}
-
-/**********************************************************************************
-* Called when <resolutions_view_cboxs[i]> changed
-***********************************************************************************/
-void PTabMergeTiles::viewinVaa3D_changed(int checked)
-{
-    QCheckBox* sender = (QCheckBox*) QObject::sender();
-
-    //unchecking other checkboxes
-    if(checked)
-        for(int i=0; i<n_max_resolutions; i++)
-            if(resolutions_view_cboxs[i]->isChecked())
-            {
-                if(resolutions_view_cboxs[i] == sender)
-                    resolutions_save_cboxs[i]->setChecked(true);
-                else
-                    resolutions_view_cboxs[i]->setChecked(false);
-            }
-}
-
-/**********************************************************************************
-* Called when <resolutions_save_cboxs[i]> changed
-***********************************************************************************/
-void PTabMergeTiles::save_changed(int checked)
-{
-    //unchecking other checkboxes
-    if(!checked)
-        for(int i=0; i<n_max_resolutions; i++)
-            if(!resolutions_save_cboxs[i]->isChecked())
-                resolutions_view_cboxs[i]->setChecked(false);
-}
 
 /**********************************************************************************
 * Called by <CMergeTiles> when the associated operation has been performed.

@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-18. Alessandro. @ADDED constructor that directly takes vm::VirtualVolume in input, and added 'volume_external' attribute
 * 2017-04-01. Giulio.     @ADDED support for multi-layer stitching
 * 2016-09-13. Giulio.     @ADDED a cache manager to store stitched subregions
 * 2016-06-19. Giulio.     @FIXED bug in the call to input plugin (introduced the information on the plugin type: 2D/3D)
@@ -59,6 +60,7 @@ class UnstitchedVolume : public iim::VirtualVolume
 	protected:
 
 		volumemanager::VirtualVolume *volume;
+		bool volume_external;				 // whether 'volume' has been provided by an external caller (in which case it must not be deallocated / modified)
 		StackStitcher *stitcher;
 
 		iim::ref_sys reference_system;       //reference system of the stored volume
@@ -103,9 +105,14 @@ class UnstitchedVolume : public iim::VirtualVolume
 													  int V0=-1, int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1)  throw (iim::IOException);
 
 	public:
-		//CONSTRUCTORS-DECONSTRUCTOR
-        UnstitchedVolume(const char* _root_dir, bool cacheEnabled = true, int _blending_algo = S_SINUSOIDAL_BLENDING )  throw (iim::IOException);
 
+		// constructor 1 (from source folder)
+        UnstitchedVolume(const char* _root_dir, bool cacheEnabled = true, int _blending_algo = S_SINUSOIDAL_BLENDING )  throw (iim::IOException);
+		
+		// constructor 2 @ADDED by Alessandro on 2014-04-18: takes an external vm::VirtualVolume in input
+		UnstitchedVolume(vm::VirtualVolume * _imported_volume, bool cacheEnabled = true, int _blending_algo = S_SINUSOIDAL_BLENDING )  throw (iim::IOException);
+
+		// destructor
 		virtual ~UnstitchedVolume(void) throw (iim::IOException);
 
 		//GET methods

@@ -112,6 +112,7 @@ VolumeConverter::VolumeConverter( )
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
 	volume = (VirtualVolume *) 0;
+	volume_external = false;
 }
 
 
@@ -119,7 +120,7 @@ VolumeConverter::~VolumeConverter()
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
-	if(volume)
+	if(volume && !volume_external)
 		delete volume;
 }
 
@@ -203,6 +204,74 @@ void VolumeConverter::setSrcVolume(const char* _root_dir, const char* _fmt, cons
 	V1 = volume->getDIM_V(); 
 	H1 = volume->getDIM_H();
 	D1 = volume->getDIM_D();
+}
+
+// additional setSrcVolume @ADDED by Alessandro on 2014-04-18: takes an external vm::VirtualVolume in input
+void VolumeConverter::setSrcVolume(iim::VirtualVolume * _imported_volume,
+				  const char* _out_fmt, bool time_series, 
+				  int downsamplingFactor, std::string chanlist, int _res, int _timepoint) throw (iim::IOException, iom::exception)
+{
+	 volume_external = true;
+	 volume = _imported_volume;
+	 
+	 // 2015-04-14 Alessandro. @FIXED bug-crash when the volume has not been imported correctly in setSrcVolume.
+	 if(!volume)
+		 throw iim::IOException("in VolumeConverter::setSrcVolume(): invalid pre-imported volume provided");
+
+	 if( downsamplingFactor > 1 ) {
+		 if ( dynamic_cast<SimpleVolume*>(volume) ) 
+			 dynamic_cast<SimpleVolume*>(volume)->setDOWNSAMPLINGFACTOR(downsamplingFactor);
+		 else if ( dynamic_cast<SimpleVolumeRaw*>(volume) ) 
+			 dynamic_cast<SimpleVolumeRaw*>(volume)->setDOWNSAMPLINGFACTOR(downsamplingFactor);
+		 else
+			 throw iim::IOException(iim::strprintf("in VolumeConverter::setSrcVolume(): source volume (\"%s\") cannot be downsampled", volume->getPrintableFormat().c_str()));
+	 }
+
+	 if ( chanlist == "" )
+		 channels = volume->getDIM_C();
+	 else { // a channel list has been specified
+		 channels = (int) chanlist.size();
+		 uint32 *active_chans = new uint32(channels);
+		 for ( int i=0; i<channels; i++) {
+			 if ( isdigit(chanlist.at(i)) )
+				 active_chans[i] = chanlist.at(i) - '0';
+			 else
+				 throw iim::IOException(iim::strprintf("in VolumeConverter::setSrcVolume(): the channel list contains a non-digit character (%c)", chanlist.at(i)));
+		 }
+		 volume->setActiveChannels(active_chans,channels);
+	 }
+
+	 if ( strcmp(_out_fmt,REAL_REPRESENTATION) == 0 ) {
+		 if ( channels > 1 ) {
+			 fprintf(stderr,"*** warning *** more than 1 channel, the internal representation has been changed\n");
+			 out_fmt = UINT8x3_REPRESENTATION;
+			 internal_rep = UINT8_INTERNAL_REP;
+		 }
+		 else {
+			 out_fmt = _out_fmt;
+			 internal_rep = REAL_INTERNAL_REP;
+		 }
+	 }
+	 else if ( strcmp(_out_fmt,UINT8_REPRESENTATION) == 0 ) { 
+		 out_fmt = _out_fmt;
+		 internal_rep = UINT8_INTERNAL_REP;
+	 }
+	 else if ( strcmp(_out_fmt,UINT8x3_REPRESENTATION) == 0 ) {
+		 out_fmt = _out_fmt;
+		 internal_rep = UINT8_INTERNAL_REP;
+	 }
+	 else {
+		 char err_msg[STATIC_STRINGS_SIZE];
+		 sprintf(err_msg,"VolumeConverter::setSrcVolume: unsupported output format (%s)",out_fmt);
+		 throw IOException(err_msg);
+	 }
+
+	 V0 = 0;
+	 H0 = 0;
+	 D0 = 0;
+	 V1 = volume->getDIM_V(); 
+	 H1 = volume->getDIM_H();
+	 D1 = volume->getDIM_D();
 }
 
 
