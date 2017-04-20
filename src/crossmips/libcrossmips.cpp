@@ -28,8 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2017-04-14. Giulio.     @FIXED a very old bug: in the third call to 'compute_Neighborhood' was passed 'NCC_params->wRangeThr_i' instead of 'NCC_params->wRangeThr_j' 
-
+* 2017-04-20. Giulio.     @FIXED a very old bug: in the third call to 'compute_Neighborhood' eas used 'NCC_params->wRangeThr_i' instead of 'NCC_params->wRangeThr_j' 
 * 2016-01-27. Giulio.     @ADDED   checks to not consider NCC maps when they have a dimension that it is too small
 * 2016-01-27. Giulio.     @CHANGED the way initial checks are managed; the search can now be as much lurge as allowed by NCC parameter minDim_NCCsrc
 * 2016-01-27. Giulio.     @CHANGED the way initial checks are managed; the search are is now dynamically resized if overlap is too small
@@ -436,8 +435,8 @@ NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B,
 
 	//if ( NCC_yz_valid ) {
 		// NCC_yz: check neighborhood of maxima and search for better maxima if any
-		temp = new iom::real_t[(2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_k+1)];;
-		for ( i=0; i<((2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_k+1)); i++ )
+		temp = new iom::real_t[(2*NCC_params->wRangeThr_j+1)*(2*NCC_params->wRangeThr_k+1)];;
+		for ( i=0; i<((2*NCC_params->wRangeThr_j+1)*(2*NCC_params->wRangeThr_k+1)); i++ )
 			temp[i] = 0;
 		compute_Neighborhood(NCC_params,NCC_yz,delayj,delayk,NCC_params->wRangeThr_j,NCC_params->wRangeThr_k,ind_yz,MIP_yz1,MIP_yz2,dimj_v,dimk_v,temp,dy2,dz2, failed_yz);
 		// substitute NCC map and delete the old one

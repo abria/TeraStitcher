@@ -26,6 +26,8 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2017-04-20. Giulio. @FIXED HDF5 error messages when resolutions were added after the first
+* 2017-04-20. Giulio. @ADDED an operation to adjust the object list
 * 2017-04-17. Giulio. @ADDED generation of a default file structure 
 * 2017-04-17. Giulio. @ADDED in 'IMS_HDF5init' file structure is extracted only upon request
 * 2017-04-09. Giulio. @FIXED include the correct header file 'IMS_HDF5Mngr.h'
@@ -345,6 +347,11 @@ IMS_obj_list_t *get_obj_list ( hid_t group ) {
 	return olist;
 }
 
+IMS_obj_list_t *adjust_obj_list ( IMS_obj_list_t *olist, iim::uint32 *chans, int n_chans ) {
+	IMS_obj_list_t *dsi_obj_list = (*olist)["DataSetInfo"].olist;
+	return olist;
+}
+
 //creates and associates the attributes <name,value_str> to node parent
 herr_t create_string_attribute ( hid_t parent, const char *name, const char *value_str ) {
 
@@ -450,13 +457,13 @@ class IMS_HDF5_fdescr_t {
 	hsize_t  ***n_slices;        // number of slices of each time point at each resolutions at each chan (all channels should have the same number of slices)
 
 	IMS_obj_list_t *olist;       // hierarchy of objects in the file with their type, value and attributes
-	IMS_attr_list_t *rootalist;      // list of attributes of root group ("/")
+	IMS_attr_list_t *rootalist;  // list of attributes of root group ("/")
 
 	// info required by IMS file format
-	histogram_t ***hist; // histograms of each time point at each resolutions at each chan
+	histogram_t ***hist;         // histograms of each time point at each resolutions at each chan
 	iim::uint8 *thumbnail;
 	iim::uint32 thumbnail_sz;
-	bool creating;        // if true means that the object represent a file that is being created 
+	bool creating;               // if true means that the object represent a file that is being created 
 	
 	// private methods
 	void scan_root ( );
@@ -505,7 +512,7 @@ public:
 	int addChan ( int s );
 	/* add chan s to file */
 
-	int addResolution ( int r, hsize_t dimV, hsize_t dimH, hsize_t dimD, int dimC );	
+	int addResolution ( int r, hsize_t dimV, hsize_t dimH, hsize_t dimD, int dimC, bool is_first = false );	
 	/* add resolution r; other parameters:
      *
      * height: image height at resolution 0
@@ -572,7 +579,8 @@ IMS_HDF5_fdescr_t::IMS_HDF5_fdescr_t ( ) {
 	hist         = (histogram_t ***)0;
 	thumbnail    = (iim::uint8 *) 0;
 	thumbnail_sz = 0;
-	creating     = false;
+
+	creating           = false;
 }
 
 
@@ -610,7 +618,8 @@ IMS_HDF5_fdescr_t::IMS_HDF5_fdescr_t ( const char *_fname, bool loadstruct, int 
 		memset(hist,0,maxres*sizeof(histogram_t **)); 
 		thumbnail    = (iim::uint8 *) 0;
 		thumbnail_sz = 0;
-		creating     = true;
+
+		creating           = true;
 
 		if ( !obj_info || !root_attr_info )
 			throw iim::IOException(iim::strprintf("the file %s has to be created: a structure description and a root attribute list must be passed ",_fname).c_str(),__iim__current__function__);
@@ -663,7 +672,8 @@ IMS_HDF5_fdescr_t::IMS_HDF5_fdescr_t ( const char *_fname, bool loadstruct, int 
 		hist         = (histogram_t ***)0;
 		thumbnail    = (iim::uint8 *) 0;
 		thumbnail_sz = 0;
-		creating     = false;
+
+		creating           = false;
 	}
 
 	if ( vxl_nbytes == 1 )
@@ -927,7 +937,7 @@ int IMS_HDF5_fdescr_t::addChan ( int s ) {
 }
 
 
-int IMS_HDF5_fdescr_t::addResolution ( int r, hsize_t dimV, hsize_t dimH, hsize_t dimD, int dimC ) {
+int IMS_HDF5_fdescr_t::addResolution ( int r, hsize_t dimV, hsize_t dimH, hsize_t dimD, int dimC, bool is_first ) {
 
 	char value_str[33];
 	herr_t status;
@@ -960,74 +970,78 @@ int IMS_HDF5_fdescr_t::addResolution ( int r, hsize_t dimV, hsize_t dimH, hsize_
 	chunk_dims[r][1] = DEF_CHNK_DIM_XY; 
 	chunk_dims[r][2] = DEF_CHNK_DIM_XY; 
 
-	n_chans = dimC;
+	if ( is_first ) {
 
-	// set /DataSetInfo/Image attributes if not yet defined
-	grpid = H5Gopen(file_id,"/DataSetInfo/Image",H5P_DEFAULT);
-	//hid_t aid;
+		// initialize n_chans
+		n_chans = dimC;
 
-	// according to HDF5 reference if the attributes already exist the attempt to create them leave things unchanged
-	//if ( (aid = H5Aopen(grpid,"ExtMax0",H5P_DEFAULT)) < 0 ) {
-		sprintf(value_str,"%.3f",vxl_sizes[0][2]*dimH);
-		status = create_string_attribute(grpid,"ExtMax0",value_str);
-	//}
-	//else
-	//	status = H5Aclose(aid);
+		// set /DataSetInfo/Image attributes if not yet defined
+		grpid = H5Gopen(file_id,"/DataSetInfo/Image",H5P_DEFAULT);
+		//hid_t aid;
 
-	//if ( (aid = H5Aopen(grpid,"ExtMax1",H5P_DEFAULT)) < 0 ) {
-		sprintf(value_str,"%.3f",vxl_sizes[0][1]*dimV);
-		status = create_string_attribute(grpid,"ExtMax1",value_str);
-	//}
-	//else
-	//	status = H5Aclose(aid);
+		// according to HDF5 reference if the attributes already exist the attempt to create them leave things unchanged
+		//if ( (aid = H5Aopen(grpid,"ExtMax0",H5P_DEFAULT)) < 0 ) {
+			sprintf(value_str,"%.3f",vxl_sizes[0][2]*dimH);
+			status = create_string_attribute(grpid,"ExtMax0",value_str);
+		//}
+		//else
+		//	status = H5Aclose(aid);
 
-	//if ( (aid = H5Aopen(grpid,"ExtMax2",H5P_DEFAULT)) < 0 ) {
-		sprintf(value_str,"%.3f",vxl_sizes[0][0]*dimD);
-		status = create_string_attribute(grpid,"ExtMax2",value_str);
-	//}
-	//else
-	//	status = H5Aclose(aid);
+		//if ( (aid = H5Aopen(grpid,"ExtMax1",H5P_DEFAULT)) < 0 ) {
+			sprintf(value_str,"%.3f",vxl_sizes[0][1]*dimV);
+			status = create_string_attribute(grpid,"ExtMax1",value_str);
+		//}
+		//else
+		//	status = H5Aclose(aid);
 
-	//if ( (aid = H5Aopen(grpid,"ExtMin0",H5P_DEFAULT)) < 0 ) {
-		status = create_string_attribute(grpid,"ExtMin0","0");
-	//}
-	//else
-	//	status = H5Aclose(aid);
+		//if ( (aid = H5Aopen(grpid,"ExtMax2",H5P_DEFAULT)) < 0 ) {
+			sprintf(value_str,"%.3f",vxl_sizes[0][0]*dimD);
+			status = create_string_attribute(grpid,"ExtMax2",value_str);
+		//}
+		//else
+		//	status = H5Aclose(aid);
 
-	//if ( (aid = H5Aopen(grpid,"ExtMin1",H5P_DEFAULT)) < 0 ) {
-		status = create_string_attribute(grpid,"ExtMin1","0");
-	//}
-	//else
-	//	status = H5Aclose(aid);
+		//if ( (aid = H5Aopen(grpid,"ExtMin0",H5P_DEFAULT)) < 0 ) {
+			status = create_string_attribute(grpid,"ExtMin0","0");
+		//}
+		//else
+		//	status = H5Aclose(aid);
 
-	//if ( (aid = H5Aopen(grpid,"ExtMin2",H5P_DEFAULT)) < 0 ) {
-		status = create_string_attribute(grpid,"ExtMin2","0");
-	//}
-	//else
-	//	status = H5Aclose(aid);
+		//if ( (aid = H5Aopen(grpid,"ExtMin1",H5P_DEFAULT)) < 0 ) {
+			status = create_string_attribute(grpid,"ExtMin1","0");
+		//}
+		//else
+		//	status = H5Aclose(aid);
 
-	//if ( (aid = H5Aopen(grpid,"X",H5P_DEFAULT)) < 0 ) {
-		sprintf(value_str,"%d",(int)dimH);
-		status = create_string_attribute(grpid,"X",value_str);
-	//}
-	//else
-	//	status = H5Aclose(aid);
+		//if ( (aid = H5Aopen(grpid,"ExtMin2",H5P_DEFAULT)) < 0 ) {
+			status = create_string_attribute(grpid,"ExtMin2","0");
+		//}
+		//else
+		//	status = H5Aclose(aid);
 
-	//if ( (aid = H5Aopen(grpid,"Y",H5P_DEFAULT)) < 0 ) {
-		sprintf(value_str,"%d",(int)dimV);
-		status = create_string_attribute(grpid,"Y",value_str);
-	//}
-	//else
-	//	status = H5Aclose(aid);
+		//if ( (aid = H5Aopen(grpid,"X",H5P_DEFAULT)) < 0 ) {
+			sprintf(value_str,"%d",(int)dimH);
+			status = create_string_attribute(grpid,"X",value_str);
+		//}
+		//else
+		//	status = H5Aclose(aid);
 
-	//if ( (aid = H5Aopen(grpid,"Z",H5P_DEFAULT)) < 0 ) {
-		sprintf(value_str,"%d",(int)dimD);
-		status = create_string_attribute(grpid,"Z",value_str);
-	//}
-	//else
-	//	status = H5Aclose(aid);
+		//if ( (aid = H5Aopen(grpid,"Y",H5P_DEFAULT)) < 0 ) {
+			sprintf(value_str,"%d",(int)dimV);
+			status = create_string_attribute(grpid,"Y",value_str);
+		//}
+		//else
+		//	status = H5Aclose(aid);
 
-	H5Gclose(grpid);
+		//if ( (aid = H5Aopen(grpid,"Z",H5P_DEFAULT)) < 0 ) {
+			sprintf(value_str,"%d",(int)dimD);
+			status = create_string_attribute(grpid,"Z",value_str);
+		//}
+		//else
+		//	status = H5Aclose(aid);
+
+		H5Gclose(grpid);
+	}
 
 	// initialize n_slices[r]
 	n_slices[r] = new hsize_t *[MAXTPS];
@@ -1874,6 +1888,16 @@ void *IMS_HDF5get_olist ( void *descr, int n_chans, int n_timepoints ) throw (ii
 #endif
 }
 
+void *IMS_HDF5adjust_olist ( void *olist, iim::uint32 *chans, int n_chans ) throw (iim::IOException) {
+#ifdef ENABLE_IMS_HDF5
+		return ((void *) adjust_obj_list((IMS_obj_list_t *)olist,chans,n_chans));
+#else
+	throw iim::IOException(iim::strprintf(
+			"Support to IMS_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "
+			"in ""3rdparty/libs"" directory and set the ""ENABLED_IMS_HDF5"" checkbox before configuring CMake project").c_str(),__iim__current__function__);
+#endif
+}
+
 void *IMS_HDF5get_rootalist ( void *descr ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
 	if ( descr )
@@ -1961,11 +1985,11 @@ void IMS_HDF5getVxlSize ( void *descr, double &szV, double &szH, double &szD ) t
 }
 
 
-void IMS_HDF5addResolution ( void *file_descr, iim::sint64 height, iim::sint64 width, iim::sint64 depth, int nchans, int r ) throw (iim::IOException) {
+void IMS_HDF5addResolution ( void *file_descr, iim::sint64 height, iim::sint64 width, iim::sint64 depth, int nchans, int r, bool is_first ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
 	IMS_HDF5_fdescr_t *int_descr = (IMS_HDF5_fdescr_t *) file_descr;
 
-	if ( int_descr->addResolution(r,(hsize_t)height, (hsize_t)width,(hsize_t)depth,nchans) != r )
+	if ( int_descr->addResolution(r,(hsize_t)height, (hsize_t)width,(hsize_t)depth,nchans,is_first) != r )
 		throw iim::IOException(iim::strprintf("cannot add resolution %d",r).c_str(),__iim__current__function__);
 #else
 	throw iim::IOException(iim::strprintf(

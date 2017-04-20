@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-20. Giulio      @FIXED a missing parameter in the call to 'IMS_HDF5init' in 'appendSlice'
 * 2017-04-17. Giulio.     @ADDED the generation of IMS files with default metadata
 * 2017-04-07. Giulio.     @ADDED ability to return a selected channel instead of all channels
 * 2016-10-27. Giulio.     @ADDED routines for extracting additional parameters
@@ -384,7 +385,7 @@ throw (iom::exception)
 	hyperslab_descr[10] = 1; // [3][1]
 	hyperslab_descr[11] = 1; // [3][2]
 
-	IMS_HDF5init(img_path,file_descr,img_bytes_x_chan);
+	IMS_HDF5init(img_path,file_descr,false,img_bytes_x_chan);
 
 	for ( int c=0; c<img_chans; c++ ) {
 		IMS_HDF5writeHyperslab(file_descr,raw_img,buf_dims,hyperslab_descr,tp,c);

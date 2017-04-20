@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-20. Giulio.     @FIXED a bug in the allocation of 'active_chans' in the SetSrc methods
 * 2017-04-17. Giulio.     @ADDED the possibility to generate an IMS file with default metadata
 * 2017-04-09. Giulio.     @ADDED the ability to convert a subset of channels
 * 2017-04-08. Giulio.     @ADDED support for additional attributes required by the IMS format
@@ -163,7 +164,7 @@ void VolumeConverter::setSrcVolume(const char* _root_dir, const char* _fmt, cons
 		channels = volume->getDIM_C();
 	else { // a channel list has been specified
 		channels = (int) chanlist.size();
-		uint32 *active_chans = new uint32(channels);
+		uint32 *active_chans = new uint32[channels];
 		for ( int i=0; i<channels; i++) {
 			if ( isdigit(chanlist.at(i)) )
 				active_chans[i] = chanlist.at(i) - '0';
@@ -231,7 +232,7 @@ void VolumeConverter::setSrcVolume(iim::VirtualVolume * _imported_volume,
 		 channels = volume->getDIM_C();
 	 else { // a channel list has been specified
 		 channels = (int) chanlist.size();
-		 uint32 *active_chans = new uint32(channels);
+		 uint32 *active_chans = new uint32[channels];
 		 for ( int i=0; i<channels; i++) {
 			 if ( isdigit(chanlist.at(i)) )
 				 active_chans[i] = chanlist.at(i) - '0';
@@ -4046,6 +4047,8 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 		IMS_HDF5close(file_descr);
 	}
 
+	// adjust the object/attribute structure to the file to be generated
+	olist = IMS_HDF5adjust_olist(olist,this->volume->getActiveChannels(),channels);
 
 	// create output file with acquisition metadata
 	IMS_HDF5init(output_path,file_descr,false,volume->getBYTESxCHAN(),olist,rootalist); // set the same voxel size of the file containaing metadata 
@@ -4057,10 +4060,13 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 	IMS_HDF5setVxlSize(file_descr,fabs(volume->getVXL_1()),fabs(volume->getVXL_2()),fabs(volume->getVXL_3()));
 
 	// create output file structure and add specific image metadata
+	bool is_first = true;
 	for ( int i=0; i<resolutions_size; i++ ) {
 
-		if(resolutions[i])
-			IMS_HDF5addResolution(file_descr,height,width,depth,volume->getDIM_C(),i); 
+		if(resolutions[i]) {
+			IMS_HDF5addResolution(file_descr,height,width,depth,channels,i,is_first); 
+			is_first = false;
+		}
 
 	}
 

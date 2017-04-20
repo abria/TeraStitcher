@@ -672,9 +672,9 @@ void compute_Neighborhood ( NCC_parms_t *NCC_params, iom::real_t *NCC, int delay
 	int srcStartv; // horizontal index of first pixel of the subregion of NCCnew to be reused when current maximum is moved to the center of NCCnew
 	int srcStarti; // linear index of first pixel of the subregion of NCCnew to be reused when current maximum is moved to the center of NCCnew
 
-	int dstStartu; // vertical index of first pixel of the subregion of NCCnew where te subregion to be used has to be copied
-	int dstStartv; // horizontal index of first pixel of the subregion of NCCnew where te subregion to be used has to be copied
-	int dstStarti; // linear index of first pixel of the subregion of NCCnew where te subregion to be used has to be copied
+	int dstStartu; // vertical index of first pixel of the subregion of NCCnew where the subregion to be used has to be copied
+	int dstStartv; // horizontal index of first pixel of the subregion of NCCnew where the subregion to be used has to be copied
+	int dstStarti; // linear index of first pixel of the subregion of NCCnew where the subregion to be used has to be copied
 
 	int deltau; // vertical displacement of current maximum from the center of NCCnew
 	int deltav; // horizontal displacement of current maximum from the center of NCCnew
@@ -723,15 +723,19 @@ void compute_Neighborhood ( NCC_parms_t *NCC_params, iom::real_t *NCC, int delay
 		dstStarti = dstStartu * (2*newv+1) + dstStartv;
 		if ( srcStartu > 0 ) { // forward copy is safe
 			i = 0;
-			for ( u=0; u<((2*newu+1)-abs(deltau)); u++, i+=abs(deltav) ) // when row changes |deltav| values have to be skipped
-				for ( v=0; v<((2*newv+1)-abs(deltav)); v++ , i++)
+			for ( u=0; u<((2*newu+1)-abs(deltau)); u++, i+=abs(deltav) ) { // when row changes |deltav| values have to be skipped
+				for ( v=0; v<((2*newv+1)-abs(deltav)); v++ , i++) {
 					NCCnew[i + dstStarti] = NCCnew[i + srcStarti];
+				}
+			}
 		}
 		else { // srcStartu == 0 : beckward copy is safe
 			i=(((2*newu+1)-abs(deltau))*((2*newv+1)-abs(deltav)) - 1);
-			for ( u=0; u<((2*newu+1)-abs(deltau)); u++, i+=abs(deltav) ) // when row changes |deltav| values have to be skipped
-				for ( v=0; v<((2*newv+1)-abs(deltav)); v++ , i--)
+			for ( u=0; u<((2*newu+1)-abs(deltau)); u++, i+=abs(deltav) ) { // when row changes |deltav| values have to be skipped
+				for ( v=0; v<((2*newv+1)-abs(deltav)); v++ , i--) {
 					NCCnew[i + dstStarti] = NCCnew[i + srcStarti];
+				}
+			}
 		}
 
 		// update position of the new center (current maximum)

@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2017-04-20. Giulio. @ADDED an operation to adjust the object list
 * 2017-04-17. Giulio. @CHENGED 'IMS_HDF5init' interface to extract file structure only upon request
 * 2017-04-08. Giulio. @ADDED support for additional attributes required by the IMS format
 * 2015-12-29. Giulio. @ADDED red_factor parameter to 'IMS_HDF5getSubVolume'
@@ -99,11 +100,15 @@ void IMS_HDF5init ( std::string fname, void *&descr, bool loadstruct = false, in
  *             file to be created; the description is deallocated after it is used and cannot be used by the caller
  */
  
- void *IMS_HDF5get_olist ( void *descr, int n_chans = 1 , int n_timepoints = 1 ) throw (iim::IOException);
+void *IMS_HDF5get_olist ( void *descr, int n_chans = 1 , int n_timepoints = 1 ) throw (iim::IOException);
 /* 
  */
 
- void *IMS_HDF5get_rootalist ( void *descr ) throw (iim::IOException);
+void *IMS_HDF5adjust_olist ( void *olist, iim::uint32 *chans, int n_chans ) throw (iim::IOException);
+/* 
+ */
+
+void *IMS_HDF5get_rootalist ( void *descr ) throw (iim::IOException);
 /*
  */
 
@@ -132,7 +137,7 @@ void IMS_HDF5set_histogram ( void *descr, histogram_t *buf, int r = 0, int ch = 
 void IMS_HDF5set_thumbnail ( void *descr, iim::uint8 *buf, iim::uint32 thumbnail_sz ) throw (iim::IOException);
 /* set the thumbnail to be saved when the file is closed (has effect only if the file is being created) */
 
-void IMS_HDF5addResolution ( void *file_descr, iim::sint64 height, iim::sint64 width, iim::sint64 depth, int nchans, int r = 0 ) throw (iim::IOException); 
+void IMS_HDF5addResolution ( void *file_descr, iim::sint64 height, iim::sint64 width, iim::sint64 depth, int nchans, int r = 0, bool is_first = false ) throw (iim::IOException); 
 /* add resolution r
  *
  * height: image height at resolution 0
