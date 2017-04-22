@@ -514,8 +514,8 @@ void PTabImport::projfile_button_clicked()
     //---- Alessandro 2013-05-20: obtaining volume's directory with QFileDialog instead of platform native file dialogs
     //                            since a strange behaviour has been shown by native file dialogs on MacOS X.
     QFileDialog dialog(this);
-    dialog.setFileMode(QFileDialog::ExistingFile);
-    dialog.setViewMode(QFileDialog::Detail);
+	dialog.setFileMode(QFileDialog::ExistingFile);
+	dialog.setAcceptMode(QFileDialog::AcceptOpen);
     //dialog.setWindowFlags(Qt::WindowStaysOnTopHint);
     dialog.setWindowTitle("Select TeraStitcher XML project file");
     dialog.setDirectory(QDir::currentPath());
