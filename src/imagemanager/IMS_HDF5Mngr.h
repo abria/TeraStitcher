@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2017-04-20. Giulio  @CHANGED interface of 'IMS_HDF5init' to improve structure initialization
 * 2017-04-20. Giulio. @ADDED an operation to adjust the object list
 * 2017-04-17. Giulio. @CHENGED 'IMS_HDF5init' interface to extract file structure only upon request
 * 2017-04-08. Giulio. @ADDED support for additional attributes required by the IMS format
@@ -100,12 +101,16 @@ void IMS_HDF5init ( std::string fname, void *&descr, bool loadstruct = false, in
  *             file to be created; the description is deallocated after it is used and cannot be used by the caller
  */
  
-void *IMS_HDF5get_olist ( void *descr, int n_chans = 1 , int n_timepoints = 1 ) throw (iim::IOException);
-/* 
+void *IMS_HDF5get_olist ( void *descr, std::string fname = "", int height = 0, int width = 0, int z_points = 0, int n_chans = 1, int n_timepoints = 1, float abs_V = 0.0, float abs_H = 0.0 ) throw (iim::IOException);
+/* return a structure describing a hierarchical file structure in terms of groups and attributes
+ * if 'descr' is not null, the other parameters are not used and the returned structure is the one of the file which descriptor is 'descr'
+ * if 'descr' is null a default strucutre is built using the other parameters to set some attributes
  */
 
-void *IMS_HDF5adjust_olist ( void *olist, iim::uint32 *chans, int n_chans ) throw (iim::IOException);
-/* 
+void *IMS_HDF5adjust_olist ( void *olist, std::string fname, int height, int width, int z_points, iim::uint32 *chans, int n_chans, float abs_V = 0.0, float abs_H = 0.0 ) throw (iim::IOException);
+/* adjust the structure 'olist' which describes a hierarchical file structure in terms of groups and attributes
+ * the other parameters are used to change some groups and attributes
+ * the adjusted file structure is returned
  */
 
 void *IMS_HDF5get_rootalist ( void *descr ) throw (iim::IOException);

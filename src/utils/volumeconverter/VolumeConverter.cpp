@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-20. Giulio      @CHANGED calls to 'IMS_HDF5init' to improve structure initialization
 * 2017-04-20. Giulio.     @FIXED a bug in the allocation of 'active_chans' in the SetSrc methods
 * 2017-04-17. Giulio.     @ADDED the possibility to generate an IMS file with default metadata
 * 2017-04-09. Giulio.     @ADDED the ability to convert a subset of channels
@@ -4037,7 +4038,8 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 	void *olist;
 	void *rootalist;
 	if ( metadata_file == "default" || metadata_file == "null" ) {
-		olist = IMS_HDF5get_olist((void *)0,channels,1); // assumes 1 timepoint
+		// default metadata have to be generated
+		olist = IMS_HDF5get_olist((void *)0,output_path,(int)height,(int)width,(int)depth,channels,1,volume->getORG_V(),volume->getORG_H()); // assumes 1 timepoint
 		rootalist = IMS_HDF5get_rootalist((void *)0);
 	}
 	else {
@@ -4045,10 +4047,10 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 		olist = IMS_HDF5get_olist(file_descr);
 		rootalist = IMS_HDF5get_rootalist(file_descr);
 		IMS_HDF5close(file_descr);
+		// adjust the object/attribute structure to the file to be generated
+		olist = IMS_HDF5adjust_olist(olist,output_path,(int)height,(int)width,(int)depth,this->volume->getActiveChannels(),channels,volume->getORG_V(),volume->getORG_H());
 	}
 
-	// adjust the object/attribute structure to the file to be generated
-	olist = IMS_HDF5adjust_olist(olist,this->volume->getActiveChannels(),channels);
 
 	// create output file with acquisition metadata
 	IMS_HDF5init(output_path,file_descr,false,volume->getBYTESxCHAN(),olist,rootalist); // set the same voxel size of the file containaing metadata 

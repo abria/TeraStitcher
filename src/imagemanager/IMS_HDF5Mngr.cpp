@@ -26,6 +26,8 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2017-04-22. Giulio  @ADDED adjustment in the file structure inheroted from another file 
+* 2017-04-20. Giulio  @CHANGED creation of a default file strucure 
 * 2017-04-20. Giulio. @FIXED HDF5 error messages when resolutions were added after the first
 * 2017-04-20. Giulio. @ADDED an operation to adjust the object list
 * 2017-04-17. Giulio. @ADDED generation of a default file structure 
@@ -61,6 +63,19 @@
 #include <string.h>
 
 
+// code to get time in string format
+#include <time.h>
+
+static char time_str[1024];
+static char *get_time_str ( ) {
+	time_t rawtime;
+	time(&rawtime);
+	strftime(time_str,1024,"%Y-%m-%d %H:%M:%S.000",localtime(&rawtime));
+	return time_str;
+}
+
+
+
 #define MAXSTP   10 // maximim number of channels (aka setups)
 #define MAXRES   10 // maximim number of resolutions
 #define MAXTPS   50 // maximum number of timepoints
@@ -77,11 +92,11 @@ typedef int subdvsns_t[3];
 const char *excluded_attrs[] = { 
 	// CustomData attributes
 	"DimensionInformation",
-	"Height",
+	//"Height",
 	"Left",
-	"Width",
-	"XPosition",
-	"YPosition",
+	//"Width",
+	//"XPosition",
+	//"YPosition",
 	// Image attributes
 	"ExtMax0",
 	"ExtMax1",
@@ -182,11 +197,11 @@ IMS_attr_list_t *build_std_rootattributes ( ) {
 
 
 // return a standard IMS file structure
-IMS_obj_list_t *build_std_filestruct ( int n_chans = 1, int n_timepoints = 1 ) {
+IMS_obj_list_t *build_std_filestruct ( std::string fname, int height, int width, int z_points, int n_chans = 1, int n_timepoints = 1, float abs_V = 0.0, float abs_H = 0.0 ) {
 
 	IMS_obj_list_t *olist;
 	IMS_attr_list_t *alist;
-	char num_str[10];
+	char num_str[256];
 
 	IMS_obj_list_t *rootlist = new IMS_obj_list_t;
 
@@ -194,17 +209,35 @@ IMS_obj_list_t *build_std_filestruct ( int n_chans = 1, int n_timepoints = 1 ) {
 
 	olist = new IMS_obj_list_t; // DataSetInfo list
 
+	alist = new IMS_attr_list_t; // CustomData attribute info list
+	alist->insert(std::make_pair("DateAndTime",std::string(get_time_str())));
+	sprintf(num_str,"%u",height);
+	alist->insert(std::make_pair("Height",std::string(num_str)));
+	sprintf(num_str,"%u",width);
+	alist->insert(std::make_pair("Width",std::string(num_str)));
+	sprintf(num_str,"%u",z_points);
+	alist->insert(std::make_pair("NumberOfZPoints",std::string(num_str)));
+	sprintf(num_str,"%u",n_chans);
+	alist->insert(std::make_pair("NumberOfChannels",std::string(num_str)));
+	sprintf(num_str,"%u",n_timepoints);
+	alist->insert(std::make_pair("NumberOfTimePoints",std::string(num_str)));
+	sprintf(num_str,"%.2f",abs_H);
+	alist->insert(std::make_pair("XPosition",std::string(num_str)));
+	sprintf(num_str,"%.2f",abs_V);
+	alist->insert(std::make_pair("YPosition",std::string(num_str)));
+	olist->insert(std::make_pair("CustomData",IMS_obj_info_t(H5G_GROUP,new IMS_obj_list_t,alist)));
+
 	alist = new IMS_attr_list_t; // ImarisDataSet attribute info list
-	alist->insert(std::make_pair("Creator",""));
+	alist->insert(std::make_pair("Creator","(creator not specified)"));
 	alist->insert(std::make_pair("NumberOfImages","1"));
 	alist->insert(std::make_pair("Version","5.5"));
 	olist->insert(std::make_pair("ImarisDataSet",IMS_obj_info_t(H5G_GROUP,new IMS_obj_list_t,alist)));
 
 	alist = new IMS_attr_list_t; // Image attribute info list
-	alist->insert(std::make_pair("Description",""));
-	alist->insert(std::make_pair("Name",""));
-	alist->insert(std::make_pair("RecordingDate",""));
-	alist->insert(std::make_pair("Unit","um"));
+	alist->insert(std::make_pair("Description","(description not specified)"));
+	alist->insert(std::make_pair("Name",fname));
+	alist->insert(std::make_pair("RecordingDate",get_time_str()));
+	alist->insert(std::make_pair("Unit",""));
 	olist->insert(std::make_pair("Image",IMS_obj_info_t(H5G_GROUP,new IMS_obj_list_t,alist)));
 
 	for ( int c=0; c<n_chans; c++ ) {
@@ -215,11 +248,18 @@ IMS_obj_list_t *build_std_filestruct ( int n_chans = 1, int n_timepoints = 1 ) {
 		olist->insert(std::make_pair("Channel " + std::string(num_str),IMS_obj_info_t(H5G_GROUP,new IMS_obj_list_t,alist)));
 	}
 
+	alist = new IMS_attr_list_t; // Log attribute info list
+	alist->insert(std::make_pair("Entries","0"));
+	olist->insert(std::make_pair("Log",IMS_obj_info_t(H5G_GROUP,new IMS_obj_list_t,alist)));
+
 	alist = new IMS_attr_list_t; // TimeInfo attribute info list
-	alist->insert(std::make_pair("DataSetTimePoints","1"));
-	alist->insert(std::make_pair("FileTimePoints","1"));
 	sprintf(num_str,"%u",n_timepoints);
-	alist->insert(std::make_pair("TimePoints",std::string(num_str)));
+	alist->insert(std::make_pair("DataSetTimePoints",std::string(num_str)));
+	alist->insert(std::make_pair("FileTimePoints",std::string(num_str)));
+	for ( int t=1; t<=n_timepoints; t++ ) {
+		sprintf(num_str,"%u",1);
+		alist->insert(std::make_pair("TimePoint" + std::string(num_str),std::string(get_time_str())));
+	}
 	olist->insert(std::make_pair("TimeInfo",IMS_obj_info_t(H5G_GROUP,new IMS_obj_list_t,alist)));
 
 	rootlist->insert(std::make_pair("DataSetInfo",IMS_obj_info_t(H5G_GROUP,olist,new IMS_attr_list_t)));
@@ -347,8 +387,84 @@ IMS_obj_list_t *get_obj_list ( hid_t group ) {
 	return olist;
 }
 
-IMS_obj_list_t *adjust_obj_list ( IMS_obj_list_t *olist, iim::uint32 *chans, int n_chans ) {
+// adjust the file structure retrieved by another file
+IMS_obj_list_t *adjust_obj_list ( IMS_obj_list_t *olist, std::string fname, int height, int width, int z_points, iim::uint32 *chans, int n_chans, float abs_V = 0.0, float abs_H = 0.0 ) {
+
+	char num_str[256];
+	IMS_attr_list_t *attr_list;
+
 	IMS_obj_list_t *dsi_obj_list = (*olist)["DataSetInfo"].olist;
+	
+	// adjust Channel information
+	IMS_attr_list_t *chan_attr_list[MAXSTP]; // list of channels attribute lists
+	std::string chan_names_list[MAXSTP];
+	int org_n_chans = 0;
+	for ( IMS_obj_list_t::iterator it = dsi_obj_list->begin(); it != dsi_obj_list->end(); it++ ) {
+		if ( it->first.substr(0,7) == "Channel" ) {
+			org_n_chans++;
+			chan_attr_list[atoi(it->first.substr(7).c_str())] = it->second.alist;
+			chan_names_list[atoi(it->first.substr(7).c_str())] = it->first;
+			it->second.alist = (IMS_attr_list_t *) 0;
+		}
+	}
+	for ( int c=0; c<org_n_chans; c++ ) {
+		if ( chan_names_list[c].substr(0,7) == "Channel" ) 
+			dsi_obj_list->erase(chan_names_list[c]);
+		else
+			throw iim::IOException(iim::strprintf("Missing number in names of channel groups (%d)",c).c_str(),__iim__current__function__);
+	}
+	for ( int c=0; c<n_chans; c++ ) {
+		sprintf(num_str,"%u",c);
+		dsi_obj_list->insert(std::make_pair("Channel" + std::string(num_str),IMS_obj_info_t(H5G_GROUP,new IMS_obj_list_t,chan_attr_list[chans[c]])));
+	}
+
+	// adjust DataSetInfo
+	if ( dsi_obj_list->find("CustomData") != dsi_obj_list->end() ) { // there is group CustomData: adjust and complete its attributes
+		attr_list = (*dsi_obj_list)["CustomData"].alist;
+		if ( attr_list->find("DateAndTime") != attr_list->end() ) 
+			attr_list->erase("DateAndTime");
+		attr_list->insert(std::make_pair("DateAndTime",std::string(get_time_str())));
+		if ( attr_list->find("Height") != attr_list->end() ) 
+			attr_list->erase("Height");
+		sprintf(num_str,"%u",height);
+		attr_list->insert(std::make_pair("Height",std::string(num_str)));
+		if ( attr_list->find("Width") != attr_list->end() ) 
+			attr_list->erase("Width");
+		sprintf(num_str,"%u",width);
+		attr_list->insert(std::make_pair("Width",std::string(num_str)));
+		if ( attr_list->find("NumberOfZPoints") != attr_list->end() ) 
+			attr_list->erase("NumberOfZPoints");
+		sprintf(num_str,"%u",z_points);
+		attr_list->insert(std::make_pair("NumberOfZPoints",std::string(num_str)));
+		if ( attr_list->find("NumberOfChannels") != attr_list->end() ) 
+			attr_list->erase("NumberOfChannels");
+		sprintf(num_str,"%u",n_chans);
+		attr_list->insert(std::make_pair("NumberOfChannels",std::string(num_str)));
+		if ( attr_list->find("NumberOfTimePoints") != attr_list->end() ) 
+			attr_list->erase("NumberOfTimePoints");
+		sprintf(num_str,"%u",1); // assume 1 time point
+		attr_list->insert(std::make_pair("NumberOfTimePoints",std::string(num_str)));
+		if ( attr_list->find("XPosition") != attr_list->end() ) 
+			attr_list->erase("XPosition");
+		sprintf(num_str,"%.2f",abs_H);
+		attr_list->insert(std::make_pair("XPosition",std::string(num_str)));
+		if ( attr_list->find("YPosition") != attr_list->end() ) 
+			attr_list->erase("YPosition");
+		sprintf(num_str,"%.2f",abs_V);
+		attr_list->insert(std::make_pair("YPosition",std::string(num_str)));
+	}
+	
+	// adjust Image
+	if ( dsi_obj_list->find("Image") != dsi_obj_list->end() ) { // there is group Image: adjust and complete its attributes
+		attr_list = (*dsi_obj_list)["Image"].alist;
+		if ( attr_list->find("RecordingDate") != attr_list->end() ) 
+			attr_list->erase("RecordingDate");
+		attr_list->insert(std::make_pair("RecordingDate",std::string(get_time_str())));
+		if ( attr_list->find("Name") != attr_list->end() ) 
+			attr_list->erase("Name");
+		attr_list->insert(std::make_pair("Name",fname));
+	}
+		
 	return olist;
 }
 
@@ -421,7 +537,7 @@ herr_t create_file_struct ( hid_t group_id, IMS_obj_list_t *olist ) {
 			subgroup_id = H5Gcreate2(group_id, ito->first.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 			status = create_attributes(subgroup_id,ito->second.alist);
 			const char *tmp = ito->first.c_str();
-			if ( strcmp(tmp,"DataSet") != 0 ) {
+			if ( strcmp(tmp,"DataSet") != 0 && strcmp(tmp,"TimestampsPerFrame") != 0 ) { // 2017-04-21. Giulio. excluded group 'TimestampsPerFrame'
 				status = create_file_struct(subgroup_id,ito->second.olist);
 			}
 			status = H5Gclose(subgroup_id);
@@ -1875,12 +1991,12 @@ void IMS_HDF5init ( std::string fname, void *&descr, bool loadstruct, int vxl_nb
 #endif
 }
 
-void *IMS_HDF5get_olist ( void *descr, int n_chans, int n_timepoints ) throw (iim::IOException) {
+void *IMS_HDF5get_olist ( void *descr, std::string fname, int height, int width, int z_points, int n_chans, int n_timepoints, float abs_V, float abs_H ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
 	if ( descr )
 		return ((IMS_HDF5_fdescr_t *) descr)->extractOLIST();
 	else
-		return (void *) build_std_filestruct(n_chans,n_timepoints);
+		return (void *) build_std_filestruct(fname,height,width,z_points,n_chans,n_timepoints,abs_V,abs_H);
 #else
 	throw iim::IOException(iim::strprintf(
 			"Support to IMS_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "
@@ -1888,9 +2004,9 @@ void *IMS_HDF5get_olist ( void *descr, int n_chans, int n_timepoints ) throw (ii
 #endif
 }
 
-void *IMS_HDF5adjust_olist ( void *olist, iim::uint32 *chans, int n_chans ) throw (iim::IOException) {
+void *IMS_HDF5adjust_olist ( void *olist, std::string fname, int height, int width, int z_points, iim::uint32 *chans, int n_chans, float abs_V, float abs_H ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
-		return ((void *) adjust_obj_list((IMS_obj_list_t *)olist,chans,n_chans));
+		return ((void *) adjust_obj_list((IMS_obj_list_t *)olist,fname,height,width,z_points,chans,n_chans,abs_V,abs_H));
 #else
 	throw iim::IOException(iim::strprintf(
 			"Support to IMS_HDF5 files not available: please verify there is are valid hdf5 static libs (hdf5 and szip) "
