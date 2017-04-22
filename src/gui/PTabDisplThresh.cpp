@@ -58,7 +58,7 @@ PTabDisplThresh::PTabDisplThresh(QMyTabWidget* _container, int _tab_index) : QWi
     //other widgets
     saveproj_label = new QLabel("Save project XML to:");
     saveproj_field = new QLineEdit();
-    saveproj_field->setFont(QFont("",8));
+    //saveproj_field->setFont(QFont("",8));
     browse_button = new QPushButton("...");
     reliable_displ_number_label = new QLabel("Reliable displacements:");
     reliable_displ_number_field = new QLineEdit();
@@ -198,7 +198,7 @@ void PTabDisplThresh::start()
 
         //showing operation successful message
         if(PTeraStitcher::instance()->modeAdvancedAction->isChecked())
-            QMessageBox::information(this, "Operation successful", "Thresholding step successfully performed!", QMessageBox::Ok);
+            QMessageBox::information(this, "Operation successful", "Threshold step successfully performed!", QMessageBox::Ok);
 
         //enabling (and updating) other tabs
         this->updateContent();

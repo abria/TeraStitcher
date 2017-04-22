@@ -58,7 +58,7 @@ PTabPlaceTiles::PTabPlaceTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     //other widgets
     saveproj_label = new QLabel("Save project XML to:");
     saveproj_field = new QLineEdit();
-    saveproj_field->setFont(QFont("",8));
+    //saveproj_field->setFont(QFont("",8));
     browse_button = new QPushButton("...");
     algo_label = new QLabel("Algorithm:");
     algo_cbox = new QComboBox();
@@ -169,7 +169,7 @@ void PTabPlaceTiles::start()
 
         //showing operation successful message
         if(PTeraStitcher::instance()->modeAdvancedAction->isChecked())
-            QMessageBox::information(this, "Operation successful", "Placing step successfully performed!", QMessageBox::Ok);
+            QMessageBox::information(this, "Operation successful", "Place step successfully performed!", QMessageBox::Ok);
 
         //stop animation and reset some widgets
         stop();

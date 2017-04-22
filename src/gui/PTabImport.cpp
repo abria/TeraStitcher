@@ -68,7 +68,7 @@ PTabImport::PTabImport(QMyTabWidget* _container, int _tab_index) : QWidget(), co
 #ifdef Q_OS_MAC
 	QFont smallFont;
 #else
-	QFont smallFont("", 8);
+	QFont smallFont;//("", 8);
 #endif
     import_form = new QGroupBox("Import form");
     path_field    = new QPrefixSuffixLineEdit("Volume/XML path: ");

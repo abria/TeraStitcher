@@ -63,7 +63,8 @@ class terastitcher::PTabMergeTiles : public QWidget
     QWidget* basic_panel;
     QLabel* savedir_label;
     QLineEdit* savedir_field;
-    QPushButton* browse_button;
+	QPushButton *outDirButton;			//browse for volume's output directory button
+	QPushButton *outFileButton;			//browse for volume's output file button
     QLabel* resolutions_label;
     QLabel* resolutions_size_label;
     QLabel* resolutions_save_label;
@@ -191,11 +192,6 @@ public slots:
 #else
 	void merging_done(iom::exception *ex);
 #endif
-
-    /**********************************************************************************
-    * Called when "channel_selection" state has changed.
-    ***********************************************************************************/
-    void channelSelectedChanged(int);
 
 };
 

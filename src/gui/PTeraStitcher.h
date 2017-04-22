@@ -42,8 +42,9 @@
 #include "PTabPlaceTiles.h"
 #include "PTabMergeTiles.h"
 #include "QHelpBox.h"
+#include <QMainWindow>
 
-class terastitcher::PTeraStitcher : public QWidget
+class terastitcher::PTeraStitcher : public QMainWindow
 {
     Q_OBJECT
 
@@ -68,7 +69,6 @@ class terastitcher::PTeraStitcher : public QWidget
         QWidget *parentWidget;          //handle of parent widget
 
         //menu widgets
-        QMenuBar* menuBar;              //Menu bar
         QMenu* fileMenu;                //"File" menu
         QAction* closeVolumeAction;     //"Close volume" menu action
         QAction* exitAction;            //"Exit" menu action
@@ -87,12 +87,11 @@ class terastitcher::PTeraStitcher : public QWidget
         PTabDisplThresh* tabDisplThres; //tab for "Displacements Thresholding" step of the stitching process
         PTabPlaceTiles* tabPlaceTiles;  //tab for "Optimal tiles placement" step of the stitching process
         PTabMergeTiles* tabMergeTiles;  //tab for "Merging tiles" step of the stitching process
-        QHelpBox* helpBox;              //helpbox
+        //QHelpBox* helpBox;              //helpbox
         QProgressBar* progressBar;      //progress bar
         QPushButton* startButton;       //start button
         QPushButton* startAllButton;    //start all button
         QPushButton* stopButton;        //stop button
-        QStatusBar* statusBar;          //status bar
 
 
     public:
@@ -114,7 +113,7 @@ class terastitcher::PTeraStitcher : public QWidget
         V3DPluginCallback* getV3D_env(){return V3D_env;}
 #endif
         QProgressBar* getProgressBar(){return progressBar;}
-        QStatusBar* getStatusBar(){return statusBar;}
+        QStatusBar* getStatusBar(){return this->statusBar();}
         void setStartButtonEnabled(bool enabled){startButton->setEnabled(enabled);}
         void setStopButtonEnabled(bool enabled){stopButton->setEnabled(enabled);}
 
@@ -128,7 +127,7 @@ class terastitcher::PTeraStitcher : public QWidget
         void closeEvent(QCloseEvent *evt);
 
         //overrides eventFilter method of QWidget
-        bool eventFilter(QObject *object, QEvent *event);
+        //bool eventFilter(QObject *object, QEvent *event);
 
         //very useful (not included in Qt): disables the given item of the given combobox
         static void setEnabledComboBoxItem(QComboBox* cbox, int _index, bool enabled);

@@ -61,7 +61,7 @@ PTabDisplProj::PTabDisplProj(QMyTabWidget* _container, int _tab_index) : QWidget
     //other widgets
     saveproj_label = new QLabel("Save project XML to:");
     saveproj_field = new QLineEdit();
-    saveproj_field->setFont(QFont("",8));
+    //saveproj_field->setFont(QFont("",8));
     browse_button = new QPushButton("...");
     total_displ_number_label = new QLabel("Displacements:");
     total_displ_number_field = new QLineEdit();
@@ -178,7 +178,7 @@ void PTabDisplProj::start()
 
         //showing operation successful message
         if(PTeraStitcher::instance()->modeAdvancedAction->isChecked())
-            QMessageBox::information(this, "Operation successful", "Projecting step successfully performed!", QMessageBox::Ok);
+            QMessageBox::information(this, "Operation successful", "Project step successfully performed!", QMessageBox::Ok);
 
         //enabling (and updating) other tabs
         this->setEnabled(true);

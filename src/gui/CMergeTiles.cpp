@@ -129,11 +129,17 @@ void CMergeTiles::run()
 			std::string mdata_fname = "null";
 			std::string outFmt = "RGB";
 
+			// set blending algorithm
+			_unstitchedVolume->setBLENDING_ALGO(blending_algo);
+
+
 			// create volume converter
 			VolumeConverter vc;
 			vc.setSrcVolume(_unstitchedVolume, outFmt.c_str());
 			vc.setSubVolume(y0, y1, x0, x1, z0, z1);
 
+
+			// make conversion (code taken from teraconverter.cpp)
 			if ( dst_format == iim::SIMPLE_RAW_FORMAT )
 			{
 					vc.generateTilesSimple(dst_root_dir.c_str(),resolutions,

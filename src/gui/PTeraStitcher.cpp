@@ -75,9 +75,9 @@ void PTeraStitcher::uninstance()
 }
 
 #ifdef VAA3D_TERASTITCHER
-PTeraStitcher::PTeraStitcher(V3DPluginCallback *callback, QWidget *parent) : QWidget(parent), V3D_env(callback)
+PTeraStitcher::PTeraStitcher(V3DPluginCallback *callback, QWidget *parent) : QMainWindow(parent), V3D_env(callback)
 #else
-PTeraStitcher::PTeraStitcher(QWidget *parent) : QWidget(parent)
+PTeraStitcher::PTeraStitcher(QWidget *parent) : QMainWindow(parent)
 #endif
 {
     #ifdef TSP_DEBUG
@@ -87,10 +87,7 @@ PTeraStitcher::PTeraStitcher(QWidget *parent) : QWidget(parent)
     //initializing members
     parentWidget = parent;
 
-    //initializing menu
-    menuBar = new QMenuBar(0);
-
-    fileMenu = menuBar->addMenu("File");
+    fileMenu = menuBar()->addMenu("File");
     closeVolumeAction = new QAction("Close volume", this);
     closeVolumeAction->setIcon(QIcon(":/icons/close.png"));
     closeVolumeAction->setShortcut(QKeySequence("Ctrl+C"));
@@ -101,7 +98,7 @@ PTeraStitcher::PTeraStitcher(QWidget *parent) : QWidget(parent)
     fileMenu->addAction(exitAction);
     connect(exitAction, SIGNAL(triggered()), this, SLOT(exit()));
 
-    optionsMenu = menuBar->addMenu("Options");
+    optionsMenu = menuBar()->addMenu("Options");
     modeOptionsMenu = optionsMenu->addMenu("Mode");
     QActionGroup* modeSelectionGroup = new QActionGroup(this);
     modeSelectionGroup->setExclusive(true);
@@ -117,7 +114,7 @@ PTeraStitcher::PTeraStitcher(QWidget *parent) : QWidget(parent)
     connect(modeBasicAction, SIGNAL(changed()), this, SLOT(modeChanged()));
     connect(modeAdvancedAction, SIGNAL(changed()), this, SLOT(modeChanged()));
 
-    helpMenu = menuBar->addMenu("Help");
+    helpMenu = menuBar()->addMenu("Help");
     aboutAction = new QAction("About", this);
     aboutAction->setIcon(QIcon(":/icons/about.png"));
     helpMenu->addAction(aboutAction);
@@ -143,12 +140,12 @@ PTeraStitcher::PTeraStitcher(QWidget *parent) : QWidget(parent)
 	tabMergeTiles = PTabMergeTiles::instance(tabs, 5);
 #endif
     tabMergeTiles->setEnabled(false);
-    tabs->addTab(tabImport, tr("Importing"));
-    tabs->addTab(tabDisplComp, tr("Aligning"));
-    tabs->addTab(tabDisplProj, tr("Projecting"));
-    tabs->addTab(tabDisplThres, tr("Thresholding"));
-    tabs->addTab(tabPlaceTiles, tr("Placing"));
-    tabs->addTab(tabMergeTiles, tr("Merging"));
+    tabs->addTab(tabImport, tr("Import"));
+    tabs->addTab(tabDisplComp, tr("Align"));
+    tabs->addTab(tabDisplProj, tr("Project"));
+    tabs->addTab(tabDisplThres, tr("Threshold"));
+    tabs->addTab(tabPlaceTiles, tr("Place"));
+    tabs->addTab(tabMergeTiles, tr("Merge"));
     tabs->setTabIcon(0, QIcon(":/icons/number1.png"));
     tabs->setTabIcon(1, QIcon(":/icons/number2.png"));
     tabs->setTabIcon(2, QIcon(":/icons/number3.png"));
@@ -165,49 +162,48 @@ PTeraStitcher::PTeraStitcher(QWidget *parent) : QWidget(parent)
     stopButton = new QPushButton(this);
     stopButton->setIcon(QIcon(":/icons/stop.png"));
     stopButton->setText("Stop");
-    statusBar = new QStatusBar();
-    statusBar->showMessage("Ready.");
-    statusBar->setFont(QFont("",8));
-    helpBox = new QHelpBox(this);
-    helpBox->setDefaultMessage("<b>What's this?</b><br><i>Move the mouse over an object and its description will be displayed here.</i>");
+    statusBar()->showMessage("Ready.");
+    //statusBar()->setFont(QFont("",8));
+    //helpBox = new QHelpBox(this);
+    //helpBox->setDefaultMessage("<b>What's this?</b><br><i>Move the mouse over an object and its description will be displayed here.</i>");
 
     //layout
-    QGridLayout* bottomBar = new QGridLayout();
-    bottomBar->addWidget(statusBar, 0,0,1,20);
-    bottomBar->addWidget(progressBar, 1,0,1,18);
-    bottomBar->addWidget(startButton, 1,18,1,1);
-    bottomBar->addWidget(stopButton, 1,19,1,1);
+    QHBoxLayout* bottomBar = new QHBoxLayout();
+    bottomBar->addWidget(progressBar, 1);
+    bottomBar->addWidget(startButton);
+    bottomBar->addWidget(stopButton);
     //bottomBar->setContentsMargins(5,0,5,5);
     QVBoxLayout* layout = new QVBoxLayout();
-    layout->addWidget(menuBar, 0);
     layout->addWidget(tabs, 1);
-    helpBox->setFixedHeight(100);
-    QGridLayout *helpBoxLayout = new QGridLayout();
-    helpBoxLayout->addWidget(helpBox, 0, 0);
+    //helpBox->setFixedHeight(100);
+    //QGridLayout *helpBoxLayout = new QGridLayout();
+   // helpBoxLayout->addWidget(helpBox, 0, 0);
     //helpBoxLayout->setContentsMargins(5,5,5,0);
-    layout->addLayout(helpBoxLayout);
-    layout->addLayout(bottomBar, 0);
-    layout->setSpacing(0);
+	//layout->addLayout(helpBoxLayout);
+	layout->addLayout(bottomBar, 0);
+    //layout->setSpacing(0);
     //layout->setContentsMargins(0,0,0,0);
-    setLayout(layout);
+	QWidget *centralWidget = new QWidget(this);
+    centralWidget->setLayout(layout);
+	setCentralWidget(centralWidget);
 
     // signals and slots
     connect(startButton, SIGNAL(clicked()), this, SLOT(startButtonClicked()));
     //connect(startAllButton, SIGNAL(clicked()), this, SLOT(startAllButtonClicked()));
     connect(stopButton, SIGNAL(clicked()), this, SLOT(stopButtonClicked()));
     connect(ts::QProgressSender::instance(), SIGNAL(sendProgressBarChanged(int, int, int, std::string)), this, SLOT(progressBarChanged(int, int, int, std::string)), Qt::QueuedConnection);
-    tabImport->installEventFilter(this);
+    /*tabImport->installEventFilter(this);
     tabDisplComp->installEventFilter(this);
     tabDisplProj->installEventFilter(this);
     tabDisplThres->installEventFilter(this);
     tabPlaceTiles->installEventFilter(this);
     tabMergeTiles->installEventFilter(this);
     tabImport->slice_spinbox->installEventFilter(this);
-    tabImport->preview_button->installEventFilter(this);
+    tabImport->preview_button->installEventFilter(this);*/
 
     //window attributes
     setWindowTitle(tr("TeraStitcher v") + (terastitcher::version + " (with Qt " + ts::qtversion + ")").c_str());
-    setWindowFlags(Qt::WindowStaysOnTopHint);
+    //setWindowFlags(Qt::WindowStaysOnTopHint);
 	//resize(1024, 768);
 //    setFixedSize(800, 600);
 //    setFixedSize(1024, 768);
@@ -260,10 +256,10 @@ void PTeraStitcher::modeChanged()
     else
     {
         tabs->removeTab(3);
-        tabs->addTab(tabDisplProj, tr("Projecting"));
-        tabs->addTab(tabDisplThres, tr("Thresholding"));
-        tabs->addTab(tabPlaceTiles, tr("Placing"));
-        tabs->addTab(tabMergeTiles, tr("Merging"));
+        tabs->addTab(tabDisplProj, tr("Project"));
+        tabs->addTab(tabDisplThres, tr("Threshold"));
+        tabs->addTab(tabPlaceTiles, tr("Place"));
+        tabs->addTab(tabMergeTiles, tr("Merge"));
         tabs->setTabIcon(2, QIcon(":/icons/number3.png"));
         tabs->setTabIcon(3, QIcon(":/icons/number4.png"));
         tabs->setTabIcon(4, QIcon(":/icons/number5.png"));
@@ -283,8 +279,8 @@ void PTeraStitcher::setToReady()
     startButton->setEnabled(true);
     stopButton->setEnabled(false);    
     tabs->setEnabled(true);
-    statusBar->clearMessage();
-    statusBar->showMessage("Ready.");
+    statusBar()->clearMessage();
+    statusBar()->showMessage("Ready.");
 }
 
 //called when startButton has been clicked
@@ -450,86 +446,86 @@ void PTeraStitcher::progressBarChanged(int val, int minutes, int seconds, std::s
     remaining_time.append(QString::number(seconds));
     remaining_time.append(" seconds remaining");
     if(message.size())
-        statusBar->showMessage(message.c_str());
+        statusBar()->showMessage(message.c_str());
     else
-        statusBar->showMessage(remaining_time);
+        statusBar()->showMessage(remaining_time);
 }
 
 /**********************************************************************************
 * Filters events generated by the widgets to which a help message must be associated
 ***********************************************************************************/
 std::string defaultMsg   = "<b>What's this?</b><br><i>Move the mouse over an object and its description will be displayed here.</i>";
-std::string tabImportMsg = "The <i>Importing</i> step imports the <b>acquisition files</b> and previously computed <b>stitching metadata</b> "
+std::string tabImportMsg = "The <i>Import</i> step imports the <b>acquisition files</b> and previously computed <b>stitching metadata</b> "
                       "(alignments, tiles placement, etc.) if any. This takes up to a few minutes the first time an acquisition is "
                       "imported (all files are scanned) whereas it is instant when importing through a valid <b>TeraStitcher XML project</b> file.";
 std::string previewMsg =   "Select a <b>slice</b> to be <b>stitched</b> using <b>nominal stage coordinates</b> and the result will be shown "
                       "into <b>Vaa3D</b>. This may be useful to test whether the volume has been properly imported and the precision of "
                       "<b>motorized stages</b>.";
-std::string tabDCompMsg  = "The <i>Aligning</i> step computes all <b>pairwise stacks displacements</b> and saves them in the selected XML project file. "
+std::string tabDCompMsg  = "The <i>Align</i> step computes all <b>pairwise stacks displacements</b> and saves them in the selected XML project file. "
                       "The volume will be processed a layer at the time, whose thickness can be specified by the user to control <b>memory occupancy</b>.";
-std::string tabDProjMsg  = "The <i>Projecting</i> step generates <b>the most reliable displacement</b> between each pair of adjacent stacks "
+std::string tabDProjMsg  = "The <i>Project</i> step generates <b>the most reliable displacement</b> between each pair of adjacent stacks "
                       "by combining the multiple displacements previously computed along D (one for each layer)";
-std::string tabDThresMsg = "The <i>Thresholding</i> step substitutes all the displacements whose <b>reliability</b> is below the selected threshold "
+std::string tabDThresMsg = "The <i>Threshold</i> step substitutes all the displacements whose <b>reliability</b> is below the selected threshold "
                       "with the default displacement corresponding to the <b>nominal stage coordinate</b>. In addition, the subset of reliable displacements "
-                      "is used to mark stacks as <b>stitchables</b> or <b>nonstitchables</b>, that can be later excluded from <i>Merging</i>.";
-std::string tabPlaceMsg =  "The <i>Placing</i> step uses the computed displacements to obtain the <b>optimal tiles placement</b>. If this step is skipped, "
+                      "is used to mark stacks as <b>stitchables</b> or <b>nonstitchables</b>, that can be later excluded from <i>Merge</i>.";
+std::string tabPlaceMsg =  "The <i>Place</i> step uses the computed displacements to obtain the <b>optimal tiles placement</b>. If this step is skipped, "
                       "tiles will be merged using only nominal stage coordinates.";
-std::string tabMergeMsg =  "The <i>Merging</i> step <b>combines</b> tiles into a volume which is saved at <b>different resolutions</b>. The "
+std::string tabMergeMsg =  "The <i>Merge</i> step <b>combines</b> tiles into a volume which is saved at <b>different resolutions</b>. The "
                       "overlapping regions are substituted with a <b>blended</b> version of them. If the previous step has NOT been performed, <b>nominal</b> stage "
                       "coordinates will be used for merging. This allows <b>direct stitching</b> in the case that nominal coordinates are precise enough.";
-bool PTeraStitcher::eventFilter(QObject *object, QEvent *event)
-{
-    if((object == tabImport->slice_spinbox || object == tabImport->preview_button) && tabImport->isVisible())
-    {
-        if(event->type() == QEvent::Enter)
-            helpBox->setText(previewMsg);
-        else if(event->type() == QEvent::Leave)
-            helpBox->setText(tabImportMsg);
-    }
-    else if (object == tabImport)
-    {
-        if(event->type() == QEvent::Enter)
-            helpBox->setText(tabImportMsg);
-        else if(event->type() == QEvent::Leave)
-            helpBox->setText(defaultMsg);
-    }
-    else if(object == tabDisplComp)
-    {
-        if(event->type() == QEvent::Enter)
-            helpBox->setText(tabDCompMsg);
-        else if(event->type() == QEvent::Leave)
-            helpBox->setText(defaultMsg);
-    }
-    else if(object == tabDisplProj)
-    {
-        if(event->type() == QEvent::Enter)
-            helpBox->setText(tabDProjMsg);
-        else if(event->type() == QEvent::Leave)
-            helpBox->setText(defaultMsg);
-    }
-    else if(object == tabDisplThres)
-    {
-        if(event->type() == QEvent::Enter)
-            helpBox->setText(tabDThresMsg);
-        else if(event->type() == QEvent::Leave)
-            helpBox->setText(defaultMsg);
-    }
-    else if(object == tabPlaceTiles)
-    {
-        if(event->type() == QEvent::Enter)
-            helpBox->setText(tabPlaceMsg);
-        else if(event->type() == QEvent::Leave)
-            helpBox->setText(defaultMsg);
-    }
-    else if(object == tabMergeTiles)
-    {
-        if(event->type() == QEvent::Enter)
-            helpBox->setText(tabMergeMsg);
-        else if(event->type() == QEvent::Leave)
-            helpBox->setText(defaultMsg);
-    }
-    return false;
-}
+//bool PTeraStitcher::eventFilter(QObject *object, QEvent *event)
+//{
+//    if((object == tabImport->slice_spinbox || object == tabImport->preview_button) && tabImport->isVisible())
+//    {
+//        if(event->type() == QEvent::Enter)
+//            helpBox->setText(previewMsg);
+//        else if(event->type() == QEvent::Leave)
+//            helpBox->setText(tabImportMsg);
+//    }
+//    else if (object == tabImport)
+//    {
+//        if(event->type() == QEvent::Enter)
+//            helpBox->setText(tabImportMsg);
+//        else if(event->type() == QEvent::Leave)
+//            helpBox->setText(defaultMsg);
+//    }
+//    else if(object == tabDisplComp)
+//    {
+//        if(event->type() == QEvent::Enter)
+//            helpBox->setText(tabDCompMsg);
+//        else if(event->type() == QEvent::Leave)
+//            helpBox->setText(defaultMsg);
+//    }
+//    else if(object == tabDisplProj)
+//    {
+//        if(event->type() == QEvent::Enter)
+//            helpBox->setText(tabDProjMsg);
+//        else if(event->type() == QEvent::Leave)
+//            helpBox->setText(defaultMsg);
+//    }
+//    else if(object == tabDisplThres)
+//    {
+//        if(event->type() == QEvent::Enter)
+//            helpBox->setText(tabDThresMsg);
+//        else if(event->type() == QEvent::Leave)
+//            helpBox->setText(defaultMsg);
+//    }
+//    else if(object == tabPlaceTiles)
+//    {
+//        if(event->type() == QEvent::Enter)
+//            helpBox->setText(tabPlaceMsg);
+//        else if(event->type() == QEvent::Leave)
+//            helpBox->setText(defaultMsg);
+//    }
+//    else if(object == tabMergeTiles)
+//    {
+//        if(event->type() == QEvent::Enter)
+//            helpBox->setText(tabMergeMsg);
+//        else if(event->type() == QEvent::Leave)
+//            helpBox->setText(defaultMsg);
+//    }
+//    return false;
+//}
 
 //very useful (not included in Qt): disables the given item of the given combobox
 void PTeraStitcher::setEnabledComboBoxItem(QComboBox* cbox, int _index, bool enabled)

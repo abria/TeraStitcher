@@ -68,9 +68,9 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
 #if defined Q_OS_MAC
 	QFont smallFont;
 #elif defined Q_OS_WIN
-	QFont smallFont("", 7);
+	QFont smallFont;//("", 7);
 #else 
-	QFont smallFont("", 8);
+	QFont smallFont;//("", 8);
 #endif
 
     //basic panel widgets
@@ -78,7 +78,8 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     savedir_label = new QLabel("Save to:");
     savedir_field = new QLineEdit();
     savedir_field->setFont(smallFont);
-    browse_button = new QPushButton("...");
+	outDirButton = new QPushButton("Browse for dir...", this);
+	outFileButton = new QPushButton("Browse for file...", this);
     resolutions_label = new QLabel(QString("Resolution (X ").append(QChar(0x00D7)).append(" Y ").append(QChar(0x00D7)).append(" Z)"));
     resolutions_label->setFont(smallFont);
     resolutions_label->setAlignment(Qt::AlignCenter);
@@ -234,7 +235,6 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     channel_selection->lineEdit()->setAlignment(Qt::AlignCenter);
     for(int i = 0; i < channel_selection->count(); i++)
         channel_selection->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);
-    connect(channel_selection, SIGNAL(currentIndexChanged(int)),this, SLOT(channelSelectedChanged(int)));
 
 
 
@@ -246,12 +246,12 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     /**/
     QHBoxLayout* basic_panel_row_1 = new QHBoxLayout();
     basic_panel_row_1->setContentsMargins(0,0,0,0);
-    basic_panel_row_1->setSpacing(0);
+    //basic_panel_row_1->setSpacing(0);
     savedir_label->setFixedWidth(left_margin);
-    browse_button->setFixedWidth(80);
     basic_panel_row_1->addWidget(savedir_label);
-    basic_panel_row_1->addWidget(savedir_field,1);
-    basic_panel_row_1->addWidget(browse_button);
+	basic_panel_row_1->addWidget(savedir_field,1);
+	basic_panel_row_1->addWidget(outDirButton);
+	basic_panel_row_1->addWidget(outFileButton);
     basicpanel_layout->addLayout(basic_panel_row_1);
     /**/
     basicpanel_layout->addSpacing(10);
@@ -386,7 +386,8 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     wait_label->setMovie(wait_movie);
 
     // signals and slots
-    connect(browse_button, SIGNAL(clicked()), this, SLOT(browse_button_clicked()));
+	connect(outDirButton, SIGNAL(clicked()), this, SLOT(browse_button_clicked()));
+	connect(outFileButton, SIGNAL(clicked()), this, SLOT(browse_button_clicked()));
     connect(y0_field, SIGNAL(valueChanged(int)), this, SLOT(y0_field_changed(int)));
     connect(y1_field, SIGNAL(valueChanged(int)), this, SLOT(y1_field_changed(int)));
     connect(x0_field, SIGNAL(valueChanged(int)), this, SLOT(x0_field_changed(int)));
@@ -423,7 +424,7 @@ void PTabMergeTiles::reset()
     printf("TeraStitcher plugin [thread %d] >> PTabMergeTiles::reset()\n", this->thread()->currentThreadId());
     #endif
 
-    savedir_field->setText("Enter or select the directory where to save the stitched volume.");
+    savedir_field->setText("Enter or select the folder/file where to save the stitched volume.");
     for(int i=0; i<n_max_resolutions; i++)
     {
         resolutions_fields[i]->setText(QString("n.a. ").append(QChar(0x00D7)).append(QString(" n.a. ").append(QChar(0x00D7)).append(" n.a.")));
@@ -447,6 +448,7 @@ void PTabMergeTiles::reset()
     showAdvancedButton->setChecked(false);
     advanced_panel->setVisible(false);
 
+	volumeformat_changed(0);
     setEnabled(false);
 }
 
@@ -462,7 +464,7 @@ void PTabMergeTiles::start()
 
     try
     {
-        //first checking that a volume has been properly imported
+        // first check that a volume has been properly imported
         if(!CImportUnstitched::instance()->getVolume())
             throw iom::exception("A volume must be properly imported first. Please perform the Import step.");
 
@@ -470,21 +472,33 @@ void PTabMergeTiles::start()
         if(vol_format_cbox->currentIndex() == 0)
             throw iom::exception("Please select the volume format from the pull-down menu");
 
-        //verifying that directory is readable
-        QDir directory(savedir_field->text());
-        if(!directory.isReadable())
-            throw iom::exception(QString("Cannot open directory\n \"").append(savedir_field->text()).append("\"").toStdString().c_str());
+		if(outDirButton->isEnabled())
+		{
+			// check that directory is readable
+			QDir directory(savedir_field->text());
+			if(!directory.isReadable())
+				throw iom::exception(QString("Cannot open directory\n \"").append(savedir_field->text()).append("\"").toStdString().c_str());
 
-        //asking confirmation to continue when saving to a non-empty dir
-        QStringList dir_entries = directory.entryList();
-        if(dir_entries.size() > 2 && QMessageBox::information(this, "Warning", "The directory you selected is NOT empty. \n\nIf you continue, the merging "
-                                               "process could fail if the directories to be created already exist in the given path.", "Continue", "Cancel"))
-        {
-            PTeraStitcher::instance()->setToReady();
-            return;
-        }
+			// ask confirmation to continue when saving to a non-empty dir
+			QStringList dir_entries = directory.entryList();
+			if(dir_entries.size() > 2 && QMessageBox::information(this, "Warning", "The directory you selected is NOT empty. \n\nIf you continue, the merging "
+												   "process could fail if the directories to be created already exist in the given path.", "Continue", "Cancel"))
+			{
+				PTeraStitcher::instance()->setToReady();
+				return;
+			}
+		}
+		else if(iim::isFile(savedir_field->text().toStdString()))
+		{
+			// ask confirmation to continue when overwriting an existing file
+			if(QMessageBox::information(this, "Warning", "The file already exists and will be overwritten.", "Continue", "Cancel"))
+			{
+				PTeraStitcher::instance()->setToReady();
+				return;
+			}
+		}
 
-        //disabling import form and enabling progress bar animation and tab wait animation
+        //disable import form and enable progress bar animation and tab wait animation
         PTeraStitcher::instance()->getProgressBar()->setEnabled(true);
         PTeraStitcher::instance()->getProgressBar()->setMinimum(0);
         PTeraStitcher::instance()->getProgressBar()->setMaximum(100);
@@ -496,10 +510,12 @@ void PTabMergeTiles::start()
         else
             container->getTabBar()->setTabButton(tab_index, QTabBar::LeftSide, wait_label);
 
-        //propagating options and parameters and launching task
+        // propagate options and parameters
         CMergeTiles::instance()->setPMergeTiles(this);
         for(int i=0; i<n_max_resolutions; i++)
             CMergeTiles::instance()->setResolution(i, resolutions_save_cboxs[i]->isChecked());
+
+		// perform task in a separate thread
         CMergeTiles::instance()->start();
     }
     catch(iom::exception &ex)
@@ -596,29 +612,54 @@ void PTabMergeTiles::browse_button_clicked()
     printf("TeraStitcher plugin [thread %d] >> PTabMergeTiles browse_button_clicked() launched\n", this->thread()->currentThreadId());
     #endif
 
-    //obtaining volume's directory
-    QFileDialog dialog(this);
-    dialog.setFileMode(QFileDialog::DirectoryOnly);
-    dialog.setAcceptMode(QFileDialog::AcceptSave);
-    //dialog.setWindowFlags(Qt::WindowStaysOnTopHint);
-    dialog.setDirectory(CImportUnstitched::instance()->getVolume()->getSTACKS_DIR());
-    dialog.setWindowTitle("Please select an EMPTY directory");
-    if (dialog.exec())
-    {
-        QStringList fileNames = dialog.selectedFiles();
-        QString xmlpath = fileNames.first();
+	if(QObject::sender() == outDirButton)
+	{
+		//obtaining volume's directory
+		QFileDialog dialog(this);
+		dialog.setFileMode(QFileDialog::DirectoryOnly);
+		dialog.setAcceptMode(QFileDialog::AcceptOpen);
+		//dialog.setWindowFlags(Qt::WindowStaysOnTopHint);
+		dialog.setDirectory(CImportUnstitched::instance()->getVolume()->getSTACKS_DIR());
+		dialog.setWindowTitle("Select an EMPTY directory");
+		if (dialog.exec())
+		{
+			QStringList fileNames = dialog.selectedFiles();
+			QString folder_path = fileNames.first();
 
-        QDir directory(xmlpath);
-        QStringList dir_entries = directory.entryList();
-        if(dir_entries.size() <= 2)
-            savedir_field->setText(xmlpath);
-        else
-        {
-            if(!QMessageBox::information(this, "Warning", "The directory you selected is NOT empty. \n\nIf you continue, the merging "
-                                               "process could fail if the directories to be created already exist in the given path.", "Continue", "Cancel"))
-                savedir_field->setText(xmlpath);
-        }
-    }
+			QDir directory(folder_path);
+			QStringList dir_entries = directory.entryList();
+			if(dir_entries.size() <= 2)
+				savedir_field->setText(folder_path);
+			else
+			{
+				if(!QMessageBox::information(this, "Warning", "The directory you selected is NOT empty. \n\nIf you continue, the merging "
+												   "process could fail if the directories to be created already exist in the given path.", "Continue", "Cancel"))
+					savedir_field->setText(folder_path);
+			}
+		}
+	}
+	else
+	{
+		QFileDialog dialog(this);
+		dialog.setFileMode(QFileDialog::AnyFile);
+		dialog.setWindowTitle("Save as");
+		if(vol_format_cbox->currentText().toStdString() == iim::BDV_HDF5_FORMAT)
+			dialog.setNameFilter( tr("BigDataViewer HDF5 files (*.h5 *.H5)") );
+		else if(vol_format_cbox->currentText().toStdString() == iim::IMS_HDF5_FORMAT)
+			dialog.setNameFilter( tr("Imaris HDF5 files (*.ims *.IMS)") );
+		dialog.setAcceptMode(QFileDialog::AcceptSave);
+		dialog.setDirectory(CImportUnstitched::instance()->getVolume()->getSTACKS_DIR());
+		if (dialog.exec())
+		{
+			QStringList fileNames = dialog.selectedFiles();
+			QString file_path = fileNames.first();
+			if(!file_path.endsWith(".h5", Qt::CaseInsensitive) && vol_format_cbox->currentText().toStdString() == iim::BDV_HDF5_FORMAT)
+				file_path.append(".h5");
+			else if(!file_path.endsWith(".ims", Qt::CaseInsensitive) && vol_format_cbox->currentText().toStdString() == iim::IMS_HDF5_FORMAT)
+				file_path.append(".ims");
+			savedir_field->setText(file_path);
+		}
+	}
 }
 
 /**********************************************************************************
@@ -670,12 +711,12 @@ void PTabMergeTiles::updateContent()
     }
     catch(iom::exception &ex)
     {
-        QMessageBox::critical(this,QObject::tr("Error"), strprintf("An error occurred while preparing the stitcher for the Merging step: \n\n\"%s\"\n\nPlease check the previous steps before you can perform the Merging step.", ex.what()).c_str(),QObject::tr("Ok"));
+        QMessageBox::critical(this,QObject::tr("Error"), strprintf("An error occurred while preparing the stitcher for the Merge step: \n\n\"%s\"\n\nPlease check the previous steps before you can perform the Merge step.", ex.what()).c_str(),QObject::tr("Ok"));
         this->setEnabled(false);
 	}
 	catch(iim::IOException &ex)
 	{
-		QMessageBox::critical(this,QObject::tr("Error"), strprintf("An error occurred while preparing the stitcher for the Merging step: \n\n\"%s\"\n\nPlease check the previous steps before you can perform the Merging step.", ex.what()).c_str(),QObject::tr("Ok"));
+		QMessageBox::critical(this,QObject::tr("Error"), strprintf("An error occurred while preparing the stitcher for the Merge step: \n\n\"%s\"\n\nPlease check the previous steps before you can perform the Merge step.", ex.what()).c_str(),QObject::tr("Ok"));
 		this->setEnabled(false);
 	}
 }
@@ -696,7 +737,7 @@ void PTabMergeTiles::z1_field_changed(int val){z0_field->setMaximum(val); update
 ***********************************************************************************/
 void PTabMergeTiles::volumeformat_changed(QString str)
 {
-	std::string stdstr = str.toStdString();
+   std::string stdstr = str.toStdString();
    if(
 		stdstr.compare(iim::STACKED_RAW_FORMAT) == 0 || 
 		stdstr.compare(iim::STACKED_FORMAT) == 0)
@@ -715,9 +756,7 @@ void PTabMergeTiles::volumeformat_changed(QString str)
 		stdstr.compare(iim::TILED_FORMAT) == 0 || 
 		stdstr.compare(iim::TILED_MC_FORMAT) == 0 || 
 		stdstr.compare(iim::TILED_TIF3D_FORMAT) == 0 || 
-		stdstr.compare(iim::TILED_MC_TIF3D_FORMAT) == 0 || 
-		stdstr.compare(iim::BDV_HDF5_FORMAT) == 0 || 
-		stdstr.compare(iim::IMS_HDF5_FORMAT) == 0)
+		stdstr.compare(iim::TILED_MC_TIF3D_FORMAT) == 0)
     {
 		block_height_field->setEnabled(true);
 		block_height_field->setVisible(true);
@@ -740,6 +779,22 @@ void PTabMergeTiles::volumeformat_changed(QString str)
 		block_height_field->setValue(-1);
 		block_width_field->setValue(-1);
 		block_depth_field->setValue(-1);
+	}
+
+	if( stdstr.compare(iim::BDV_HDF5_FORMAT) == 0 || 
+		stdstr.compare(iim::IMS_HDF5_FORMAT) == 0)
+	{
+		outDirButton->setVisible(false);
+		outDirButton->setEnabled(false);
+		outFileButton->setVisible(true);
+		outFileButton->setEnabled(true);
+	}
+	else
+	{
+		outDirButton->setVisible(true);
+		outDirButton->setEnabled(true);
+		outFileButton->setVisible(false);
+		outFileButton->setEnabled(false);
 	}
 
 	libtiff_bigtiff_checkbox->setVisible(stdstr.find("TIFF") != std::string::npos);
@@ -768,14 +823,14 @@ void PTabMergeTiles::merging_done(iom::exception *ex)
         QMessageBox::critical(this,QObject::tr("Error"), QObject::tr(ex->what()),QObject::tr("Ok"));
     else
     {
+		//showing operation successful message
+		QMessageBox::information(this, "Operation successful", "Merge step successfully performed!", QMessageBox::Ok);
+
 #ifdef VAA3D_TERASTITCHER
         if(img)
         {
             v3dhandle new_win = PTeraStitcher::instance()->getV3D_env()->newImageWindow(img->getFileName());
             PTeraStitcher::instance()->getV3D_env()->setImage(new_win, img);
-
-            //showing operation successful message
-            QMessageBox::information(this, "Operation successful", "Step successfully performed!", QMessageBox::Ok);
         }
 #endif
     }
@@ -802,12 +857,4 @@ void PTabMergeTiles::showAdvancedChanged(bool status)
     #endif
 
     advanced_panel->setVisible(status);
-}
-
-/**********************************************************************************
-* Called when "channel_selection" state has changed.
-***********************************************************************************/
-void PTabMergeTiles::channelSelectedChanged(int c)
-{
-    iom::CHANS = iom::channel(c);
 }

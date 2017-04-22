@@ -64,7 +64,7 @@ PTabDisplComp::PTabDisplComp(QMyTabWidget* _container, int _tab_index) : QWidget
     basic_panel = new QWidget();
     saveproj_label = new QLabel("Save project XML to:");
     saveproj_field = new QLineEdit();
-    saveproj_field->setFont(QFont("",8));
+    //saveproj_field->setFont(QFont("",8));
     browse_button = new QPushButton("...");
     algorithm_label = new QLabel("Algorithm:");
     algorithm_cbox = new QComboBox();
@@ -484,7 +484,7 @@ void PTabDisplComp::displcomp_done(iom::exception *ex)
     else
     {
         //showing operation successful message
-        QMessageBox::information(this, "Operation successful", "Aligning step successfully performed!", QMessageBox::Ok);
+        QMessageBox::information(this, "Operation successful", "Align step successfully performed!", QMessageBox::Ok);
 
         PTabDisplProj::getInstance()->setEnabled(true);
         PTabDisplThresh::getInstance()->setEnabled(true);
