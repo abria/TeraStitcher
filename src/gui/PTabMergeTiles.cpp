@@ -79,6 +79,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     savedir_field = new QLineEdit();
     savedir_field->setFont(smallFont);
 	outDirButton = new QPushButton("Browse for dir...", this);
+
 	outFileButton = new QPushButton("Browse for file...", this);
     resolutions_label = new QLabel(QString("Resolution (X ").append(QChar(0x00D7)).append(" Y ").append(QChar(0x00D7)).append(" Z)"));
     resolutions_label->setFont(smallFont);
@@ -110,19 +111,33 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     vol_format_cbox->setEditable(true);
     vol_format_cbox->lineEdit()->setReadOnly(true);
     vol_format_cbox->lineEdit()->setAlignment(Qt::AlignCenter);
+    
 	vol_format_cbox->addItem("--- Volume format ---");
+
 	vol_format_cbox->addItem(iim::SIMPLE_FORMAT.c_str());
+	
 	vol_format_cbox->addItem(iim::STACKED_FORMAT.c_str());
+
 	vol_format_cbox->addItem(iim::TILED_TIF3D_FORMAT.c_str());
+
 	vol_format_cbox->addItem(iim::TILED_MC_TIF3D_FORMAT.c_str());
+
 	//vol_format_cbox->addItem(iim::TIF3D_FORMAT.c_str());
-	vol_format_cbox->addItem(iim::SIMPLE_RAW_FORMAT.c_str());
-	vol_format_cbox->addItem(iim::STACKED_RAW_FORMAT.c_str());
-	vol_format_cbox->addItem(iim::TILED_FORMAT.c_str());
-	vol_format_cbox->addItem(iim::TILED_MC_FORMAT.c_str());
-	//vol_format_cbox->addItemiim::RAW_FORMAT.c_str());
+
 	vol_format_cbox->addItem(iim::BDV_HDF5_FORMAT.c_str());
+
 	vol_format_cbox->addItem(iim::IMS_HDF5_FORMAT.c_str());
+
+	vol_format_cbox->addItem(iim::SIMPLE_RAW_FORMAT.c_str());
+
+	vol_format_cbox->addItem(iim::STACKED_RAW_FORMAT.c_str());
+
+	vol_format_cbox->addItem(iim::TILED_FORMAT.c_str());
+
+	vol_format_cbox->addItem(iim::TILED_MC_FORMAT.c_str());
+
+	//vol_format_cbox->addItemiim::RAW_FORMAT.c_str());
+
     //vol_format_cbox->addItem("2Dseries");
     //vol_format_cbox->addItem("3Dseries");
     //std::vector <std::string> volformats = vm::VirtualVolumeFactory::registeredPluginsList();

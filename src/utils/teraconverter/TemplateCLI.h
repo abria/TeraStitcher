@@ -51,7 +51,7 @@ class TemplateCLI
         bool makeDirs;                          //creates the directory hiererchy
         bool metaData;                          //creates the mdata.bin file of the output volume
         bool parallel;                          //parallel mode: does not perform side-effect operations during merge
-        bool isotropic;                         //generate lowest resolutiona with voxels as much isotropic as possible
+        bool isotropic;                         //generate lowest resolutions with voxels as much isotropic as possible
 
 		bool pluginsinfo;						//display plugins information
 

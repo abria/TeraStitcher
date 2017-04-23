@@ -25,7 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
-
+* 2017-04-23. Giulio.     @ADDED auxiliary function vcDriver to call the actual conversion method
 * 2017-04-18. Alessandro. @ADDED setSrcVolume that directly takes vm::VirtualVolume in input, and added 'volume_external' attribute
 * 2017-04-09. Giulio.     @ADDED the ability to convert a subset of channels
 * 2017-01-22. Giulio      @ADDED parameter for standard block depth for efficiency reasons
@@ -92,6 +92,37 @@
 
 #define STANDARD_BLOCK_DEPTH   64      // standard block to be used when converting to tiled format (introduced for efficiency)
 
+
+// 2017-04-23. Giulio. @ADDED auxiliary function to call format conversion
+void vcDriver (
+	iim::VirtualVolume *vPtr = (iim::VirtualVolume *) 0, // if this in not null, parameters 'src_root_dir' and 'src_format' are not used
+	std::string src_root_dir = "",
+	std::string dst_root_dir = "",
+	std::string src_format = "",
+	std::string dst_format = "",
+	int         img_depth = 0, // currently not used: imout depth is set internally
+	bool       *resolutions = (bool *) 0,
+	std::string chanlist = "",
+	std::string ch_dir = "",                     // name of the subdirectory where image should be saved (only for a single channel converted to tiled 4D format)
+	std::string mdata_fname = "",                // name of the file containing general metadata to be transferred to destination file (used only by some formats)
+	int         slice_depth = -1,
+	int         slice_height = -1,
+	int         slice_width = -1,
+	int         downsamplingFactor = 1,
+	int         halving_method = HALVE_BY_MEAN,
+	int         libtiff_rowsPerStrip = 1,
+	bool        libtiff_uncompressed = false,
+	bool        libtiff_bigtiff = false,
+	bool        show_progress_bar = true,			//enables/disables progress bar with estimated time remaining
+    bool        isotropic = true,                   //generate lowest resolutions with voxels as much isotropic as possible
+	int V0 = -1, int V1 = -1, int H0 = -1, int H1 = -1, int D0 = -1,int D1 = -1,
+	// the following parameters are for commandline version only; omit them in the GUI version (use default values)
+	bool        timeseries = false,
+    bool        makeDirs = false,                   //creates the directory hiererchy
+    bool        metaData = false,                   //creates the mdata.bin file of the output volume
+    bool        parallel = false,                   //parallel mode: does not perform side-effect operations during merge
+	std::string outFmt = "RGB"                      // no more used: pass always the default
+);
 
 class VolumeConverter
 {
@@ -314,14 +345,14 @@ class VolumeConverter
 		* [saved_img_depth]		: determines saved images bitdepth (16 or 8).
 		**************************************************************************************************************/
 		void generateTilesBDV_HDF5 ( std::string output_path, bool* resolutions = NULL, 
-			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool show_progress_bar = true, 
-            const char* saved_img_format = "h5", int saved_img_depth = iim::NUL_IMG_DEPTH,
+			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool isotropic=false, 
+			bool show_progress_bar = true, const char* saved_img_format = "h5", int saved_img_depth = iim::NUL_IMG_DEPTH,
             std::string frame_dir = "")	throw (iim::IOException, iom::exception);
 
 
 		void generateTilesIMS_HDF5 ( std::string output_path, std::string metadata_file, bool* resolutions = NULL, 
-			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool show_progress_bar = true, 
-            const char* saved_img_format = "ims", int saved_img_depth = iim::NUL_IMG_DEPTH,
+			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool isotropic=false, 
+			bool show_progress_bar = true, const char* saved_img_format = "ims", int saved_img_depth = iim::NUL_IMG_DEPTH,
             std::string frame_dir = "")	throw (iim::IOException, iom::exception);
 
 

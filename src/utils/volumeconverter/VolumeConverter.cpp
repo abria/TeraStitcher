@@ -109,6 +109,226 @@
 
 using namespace iim;
 
+
+// code to invoke the converter
+void vcDriver (
+	iim::VirtualVolume *vPtr,
+	std::string src_root_dir,
+	std::string dst_root_dir,
+	std::string src_format,
+	std::string dst_format,
+	int         img_depth, // currently non used
+	bool       *resolutions,
+	std::string chanlist,
+	std::string ch_dir,                     // name of the subdirectory where image should be saved (only for a single channel converted to tiled 4D format)
+	std::string mdata_fname,                // name of the file containing general metadata to be transferred to destination file (used only by some formats)
+	int         slice_depth,
+	int         slice_height,
+	int         slice_width,
+	int         downsamplingFactor,
+	int         halving_method,
+	int         libtiff_rowsPerStrip,
+	bool        libtiff_uncompressed,
+	bool        libtiff_bigtiff,
+	bool        show_progress_bar,			//enables/disables progress bar with estimated time remaining
+    bool        isotropic,                  //generate lowest resolutions with voxels as much isotropic as possible
+	int V0, int V1, int H0, int H1, int D0,int D1,
+	bool        timeseries,
+    bool        makeDirs,                   //creates the directory hiererchy
+    bool        metaData,                   //creates the mdata.bin file of the output volume
+    bool        parallel,                   //parallel mode: does not perform side-effect operations during merge
+	std::string outFmt ) {
+		// do what you have to do
+		VolumeConverter vc;
+
+		setLibTIFFcfg(!libtiff_uncompressed,libtiff_bigtiff,libtiff_rowsPerStrip);
+
+		if ( vPtr ) 
+			vc.setSrcVolume(vPtr,outFmt.c_str(),timeseries,downsamplingFactor,chanlist);
+		else
+			vc.setSrcVolume(src_root_dir.c_str(),src_format.c_str(),outFmt.c_str(),timeseries,downsamplingFactor,chanlist);
+
+		vc.setSubVolume(V0,V1,H0,H1,D0,D1);
+	
+		if ( dst_format == iim::SIMPLE_RAW_FORMAT )
+			if ( timeseries ) {
+				vc.convertTo(dst_root_dir.c_str(),dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,resolutions,
+					slice_height,slice_width,slice_depth,halving_method);
+			}
+			else if ( makeDirs ) {
+				vc.createDirectoryHierarchySimple(dst_root_dir.c_str(),resolutions,
+					slice_height,slice_width,-1,halving_method,isotropic,
+					show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+// 				vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
+// 					slice_height,slice_width,-1,halving_method,isotropic,
+// 					show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+			else if ( metaData ) {
+				//vc.mdataGenerator(dst_root_dir.c_str(),resolutions,
+				//	slice_height,slice_width,-1,halving_method,isotropic,
+				//	show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+			else {
+				vc.generateTilesSimple(dst_root_dir.c_str(),resolutions,
+					slice_height,slice_width,halving_method,isotropic,
+					show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+		else if ( dst_format == iim::SIMPLE_FORMAT )
+			if ( timeseries ) {
+				vc.convertTo(dst_root_dir.c_str(),dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,resolutions,
+					slice_height,slice_width,slice_depth,halving_method);
+			}
+			else if ( makeDirs ) {
+				vc.createDirectoryHierarchySimple(dst_root_dir.c_str(),resolutions,
+					slice_height,slice_width,-1,halving_method,isotropic,
+					show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+// 				vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
+// 					slice_height,slice_width,-1,halving_method,isotropic,
+// 					show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+			else if ( metaData ) {
+				//vc.mdataGenerator(dst_root_dir.c_str(),resolutions,
+				//	slice_height,slice_width,-1,halving_method,isotropic,
+				//	show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+			else {
+				vc.generateTilesSimple(dst_root_dir.c_str(),resolutions,
+					slice_height,slice_width,halving_method,isotropic,
+					show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+		else if ( dst_format == iim::STACKED_RAW_FORMAT )
+			if ( timeseries ) {
+				vc.convertTo(dst_root_dir.c_str(),dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,resolutions,
+					slice_height,slice_width,slice_depth,halving_method);
+			}
+			else if ( makeDirs ) {
+				vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
+					slice_height,slice_width,-1,halving_method,isotropic,
+					show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+			else if ( metaData ) {
+				vc.mdataGenerator(dst_root_dir.c_str(),ch_dir,resolutions,
+					slice_height,slice_width,-1,halving_method,isotropic,
+					show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+			else {
+				vc.generateTiles(dst_root_dir.c_str(),resolutions,
+					slice_height,slice_width,halving_method,isotropic,
+					show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+		else if ( dst_format == iim::STACKED_FORMAT )
+			if ( timeseries ) {
+				vc.convertTo(dst_root_dir.c_str(),dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,resolutions,
+					slice_height,slice_width,slice_depth,halving_method);
+			}
+			else if ( makeDirs ) {
+				vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
+					slice_height,slice_width,-1,halving_method,isotropic,
+					show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+			else if ( metaData ) {
+				vc.mdataGenerator(dst_root_dir.c_str(),ch_dir,resolutions,
+					slice_height,slice_width,-1,halving_method,isotropic,
+					show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+			else {
+				vc.generateTiles(dst_root_dir.c_str(),resolutions,
+					slice_height,slice_width,halving_method,isotropic,
+					show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+		else if ( dst_format == iim::TILED_FORMAT ) {
+			if ( timeseries ) {
+				vc.convertTo(dst_root_dir.c_str(),dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,resolutions,
+					slice_height,slice_width,slice_depth,halving_method);
+			}
+			else if ( makeDirs ) {
+				vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
+					slice_height,slice_width,slice_depth,halving_method,isotropic,
+					show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+			else if ( metaData ) {
+				vc.mdataGenerator(dst_root_dir.c_str(),ch_dir,resolutions,
+					slice_height,slice_width,slice_depth,halving_method,isotropic,
+					show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+			else {
+				vc.generateTilesVaa3DRaw(dst_root_dir.c_str(),resolutions,
+					slice_height,slice_width,slice_depth,halving_method,isotropic,
+					show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+		}
+		else if ( dst_format == iim::TILED_TIF3D_FORMAT ) {
+			if ( timeseries ) {
+				vc.convertTo(dst_root_dir.c_str(),dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,resolutions,
+					slice_height,slice_width,slice_depth,halving_method);
+			}
+			else if ( makeDirs ) {
+				vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
+					slice_height,slice_width,slice_depth,halving_method,isotropic,
+					show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+			else if ( metaData ) {
+				vc.mdataGenerator(dst_root_dir.c_str(),ch_dir,resolutions,
+					slice_height,slice_width,slice_depth,halving_method,isotropic,
+					show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+			else {
+				vc.generateTilesVaa3DRaw(dst_root_dir.c_str(),resolutions,
+					slice_height,slice_width,slice_depth,halving_method,isotropic,
+					show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+		}
+		else if ( dst_format == iim::TILED_MC_FORMAT )
+			if ( timeseries ) {
+				vc.convertTo(dst_root_dir.c_str(),dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,resolutions,
+					slice_height,slice_width,slice_depth,halving_method);
+			}
+			else if ( makeDirs ) {
+				vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
+					slice_height,slice_width,slice_depth,halving_method,isotropic,
+					show_progress_bar,"Vaa3DRawMC",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+			else if ( metaData ) {
+				vc.mdataGenerator(dst_root_dir.c_str(),ch_dir,resolutions,
+					slice_height,slice_width,slice_depth,halving_method,isotropic,
+					show_progress_bar,"Vaa3DRawMC",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+			else {
+				vc.generateTilesVaa3DRawMC(dst_root_dir.c_str(),ch_dir,resolutions,
+					slice_height,slice_width,slice_depth,halving_method,isotropic,
+					show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",false);
+			}
+		else if ( dst_format == iim::TILED_MC_TIF3D_FORMAT )
+			if ( timeseries ) {
+				vc.convertTo(dst_root_dir.c_str(),dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,resolutions,
+					slice_height,slice_width,slice_depth,halving_method);
+			}
+			else if ( makeDirs ) {
+				vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
+					slice_height,slice_width,slice_depth,halving_method,isotropic,
+					show_progress_bar,"Tiff3DMC",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+			else if ( metaData ) {
+				vc.mdataGenerator(dst_root_dir.c_str(),ch_dir,resolutions,
+					slice_height,slice_width,slice_depth,halving_method,isotropic,
+					show_progress_bar,"Tiff3DMC",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+			else {
+				vc.generateTilesVaa3DRawMC(dst_root_dir.c_str(),ch_dir,resolutions,
+					slice_height,slice_width,slice_depth,halving_method,isotropic,
+					show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+			}
+		else if ( dst_format == iim::BDV_HDF5_FORMAT )
+			vc.generateTilesBDV_HDF5(dst_root_dir.c_str(),resolutions,
+				slice_height,slice_width,slice_depth,halving_method,isotropic,
+				show_progress_bar,"Fiji_HDF5",8*vc.getVolume()->getBYTESxCHAN());
+		else if ( dst_format == iim::IMS_HDF5_FORMAT )
+			vc.generateTilesIMS_HDF5(dst_root_dir.c_str(),mdata_fname,resolutions,
+				slice_height,slice_width,slice_depth,halving_method,isotropic,
+				show_progress_bar,"Fiji_HDF5",8*vc.getVolume()->getBYTESxCHAN());
+}
+
+
 VolumeConverter::VolumeConverter( )
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
@@ -3667,7 +3887,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 
 
 void VolumeConverter::generateTilesBDV_HDF5 ( std::string output_path, bool* resolutions, 
-				int block_height, int block_width, int block_depth, int method, 
+				int block_height, int block_width, int block_depth, int method, bool isotropic, 
 				bool show_progress_bar, const char* saved_img_format, 
                 int saved_img_depth, std::string frame_dir )	throw (IOException, iom::exception)
 {
@@ -3870,9 +4090,9 @@ void VolumeConverter::generateTilesBDV_HDF5 ( std::string output_path, bool* res
 						hyperslab_descr[4] = 1;  // [1][1]
 						hyperslab_descr[5] = 1;  // [1][2]
 						// count
-						hyperslab_descr[6] = buf_dims[0]; //height/(powInt(2,i)); // [2][0]
-						hyperslab_descr[7] = buf_dims[1]; //width/(powInt(2,i));  // [2][1]
-						hyperslab_descr[8] = buf_dims[2]; //z_size/(powInt(2,i)); // [2][2]
+						hyperslab_descr[6] = buf_dims[0]; //z_size/(powInt(2,i)); // [2][0]
+						hyperslab_descr[7] = buf_dims[1]; //height/(powInt(2,i)); // [2][1]
+						hyperslab_descr[8] = buf_dims[2]; //width/(powInt(2,i));  // [2][2]
 						// block
 						hyperslab_descr[9]  = 1; // [3][0]
 						hyperslab_descr[10] = 1; // [3][1]
@@ -3925,7 +4145,7 @@ void VolumeConverter::generateTilesBDV_HDF5 ( std::string output_path, bool* res
 
 
 void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::string metadata_file, bool* resolutions, 
-				int block_height, int block_width, int block_depth, int method, 
+				int block_height, int block_width, int block_depth, int method, bool isotropic, 
 				bool show_progress_bar, const char* saved_img_format, 
                 int saved_img_depth, std::string frame_dir )	throw (IOException, iom::exception)
 {
@@ -3953,6 +4173,7 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 	int org_channels = 0;       //store the number of channels read the first time (for checking purposes)
 	sint64 z_ratio, z_max_res;
 	int resolutions_size = 0;
+	int halve_pow2[TMITREE_MAX_HEIGHT];
 
 	void *file_descr;
 	sint64 *hyperslab_descr = new sint64[4*3]; // four 3-valued parameters: [ start(offset), stride count(size), block ]
@@ -4008,6 +4229,29 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
             if(resolutions[i])
                 resolutions_size = std::max(resolutions_size, i+1);
 		}
+	}
+
+	//2016-04-13. Giulio. set the halving rules 
+	if ( isotropic ) {
+		// an isotropic image must be generated
+		float vxlsz_Vx2 = 2*(volume->getVXL_V() > 0 ? volume->getVXL_V() : -volume->getVXL_V());
+		float vxlsz_Hx2 = 2*(volume->getVXL_H() > 0 ? volume->getVXL_H() : -volume->getVXL_H());
+		float vxlsz_D = volume->getVXL_D();
+		halve_pow2[0] = 0;
+		for ( int i=1; i<resolutions_size; i++ ) {
+			halve_pow2[i] = halve_pow2[i-1];
+			if ( vxlsz_D < std::max<float>(vxlsz_Vx2,vxlsz_Hx2) ) {
+				halve_pow2[i]++;
+				vxlsz_D   *= 2;
+			}
+			vxlsz_Vx2 *= 2;
+			vxlsz_Hx2 *= 2;
+		}
+	}
+	else {
+		// halving along D dimension must be always performed
+		for ( int i=0; i<resolutions_size; i++ )
+			halve_pow2[i] = i;
 	}
 
 	// allocate the buffers for the histograms
@@ -4066,7 +4310,7 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 	for ( int i=0; i<resolutions_size; i++ ) {
 
 		if(resolutions[i]) {
-			IMS_HDF5addResolution(file_descr,height,width,depth,channels,i,is_first); 
+			IMS_HDF5addResolution(file_descr,height,width,depth,channels,i,is_first); // istotropic: must pass halve_pow2
 			is_first = false;
 		}
 
@@ -4076,7 +4320,7 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 	IMS_HDF5addTimepoint(file_descr);
 
 	//ALLOCATING  the MEMORY SPACE for image buffer
-    z_max_res = powInt(2,resolutions_size-1);
+    z_max_res = powInt(2,resolutions_size-1); // isotropic: z_max_res = powInt(2,halve_pow2[resolutions_size-1]);
 
 	// the following check does not make sense for Fiji_HDF5 format
 	//if ( z_max_res > block_depth/2 ) {
@@ -4145,9 +4389,33 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 				else // internal_rep == UINT8_INTERNAL_REP
                     VirtualVolume::halveSample_UINT8(ubuffer,(int)height/(powInt(2,i-1)),(int)width/(powInt(2,i-1)),(int)z_size/(powInt(2,i-1)),channels,method,bytes_chan);
 			}
+
+/* isotropic:
+			//halvesampling resolution if current resolution is not the deepest one
+			if(i!=0) {
+				if ( halve_pow2[i] == (halve_pow2[i-1]+1) ) { // *modified*
+					// also D dimension has to be halvesampled
+					if ( internal_rep == REAL_INTERNAL_REP ) 
+						VirtualVolume::halveSample(rbuffer,(int)height/(powInt(2,i-1)),(int)width/(powInt(2,i-1)),(int)z_size/(powInt(2,halve_pow2[i-1])),method);
+					else  // internal_rep == UINT8_INTERNAL_REP
+						VirtualVolume::halveSample_UINT8(ubuffer,(int)height/(powInt(2,i-1)),(int)width/(powInt(2,i-1)),(int)z_size/(powInt(2,halve_pow2[i-1])),channels,method,bytes_chan);
+				}
+				else if ( halve_pow2[i] == halve_pow2[i-1] ) {// *modified*
+					if ( internal_rep == REAL_INTERNAL_REP ) 
+						VirtualVolume::halveSample2D(rbuffer,(int)height/(powInt(2,i-1)),(int)width/(powInt(2,i-1)),(int)z_size/(powInt(2,halve_pow2[i-1])),method);
+					else  // internal_rep == UINT8_INTERNAL_REP
+						VirtualVolume::halveSample2D_UINT8(ubuffer,(int)height/(powInt(2,i-1)),(int)width/(powInt(2,i-1)),(int)z_size/(powInt(2,halve_pow2[i-1])),channels,method,bytes_chan);
+				}
+				else {
+					char err_msg[STATIC_STRINGS_SIZE];
+					sprintf(err_msg, "in generateTilesVaa3DRaw(...): halve sampling level %d not supported at resolution %d\n", halve_pow2[i], i);
+					throw iom::exception(err_msg);
+				}
+			}
+*/
 			
 			//saving at current resolution if it has been selected and iff buffer is at least 1 voxel (Z) deep
-            if(resolutions[i] && (z_size/(powInt(2,i))) > 0)
+            if(resolutions[i] && (z_size/(powInt(2,i))) > 0) // isotropic: if(resolutions[i] && (z_size/(powInt(2,halve_pow2[i]))) > 0)
 			{
 				if(show_progress_bar)
 				{
@@ -4171,7 +4439,7 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 					else { // internal_rep == UINT8_INTERNAL_REP
 						buf_dims[1] = height/(powInt(2,i)); //((i==0) ? powInt(2,i) : powInt(2,i-1));
 						buf_dims[2] = width/(powInt(2,i)); //((i==0) ? powInt(2,i) : powInt(2,i-1));
-						buf_dims[0] = z_size/(powInt(2,i)); //((i==0) ? powInt(2,i) : powInt(2,i-1));
+						buf_dims[0] = z_size/(powInt(2,i)); //((i==0) ? powInt(2,i) : powInt(2,i-1)); // isotropic: z_size/(powInt(2,halve_pow2[i]))
 						// start
 						hyperslab_descr[0] = 0; // [0][0]
 						hyperslab_descr[1] = 0; // [0][1]
@@ -4181,9 +4449,9 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 						hyperslab_descr[4] = 1;  // [1][1]
 						hyperslab_descr[5] = 1;  // [1][2]
 						// count
-						hyperslab_descr[6] = buf_dims[0]; //height/(powInt(2,i)); // [2][0]
-						hyperslab_descr[7] = buf_dims[1]; //width/(powInt(2,i));  // [2][1]
-						hyperslab_descr[8] = buf_dims[2]; //z_size/(powInt(2,i)); // [2][2]
+						hyperslab_descr[6] = buf_dims[0]; //z_size/(powInt(2,i)); // [2][0]
+						hyperslab_descr[7] = buf_dims[1]; //height/(powInt(2,i)); // [2][1]
+						hyperslab_descr[8] = buf_dims[2]; //width/(powInt(2,i));  // [2][2]
 						// block
 						hyperslab_descr[9]  = 1; // [3][0]
 						hyperslab_descr[10] = 1; // [3][1]
@@ -4308,9 +4576,9 @@ void VolumeConverter::convertTo(
         else if(output_format.compare(iim::TILED_MC_TIF3D_FORMAT) == 0)
             generateTilesVaa3DRawMC(output_path, "", resolutions, block_height, block_width, block_depth, method, false, true, "Tiff3D", output_bitdepth, "", false);
         else if(output_format.compare(iim::BDV_HDF5_FORMAT) == 0)
-            generateTilesBDV_HDF5(output_path,resolutions, block_height,block_width,block_depth,method, true,"Tiff3D",output_bitdepth);
+            generateTilesBDV_HDF5(output_path,resolutions, block_height,block_width,block_depth, method, false, true,"Tiff3D",output_bitdepth);
         //else if(output_format.compare(iim::IMS_HDF5_FORMAT) == 0)
-        //    generateTilesIMS_HDF5(output_path,resolutions, block_height,block_width,block_depth,method, true,"Tiff3D",output_bitdepth);
+        //    generateTilesIMS_HDF5(output_path,resolutions, block_height,block_width,block_depth, method, false, true,"Tiff3D",output_bitdepth);
         else if(output_format.compare(iim::SIMPLE_RAW_FORMAT) == 0)
             generateTilesSimple(output_path, resolutions, block_height, block_width, method, false, true, "raw", output_bitdepth, "", false);
         else if(output_format.compare(iim::SIMPLE_FORMAT) == 0)

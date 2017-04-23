@@ -25,7 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2017-04-07   Giulio.     @ADDED the opssibility to specify a subset of channels to be converted
+* 2017-04-23.  Giulio.     @CHANGED the call to conversion routines has been moved to VolumeConverter.cpp (vcDriver auxiliary function)
+* 2017-04-07.  Giulio.     @ADDED the opssibility to specify a subset of channels to be converted
 * 2017-04-02.  Giulio.     @ADDED support for creation of BigTiff files
 * 2017-04-01.  Giulio.     @CHANGED the calls to the routine that creates the directory structure in the case of 'simple' formats
 * 2017-01-23.  Giulio.     @FIXED bugs of parallel execution in case 4D formats are specified
@@ -170,17 +171,14 @@ int main ( int argc, char *argv[] ) {
 		cli.readParams(argc, argv);
 		cli.checkParams();
 		
-		// do what you have to do
-		VolumeConverter vc;
 
 		// start timer
 		double proctime = -TIME(0);
 
-		setLibTIFFcfg(!cli.libtiff_uncompressed,cli.libtiff_bigtiff,cli.libtiff_rowsPerStrip);
-
 		// perform simple tasks
 		if ( cli.infofile_path != "" ) {
 			// volume info has been requested
+			VolumeConverter vc;
 			FILE *fout;
 			vc.setSrcVolume(cli.src_root_dir.c_str(),cli.src_format.c_str(),cli.outFmt.c_str());
 			string foutName = fillPath(cli.infofile_path,getAbsolutePath(cli.src_root_dir),"err_log_file", "txt");
@@ -195,12 +193,46 @@ int main ( int argc, char *argv[] ) {
 			fclose(fout);
 			return EXIT_SUCCESS;
 		}
+
 		if(cli.pluginsinfo)
 		{
 			std::cout << iom::IOPluginFactory::pluginsInfo();
 			return EXIT_SUCCESS;
 		}
 
+		vcDriver(
+			(iim::VirtualVolume *) 0, // the volume has not been imported, the source path has to be passed
+			cli.src_root_dir, 
+			cli.dst_root_dir, 
+			cli.src_format, 
+			cli.dst_format, 
+			0, // invalid value: imout_depth is set inside
+			cli.resolutions, 
+			cli.chanlist, 
+			cli.ch_dir, 
+			cli.mdata_fname, 
+			cli.slice_depth, 
+			cli.slice_height, 
+			cli.slice_width, 
+			cli.downsamplingFactor, 
+			cli.halving_method, 
+			cli.libtiff_rowsPerStrip, 
+			cli.libtiff_uncompressed, 
+			cli.libtiff_bigtiff, 
+			cli.show_progress_bar, 
+			cli.isotropic, 
+			cli.V0, cli.V1, cli.H0, cli.H1, cli.D0, cli.D1,
+			cli.timeseries,
+			cli.makeDirs, 
+			cli.metaData, 
+			cli.parallel);
+
+/* The followoing code has been substituted by the call to vcDriver
+
+		setLibTIFFcfg(!cli.libtiff_uncompressed,cli.libtiff_bigtiff,cli.libtiff_rowsPerStrip);
+
+		// do what you have to do
+		VolumeConverter vc;
 		
 		vc.setSrcVolume(cli.src_root_dir.c_str(),cli.src_format.c_str(),cli.outFmt.c_str(),cli.timeseries,cli.downsamplingFactor,cli.chanlist);
 		vc.setSubVolume(cli.V0,cli.V1,cli.H0,cli.H1,cli.D0,cli.D1);
@@ -381,6 +413,7 @@ int main ( int argc, char *argv[] ) {
 			vc.generateTilesIMS_HDF5(cli.dst_root_dir.c_str(),cli.mdata_fname,cli.resolutions,
 				cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,
 				cli.show_progress_bar,"Fiji_HDF5",8*vc.getVolume()->getBYTESxCHAN());
+*/
 
 		// display elapsed time
 		printf("\nTime elapsed: %.1f seconds\n\n", proctime + TIME(0));
