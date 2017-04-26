@@ -596,8 +596,8 @@ void PTabImport::start()
             throw iom::exception("Please select the second axis of the reference system from the combolist");
         if(axs3_field->isVisible() && axs3_field->currentIndex() == 0)
             throw iom::exception("Please select the third axis of the reference system from the combolist");
-        //if(vol_format_cbox->isVisible() && vol_format_cbox->currentIndex() == 0)
-            //throw iom::exception("Please select the volume format from the combolist");
+        if(imin_plugin_cbox->isVisible() && imin_plugin_cbox->currentIndex() == 0)
+            throw iom::exception("Please select the i/o plugin from the pull-down menu");
 
         // propagate user's input to CImport
         CImportUnstitched::instance()->setAxes(axs1_field->currentText().toStdString(),
