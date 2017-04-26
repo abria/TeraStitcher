@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-26. Alessandro. @FIXED issue on Windows with Thumbs.db files that need to be ignored
 * 2017-04-12. Giulio.     @ADDED check on a precondition of 'loadImageStack'
 * 2017-04-07. Giluio.     @ADDED ability to load only one channel when channels are stored in separate planes (non-interleaved input plugin) 
 * 2016-11-16. Giulio.     @ADDED management of the case when the xml import file is generated externally and attributes BLOCK_SIZES and BLOCK_ABS_D are missing
@@ -243,7 +244,8 @@ void Block::init() throw (iom::exception)
 		// 2015-01-17. Alessandro. @ADDED support for all-in-one-folder data (import from xml only).
 		if(img_regex.empty())
         {
-            if(tmp.compare(".") != 0 && tmp.compare("..") != 0 && tmp.find(".") != string::npos)
+			if(tmp.compare(".") != 0 && tmp.compare("..") != 0 && tmp.find(".") != string::npos 
+				&& tmp != "Thumbs.db")	// @2017-04-26. Alessandro. @FIXED issue on Windows with Thumbs.db files that need to be ignored
                 entries_lev3.push_back(tmp);
         }
         else

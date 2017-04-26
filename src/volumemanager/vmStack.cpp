@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-26. Alessandro. @FIXED issue on Windows with Thumbs.db files that need to be ignored
 * 2017-04-12. Giulio.     @ADDED check on a precondition of 'loadImageStack'
 * 2016-11-14. Giulio.     @ADDED management of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
 * 2016-09-01. Giulio.     @ADDED cache management in loadImageStack (only if just one slice has to be loaded)
@@ -191,7 +192,8 @@ void Stack::init() throw (iom::exception)
 		// 2015-01-17. Alessandro. @ADDED support for all-in-one-folder data (import from xml only).
         if(img_regex.empty())
         {
-			if(tmp.compare(".") != 0 && tmp.compare("..") != 0 && tmp.find(".") != string::npos)
+			if(tmp.compare(".") != 0 && tmp.compare("..") != 0 && tmp.find(".") != string::npos 
+				&& tmp != "Thumbs.db")	// @2017-04-26. Alessandro. @FIXED issue on Windows with Thumbs.db files that need to be ignored
                 entries_lev3.push_back(tmp);
         }
         else

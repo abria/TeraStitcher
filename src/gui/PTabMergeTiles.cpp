@@ -112,7 +112,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     vol_format_cbox->lineEdit()->setReadOnly(true);
     vol_format_cbox->lineEdit()->setAlignment(Qt::AlignCenter);
     
-	vol_format_cbox->addItem("--- Volume format ---");
+	vol_format_cbox->addItem("--- Select a format ---");
 
 	vol_format_cbox->addItem(iim::SIMPLE_FORMAT.c_str());
 	
@@ -220,7 +220,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
         blendingalbo_cbox->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);
     blendingalbo_cbox->setCurrentIndex(1);
     blendingalbo_cbox->setFont(smallFont);
-    restoreSPIM_label = new QLabel("remove SPIM artifacts: ");
+    restoreSPIM_label = new QLabel("Artifacts removal:");
     restoreSPIM_label->setFont(smallFont);
     restoreSPIM_cbox = new QComboBox();
     restoreSPIM_cbox->insertItem(0, "None");
@@ -233,7 +233,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     for(int i = 0; i < restoreSPIM_cbox->count(); i++)
         restoreSPIM_cbox->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);
     restoreSPIM_cbox->setFont(smallFont);
-    imgdepth_cbox = new QComboBox();
+    /*imgdepth_cbox = new QComboBox();
     imgdepth_cbox->insertItem(0, "8 bits");
     imgdepth_cbox->insertItem(1, "16 bits");
     imgdepth_cbox->setFont(smallFont);
@@ -241,15 +241,15 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     imgdepth_cbox->lineEdit()->setReadOnly(true);
     imgdepth_cbox->lineEdit()->setAlignment(Qt::AlignCenter);
     for(int i = 0; i < imgdepth_cbox->count(); i++)
-        imgdepth_cbox->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);
-    channel_selection = new QComboBox();
+        imgdepth_cbox->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);*/
+    /*channel_selection = new QComboBox();
     channel_selection->addItem("all channels");
     channel_selection->setFont(smallFont);
     channel_selection->setEditable(true);
     channel_selection->lineEdit()->setReadOnly(true);
     channel_selection->lineEdit()->setAlignment(Qt::AlignCenter);
     for(int i = 0; i < channel_selection->count(); i++)
-        channel_selection->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);
+        channel_selection->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);*/
 
 
 
@@ -257,7 +257,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     //basic settings panel
     QVBoxLayout* basicpanel_layout = new QVBoxLayout();
     basicpanel_layout->setContentsMargins(0,0,0,0);
-    int left_margin = 80;
+    int left_margin = 130;
     /**/
     QHBoxLayout* basic_panel_row_1 = new QHBoxLayout();
     basic_panel_row_1->setContentsMargins(0,0,0,0);
@@ -267,6 +267,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
 	basic_panel_row_1->addWidget(savedir_field,1);
 	basic_panel_row_1->addWidget(outDirButton);
 	basic_panel_row_1->addWidget(outFileButton);
+	basic_panel_row_1->setContentsMargins(0,0,0,0);
     basicpanel_layout->addLayout(basic_panel_row_1);
     /**/
     basicpanel_layout->addSpacing(10);
@@ -302,6 +303,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     volumeformat_label->setFixedWidth(left_margin);
     basic_panel_row_3->addWidget(volumeformat_label);
     vol_format_cbox->setFixedWidth(300);
+	basic_panel_row_3->setAlignment(Qt::AlignLeft);
     basic_panel_row_3->addWidget(vol_format_cbox);
     basic_panel_row_3->addSpacing(20);
     basic_panel_row_3->addWidget(block_height_field, 1);
@@ -309,24 +311,30 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     basic_panel_row_3->addWidget(block_width_field, 1);
     basic_panel_row_3->addSpacing(5);
 	basic_panel_row_3->addWidget(block_depth_field, 1);
-	basic_panel_row_3->addStretch(1);
+	//basic_panel_row_3->addStretch(1);
     basicpanel_layout->addLayout(basic_panel_row_3);
     /**/
     QHBoxLayout* basic_panel_row_4 = new QHBoxLayout();
     basic_panel_row_4->setContentsMargins(0,0,0,0);
     basic_panel_row_4->setSpacing(0);
     basic_panel_row_4->addSpacing(left_margin);
-    imgdepth_cbox->setFixedWidth(100);
-    basic_panel_row_4->addWidget(imgdepth_cbox);
-    basic_panel_row_4->addSpacing(5);
-    channel_selection->setFixedWidth(200);
-    basic_panel_row_4->addWidget(channel_selection);
-    basic_panel_row_4->addSpacing(20);
-    basic_panel_row_4->addWidget(memocc_field, 1);
-    basicpanel_layout->addLayout(basic_panel_row_4);
-    basicpanel_layout->addSpacing(5);
+    //imgdepth_cbox->setFixedWidth(100);
+   // basic_panel_row_4->addWidget(imgdepth_cbox);
+    //basic_panel_row_4->addSpacing(5);
+    //channel_selection->setFixedWidth(200);
+   // basic_panel_row_4->addWidget(channel_selection);
+	basic_panel_row_4->addWidget(libtiff_uncompressed_checkbox);
+	basic_panel_row_4->setSpacing(0);
+	libtiff_uncompressed_checkbox->setFixedWidth(150);
+	basic_panel_row_4->addSpacing(5);
+	basic_panel_row_4->addWidget(libtiff_bigtiff_checkbox);
+	libtiff_bigtiff_checkbox->setFixedWidth(145);
+	basic_panel_row_4->addSpacing(20);
+	basic_panel_row_4->addWidget(memocc_field, 1);
+	basicpanel_layout->addLayout(basic_panel_row_4);
+	basicpanel_layout->addSpacing(5);
     /**/
-	QHBoxLayout* basic_panel_row_5 = new QHBoxLayout();
+	/*QHBoxLayout* basic_panel_row_5 = new QHBoxLayout();
 	basic_panel_row_5->setContentsMargins(0,0,0,0);
 	basic_panel_row_5->setSpacing(0);
 	basic_panel_row_5->addSpacing(left_margin);
@@ -336,7 +344,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
 	basic_panel_row_5->setSpacing(10);
 	basic_panel_row_5->addWidget(libtiff_bigtiff_checkbox);
 	basic_panel_row_5->addStretch(1);
-	basicpanel_layout->addLayout(basic_panel_row_5);
+	basicpanel_layout->addLayout(basic_panel_row_5);*/
 	/**/
     basicpanel_layout->addWidget(showAdvancedButton);
     /**/
@@ -349,7 +357,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     QHBoxLayout* advancedpanel_row1 = new QHBoxLayout();
     advancedpanel_row1->setSpacing(0);
     advancedpanel_row1->setContentsMargins(0,0,0,0);
-    QLabel* selection_label = new QLabel("Selection:");
+    QLabel* selection_label = new QLabel("XYZ selection:");
     selection_label->setFixedWidth(left_margin);
     advancedpanel_row1->addWidget(selection_label);
     QLabel* yRangeLabel = new QLabel(" (Y)");
@@ -378,12 +386,19 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     advancedpanel_row2->setContentsMargins(0,0,0,0);
     blendingalgo_label->setFixedWidth(left_margin);
     advancedpanel_row2->addWidget(blendingalgo_label);
-    blendingalbo_cbox->setFixedWidth(300);
-    advancedpanel_row2->addWidget(blendingalbo_cbox);
-    advancedpanel_row2->addSpacing(60);
-    advancedpanel_row2->addWidget(restoreSPIM_label);
-    advancedpanel_row2->addWidget(restoreSPIM_cbox);
-    advancedpanel_layout->addLayout(advancedpanel_row2);
+    //blendingalbo_cbox->setFixedWidth(300);
+	advancedpanel_row2->addWidget(blendingalbo_cbox);
+	advancedpanel_row2->addStretch(1);
+	advancedpanel_layout->addLayout(advancedpanel_row2);
+	/**/
+	QHBoxLayout* advancedpanel_row3 = new QHBoxLayout();
+	restoreSPIM_label->setFixedWidth(left_margin);
+	advancedpanel_row3->setSpacing(0);
+	advancedpanel_row3->setContentsMargins(0,0,0,0);
+    advancedpanel_row3->addWidget(restoreSPIM_label);
+    advancedpanel_row3->addWidget(restoreSPIM_cbox);
+	advancedpanel_row3->addStretch(1);
+    advancedpanel_layout->addLayout(advancedpanel_row3);
     /**/
     advanced_panel->setLayout(advancedpanel_layout);
 
@@ -812,8 +827,8 @@ void PTabMergeTiles::volumeformat_changed(QString str)
 		outFileButton->setEnabled(false);
 	}
 
-	libtiff_bigtiff_checkbox->setVisible(stdstr.find("TIFF") != std::string::npos);
-	libtiff_uncompressed_checkbox->setVisible(stdstr.find("TIFF") != std::string::npos);
+	libtiff_bigtiff_checkbox->setEnabled(stdstr.find("TIFF") != std::string::npos);
+	libtiff_uncompressed_checkbox->setEnabled(stdstr.find("TIFF") != std::string::npos);
 }
 
 

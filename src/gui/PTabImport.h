@@ -74,7 +74,7 @@ class terastitcher::PTabImport : public QWidget
         QDoubleSpinBox *vxl1_field;     //field for voxel dimension along first direction
         QDoubleSpinBox *vxl2_field;     //field for voxel dimension along second direction
         QDoubleSpinBox *vxl3_field;     //field for voxel dimension along third direction
-        QComboBox* vol_format_cbox;
+        //QComboBox* vol_format_cbox;
         QPrefixSuffixLineEdit *regex_field;         //field for image filter regex
 
         //info panel widgets, contain informations of the loaded volume
@@ -214,7 +214,7 @@ class terastitcher::PTabImport : public QWidget
         /**********************************************************************************
         * Called when "volformat_cbox" state has changed.
         ***********************************************************************************/
-        void volformatChanged(QString);
+       // void volformatChanged(QString);
 
         /**********************************************************************************
         * Called when "sparse_data_checkbox" state has changed.

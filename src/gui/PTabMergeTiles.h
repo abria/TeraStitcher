@@ -93,8 +93,8 @@ class terastitcher::PTabMergeTiles : public QWidget
     QComboBox* blendingalbo_cbox;
     QLabel* restoreSPIM_label;
     QComboBox* restoreSPIM_cbox;
-    QComboBox* imgdepth_cbox;
-    QComboBox* channel_selection;
+    //QComboBox* imgdepth_cbox;
+    //QComboBox* channel_selection;
 
 
     //other widgets
