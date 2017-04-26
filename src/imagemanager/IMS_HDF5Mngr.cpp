@@ -188,9 +188,9 @@ IMS_attr_list_t *build_std_rootattributes ( ) {
 
 	alist->insert(std::make_pair("DataSetDirectoryName","DataSet"));
 	alist->insert(std::make_pair("DataSetInfoDirectoryName","DataSetInfo"));
-	alist->insert(std::make_pair("ThimbnailDirectoryName","Thimbnail"));
-	alist->insert(std::make_pair("ImarsiDataSet","ImarsiDataSet"));
-	alist->insert(std::make_pair("FormatVersion","5.5.0"));
+	alist->insert(std::make_pair("ThumbnailDirectoryName","Thumbnail"));
+	alist->insert(std::make_pair("ImarisDataSet","ImarisDataSet"));
+	alist->insert(std::make_pair("ImarisVersion","5.5.0"));
 
 	return alist;
 }
@@ -326,7 +326,7 @@ IMS_attr_list_t *get_root_attributes ( hid_t root ) {
 	for ( unsigned int i=0; i<nattr; i++ ) {
 		attrid = H5Aopen_idx(root, (hsize_t)i);
 		H5Aget_name(attrid,MAX_NAME,name);
-		if ( strcmp(name,"ImarisDataSet") == 0 || strcmp(name,"ImarisVersion") == 0  || strcmp(name,"FormatVersion") == 0) {
+		if ( strcmp(name,"ImarisDataSet") == 0 || strcmp(name,"ImarisVersion") == 0) {
 			// is an attribute requested by the format IMARIS 5.5 (IMS)
 			typid = H5Aget_type(attrid);
 			if ( H5Tget_class(typid) != H5T_STRING )
@@ -343,7 +343,7 @@ IMS_attr_list_t *get_root_attributes ( hid_t root ) {
 
 	alist->insert(std::make_pair("DataSetDirectoryName","DataSet"));
 	alist->insert(std::make_pair("DataSetInfoDirectoryName","DataSetInfo"));
-	alist->insert(std::make_pair("ThimbnailDirectoryName","Thimbnail"));
+	alist->insert(std::make_pair("ThumbnailDirectoryName","Thumbnail"));
 
 	return alist;
 }
