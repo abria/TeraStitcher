@@ -783,30 +783,30 @@ void PTabImport::volumePathChanged(QString path)
         // try to read and automatically select the volume format...
         try
         {
-            std::string vformat = vm::VirtualVolume::getVolumeFormat(path_field->text().toStdString());
-//            int index = vol_format_cbox->findText(vformat.c_str());
-//            if ( index != -1 ) { // -1 for not found
-//               vol_format_cbox->setCurrentIndex(index);
-////               vol_format_cbox->setVisible(false);
+//            std::string vformat = vm::VirtualVolume::getVolumeFormat(path_field->text().toStdString());
+////            int index = vol_format_cbox->findText(vformat.c_str());
+////            if ( index != -1 ) { // -1 for not found
+////               vol_format_cbox->setCurrentIndex(index);
+//////               vol_format_cbox->setVisible(false);
+////            }
+////            else
+////                vol_format_cbox->setVisible(true);
+//
+//            // ...and suggest an i/o plugin
+//            if(vformat.compare(vm::StackedVolume::id) == 0)
+//            {
+//                int index = imin_plugin_cbox->findText("tiff2D");
+//                if ( index != -1 ) { // -1 for not found
+//                   imin_plugin_cbox->setCurrentIndex(index);
+//                }
 //            }
-//            else
-//                vol_format_cbox->setVisible(true);
-
-            // ...and suggest an i/o plugin
-            if(vformat.compare(vm::StackedVolume::id) == 0)
-            {
-                int index = imin_plugin_cbox->findText("tiff2D");
-                if ( index != -1 ) { // -1 for not found
-                   imin_plugin_cbox->setCurrentIndex(index);
-                }
-            }
-            else if(vformat.compare(vm::BlockVolume::id) == 0)
-            {
-                int index = imin_plugin_cbox->findText("tiff3D");
-                if ( index != -1 ) { // -1 for not found
-                   imin_plugin_cbox->setCurrentIndex(index);
-                }
-            }
+//            else if(vformat.compare(vm::BlockVolume::id) == 0)
+//            {
+//                int index = imin_plugin_cbox->findText("tiff3D");
+//                if ( index != -1 ) { // -1 for not found
+//                   imin_plugin_cbox->setCurrentIndex(index);
+//                }
+//            }
 
             rescan_checkbox->setChecked(false);
             axs1_field->setVisible(false);
