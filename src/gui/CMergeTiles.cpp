@@ -107,15 +107,17 @@ void CMergeTiles::run()
 		//int img_depth = pMergeTiles->imgdepth_cbox->currentText().section(" ", 0, 0).toInt();
 		std::string dst_format = pMergeTiles->vol_format_cbox->currentText().toStdString();
 		bool parallel = false;
-		bool isotropic = false;
+		bool isotropic = pMergeTiles->isotropic_checkbox->isChecked();
 		bool show_progress_bar = true;
 		//bool timeseries = false;
 		//bool makeDirs = false;
 		//bool metaData = false;
 		bool halving_method = HALVE_BY_MEAN;
-		std::string chanlist = "";         // currently cannot be changed, the default is passed
+		// std::string chanlist = "";      // already defined as object member
 		std::string ch_dir = "";           // currently cannot be changed, the default is passed
-		std::string mdata_fname = "null";  // currently cannot be changed, the default is passed		
+		std::string mdata_fname = pMergeTiles->mdata_line->text().toStdString();
+		if(mdata_fname == PTabMergeTiles::metadata_path_null || mdata_fname.empty())
+			mdata_fname = "null";
 		int downsamplingFactor = 1;        // currently cannot be changed, the default is passed
 		//std::string outFmt = "RGB";      // no more used
 
@@ -195,4 +197,5 @@ void CMergeTiles::reset()
 		delete _unstitchedVolume;
 		_unstitchedVolume = 0;
 	}
+	chanlist = "";
 }

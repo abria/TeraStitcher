@@ -41,21 +41,12 @@ using namespace terastitcher;
 
 PTeraStitcher* PTeraStitcher::uniqueInstance = NULL;
 
-#ifdef VAA3D_TERASTITCHER
-PTeraStitcher* PTeraStitcher::instance(V3DPluginCallback *callback, QWidget *parent)
-{
-	if (uniqueInstance == NULL)
-		uniqueInstance = new PTeraStitcher(callback, parent);
-	return uniqueInstance;
-}
-#else
 PTeraStitcher* PTeraStitcher::instance(QWidget *parent)
 {
 	if (uniqueInstance == NULL)
 		uniqueInstance = new PTeraStitcher(parent);
 	return uniqueInstance;
 }
-#endif
 
 void PTeraStitcher::uninstance()
 {
@@ -74,11 +65,8 @@ void PTeraStitcher::uninstance()
     }
 }
 
-#ifdef VAA3D_TERASTITCHER
-PTeraStitcher::PTeraStitcher(V3DPluginCallback *callback, QWidget *parent) : QMainWindow(parent), V3D_env(callback)
-#else
+
 PTeraStitcher::PTeraStitcher(QWidget *parent) : QMainWindow(parent)
-#endif
 {
     #ifdef TSP_DEBUG
     printf("TeraStitcher plugin [thread %d] >> PTeraStitcher created\n", this->thread()->currentThreadId());
@@ -331,9 +319,9 @@ void PTeraStitcher::stopButtonClicked()
         tabImport->stop();
     else if(tabDisplComp->isVisible())
     {
-        if(QMessageBox::information(this, "Warning", "Terminating this step can be unsafe and cause Vaa3D to crash. \n"
+        if(QMessageBox::information(this, "Warning", "Terminating this step can be unsafe and cause TeraStitcher to crash. \n"
                                                   "\nPlease save your data first or click on \"Cancel\" and close the "
-                                                  "plugin to terminate safely this process.", "Continue", "Cancel"))
+                                                  "application to terminate safely this process.", "Continue", "Cancel"))
             return;
         else
             tabDisplComp->stop();
@@ -346,9 +334,9 @@ void PTeraStitcher::stopButtonClicked()
         tabPlaceTiles->stop();
     else if(tabMergeTiles->isVisible())
     {
-        if(QMessageBox::information(this, "Warning", "Terminating this step can be unsafe and cause Vaa3D to crash. \n"
+        if(QMessageBox::information(this, "Warning", "Terminating this step can be unsafe and cause TeraStitcher to crash. \n"
                                                   "\nPlease save your data first or click on \"Cancel\" and close the "
-                                                  "plugin to terminate safely this process.", "Continue", "Cancel"))
+                                                  "application to terminate safely this process.", "Continue", "Cancel"))
             return;
         else
             tabMergeTiles->stop();
@@ -361,7 +349,7 @@ void PTeraStitcher::stopButtonClicked()
 void PTeraStitcher::closeEvent(QCloseEvent *evt)
 {
     if(progressBar->isEnabled() && QMessageBox::information(this, "Warning", "An operation is still in progress. Terminating it can be unsafe and cause Vaa3D to crash. \n"
-                                                                    "\nPlease save your data first.", "Close TeraStitcher plugin", "Cancel"))
+                                                                    "\nPlease save your data first.", "Close TeraStitcher", "Cancel"))
     {
         evt->ignore();
     }
@@ -418,7 +406,7 @@ void PTeraStitcher::about()
 
     QMessageBox msgBox(this);
     QSpacerItem* horizontalSpacer = new QSpacerItem(600, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-    msgBox.setText( QString("<html><h1>TeraStitcher plugin v. ").append(terastitcher::version.c_str()).append("</h1>"
+    msgBox.setText( QString("<html><h1>TeraStitcher v. ").append(terastitcher::version.c_str()).append("</h1>"
                     "<big>A tool for fast automatic 3D-stitching of teravoxel-sized microscopy images</big><br>"
                     "<a href=\"http://www.biomedcentral.com/1471-2105/13/316\">(BMC Bioinformatics 2012, 13:316)</a><br><br>"
                     "<u>Developed by:</u><ul>"
@@ -426,8 +414,6 @@ void PTeraStitcher::about()
                            "Post-doctoral Fellow at University of Cassino</li>"
                     "<li><b>Giulio Iannello</b> (email: g.iannello@unicampus.it)<br>"
                            "Full Professor at University Campus Bio-Medico of Rome</li>"
-                    "<li><b>Leonardo Onofri</b> (email: leonardonofri@gmail.com)<br>"
-                           "Post-doctoral Fellow at University Campus Bio-Medico of Rome</li></ul>"
                     "For further info, please visit our <a href=\"http://abria.github.io/TeraStitcher/\">website</a>.</html>" ));
 
     QGridLayout* layout = (QGridLayout*)msgBox.layout();

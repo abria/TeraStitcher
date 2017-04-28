@@ -83,6 +83,9 @@ class terastitcher::PTabMergeTiles : public QWidget
     QPushButton* showAdvancedButton;
 	QCheckBox *libtiff_uncompressed_checkbox;
 	QCheckBox *libtiff_bigtiff_checkbox;
+	QCheckBox *isotropic_checkbox;
+	QLineEdit *mdata_line;
+	QPushButton *mdata_browse_button;
 
 
     //advanced settings panel widgets
@@ -94,7 +97,7 @@ class terastitcher::PTabMergeTiles : public QWidget
     QLabel* restoreSPIM_label;
     QComboBox* restoreSPIM_cbox;
     //QComboBox* imgdepth_cbox;
-    //QComboBox* channel_selection;
+    QComboBox* channel_selection;
 
 
     //other widgets
@@ -181,17 +184,30 @@ public slots:
     void z0_field_changed(int val);
     void z1_field_changed(int val);
 
+	/**********************************************************************************
+    * Called when the checkboxes of the channel QComboBox's QStandardItemModel changed.
+    ***********************************************************************************/
+	void channelSelectionChanged(QStandardItem * item);
+
+
     /**********************************************************************************
     * Called by <CMergeTiles> when the associated operation has been performed.
     * If an exception has occurred in the <CMergeTiles> thread,it is propagated and man-
     * aged in the current thread (ex != 0). Otherwise, if a valid  3D image  is passed,
     * it is shown in Vaa3D.
     ***********************************************************************************/
-#ifdef VAA3D_TERASTITCHER
-    void merging_done(iom::exception *ex, Image4DSimple* img);
-#else
 	void merging_done(iom::exception *ex);
-#endif
+
+	/**********************************************************************************
+    * Opens the dialog to select the image metadata file
+    * Called when user clicks on "mdata_browse_button".
+    ***********************************************************************************/
+    void metadata_browse_button_clicked();
+
+	// class members
+public:
+
+	static std::string metadata_path_null;
 
 };
 

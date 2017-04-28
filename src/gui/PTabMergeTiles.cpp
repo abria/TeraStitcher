@@ -41,6 +41,8 @@
 
 using namespace terastitcher;
 
+std::string PTabMergeTiles::metadata_path_null = "Enter or select image metadata .ims file";
+
 /*********************************************************************************
 * Singleton design pattern: this class can have one instance only,  which must be
 * instantiated by calling static method "istance(...)"
@@ -55,11 +57,7 @@ void PTabMergeTiles::uninstance()
     }
 }
 
-#ifdef VAA3D_TERASTITCHER
-PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index, V3DPluginCallback *_V3D_env) : QWidget(), container(_container), V3D_env(_V3D_env), tab_index(_tab_index)
-#else
 PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidget(), container(_container), tab_index(_tab_index)
-#endif
 {
     #ifdef TSP_DEBUG
     printf("TeraStitcher plugin [thread %d] >> PTabMergeTiles created\n", this->thread()->currentThreadId());
@@ -111,35 +109,22 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     vol_format_cbox->setEditable(true);
     vol_format_cbox->lineEdit()->setReadOnly(true);
     vol_format_cbox->lineEdit()->setAlignment(Qt::AlignCenter);
-    
 	vol_format_cbox->addItem("--- Select a format ---");
-
 	vol_format_cbox->addItem(iim::SIMPLE_FORMAT.c_str());
-	
 	vol_format_cbox->addItem(iim::STACKED_FORMAT.c_str());
-
 	vol_format_cbox->addItem(iim::TILED_TIF3D_FORMAT.c_str());
-
 	vol_format_cbox->addItem(iim::TILED_MC_TIF3D_FORMAT.c_str());
-
 	//vol_format_cbox->addItem(iim::TIF3D_FORMAT.c_str());
-
 	vol_format_cbox->addItem(iim::BDV_HDF5_FORMAT.c_str());
-
 	vol_format_cbox->addItem(iim::IMS_HDF5_FORMAT.c_str());
-
 	vol_format_cbox->addItem(iim::SIMPLE_RAW_FORMAT.c_str());
-
 	vol_format_cbox->addItem(iim::STACKED_RAW_FORMAT.c_str());
-
 	vol_format_cbox->addItem(iim::TILED_FORMAT.c_str());
-
 	vol_format_cbox->addItem(iim::TILED_MC_FORMAT.c_str());
-
 	//vol_format_cbox->addItemiim::RAW_FORMAT.c_str());
-
     //vol_format_cbox->addItem("2Dseries");
     //vol_format_cbox->addItem("3Dseries");
+
     //std::vector <std::string> volformats = vm::VirtualVolumeFactory::registeredPluginsList();
     //for(int i=0; i<volformats.size(); i++)
     //    vol_format_cbox->addItem(volformats[i].c_str());
@@ -178,8 +163,14 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
 	libtiff_uncompressed_checkbox->setToolTip("Disable libTIFF compression");
 	libtiff_bigtiff_checkbox = new QCheckBox("bigtiff", this);
 	libtiff_bigtiff_checkbox->setToolTip("Force BigTIFF mode for files > 4 GB");
-    showAdvancedButton = new QPushButton(QString("Advanced options ").append(QChar(0x00BB)), this);
+	isotropic_checkbox = new QCheckBox("isotropic", this);
+	isotropic_checkbox->setToolTip("Generate lowest resolution with voxels as much isotropic as possible. Use this flag when the high resolution image has highy anistropic voxels");
+    isotropic_checkbox->setChecked(true);
+	showAdvancedButton = new QPushButton(QString("Advanced options ").append(QChar(0x00BB)), this);
     showAdvancedButton->setCheckable(true);
+	mdata_line = new QLineEdit(this);
+	mdata_line->setFont(smallFont);
+	mdata_browse_button = new QPushButton ("...", this);
 
     //advanced panel widgets
     advanced_panel = new QWidget();
@@ -242,21 +233,15 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     imgdepth_cbox->lineEdit()->setAlignment(Qt::AlignCenter);
     for(int i = 0; i < imgdepth_cbox->count(); i++)
         imgdepth_cbox->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);*/
-    /*channel_selection = new QComboBox();
-    channel_selection->addItem("all channels");
-    channel_selection->setFont(smallFont);
-    channel_selection->setEditable(true);
-    channel_selection->lineEdit()->setReadOnly(true);
-    channel_selection->lineEdit()->setAlignment(Qt::AlignCenter);
-    for(int i = 0; i < channel_selection->count(); i++)
-        channel_selection->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);*/
+    channel_selection = new QComboBox();
 
 
 
     /*** LAYOUT SECTIONS ***/
     //basic settings panel
     QVBoxLayout* basicpanel_layout = new QVBoxLayout();
-    basicpanel_layout->setContentsMargins(0,0,0,0);
+	basicpanel_layout->setContentsMargins(0,0,0,0);
+	basicpanel_layout->setSpacing(5);
     int left_margin = 130;
     /**/
     QHBoxLayout* basic_panel_row_1 = new QHBoxLayout();
@@ -293,7 +278,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
         basic_panel_row_2->addWidget(resolutions_sizes[i],      1+i,    7,  1, 3);
         basic_panel_row_2->addWidget(resolutions_save_cboxs[i], 1+i,    10, 1, 1);
     }
-    basicpanel_layout->addLayout(basic_panel_row_2);
+	basicpanel_layout->addLayout(basic_panel_row_2);
     /**/
     basicpanel_layout->addSpacing(10);
     /**/
@@ -311,6 +296,9 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     basic_panel_row_3->addWidget(block_width_field, 1);
     basic_panel_row_3->addSpacing(5);
 	basic_panel_row_3->addWidget(block_depth_field, 1);
+	basic_panel_row_3->addWidget(mdata_line, 1);
+	basic_panel_row_3->addSpacing(5);
+	basic_panel_row_3->addWidget(mdata_browse_button);
 	//basic_panel_row_3->addStretch(1);
     basicpanel_layout->addLayout(basic_panel_row_3);
     /**/
@@ -318,18 +306,6 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     basic_panel_row_4->setContentsMargins(0,0,0,0);
     basic_panel_row_4->setSpacing(0);
     basic_panel_row_4->addSpacing(left_margin);
-    //imgdepth_cbox->setFixedWidth(100);
-   // basic_panel_row_4->addWidget(imgdepth_cbox);
-    //basic_panel_row_4->addSpacing(5);
-    //channel_selection->setFixedWidth(200);
-   // basic_panel_row_4->addWidget(channel_selection);
-	basic_panel_row_4->addWidget(libtiff_uncompressed_checkbox);
-	basic_panel_row_4->setSpacing(0);
-	libtiff_uncompressed_checkbox->setFixedWidth(150);
-	basic_panel_row_4->addSpacing(5);
-	basic_panel_row_4->addWidget(libtiff_bigtiff_checkbox);
-	libtiff_bigtiff_checkbox->setFixedWidth(145);
-	basic_panel_row_4->addSpacing(20);
 	basic_panel_row_4->addWidget(memocc_field, 1);
 	basicpanel_layout->addLayout(basic_panel_row_4);
 	basicpanel_layout->addSpacing(5);
@@ -355,9 +331,9 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     QVBoxLayout* advancedpanel_layout = new QVBoxLayout();
     /**/
     QHBoxLayout* advancedpanel_row1 = new QHBoxLayout();
-    advancedpanel_row1->setSpacing(0);
+    advancedpanel_row1->setSpacing(10);
     advancedpanel_row1->setContentsMargins(0,0,0,0);
-    QLabel* selection_label = new QLabel("XYZ selection:");
+    QLabel* selection_label = new QLabel("XYZC selection:");
     selection_label->setFixedWidth(left_margin);
     advancedpanel_row1->addWidget(selection_label);
     QLabel* yRangeLabel = new QLabel(" (Y)");
@@ -365,20 +341,27 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     QLabel* xRangeLabel = new QLabel(" (X)");
     xRangeLabel->setFont(smallFont);
     QLabel* zRangeLabel = new QLabel(" (Z)");
-    zRangeLabel->setFont(smallFont);
-    yRangeLabel->setFixedWidth(60);
-    xRangeLabel->setFixedWidth(60);
-    zRangeLabel->setFixedWidth(60);
+	zRangeLabel->setFont(smallFont);
+	QLabel* cRangeLabel = new QLabel(" (C)");
+	cRangeLabel->setFont(smallFont);
+    //yRangeLabel->setFixedWidth(60);
+   // xRangeLabel->setFixedWidth(60);
+    //zRangeLabel->setFixedWidth(60);
     advancedpanel_row1->addWidget(x0_field);
     advancedpanel_row1->addWidget(x1_field);
 	advancedpanel_row1->addWidget(xRangeLabel);
+	advancedpanel_row1->addSpacing(20);
 	advancedpanel_row1->addWidget(y0_field);
 	advancedpanel_row1->addWidget(y1_field);
 	advancedpanel_row1->addWidget(yRangeLabel);
+	advancedpanel_row1->addSpacing(20);
     advancedpanel_row1->addWidget(z0_field);
     advancedpanel_row1->addWidget(z1_field);
-    advancedpanel_row1->addWidget(zRangeLabel);
-    advancedpanel_row1->addStretch(1);
+	advancedpanel_row1->addWidget(zRangeLabel);
+	advancedpanel_row1->addSpacing(20);
+	advancedpanel_row1->addWidget(channel_selection, 1);
+	advancedpanel_row1->addWidget(cRangeLabel);
+    //advancedpanel_row1->addStretch(1);
     advancedpanel_layout->addLayout(advancedpanel_row1);
     /**/
     QHBoxLayout* advancedpanel_row2 = new QHBoxLayout();
@@ -388,6 +371,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     advancedpanel_row2->addWidget(blendingalgo_label);
     //blendingalbo_cbox->setFixedWidth(300);
 	advancedpanel_row2->addWidget(blendingalbo_cbox);
+	blendingalbo_cbox->setFixedWidth(300);
 	advancedpanel_row2->addStretch(1);
 	advancedpanel_layout->addLayout(advancedpanel_row2);
 	/**/
@@ -396,10 +380,22 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
 	advancedpanel_row3->setSpacing(0);
 	advancedpanel_row3->setContentsMargins(0,0,0,0);
     advancedpanel_row3->addWidget(restoreSPIM_label);
-    advancedpanel_row3->addWidget(restoreSPIM_cbox);
+	advancedpanel_row3->addWidget(restoreSPIM_cbox);
+	restoreSPIM_cbox->setFixedWidth(300);
 	advancedpanel_row3->addStretch(1);
     advancedpanel_layout->addLayout(advancedpanel_row3);
     /**/
+	QHBoxLayout* advancedpanel_row4 = new QHBoxLayout();
+	QLabel* other_options_label = new QLabel("Other options:", this);
+	other_options_label->setFixedWidth(left_margin);
+	advancedpanel_row4->setSpacing(10);
+	advancedpanel_row4->addWidget(other_options_label);
+	advancedpanel_row4->addWidget(libtiff_uncompressed_checkbox);
+	advancedpanel_row4->addWidget(libtiff_bigtiff_checkbox);
+	advancedpanel_row4->addWidget(isotropic_checkbox);
+	advancedpanel_row4->addStretch(1);
+	advancedpanel_layout->addLayout(advancedpanel_row4);
+	/**/
     advanced_panel->setLayout(advancedpanel_layout);
 
     //overall
@@ -429,14 +425,12 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     connect(vol_format_cbox, SIGNAL(currentIndexChanged(QString)), this, SLOT(volumeformat_changed(QString)));
     for(int i=0; i<n_max_resolutions; i++)
         connect(resolutions_save_cboxs[i], SIGNAL(stateChanged(int)), this, SLOT(updateContent()));
-#ifdef VAA3D_TERASTITCHER
-    connect(CMergeTiles::instance(), SIGNAL(sendOperationOutcome(iom::exception*, Image4DSimple*)), this, SLOT(merging_done(iom::exception*, Image4DSimple*)), Qt::QueuedConnection);
-#else 
 	connect(CMergeTiles::instance(), SIGNAL(sendOperationOutcome(iom::exception*)), this, SLOT(merging_done(iom::exception*)), Qt::QueuedConnection);
-#endif
 	connect(showAdvancedButton, SIGNAL(toggled(bool)), this, SLOT(showAdvancedChanged(bool)));
-
-    reset();
+	connect(qobject_cast<QStandardItemModel *>(channel_selection->model()), SIGNAL(itemChanged(QStandardItem *)), this, SLOT(channelSelectionChanged(QStandardItem *)));
+    connect(mdata_browse_button, SIGNAL(clicked()), this, SLOT(metadata_browse_button_clicked()));
+	
+	reset();
 }
 
 
@@ -480,6 +474,10 @@ void PTabMergeTiles::reset()
 
 	volumeformat_changed(0);
     setEnabled(false);
+
+	channel_selection->clear();
+
+	mdata_line->setText(metadata_path_null.c_str());
 }
 
 /*********************************************************************************
@@ -501,6 +499,15 @@ void PTabMergeTiles::start()
         // check user input
         if(vol_format_cbox->currentIndex() == 0)
             throw iom::exception("Please select the volume format from the pull-down menu");
+
+		// check at least one channel is enabled
+		bool channel_enabled = false;
+		QStandardItemModel * ch_model = qobject_cast<QStandardItemModel *>(channel_selection->model());
+		for(int i=0; i<ch_model->rowCount() && !channel_enabled; i++)
+			if(ch_model->item(i)->checkState() == Qt::Checked)
+				channel_enabled = true;
+		if(!channel_enabled)
+			throw iom::exception("Please select at least one channel from the channel selection pull-down menu");
 
 		if(outDirButton->isEnabled())
 		{
@@ -544,6 +551,15 @@ void PTabMergeTiles::start()
         CMergeTiles::instance()->setPMergeTiles(this);
         for(int i=0; i<n_max_resolutions; i++)
             CMergeTiles::instance()->setResolution(i, resolutions_save_cboxs[i]->isChecked());
+
+		// set active channels
+		CMergeTiles::instance()->resetActiveChannels();
+		if (ch_model->item(0)->checkState() != Qt::Checked)	// do nothing if 'All channels' is checked
+		{
+			for(int i=1; i<ch_model->rowCount(); i++)
+				if(ch_model->item(i)->checkState() == Qt::Checked)
+					CMergeTiles::instance()->setActiveChannel(i-1);
+		}
 
 		// perform task in a separate thread
         CMergeTiles::instance()->start();
@@ -625,11 +641,40 @@ void PTabMergeTiles::setEnabled(bool enabled)
         volumeformat_changed(vol_format_cbox->currentText());
         QWidget::setEnabled(true);
 
+		// update channel selection
+		QStandardItemModel * ch_model = qobject_cast<QStandardItemModel *>(channel_selection->model());
+		for(int c=0; c<=volume->getDIM_C(); c++)
+		{
+			if(c)
+				channel_selection->addItem(QString("Channel ") + QString::number(c));
+			else
+				channel_selection->addItem("All channels");
+			ch_model->item(c)->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
+			ch_model->item(c)->setData(Qt::Checked, Qt::CheckStateRole);
+			ch_model->item(c)->setData(Qt::AlignCenter, Qt::TextAlignmentRole);
+		}
+		channel_selection->setEditable(true);
+		channel_selection->lineEdit()->setReadOnly(true);
+		channel_selection->lineEdit()->setAlignment(Qt::AlignCenter);
+
         //updating content
         updateContent();
     }
     else
         QWidget::setEnabled(enabled);
+}
+
+/**********************************************************************************
+* Called when the checkboxes of the channel QComboBox's QStandardItemModel changed.
+***********************************************************************************/
+void PTabMergeTiles::channelSelectionChanged(QStandardItem * item)
+{
+	QStandardItemModel * ch_model = qobject_cast<QStandardItemModel *>(channel_selection->model());
+	if (ch_model->item(0)->checkState() == Qt::Checked)
+	{
+		for(int i=1; i<ch_model->rowCount(); i++)
+			ch_model->item(i)->setCheckState(Qt::Checked);
+	}
 }
 
 /**********************************************************************************
@@ -827,6 +872,21 @@ void PTabMergeTiles::volumeformat_changed(QString str)
 		outFileButton->setEnabled(false);
 	}
 
+	if(stdstr.compare(iim::IMS_HDF5_FORMAT) == 0)
+	{
+		mdata_line->setVisible(true);
+		mdata_line->setEnabled(true);
+		mdata_browse_button->setVisible(true);
+		mdata_browse_button->setEnabled(true);
+	}
+	else
+	{
+		mdata_line->setVisible(false);
+		mdata_line->setEnabled(false);
+		mdata_browse_button->setVisible(false);
+		mdata_browse_button->setEnabled(false);
+	}
+
 	libtiff_bigtiff_checkbox->setEnabled(stdstr.find("TIFF") != std::string::npos);
 	libtiff_uncompressed_checkbox->setEnabled(stdstr.find("TIFF") != std::string::npos);
 }
@@ -838,11 +898,7 @@ void PTabMergeTiles::volumeformat_changed(QString str)
 * aged in the current thread (ex != 0). Otherwise, if a valid  3D image  is passed,
 * it is shown in Vaa3D.
 ***********************************************************************************/
-#ifdef VAA3D_TERASTITCHER
-void PTabMergeTiles::merging_done(iom::exception *ex, Image4DSimple* img)
-#else
 void PTabMergeTiles::merging_done(iom::exception *ex)
-#endif
 {
     #ifdef TSP_DEBUG
     printf("TeraStitcher plugin [thread %d] >> PTabMergeTiles merging_done(%s) launched\n", this->thread()->currentThreadId(), (ex? "ex" : "NULL"));
@@ -855,14 +911,6 @@ void PTabMergeTiles::merging_done(iom::exception *ex)
     {
 		//showing operation successful message
 		QMessageBox::information(this, "Operation successful", "Merge step successfully performed!", QMessageBox::Ok);
-
-#ifdef VAA3D_TERASTITCHER
-        if(img)
-        {
-            v3dhandle new_win = PTeraStitcher::instance()->getV3D_env()->newImageWindow(img->getFileName());
-            PTeraStitcher::instance()->getV3D_env()->setImage(new_win, img);
-        }
-#endif
     }
 
 
@@ -887,4 +935,22 @@ void PTabMergeTiles::showAdvancedChanged(bool status)
     #endif
 
     advanced_panel->setVisible(status);
+}
+
+/**********************************************************************************
+* Opens the dialog to select the image metadata file
+* Called when user clicks on "mdata_browse_button".
+***********************************************************************************/
+void PTabMergeTiles::metadata_browse_button_clicked()
+{
+	QFileDialog dialog(this);
+	dialog.setFileMode(QFileDialog::ExistingFile);
+	dialog.setAcceptMode(QFileDialog::AcceptOpen);
+	//dialog.setWindowFlags(Qt::WindowStaysOnTopHint);
+	dialog.setWindowTitle("Select image metadata file");
+	dialog.setDirectory(QDir::currentPath());
+	dialog.setNameFilter(tr("Imaris files (*.ims *.IMS)"));
+	if(dialog.exec())
+		if(!dialog.selectedFiles().empty())
+			mdata_line->setText(dialog.selectedFiles().front());
 }

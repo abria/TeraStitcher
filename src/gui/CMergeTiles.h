@@ -63,6 +63,7 @@ class terastitcher::CMergeTiles : public QThread
         //members
         PTabMergeTiles* pMergeTiles;
         bool resolutions[S_MAX_MULTIRES];
+		std::string chanlist;
 
 		// volume that has to be stitched
 		UnstitchedVolume * _unstitchedVolume;
@@ -84,10 +85,13 @@ class terastitcher::CMergeTiles : public QThread
 
 		// get methods
 		UnstitchedVolume* unstitchedVolume() throw (iim::IOException);
+		std::string getActiveChannels(){return chanlist;}
 
 		// set methods
         void setPMergeTiles(PTabMergeTiles* handle){pMergeTiles = handle;}
         void setResolution(int index, bool enabled){resolutions[index] = enabled;}
+		void setActiveChannel(int c){ chanlist += ts::num2str<int>(c);}
+		void resetActiveChannels(){chanlist = "";}
 
         // reset method
         void reset();
