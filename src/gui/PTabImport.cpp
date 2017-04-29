@@ -571,6 +571,14 @@ void PTabImport::preview_button_clicked()
     wait_movie->start();
     container->getTabBar()->setTabButton(tab_index, QTabBar::LeftSide, wait_label);
 
+	// 2017-04-29. Giulio. @ADDED set of the input channel when the input plugin is non-interleaved
+	if(iom::IMIN_PLUGIN == "tiff2D" || iom::IMIN_PLUGIN == "opencv2D" || iom::IMIN_PLUGIN == "tiff3D") 
+		// interleaved inout plugins do not nothing
+		;
+	else
+		// non-interleaved input plugins: active channel must be set before launching previewing
+    	CImportUnstitched::instance()->getVolume()->setACTIVE_CHAN(iom::CHANS_no);
+
     //launching preview thread
     int bitdepth = 8;
     if(imgdepth_cbox->currentText().compare("16 bits") == 0)
@@ -718,14 +726,14 @@ void PTabImport::import_done(iom::exception *ex)
 		// the channel combo has already been emptied
 		if ( CImportUnstitched::instance()->getVolume()->getDIM_C() > 1 ) {
 			if(iom::IMIN_PLUGIN == "tiff2D" || iom::IMIN_PLUGIN == "opencv2D" || iom::IMIN_PLUGIN == "tiff3D") {
-				channel_selection->addItem("R");
-				channel_selection->addItem("G");
-				channel_selection->addItem("B");
+				channel_selection->addItem("Channel R");
+				channel_selection->addItem("Channel G");
+				channel_selection->addItem("Channel B");
 			}
 			else {
-				char num_str[10];
+				char num_str[20];
 				for(int i = 0; i < CImportUnstitched::instance()->getVolume()->getDIM_C(); i++) {
-					sprintf(num_str,"%d",i);
+					sprintf(num_str,"Channel %d",i);
 					channel_selection->addItem(num_str);
 				}
 			}
@@ -924,7 +932,17 @@ void PTabImport::rescanCheckboxChanged(int checked)
 ***********************************************************************************/
 void PTabImport::channelSelectedChanged(int c)
 {
-    iom::CHANS = iom::channel(c);
+	// 2017-04-29. Giulio. @ADDED distinguish between interleaved and non-interleaved plugins
+	if(iom::IMIN_PLUGIN == "tiff2D" || iom::IMIN_PLUGIN == "opencv2D" || iom::IMIN_PLUGIN == "tiff3D") {
+    	iom::CHANS = iom::channel(c);
+    }
+    else { // non-interleaved input plugin: the channel number has to be set
+    	int index = channel_selection->currentIndex();
+    	if ( index > 0 )
+    		iom::CHANS_no = index - 1;
+    	else
+    		iom::CHANS_no = 0;
+    }
 }
 
 /**********************************************************************************

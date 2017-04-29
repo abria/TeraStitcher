@@ -84,10 +84,11 @@ PTabDisplComp::PTabDisplComp(QMyTabWidget* _container, int _tab_index) : QWidget
     memocc_field->setReadOnly(true);
     memocc_field->setAlignment(Qt::AlignCenter);
     channel_selection = new QComboBox();
-    channel_selection->addItem("all channels");
-    channel_selection->addItem("R");
-    channel_selection->addItem("G");
-    channel_selection->addItem("B");
+    channel_selection->addItem("unselected");
+	// 2017-04-29. Giulio. @DELETED channel list: still to be improved
+//     channel_selection->addItem("R");
+//     channel_selection->addItem("G");
+//     channel_selection->addItem("B");
     channel_selection->setEditable(true);
     channel_selection->lineEdit()->setReadOnly(true);
     channel_selection->lineEdit()->setAlignment(Qt::AlignCenter);
@@ -344,6 +345,15 @@ void PTabDisplComp::start()
         CDisplComp::instance()->setSearchRadius(Ysearch_sbox->value(), Xsearch_sbox->value(), Zsearch_sbox->value());
         CDisplComp::instance()->setOverlap(Yoverlap_sbox->value(), Xoverlap_sbox->value());
         CDisplComp::instance()->setRestoreSPIM(restoreSPIM_cbox->isChecked());
+        
+		// 2017-04-29. Giulio. @ADDED set of the input channel when the input plugin is non-interleaved
+		if(iom::IMIN_PLUGIN == "tiff2D" || iom::IMIN_PLUGIN == "opencv2D" || iom::IMIN_PLUGIN == "tiff3D") 
+			// interleaved inout plugins do not nothing
+			;
+		else
+			// non-interleaved input plugins: active channel must be set before launching previewing
+			CImportUnstitched::instance()->getVolume()->setACTIVE_CHAN(iom::CHANS_no);
+        
         CDisplComp::instance()->start();
     }
     catch(iom::exception &ex)
