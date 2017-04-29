@@ -26,6 +26,12 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2017-04-27. Giulio.     @ADDED code to get and initialize the input plugin form the xml if specified
+*/
+
 #include "PTabImport.h"
 #include "iomanager.config.h"
 #include "vmStackedVolume.h"
@@ -238,17 +244,22 @@ PTabImport::PTabImport(QMyTabWidget* _container, int _tab_index) : QWidget(), co
     slice_spinbox = new QSpinBox();
     slice_spinbox->setPrefix("Slice ");
     slice_spinbox->setAlignment(Qt::AlignCenter);
+    
+    // 2017-04-28. Giulio. @CHANGED made adaptable to the input plugin
     channel_selection = new QComboBox();
-    channel_selection->addItem("to gray");
-    channel_selection->addItem("R");
-    channel_selection->addItem("G");
-    channel_selection->addItem("B");
+    channel_selection->addItem("unselected");
+//     channel_selection->addItem("to gray");
+//     channel_selection->addItem("R");
+//     channel_selection->addItem("G");
+//     channel_selection->addItem("B");
     channel_selection->setEditable(true);
     channel_selection->lineEdit()->setReadOnly(true);
     channel_selection->lineEdit()->setAlignment(Qt::AlignCenter);
     for(int i = 0; i < channel_selection->count(); i++)
         channel_selection->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);
     connect(channel_selection, SIGNAL(currentIndexChanged(int)),this, SLOT(channelSelectedChanged(int)));
+    
+    // 2017-04-28. Giulio. @CHANGED made not visible; used to set the depth of the preview directly from the imported volume
     imgdepth_cbox = new QComboBox();
     imgdepth_cbox->insertItem(0, "8 bits");
     imgdepth_cbox->insertItem(1, "16 bits");
@@ -257,6 +268,9 @@ PTabImport::PTabImport(QMyTabWidget* _container, int _tab_index) : QWidget(), co
     imgdepth_cbox->lineEdit()->setAlignment(Qt::AlignCenter);
     for(int i = 0; i < imgdepth_cbox->count(); i++)
         imgdepth_cbox->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);
+    imgdepth_cbox->setVisible(false);
+    //imgdepth_cbox->setEditable(false);
+    
     preview_button = new QPushButton(this);
     preview_button->setIcon(QIcon(":/icons/preview.png"));
     preview_button->setIconSize(QSize(20,20));
@@ -475,6 +489,10 @@ void PTabImport::reset()
     slice_spinbox->setMaximum(0);
     slice_spinbox->setValue(0);
     slice_spinbox->setSuffix("/0");
+    
+//     delete channel_selection;
+//     channel_selection = new QComboBox();
+//     channel_selection->addItem("unselected");
 }
 
 // qt event filter
@@ -693,6 +711,30 @@ void PTabImport::import_done(iom::exception *ex)
         slice_spinbox->setValue(slice_spinbox->maximum()/2);
         slice_spinbox->setSuffix(QString("/").append(QString::number(CImportUnstitched::instance()->getVolume()->getN_SLICES())));
 
+		imgdepth_cbox->setCurrentIndex(CImportUnstitched::instance()->getVolume()->getBYTESxCHAN()-1);
+    	imgdepth_cbox->setEditable(false);
+
+		// 2017-04-29. Giulio. @ADDED setup of the channel selection combo box
+		// the channel combo has already been emptied
+		if ( CImportUnstitched::instance()->getVolume()->getDIM_C() > 1 ) {
+			if(iom::IMIN_PLUGIN == "tiff2D" || iom::IMIN_PLUGIN == "opencv2D" || iom::IMIN_PLUGIN == "tiff3D") {
+				channel_selection->addItem("R");
+				channel_selection->addItem("G");
+				channel_selection->addItem("B");
+			}
+			else {
+				char num_str[10];
+				for(int i = 0; i < CImportUnstitched::instance()->getVolume()->getDIM_C(); i++) {
+					sprintf(num_str,"%d",i);
+					channel_selection->addItem(num_str);
+				}
+			}
+ 		}
+		for(int i = 0; i < channel_selection->count(); i++)
+			channel_selection->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);
+		channel_selection->setCurrentIndex(0);
+		channel_selection->setVisible(true);
+		
         PTeraStitcher::instance()->setToReady();
 
         //...and enabling (ed updating) all other tabs
@@ -783,6 +825,16 @@ void PTabImport::volumePathChanged(QString path)
         // try to read and automatically select the volume format...
         try
         {
+        	// 2017-04-27. Giulio. @ADDED set the input plugin if found in the xml file
+        	std::string inplugin = vm::VirtualVolume::getInputPlugin(path_field->text().toStdString());
+            int index = imin_plugin_cbox->findText(inplugin.c_str());
+            if ( index != -1 ) { // -1 for not found
+				imin_plugin_cbox->setCurrentIndex(index);
+            	imin_plugin_cbox->setVisible(true);
+            }
+			else
+                imin_plugin_cbox->setVisible(true);
+                
 //            std::string vformat = vm::VirtualVolume::getVolumeFormat(path_field->text().toStdString());
 ////            int index = vol_format_cbox->findText(vformat.c_str());
 ////            if ( index != -1 ) { // -1 for not found
@@ -899,12 +951,20 @@ void PTabImport::iopluginChanged(QString str)
 {
     iom::IMIN_PLUGIN = str.toStdString();
 
+	// the combo list of channels is emptied every time the plugin is changed
+	int n = channel_selection->count() - 1;
+	for ( int i=0; i<n; i++ )
+		channel_selection->removeItem(1);
+ 	channel_selection->setCurrentIndex(0);
+	channel_selection->setVisible(true);
+		
 	// 2017-04-25 by Alessandro: @ADDED automatic selection of volume format plugin
-	vm::VOLUME_INPUT_FORMAT_PLUGIN = str.toStdString();
-	if(str == "tiff2D")
+	if(str == "tiff2D" || str == "opencv2D") {
 		vm::VOLUME_INPUT_FORMAT_PLUGIN = vm::StackedVolume::id;
-	else
+	}
+	else {
 		vm::VOLUME_INPUT_FORMAT_PLUGIN = vm::BlockVolume::id;
+	}
 }
 
 /**********************************************************************************

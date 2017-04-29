@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-27. Giulio.     @ADDED code to get and initialize the input plugin from the xml if specified
 * 2017-04-12. Giulio.     @ADDED method to release all buffers allocated in VirtualStack
 * 2017-04-09. Giulio.     @FIXED the case when the xml file is incoplete in method 'loadXML'
 * 2016-11-14. Giulio.     @ADDED management of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
@@ -911,6 +912,11 @@ void BlockVolume::loadXML(const char *xml_filepath) throw (iom::exception)
 	if(volformat && strcmp(volformat, id.c_str()) != 0)
 		throw iom::exception(vm::strprintf("in BlockVolume::initFromXML(): unsupported volume_format = \"%s\" (current format is \"%s\")", volformat, id.c_str()).c_str());
 
+	// 2017-04-27. Giulio. ADDED 'input_plugin' attribute to <TeraStitcher> XML node
+	const char *inplugin = hRoot.ToElement()->Attribute("input_plugin"); 
+	if(inplugin)
+		iom::IMIN_PLUGIN = inplugin;
+	
 	//reading fields and checking coherence with metadata previously read from VM_BIN_METADATA_FILE_NAME
 	TiXmlElement * pelem = hRoot.FirstChildElement("stacks_dir").Element();
 	if(strcmp(pelem->Attribute("value"), stacks_dir) != 0)
@@ -1045,6 +1051,11 @@ void BlockVolume::initFromXML(const char *xml_filepath) throw (iom::exception)
 	if(volformat && strcmp(volformat, id.c_str()) != 0)
 		throw iom::exception(vm::strprintf("in BlockVolume::initFromXML(): unsupported volume_format = \"%s\" (current format is \"%s\")", volformat, id.c_str()).c_str());
 
+	// 2017-04-27. Giulio. ADDED 'input_plugin' attribute to <TeraStitcher> XML node
+	const char *inplugin = hRoot.ToElement()->Attribute("input_plugin"); 
+	if(inplugin)
+		iom::IMIN_PLUGIN = inplugin;
+	
 	//reading fields
 	TiXmlElement * pelem = hRoot.FirstChildElement("stacks_dir").Element();
 	// 2014-11-06. Giulio. @ADDED saved reference system into XML file
@@ -1173,6 +1184,9 @@ void BlockVolume::saveXML(const char *xml_filename, const char *xml_filepath) th
 
 	// 2014-09-10. Alessandro. @ADDED 'volume_format' attribute to <TeraStitcher> XML node
 	root->SetAttribute("volume_format", id.c_str());
+
+	// 2017-04-27. Giulio. ADDED 'input_plugin' attribute to <TeraStitcher> XML node
+	root->SetAttribute("input_plugin", iom::IMIN_PLUGIN.c_str());
 
 	pelem = new TiXmlElement("stacks_dir");
 	pelem->SetAttribute("value", stacks_dir);

@@ -237,7 +237,7 @@ IMS_obj_list_t *build_std_filestruct ( std::string fname, int height, int width,
 	alist->insert(std::make_pair("Description","(description not specified)"));
 	alist->insert(std::make_pair("Name",fname));
 	alist->insert(std::make_pair("RecordingDate",get_time_str()));
-	alist->insert(std::make_pair("Unit",""));
+	alist->insert(std::make_pair("Unit","um"));
 	olist->insert(std::make_pair("Image",IMS_obj_info_t(H5G_GROUP,new IMS_obj_list_t,alist)));
 
 	for ( int c=0; c<n_chans; c++ ) {

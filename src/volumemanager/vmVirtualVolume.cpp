@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-27. Giulio.     @ADDED static method to get the input plugin from the xml if specified
 * 2017-03-27. Giulio.     @ADDED initialization of 'active_channel' with iom::CHANS_no in case more than three channels are possible (iom::CHANS = NONE)
 * 2016-09-01. Giulio.     @ADDED Cache buffer.
 * 2016-06-09. Giulio      @ADDED the initialization of 'active_channel' in the constructor
@@ -295,4 +296,25 @@ std::string VirtualVolume::getVolumeFormat(const std::string& xml_path) throw (i
 		throw iom::exception(vm::strprintf("in VirtualVolume::getVolumeFormat(): cannot find 'volume_format' <TeraStitcher> attribute in xml file at \"%s\". Too old xml, please regenerate it.", xml_path.c_str()).c_str());
 
 	return volformat;
+}
+
+
+// return 'input_plugin' attribute of <TeraStitcher> node from the given xml or a null string. 
+std::string VirtualVolume::getInputPlugin(const std::string& xml_path) throw (iom::exception)
+{
+	// open xml
+	TiXmlDocument xml;
+	if(!xml.LoadFile(xml_path.c_str()))
+		throw iom::exception(vm::strprintf("in VirtualVolume::getInputPlugin(): cannot open xml file at \"%s\"", xml_path.c_str()));
+
+	// get root node
+	TiXmlHandle hRoot(xml.FirstChildElement("TeraStitcher"));
+
+	// get 'volume_format' attribute
+	const char *inplugin = hRoot.ToElement()->Attribute("input_plugin");
+
+	if ( inplugin )
+		return inplugin; 
+	else
+		return ""; // return a null string if the attribute is not present
 }

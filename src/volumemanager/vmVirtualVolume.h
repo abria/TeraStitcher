@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-27. Giulio.     @ADDED static method to get the input plugin from the xml if specified
 * 2017-04-12. Giulio.     @ADDED method to release all buffers allocated in VirtualStack
 * 2016-09-01. Giulio.     @ADDED Cache buffer.
 * 2016-06-09. Giulio      @ADDED the 'active_channel' field and corresponding getter and setter
@@ -166,6 +167,11 @@ class volumemanager::VirtualVolume
 		// 2014-09-10. Alessandro. @ADDED 'getVolumeFormat' method to be applied on xml file.
 		// return 'volume_format' attribute of <TeraStitcher> node from the given xml. 
         static std::string getVolumeFormat(const std::string& xml_path) throw (iom::exception);
+
+		// 2017-04-27. Giulio. @ADDED 'getInputPlugin' method to be applied on xml file.
+		// return 'input_plugin' attribute of <TeraStitcher> node from the given xml if present
+		// return an empty string if the attribute is not present (for compatibility reasons).
+        static std::string getInputPlugin(const std::string& xml_path) throw (iom::exception);
 
 		//inserts the given displacement in the given stacks
 		void insertDisplacement(VirtualStack *stk_A, VirtualStack *stk_B, Displacement *displacement) throw (iom::exception);

@@ -569,6 +569,9 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
     std::stringstream file_path[TMITREE_MAX_HEIGHT];                            //array of root directory name at i-th resolution
 	int resolutions_size = 0;
 
+	std::string save_imin_plugin;  // to be used for restoring the input plugin after a change
+	std::string save_imout_plugin; // to be used for restoring the output plugin after a change
+
 	sint64 whole_height; // 2016-04-13. Giulio. to be used only if par_mode is set to store the height of the whole volume
 	sint64 whole_width;  // 2016-04-13. Giulio. to be used only if par_mode is set to store the width of the whole volume
 	sint64 whole_depth;  // 2016-04-13. Giulio. to be used only if par_mode is set to store the depth of the whole volume
@@ -581,11 +584,15 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
         throw IOException(err_msg);
 	}
 
-	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
-	if(iom::IMOUT_PLUGIN.compare("empty") == 0)
-	{
-		iom::IMOUT_PLUGIN = "tiff2D";
-	}
+	// 2017-04-24. Giulio. @CHANGED the way the output pluging is set
+	save_imout_plugin = iom::IMOUT_PLUGIN;
+	iom::IMOUT_PLUGIN = "tiff2D";
+
+	//// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
+	//if(iom::IMOUT_PLUGIN.compare("empty") == 0)
+	//{
+	//	iom::IMOUT_PLUGIN = "tiff2D";
+	//}
 
 	if ( par_mode ) // in parallel mode never show the progress bar
 		show_progress_bar = false;
@@ -1016,7 +1023,7 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 		}  
 
 		// 2016-04-09. Giulio. @FIXED If input volume is 3D the input plugin cannot be used to generate the meta data file.
-		std::string save_imin_plugin = iom::IMIN_PLUGIN; // save current input plugin
+		save_imin_plugin = iom::IMIN_PLUGIN; // save current input plugin
 		//try {
 		//	// test if it is a 2D plugin
 		//	bool temp = iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved();
@@ -1054,6 +1061,9 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 		// WARNINIG --- the directory should be removed
 		bool res = remove_dir(output_path_par.str().c_str());
 	}
+
+	// restore the output plugin
+	iom::IMOUT_PLUGIN = save_imout_plugin;
 
 	// ubuffer allocated anyway
 	delete ubuffer;
@@ -1130,6 +1140,9 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
     std::stringstream file_path[TMITREE_MAX_HEIGHT];                            //array of root directory name at i-th resolution
 	int resolutions_size = 0;
 
+	std::string save_imin_plugin; // to be used for restoring the input plugin after a change
+	std::string save_imout_plugin; // to be used for restoring the output plugin after a change
+
 	sint64 whole_height; // 2016-04-13. Giulio. to be used only if par_mode is set to store the height of the whole volume
 	sint64 whole_width;  // 2016-04-13. Giulio. to be used only if par_mode is set to store the width of the whole volume
 	sint64 whole_depth;  // 2016-04-13. Giulio. to be used only if par_mode is set to store the depth of the whole volume
@@ -1142,11 +1155,15 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
         throw IOException(err_msg);
 	}
 
-	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
-	if(iom::IMOUT_PLUGIN.compare("empty") == 0)
-	{
-		iom::IMOUT_PLUGIN = "tiff2D";
-	}
+	// 2017-04-24. Giulio. @CHANGED the way the output pluging is set
+	save_imout_plugin = iom::IMOUT_PLUGIN;
+	iom::IMOUT_PLUGIN = "tiff2D";
+
+	//// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
+	//if(iom::IMOUT_PLUGIN.compare("empty") == 0)
+	//{
+	//	iom::IMOUT_PLUGIN = "tiff2D";
+	//}
 
 	if ( par_mode ) // in parallel mode never show the progress bar
 		show_progress_bar = false;
@@ -1603,6 +1620,9 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 		bool res = remove_dir(output_path_par.str().c_str());
 	}
 
+	// restore the output plugin
+	iom::IMOUT_PLUGIN = save_imout_plugin;
+
 	// ubuffer allocated anyway
 	delete ubuffer;
 
@@ -1675,6 +1695,9 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
     std::stringstream file_path[TMITREE_MAX_HEIGHT];  //array of root directory name at i-th resolution
 	int resolutions_size = 0;
 
+	std::string save_imin_plugin; // to be used for restoring the input plugin after a change
+	std::string save_imout_plugin; // to be used for restoring the output plugin after a change
+
 	sint64 whole_height; // 2016-04-13. Giulio. to be used only if par_mode is set to store the height of the whole volume
 	sint64 whole_width;  // 2016-04-13. Giulio. to be used only if par_mode is set to store the width of the whole volume
 	sint64 whole_depth;  // 2016-04-13. Giulio. to be used only if par_mode is set to store the depth of the whole volume
@@ -1711,11 +1734,15 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
         throw IOException(err_msg);
 	}
 
-	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
-	if(iom::IMOUT_PLUGIN.compare("empty") == 0)
-	{
-		iom::IMOUT_PLUGIN = "tiff3D";
-	}
+	// 2017-04-24. Giulio. @CHANGED the way the output pluging is set
+	save_imout_plugin = iom::IMOUT_PLUGIN;
+	iom::IMOUT_PLUGIN = "tiff3D";
+
+	//// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
+	//if(iom::IMOUT_PLUGIN.compare("empty") == 0)
+	//{
+	//	iom::IMOUT_PLUGIN = "tiff3D";
+	//}
 
 	//initializing the progress bar
 	char progressBarMsg[200];
@@ -2342,7 +2369,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 		}  
 
 		// 2016-04-10. Giulio. @ADDED the TiledVolume constructor may change the input plugin if it is wrong
-		std::string save_imin_plugin = iom::IMIN_PLUGIN; // save current input plugin
+		save_imin_plugin = iom::IMIN_PLUGIN; // save current input plugin
 		// 2016-04-28. Giulio. Now the generated image should be read: use the output plugin
 		iom::IMIN_PLUGIN = iom::IMOUT_PLUGIN;
 
@@ -2384,6 +2411,9 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 		// WARNINIG --- the directory should be removed
 		bool res = remove_dir(output_path_par.str().c_str());
 	}
+
+	// restore the output plugin
+	iom::IMOUT_PLUGIN = save_imout_plugin;
 
 	// ubuffer allocated anyway
 	delete ubuffer;
@@ -2509,6 +2539,9 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
     std::stringstream file_path[S_MAX_MULTIRES];                            //array of root directory name at i-th resolution
 	int resolutions_size = 0;
 
+	std::string save_imin_plugin; // to be used for restoring the input plugin after a change
+	std::string save_imout_plugin; // to be used for restoring the output plugin after a change
+
 	std::string *chans_dir;
 	std::string resolution_dir;
 
@@ -2551,11 +2584,15 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
         ts::ProgressBar::getInstance()->display();
 	}
 
-	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
-	if(iom::IMOUT_PLUGIN.compare("empty") == 0)
-	{
-		iom::IMOUT_PLUGIN = "tiff3D";
-	}
+	// 2017-04-24. Giulio. @CHANGED the way the output pluging is set
+	save_imout_plugin = iom::IMOUT_PLUGIN;
+	iom::IMOUT_PLUGIN = "tiff3D";
+
+	//// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
+	//if(iom::IMOUT_PLUGIN.compare("empty") == 0)
+	//{
+	//	iom::IMOUT_PLUGIN = "tiff3D";
+	//}
 
 	//computing dimensions of volume to be stitched
 	//this->computeVolumeDims(exclude_nonstitchable_stacks, _ROW_START, _ROW_END, _COL_START, _COL_END, _D0, _D1);
@@ -3042,7 +3079,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 	}  
 
 	// 2016-04-10. Giulio. @ADDED the TiledVolume constructor may change the input plugin if it is wrong
-	std::string save_imin_plugin = iom::IMIN_PLUGIN; // save current input plugin
+	save_imin_plugin = iom::IMIN_PLUGIN; // save current input plugin
 	// 2016-04-28. Giulio. Now the generated image should be read: use the output plugin
 	iom::IMIN_PLUGIN = iom::IMOUT_PLUGIN;
 
@@ -3068,6 +3105,9 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 
 	// restore input plugin
 	iom::IMIN_PLUGIN = save_imin_plugin;
+
+	// restore the output plugin
+	iom::IMOUT_PLUGIN = save_imout_plugin;
 
 	// ubuffer allocated anyway
 	delete ubuffer;
@@ -3136,6 +3176,9 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
     std::stringstream file_path[TMITREE_MAX_HEIGHT];                            //array of root directory name at i-th resolution
 	int resolutions_size = 0;
 
+	std::string save_imin_plugin; // to be used for restoring the input plugin after a change
+	std::string save_imout_plugin; // to be used for restoring the output plugin after a change
+
 	sint64 whole_height; // 2016-04-13. Giulio. to be used only if par_mode is set to store the height of the whole volume
 	sint64 whole_width;  // 2016-04-13. Giulio. to be used only if par_mode is set to store the width of the whole volume
 	sint64 whole_depth;  // 2016-04-13. Giulio. to be used only if par_mode is set to store the depth of the whole volume
@@ -3175,11 +3218,15 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
         throw IOException(err_msg);
 	}
 
-	// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
-	if(iom::IMOUT_PLUGIN.compare("empty") == 0)
-	{
-		iom::IMOUT_PLUGIN = "tiff3D";
-	}
+	// 2017-04-24. Giulio. @CHANGED the way the output pluging is set
+	save_imout_plugin = iom::IMOUT_PLUGIN;
+	iom::IMOUT_PLUGIN = "tiff3D";
+
+	//// 2015-03-03. Giulio. @ADDED selection of IO plugin if not provided.
+	//if(iom::IMOUT_PLUGIN.compare("empty") == 0)
+	//{
+	//	iom::IMOUT_PLUGIN = "tiff3D";
+	//}
 
 	//initializing the progress bar
 
@@ -3801,7 +3848,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 		}  
 
 		// 2016-04-10. Giulio. @ADDED the TiledVolume constructor may change the input plugin if it is wrong
-		std::string save_imin_plugin = iom::IMIN_PLUGIN; // save current input plugin
+		save_imin_plugin = iom::IMIN_PLUGIN; // save current input plugin
 		// 2016-04-28. Giulio. Now the generated image should be read: use the output plugin
 		iom::IMIN_PLUGIN = iom::IMOUT_PLUGIN;
 
@@ -3850,6 +3897,9 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 		// WARNINIG --- the directory should be removed
 		bool res = remove_dir(output_path_par.str().c_str());
 	}
+
+	// restore the output plugin
+	iom::IMOUT_PLUGIN = save_imout_plugin;
 
 	// ubuffer allocated anyway
 	delete ubuffer;
@@ -5066,6 +5116,7 @@ void VolumeConverter::mdataGenerator(std::string output_path, std::string ch_dir
 	std::string *chans_dir;
 	std::string resolution_dir;
 
+	std::string save_imin_plugin; // to be used for restoring the input plugin after a change
 
 	if ( volume == 0 ) {
 		char err_msg[STATIC_STRINGS_SIZE];
@@ -5215,7 +5266,7 @@ void VolumeConverter::mdataGenerator(std::string output_path, std::string ch_dir
 	}  
 
 	// 2016-04-10. Giulio. @ADDED the TiledVolume constructor may change the input plugin if it is wrong
-	std::string save_imin_plugin = iom::IMIN_PLUGIN; // save current input plugin
+	save_imin_plugin = iom::IMIN_PLUGIN; // save current input plugin
 	//if ( strcmp(saved_img_format,"tif") == 0 ) {
 	//	try {
 	//		// test if it is a 2D plugin
