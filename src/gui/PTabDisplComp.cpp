@@ -535,5 +535,15 @@ void PTabDisplComp::showAdvancedChanged(bool status)
 ***********************************************************************************/
 void PTabDisplComp::channelSelectedChanged(int c)
 {
-    iom::CHANS = iom::channel(c);
+	// 2017-04-30. Giulio. @ADDED distinguish between interleaved and non-interleaved plugins
+	if(iom::IMIN_PLUGIN == "tiff2D" || iom::IMIN_PLUGIN == "opencv2D" || iom::IMIN_PLUGIN == "tiff3D") {
+    	iom::CHANS = iom::channel(c);
+    }
+    else { // non-interleaved input plugin: the channel number has to be set
+    	int index = channel_selection->currentIndex();
+    	if ( index > 0 )
+    		iom::CHANS_no = index - 1;
+    	else
+    		iom::CHANS_no = 0;
+    }
 }

@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2017-05-03. Giulio.     @ADDED ruotine resetLibTIFFcfg to reconfigure an already configured library
 * 2017-04-02. Giulio.     @ADDED support for creation of BigTiff files
 * 2017-04-02. Giulio.     @FIXED a memory leak in 'openTiff3DFile'
 * 2016-11-27. Giulio.     @FIXED bug in 'initTiff3DFile': the fake buffer was allocated before updating spp
@@ -80,6 +81,16 @@ void setLibTIFFcfg ( bool cmprssd,  bool _bigtiff,  int rps ) {
 	}
 	else
 		iim::warning(iim::strprintf("setLibTIFFcfg ( bool cmprssd = %s, unsigned int rps = %d )", cmprssd ? "true" : "false", rps).c_str());
+}
+
+
+void resetLibTIFFcfg ( bool cmprssd,  bool _bigtiff,  int rps ) {
+	bigtiff = _bigtiff;
+	compressed = cmprssd;
+	if ( compressed ) {
+		rowsPerStrip = rps;
+	}
+	unconfigured = false;
 }
 
 

@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2017-05-03. Giulio. @ADDED ruotine resetLibTIFFcfg to reconfigure an already configured library
 * 2016-06-17. Giulio. @CHANGED the interface of 'readTiff3DFile2Buffer' (enabling the possibility of performing downsampling on-the-fly when reading an image
 * 2015-02-15. Giulio. @CHANGED revised all interfaces passing always width and height in this order
 * 2015-02-06. Giulio. @ADDED append operation that assumes an already open and positioned file
@@ -44,6 +45,18 @@ void setLibTIFFcfg ( bool cmprssd = true, bool _bigtiff = false, int rps = 1 );
  * - if compression is enabled, set the rows per strip in case of compression (rps = i means that strips are groups of i rows, 
  *   rps = -1 means that each slice is just one strip); this parameter has no effect if comprssd = false
  * - force the creation of BigTiff files
+ * this function prints a warning and does nothing if the configuration has already be applied
+ * WARNINIG: if slices are big, setting rps to -1 (or to large values) may lead to very slow access to images, 
+ * or even to memory explosion; this is why the default is 1
+ */
+
+void resetLibTIFFcfg ( bool cmprssd = true, bool _bigtiff = false, int rps = 1 );
+/* the interface to LibTIFF can be configured once to:
+ * - enable compression (cmprssd = true, default) of desable compression (cmprssd = false)
+ * - if compression is enabled, set the rows per strip in case of compression (rps = i means that strips are groups of i rows, 
+ *   rps = -1 means that each slice is just one strip); this parameter has no effect if comprssd = false
+ * - force the creation of BigTiff files
+ * if a configuration has been already applied, this function modifies the existing configuration 
  * WARNINIG: if slices are big, setting rps to -1 (or to large values) may lead to very slow access to images, 
  * or even to memory explosion; this is why the default is 1
  */

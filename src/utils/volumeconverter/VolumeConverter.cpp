@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-03. Giulio.     @CHANGED a new configuration of the libtiff library is carried out even if it has already been configured
 * 2017-04-20. Giulio      @CHANGED calls to 'IMS_HDF5init' to improve structure initialization
 * 2017-04-20. Giulio.     @FIXED a bug in the allocation of 'active_chans' in the SetSrc methods
 * 2017-04-17. Giulio.     @ADDED the possibility to generate an IMS file with default metadata
@@ -141,7 +142,8 @@ void vcDriver (
 		// do what you have to do
 		VolumeConverter vc;
 
-		setLibTIFFcfg(!libtiff_uncompressed,libtiff_bigtiff,libtiff_rowsPerStrip);
+		// call the version that forces the configuration even if the library has already been configured
+		resetLibTIFFcfg(!libtiff_uncompressed,libtiff_bigtiff,libtiff_rowsPerStrip);
 
 		if ( vPtr ) 
 			vc.setSrcVolume(vPtr,outFmt.c_str(),timeseries,downsamplingFactor,chanlist);

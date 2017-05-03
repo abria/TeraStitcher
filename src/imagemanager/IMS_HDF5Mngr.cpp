@@ -243,7 +243,8 @@ IMS_obj_list_t *build_std_filestruct ( std::string fname, int height, int width,
 	for ( int c=0; c<n_chans; c++ ) {
 		alist = new IMS_attr_list_t; // ChannelX attribute info list
 		alist->insert(std::make_pair("Description",""));
-		alist->insert(std::make_pair("Name",""));
+		sprintf(num_str,"%u",c+1);
+		alist->insert(std::make_pair("Name","Channel " + std::string(num_str)));
 		sprintf(num_str,"%u",c);
 		olist->insert(std::make_pair("Channel " + std::string(num_str),IMS_obj_info_t(H5G_GROUP,new IMS_obj_list_t,alist)));
 	}
@@ -534,13 +535,15 @@ herr_t create_file_struct ( hid_t group_id, IMS_obj_list_t *olist ) {
 	IMS_obj_list_t::iterator ito;
 	for ( ito = olist->begin(); ito != olist->end(); ito++ ) {
 		if ( ito->second.otype == H5G_GROUP ) {
-			subgroup_id = H5Gcreate2(group_id, ito->first.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-			status = create_attributes(subgroup_id,ito->second.alist);
-			const char *tmp = ito->first.c_str();
-			if ( strcmp(tmp,"DataSet") != 0 && strcmp(tmp,"TimestampsPerFrame") != 0 ) { // 2017-04-21. Giulio. excluded group 'TimestampsPerFrame'
-				status = create_file_struct(subgroup_id,ito->second.olist);
+			if ( strcmp(ito->first.c_str(),"TimestampsPerFrame") != 0 ) { // // 2017-04-21. Giulio. excluded group 'TimestampsPerFrame'
+				subgroup_id = H5Gcreate2(group_id, ito->first.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+				status = create_attributes(subgroup_id,ito->second.alist);
+				const char *tmp = ito->first.c_str();
+				if ( strcmp(tmp,"DataSet") != 0 ) { 
+					status = create_file_struct(subgroup_id,ito->second.olist);
+				}
+				status = H5Gclose(subgroup_id);
 			}
-			status = H5Gclose(subgroup_id);
 		}
 	}
 

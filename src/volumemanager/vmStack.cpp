@@ -658,7 +658,7 @@ iom::real_t* Stack::loadImageStack(int first_file, int last_file) throw (iom::ex
 							raw_data[i] = (iom::real_t) ((uint16 *)data)[3*i + offset]/65535.0f; // data must be interpreted as a uint16 array
 				}
 				else {
-					throw iom::exception("channels are not interleaved in the returned buffer 'data', conversion to intensity images not supported yet.");
+					throw iom::exception("2D image formats with non-interleaved channels are not supported yet.");
 				}
 			}
 			/**** DUPLICATED CODE (END) ***/
@@ -758,7 +758,7 @@ iom::real_t* Stack::loadImageStack(int first_file, int last_file) throw (iom::ex
 						raw_data[i] = (iom::real_t) ((uint16 *)data)[3*i + offset]/65535.0f; // data must be interpreted as a uint16 array
 			}
 			else {
-				throw iom::exception("channels are not interleaved in the returned buffer 'data', conversion to intensity images not supported yet.");
+				throw iom::exception("2D image formats with non-interleaved channels are not supported yet.");
 			}
 		}
 	}

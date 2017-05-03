@@ -144,7 +144,7 @@ void CMergeTiles::run()
 			downsamplingFactor,
 			halving_method, 
 			1,                  // libtiff_rowsPerStrip: currently cannot be changed, the default is passed
-			!pMergeTiles->libtiff_uncompressed_checkbox->isChecked(), 
+			pMergeTiles->libtiff_uncompressed_checkbox->isChecked(), 
 			pMergeTiles->libtiff_bigtiff_checkbox->isChecked(), 
 			show_progress_bar, 
 			isotropic, 

@@ -131,6 +131,7 @@ class terastitcher::PTabDisplComp : public QWidget
 
         //gives PTeraStitcher instances public access to this class members
         friend class PTeraStitcher;
+        friend class PTabImport;
 
     public slots:
 

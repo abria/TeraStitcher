@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-04-02. Giulio.     @FIXED missing check that the active channel is correctly selected before loading image data
 * 2017-04-26. Alessandro. @FIXED issue on Windows with Thumbs.db files that need to be ignored
 * 2017-04-12. Giulio.     @ADDED check on a precondition of 'loadImageStack'
 * 2017-04-07. Giluio.     @ADDED ability to load only one channel when channels are stored in separate planes (non-interleaved input plugin) 
@@ -481,19 +482,23 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 	if ( STACKED_IMAGE ) {
 		delete[] STACKED_IMAGE;
     	STACKED_IMAGE=0;
-		throw iom::exception(iom::strprintf("precondition violated in Block [%d,%d] loading slices [%d,%d]: buffer is already allocated", ROW_INDEX, COL_INDEX,first_file, last_file), __iom__current__function__);
+		throw iom::exception(iom::strprintf("precondition violated in Block [%d,%d] loading slices [%d,%d]: buffer is already allocated", ROW_INDEX, COL_INDEX, first_file, last_file), __iom__current__function__);
 	}
 
 	// 2014-09-09. Alessandro. @BUG. 'first_file' and 'last_file' are set to '-1' by default. But here, they are never checked nor corrected. 
 	// I added a very simple (but not complete) check here.
 	// Be careful if you want to adjust 'last_file' to 'DEPTH' when 'last_file == -1'. 'DEPTH' could be 0 if stack is empty.
 	if(first_file < 0 || last_file < 0 || first_file > last_file)
-		throw iom::exception(vm::strprintf("in Block[%s]::loadImageStack(): invalid file selection [%d,%d]", DIR_NAME, first_file, last_file).c_str());
+		throw iom::exception(vm::strprintf("in Block[%d,%d]::loadImageStack(): invalid file selection [%d,%d]", ROW_INDEX, COL_INDEX, first_file, last_file).c_str());
 
 	string chan_select_str = "";
 	bool chan_select = !iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() && (iom::IMIN_PLUGIN == "IMS_HDF5");
 	if ( chan_select ) {
+		if ( this->CONTAINER->getACTIVE_CHAN() < 0 || N_CHANS <= this->CONTAINER->getACTIVE_CHAN() ) 
+			throw iom::exception(vm::strprintf("in Block[%d,%d]::loadImageStack(): input channel not selected.", ROW_INDEX, COL_INDEX).c_str());
+		// the plugin support channel selection: pass the requested channel
 		chan_select_str = "channel=" + num2str<int>(this->CONTAINER->getACTIVE_CHAN()) + ",";
+		//printf("-----> %s\n",chan_select_str.c_str());
 	}
 
 	// 2014-09-09. Alessandro. @FIXED 'loadImageStack()' method to deal with empty tiles.
@@ -614,16 +619,25 @@ iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::ex
 			//throw iom::exception(errMsg);
 			// 2016-06-09. Giulio. @ADDED
 
-			offset = chan_select ? 0 : this->CONTAINER->getACTIVE_CHAN(); 
-			if ( N_BYTESxCHAN == 1 ) {
-				temp = data + (offset * HEIGHT * WIDTH * (last_file-first_file+1));
-				for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
-					STACKED_IMAGE[i] = (iom::real_t) temp[i]/scale_factor;
+			// if the input plugin supports channel selection just one channel has been returned and no offset is needed
+			// otherwise the channel number provides the offset on the buffer to be filled
+			offset = chan_select ? 0 : this->CONTAINER->getACTIVE_CHAN();
+			if ( 0 <= offset && offset < N_CHANS ) { 
+				if ( N_BYTESxCHAN == 1 ) {
+					temp = data + (offset * HEIGHT * WIDTH * (last_file-first_file+1));
+					for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
+						STACKED_IMAGE[i] = (iom::real_t) temp[i]/scale_factor;
+				}
+				else { // N_BYTESxCHAN == 2
+					temp = data + (offset * HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN);
+					for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
+						STACKED_IMAGE[i] = (iom::real_t) ((iom::uint16 *)temp)[i]/scale_factor; // data must be interpreted as a uint16 array
+				}
 			}
-			else { // N_BYTESxCHAN == 2
-				temp = data + (offset * HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN);
-				for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
-					STACKED_IMAGE[i] = (iom::real_t) ((iom::uint16 *)temp)[i]/scale_factor; // data must be interpreted as a uint16 array
+			else {
+				char errMsg[2000];
+				sprintf(errMsg, "in Block[%d,%d]::loadImageStack(...): input channel not selected.", ROW_INDEX, COL_INDEX);
+				throw iom::exception(errMsg);
 			}
 		}
 	}

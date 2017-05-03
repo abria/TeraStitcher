@@ -184,7 +184,7 @@ void PTabDisplProj::start()
         this->setEnabled(true);
         PTabDisplThresh::getInstance()->setEnabled(true);
         PTabPlaceTiles::getInstance()->setEnabled(true);
-        PTabMergeTiles::getInstance()->setEnabled(true);
+        //PTabMergeTiles::getInstance()->setEnabled(true);
 
         stop();
     }

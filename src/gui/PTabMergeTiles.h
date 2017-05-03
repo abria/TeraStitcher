@@ -35,6 +35,8 @@
 #include "QMyTabWidget.h"
 #include "S_config.h"
 
+#define N_MAX_RESOLUTIONS   6  // 2017-05-03. Giulio. Introduced a symbolic constant
+
 class terastitcher::PTabMergeTiles : public QWidget
 {
     Q_OBJECT
@@ -54,7 +56,7 @@ class terastitcher::PTabMergeTiles : public QWidget
     //members
     QMyTabWidget* container;        //tabs container
     int tab_index;                  //tab index
-	static const int n_max_resolutions = 6; // maximum number of resolutions
+	static const int n_max_resolutions = N_MAX_RESOLUTIONS; // maximum number of resolutions
 #ifdef VAA3D_TERASTITCHER
     V3DPluginCallback* V3D_env;
 #endif
@@ -64,6 +66,7 @@ class terastitcher::PTabMergeTiles : public QWidget
     QLabel* savedir_label;
     QLineEdit* savedir_field;
 	QPushButton *outDirButton;			//browse for volume's output directory button
+
 	QPushButton *outFileButton;			//browse for volume's output file button
     QLabel* resolutions_label;
     QLabel* resolutions_size_label;
@@ -188,6 +191,7 @@ public slots:
     * Called when the checkboxes of the channel QComboBox's QStandardItemModel changed.
     ***********************************************************************************/
 	void channelSelectionChanged(QStandardItem * item);
+
 
 
     /**********************************************************************************

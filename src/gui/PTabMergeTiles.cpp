@@ -26,6 +26,13 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2017-05-03. Giulio.     @ADDED taking into account the isotropic flag in computing resolutions sizes
+*/
+
+
 #include "PTabMergeTiles.h"
 #include "iomanager.config.h"
 #include "vmStackedVolume.h"
@@ -429,6 +436,9 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
 	connect(showAdvancedButton, SIGNAL(toggled(bool)), this, SLOT(showAdvancedChanged(bool)));
 	connect(qobject_cast<QStandardItemModel *>(channel_selection->model()), SIGNAL(itemChanged(QStandardItem *)), this, SLOT(channelSelectionChanged(QStandardItem *)));
     connect(mdata_browse_button, SIGNAL(clicked()), this, SLOT(metadata_browse_button_clicked()));
+
+	// 2017-05-03. Giulio. Connected a handler to the isotropic check box
+    connect(isotropic_checkbox, SIGNAL(stateChanged(int)), this, SLOT(updateContent()));
 	
 	reset();
 }
@@ -750,12 +760,37 @@ void PTabMergeTiles::updateContent()
         {
             UnstitchedVolume* volume = CMergeTiles::instance()->unstitchedVolume();
 
+			//2017-05-03. Giulio. set advanced halving rules
+			int halve_pow2[N_MAX_RESOLUTIONS];
+			
+			if ( isotropic_checkbox->isChecked() && vol_format_cbox->currentText().toStdString() != iim::BDV_HDF5_FORMAT && vol_format_cbox->currentText().toStdString() != iim::IMS_HDF5_FORMAT ) {
+				// an isotropic image must be generated
+				float vxlsz_Vx2 = 2*(CImportUnstitched::instance()->getVolume()->getVXL_V() > 0 ? CImportUnstitched::instance()->getVolume()->getVXL_V() : -(CImportUnstitched::instance()->getVolume()->getVXL_V()));
+				float vxlsz_Hx2 = 2*(CImportUnstitched::instance()->getVolume()->getVXL_H() > 0 ? CImportUnstitched::instance()->getVolume()->getVXL_H() : -(CImportUnstitched::instance()->getVolume()->getVXL_H()));
+				float vxlsz_D = CImportUnstitched::instance()->getVolume()->getVXL_D();
+				halve_pow2[0] = 0;
+				for ( int i=1; i<n_max_resolutions; i++ ) {
+					halve_pow2[i] = halve_pow2[i-1];
+					if ( vxlsz_D < std::max<float>(vxlsz_Vx2,vxlsz_Hx2) ) {
+						halve_pow2[i]++;
+						vxlsz_D   *= 2;
+					}
+					vxlsz_Vx2 *= 2;
+					vxlsz_Hx2 *= 2;
+				}
+			}
+			else {
+				// halving along D dimension must be always performed
+				for ( int i=0; i<n_max_resolutions; i++ )
+					halve_pow2[i] = i;
+			}
+
             int max_res = 0;
 			for(int i=0; i<n_max_resolutions; i++)
 			{
 				int height = (y1_field->value()-y0_field->value()+1)/pow(2.0f, i);
                 int width  = (x1_field->value()-x0_field->value()+1)/pow(2.0f, i);
-                int depth  = (z1_field->value()-z0_field->value()+1)/pow(2.0f, i);
+                int depth  = (z1_field->value()-z0_field->value()+1)/pow(2.0f, halve_pow2[i]); // 2017-05-03. Giulio. advanced halving rules
                 float GVoxels = (height/1024.0f)*(width/1024.0f)*(depth/1024.0f);
                 resolutions_fields[i]->setText(QString::number(width).append(" ").append(QChar(0x00D7)).append(" ").append(QString::number(height)).append(" ").append(QChar(0x00D7)).append(" ").append(QString::number(depth)));
                 resolutions_sizes[i]->setText(QString::number(GVoxels,'f',3));
@@ -889,6 +924,9 @@ void PTabMergeTiles::volumeformat_changed(QString str)
 
 	libtiff_bigtiff_checkbox->setEnabled(stdstr.find("TIFF") != std::string::npos);
 	libtiff_uncompressed_checkbox->setEnabled(stdstr.find("TIFF") != std::string::npos);
+	
+	// 2017-05-03. Giulio. if output format change the sizes of the resolutions could change and must be updated
+	updateContent();
 }
 
 

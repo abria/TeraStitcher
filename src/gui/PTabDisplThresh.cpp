@@ -203,7 +203,7 @@ void PTabDisplThresh::start()
         //enabling (and updating) other tabs
         this->updateContent();
         PTabPlaceTiles::getInstance()->setEnabled(true);
-        PTabMergeTiles::getInstance()->setEnabled(true);
+        // PTabMergeTiles::getInstance()->setEnabled(true); // 2017-05-02. Giulio. not requested any more: enabled by Import
 
         stop();
     }
