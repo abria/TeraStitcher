@@ -1,5 +1,10 @@
 # CmakeLists.txt in volumeconverter dir
 
+option (WITH_RESUME_STATUS "Save status during image generation" OFF) 
+if(WITH_RESUME_STATUS)
+	add_definitions(-DSAVE_RESUMER_STATUS)
+endif()
+
 # make sure the compiler can find include files of other modules. 
 include_directories (${TeraStitcher_SOURCE_DIR}/imagemanager)
 include_directories (${TeraStitcher_SOURCE_DIR}/iomanager)

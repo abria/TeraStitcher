@@ -571,7 +571,7 @@ void StackedVolume::loadXML(const char *xml_filepath) throw (iom::exception)
 	float MEC_V_read=0.0f, MEC_H_read=0.0f;
 	pelem->QueryFloatAttribute("V", &MEC_V_read);
 	pelem->QueryFloatAttribute("H", &MEC_H_read);
-	if(MEC_V_read != MEC_V || MEC_H_read != MEC_H)
+	if(fabs(MEC_V_read - MEC_V) > MECH_MISMATCH || fabs(MEC_H_read - MEC_H) > MECH_MISMATCH)
 	{
 		char errMsg[2000];
 		sprintf(errMsg, "in StackedVolume::loadXML(...): Mismatch in <mechanical_displacements> field between xml file (= %.1f x %.1f ) and %s (= %.1f x %.1f ).", MEC_V_read, MEC_H_read, vm::BINARY_METADATA_FILENAME.c_str(), MEC_V, MEC_H);

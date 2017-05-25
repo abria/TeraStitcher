@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-05-25. Giulio.     @ADDED method for enabling lossy compression based on rescaling
 * 2017-04-23. Giulio.     @ADDED auxiliary function vcDriver to call the actual conversion method
 * 2017-04-18. Alessandro. @ADDED setSrcVolume that directly takes vm::VirtualVolume in input, and added 'volume_external' attribute
 * 2017-04-09. Giulio.     @ADDED the ability to convert a subset of channels
@@ -93,6 +94,7 @@
 #define STANDARD_BLOCK_DEPTH   64      // standard block to be used when converting to tiled format (introduced for efficiency)
 
 
+
 // 2017-04-23. Giulio. @ADDED auxiliary function to call format conversion
 void vcDriver (
 	iim::VirtualVolume *vPtr = (iim::VirtualVolume *) 0, // if this in not null, parameters 'src_root_dir' and 'src_format' are not used
@@ -121,7 +123,8 @@ void vcDriver (
     bool        makeDirs = false,                   //creates the directory hiererchy
     bool        metaData = false,                   //creates the mdata.bin file of the output volume
     bool        parallel = false,                   //parallel mode: does not perform side-effect operations during merge
-	std::string outFmt = "RGB"                      // no more used: pass always the default
+	std::string outFmt = "RGB",                      // no more used: pass always the default
+	int         nbits  = 0
 );
 
 class VolumeConverter
@@ -144,6 +147,9 @@ class VolumeConverter
 
 		const char *out_fmt;    // output format (for future use, currently not used: the output format is derived
 		                  // implicitly from internal_rep and the format of the source image)
+
+		bool lossy_compression;
+		int  nbits;
 
     public:
 
@@ -202,6 +208,15 @@ class VolumeConverter
             int block_depth  = -1,                      // tile's depth  (for tiled formats)
             int method = HALVE_BY_MEAN                  // downsampling method
         ) throw (iim::IOException, iom::exception);
+
+		/*************************************************************************************************************
+		* Method to set a lossy compression algorithm
+		* _algo: lossy algorithm 
+		*        0: no algorithm (i.e. lossless), no additional parameters 
+		*        1: scaling, additional parameters: 
+		*           nbits: number of least significant bits to be set to 0
+		*************************************************************************************************************/
+		void setCompressionAlgorithm(int _nbits ) throw (iim::IOException, iom::exception);
 
 		/*************************************************************************************************************
 		* Method to be called for tile generation. <> parameters are mandatory, while [] are optional.

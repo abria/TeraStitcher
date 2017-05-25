@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-05-25. Giulio.     @ADDED method for enabling lossy compression based on rescaling and implemented rescaling in all output formats
 * 2017-04-03. Giulio.     @CHANGED a new configuration of the libtiff library is carried out even if it has already been configured
 * 2017-04-20. Giulio      @CHANGED calls to 'IMS_HDF5init' to improve structure initialization
 * 2017-04-20. Giulio.     @FIXED a bug in the allocation of 'active_chans' in the SetSrc methods
@@ -69,6 +70,8 @@
 #include "iomanager.config.h"
 #include <math.h>
 #include <string>
+
+#include <stdarg.h>
 
 #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
 #include <QElapsedTimer>
@@ -138,7 +141,8 @@ void vcDriver (
     bool        makeDirs,                   //creates the directory hiererchy
     bool        metaData,                   //creates the mdata.bin file of the output volume
     bool        parallel,                   //parallel mode: does not perform side-effect operations during merge
-	std::string outFmt ) {
+	std::string outFmt,
+	int         nbits ) {
 		// do what you have to do
 		VolumeConverter vc;
 
@@ -151,6 +155,9 @@ void vcDriver (
 			vc.setSrcVolume(src_root_dir.c_str(),src_format.c_str(),outFmt.c_str(),timeseries,downsamplingFactor,chanlist);
 
 		vc.setSubVolume(V0,V1,H0,H1,D0,D1);
+
+		if ( nbits )
+			vc.setCompressionAlgorithm(nbits);
 	
 		if ( dst_format == iim::SIMPLE_RAW_FORMAT )
 			if ( timeseries ) {
@@ -337,6 +344,9 @@ VolumeConverter::VolumeConverter( )
 
 	volume = (VirtualVolume *) 0;
 	volume_external = false;
+
+	lossy_compression = false;
+	nbits = 0;
 }
 
 
@@ -510,6 +520,14 @@ void VolumeConverter::setSubVolume(int _V0, int _V1, int _H0, int _H1, int _D0, 
 	}
 	else
 		throw iim::IOException(iim::strprintf("volume is not set").c_str(),__iim__current__function__);
+}
+
+
+void VolumeConverter::setCompressionAlgorithm(int _nbits ) throw (iim::IOException, iom::exception) {
+	if ( _nbits > 0 ) {
+		lossy_compression = true;
+		nbits = _nbits;
+	}
 }
 
 
@@ -808,6 +826,24 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 				ubuffer[c] = ubuffer[c-1] + (height * width * ((z_parts<=z_ratio) ? z_max_res : (depth%z_max_res)) * bytes_chan);
 		}
 		
+		// 2017-05-25. Giulio. Added code for simple lossy compression (suggested by Hanchuan Peng)
+		if ( nbits ) {
+			//printf("----> lossy compression nbits = %d\n",nbits);
+			iim::sint64 tot_size = (height * width * ((z_parts<=z_ratio) ? z_max_res : (depth%z_max_res))) * channels;
+			if ( bytes_chan == 1 ) {
+				iim::uint8 *ptr = ubuffer[0];
+				for ( iim::sint64 i=0; i<tot_size; i++, ptr++ ) {
+					*ptr = *ptr >> nbits << nbits;
+				}
+			}
+			else if ( bytes_chan == 2 ) {
+				iim::uint16 *ptr = (iim::uint16 *) ubuffer[0];
+				for ( iim::sint64 i=0; i<tot_size; i++, ptr++ ) {
+					*ptr = *ptr >> nbits << nbits;
+				}
+			}
+		}
+
 		//updating the progress bar
 		if(show_progress_bar)
 		{	
@@ -1378,6 +1414,24 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 				ubuffer[c] = ubuffer[c-1] + (height * width * ((z_parts<=z_ratio) ? z_max_res : (depth%z_max_res)) * bytes_chan);
 		}
 		
+		// 2017-05-25. Giulio. Added code for simple lossy compression (suggested by Hanchuan Peng)
+		if ( nbits ) {
+			//printf("----> lossy compression nbits = %d\n",nbits);
+			iim::sint64 tot_size = (height * width * ((z_parts<=z_ratio) ? z_max_res : (depth%z_max_res))) * channels;
+			if ( bytes_chan == 1 ) {
+				iim::uint8 *ptr = ubuffer[0];
+				for ( iim::sint64 i=0; i<tot_size; i++, ptr++ ) {
+					*ptr = *ptr >> nbits << nbits;
+				}
+			}
+			else if ( bytes_chan == 2 ) {
+				iim::uint16 *ptr = (iim::uint16 *) ubuffer[0];
+				for ( iim::sint64 i=0; i<tot_size; i++, ptr++ ) {
+					*ptr = *ptr >> nbits << nbits;
+				}
+			}
+		}
+
 		//updating the progress bar
 		if(show_progress_bar)
 		{	
@@ -2007,6 +2061,24 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 			}
 		}
 		// WARNING: should check that buffer has been actually allocated
+
+		// 2017-05-25. Giulio. Added code for simple lossy compression (suggested by Hanchuan Peng)
+		if ( nbits ) {
+			printf("----> lossy compression nbits = %d\n",nbits);
+			iim::sint64 tot_size = (height * width * ((z_parts<=z_ratio) ? z_max_res : (depth%z_max_res))) * channels;
+			if ( bytes_chan == 1 ) {
+				iim::uint8 *ptr = ubuffer[0];
+				for ( iim::sint64 i=0; i<tot_size; i++, ptr++ ) {
+					*ptr = *ptr >> nbits << nbits;
+				}
+			}
+			else if ( bytes_chan == 2 ) {
+				iim::uint16 *ptr = (iim::uint16 *) ubuffer[0];
+				for ( iim::sint64 i=0; i<tot_size; i++, ptr++ ) {
+					*ptr = *ptr >> nbits << nbits;
+				}
+			}
+		}
 
         // 2015-01-30. Alessandro. @ADDED performance (time) measurement in 'generateTilesVaa3DRaw()' method.
         #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
@@ -2768,6 +2840,24 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 		}
 		// WARNING: should check that buffer has been actually allocated
 
+		// 2017-05-25. Giulio. Added code for simple lossy compression (suggested by Hanchuan Peng)
+		if ( nbits ) {
+			//printf("----> lossy compression nbits = %d\n",nbits);
+			iim::sint64 tot_size = (height * width * ((z_parts<=z_ratio) ? z_max_res : (depth%z_max_res))) * channels;
+			if ( bytes_chan == 1 ) {
+				iim::uint8 *ptr = ubuffer[0];
+				for ( iim::sint64 i=0; i<tot_size; i++, ptr++ ) {
+					*ptr = *ptr >> nbits << nbits;
+				}
+			}
+			else if ( bytes_chan == 2 ) {
+				iim::uint16 *ptr = (iim::uint16 *) ubuffer[0];
+				for ( iim::sint64 i=0; i<tot_size; i++, ptr++ ) {
+					*ptr = *ptr >> nbits << nbits;
+				}
+			}
+		}
+
 		//updating the progress bar
 		if(show_progress_bar)
 		{	
@@ -3514,6 +3604,24 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 		}
 		// WARNING: should check that buffer has been actually allocated
 
+		// 2017-05-25. Giulio. Added code for simple lossy compression (suggested by Hanchuan Peng)
+		if ( nbits ) {
+			//printf("----> lossy compression nbits = %d\n",nbits);
+			iim::sint64 tot_size = (height * width * ((z_parts<=z_ratio) ? z_max_res : (depth%z_max_res))) * channels;
+			if ( bytes_chan == 1 ) {
+				iim::uint8 *ptr = ubuffer[0];
+				for ( iim::sint64 i=0; i<tot_size; i++, ptr++ ) {
+					*ptr = *ptr >> nbits << nbits;
+				}
+			}
+			else if ( bytes_chan == 2 ) {
+				iim::uint16 *ptr = (iim::uint16 *) ubuffer[0];
+				for ( iim::sint64 i=0; i<tot_size; i++, ptr++ ) {
+					*ptr = *ptr >> nbits << nbits;
+				}
+			}
+		}
+
 		//updating the progress bar
 		if(show_progress_bar)
 		{	
@@ -4076,6 +4184,24 @@ void VolumeConverter::generateTilesBDV_HDF5 ( std::string output_path, bool* res
 		}
 		// WARNING: should check that buffer has been actually allocated
 
+		// 2017-05-25. Giulio. Added code for simple lossy compression (suggested by Hanchuan Peng)
+		if ( nbits ) {
+			//printf("----> lossy compression nbits = %d\n",nbits);
+			iim::sint64 tot_size = (height * width * ((z_parts<=z_ratio) ? z_max_res : (depth%z_max_res))) * channels;
+			if ( bytes_chan == 1 ) {
+				iim::uint8 *ptr = ubuffer[0];
+				for ( iim::sint64 i=0; i<tot_size; i++, ptr++ ) {
+					*ptr = *ptr >> nbits << nbits;
+				}
+			}
+			else if ( bytes_chan == 2 ) {
+				iim::uint16 *ptr = (iim::uint16 *) ubuffer[0];
+				for ( iim::sint64 i=0; i<tot_size; i++, ptr++ ) {
+					*ptr = *ptr >> nbits << nbits;
+				}
+			}
+		}
+
 		//updating the progress bar
 		if(show_progress_bar)
 		{	
@@ -4410,6 +4536,24 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 			}
 		}
 		// WARNING: should check that buffer has been actually allocated
+
+		// 2017-05-25. Giulio. Added code for simple lossy compression (suggested by Hanchuan Peng)
+		if ( nbits ) {
+			//printf("----> lossy compression nbits = %d\n",nbits);
+			iim::sint64 tot_size = (height * width * ((z_parts<=z_ratio) ? z_max_res : (depth%z_max_res))) * channels;
+			if ( bytes_chan == 1 ) {
+				iim::uint8 *ptr = ubuffer[0];
+				for ( iim::sint64 i=0; i<tot_size; i++, ptr++ ) {
+					*ptr = *ptr >> nbits << nbits;
+				}
+			}
+			else if ( bytes_chan == 2 ) {
+				iim::uint16 *ptr = (iim::uint16 *) ubuffer[0];
+				for ( iim::sint64 i=0; i<tot_size; i++, ptr++ ) {
+					*ptr = *ptr >> nbits << nbits;
+				}
+			}
+		}
 
 		//updating the progress bar
 		if(show_progress_bar)

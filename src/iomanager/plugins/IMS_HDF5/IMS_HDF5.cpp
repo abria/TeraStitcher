@@ -58,6 +58,7 @@ std::string iomanager::IMS_HDF5::desc()
 			"* Accepted configuration parameters:                 *\n"
 			"*  - resolution=R                                    *\n"
 			"*  - timepoint=T                                     *\n"
+			"*  - channel=C                                       *\n"
 			"*                                                    *\n"
 			"******************************************************\n";
 }

@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-05-15. Giulio.    @CHANGED introduced a symbol to enable/disable the management of the resume state
 * 2017-04-07. Giulio.    @CHANGED some error message (more informative)
 * 2017-04-01. Giulio.    @CHANGED the interface of the routines to be used for 2D output formats
 * 2017-04-01. Giulio.    @FIXED some bugs
@@ -41,6 +42,8 @@
 
 #include <string.h>
 #include <string>
+
+//#define SAVE_RESUMER_STATUS
 
 #define RESUMER_STATUS_FILE_NAME   "resume_status.bin"
 #define RECORD_LENGTH	(	\
@@ -64,6 +67,9 @@ using namespace iim;
 
 bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutions_size, bool* resolutions, 
 				   int slice_height, int slice_width, int method, const char* saved_img_format, int saved_img_depth, FILE *&fhandle ) throw (iim::IOException) {
+
+#ifdef SAVE_RESUMER_STATUS
+
 	size_t  str_len;
 	char resumer_filepath[STATIC_STRINGS_SIZE];
 	char err_msg[STATIC_STRINGS_SIZE];
@@ -165,10 +171,19 @@ bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutio
 		}
 		return false;
 	}
+
+#else
+
+	return false;
+	
+#endif
 }
 
 
 void readVCResumerState ( FILE *&fhandle, const char *output_path, iim::sint64 &z, iim::sint64 &z_parts ) throw (iim::IOException) {
+
+#ifdef SAVE_RESUMER_STATUS
+
 	size_t dummy = fread(&z,sizeof(sint64),1,fhandle);
 	dummy = fread(&z_parts,sizeof(sint64),1,fhandle);
 
@@ -181,13 +196,20 @@ void readVCResumerState ( FILE *&fhandle, const char *output_path, iim::sint64 &
 		sprintf(err_msg, "in initResumer: the resume state file cannot be re-opened in append mode");
         throw IOException(err_msg);
 	}
+
+#endif
 }
 
 
 void saveVCResumerState ( FILE *fhandle, iim::sint64 z, iim::sint64 z_parts ) throw (iim::IOException) {
+
+#ifdef SAVE_RESUMER_STATUS
+
 	fwrite(&z,sizeof(sint64),1,fhandle);
 	fwrite(&z_parts,sizeof(sint64),1,fhandle);
 	fflush(fhandle);
+
+#endif
 }
 
 
@@ -196,6 +218,9 @@ bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutio
 				   int block_height, int block_width, int block_depth, int method, 
                    const char* saved_img_format, int saved_img_depth, FILE *&fhandle ) throw (IOException)
 {
+
+#ifdef SAVE_RESUMER_STATUS
+
 	size_t  str_len;
 	char resumer_filepath[STATIC_STRINGS_SIZE];
 	char err_msg[STATIC_STRINGS_SIZE];
@@ -300,11 +325,20 @@ bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutio
 		}
 		return false;
 	}
+
+#else
+
+	return false;
+	
+#endif
 }
 
 void readVCResumerState ( FILE *&fhandle, const char *output_path, int &resolutions_size, int *stack_block, int *slice_start, int *slice_end, 
                  sint64 &z, sint64 &z_parts ) throw (IOException)
 {
+
+#ifdef SAVE_RESUMER_STATUS
+
 	size_t dummy = fread(&resolutions_size,sizeof(int),1,fhandle);
 	dummy = fread(stack_block,sizeof(int),resolutions_size,fhandle);
 	dummy = fread(slice_start,sizeof(int),resolutions_size,fhandle);
@@ -321,11 +355,16 @@ void readVCResumerState ( FILE *&fhandle, const char *output_path, int &resoluti
 		sprintf(err_msg, "in initResumer: the resume state file cannot be re-opened in append mode");
         throw IOException(err_msg);
 	}
+	
+#endif
 }
 
 void saveVCResumerState ( FILE *fhandle, int resolutions_size, int *stack_block, int *slice_start, int *slice_end, 
                  sint64 z, sint64 z_parts ) throw (IOException)
 {
+
+#ifdef SAVE_RESUMER_STATUS
+
 	fwrite(&resolutions_size,sizeof(int),1,fhandle);
 	fwrite(stack_block,sizeof(int),resolutions_size,fhandle);
 	fwrite(slice_start,sizeof(int),resolutions_size,fhandle);
@@ -333,10 +372,15 @@ void saveVCResumerState ( FILE *fhandle, int resolutions_size, int *stack_block,
 	fwrite(&z,sizeof(sint64),1,fhandle);
 	fwrite(&z_parts,sizeof(sint64),1,fhandle);
 	fflush(fhandle);
+
+#endif
 }
 
 void closeVCResumer ( FILE *fhandle, const char *output_path ) throw (IOException)
 {
+
+#ifdef SAVE_RESUMER_STATUS
+
 	//char err_msg[STATIC_STRINGS_SIZE];
 
 	fclose(fhandle);
@@ -346,4 +390,6 @@ void closeVCResumer ( FILE *fhandle, const char *output_path ) throw (IOExceptio
 		sprintf(resumer_filepath, "%s/%s", output_path, RESUMER_STATUS_FILE_NAME);
 		remove(resumer_filepath);
 	}
+
+#endif
 }

@@ -1,6 +1,6 @@
 set(TeraStitcher_VERSION_MAJOR 1)
 set(TeraStitcher_VERSION_MINOR 10)
-set(TeraStitcher_VERSION_PATCH 0)
+set(TeraStitcher_VERSION_PATCH 1)
 set(TeraStitcher_VERSION
   "${TeraStitcher_VERSION_MAJOR}.${TeraStitcher_VERSION_MINOR}.${TeraStitcher_VERSION_PATCH}")
 add_definitions( -DTERASTITCHER_MAJOR=${TeraStitcher_VERSION_MAJOR} )
@@ -18,7 +18,7 @@ add_definitions( -DTERASTITCHER2_PATCH=${TeraStitcher2_VERSION_PATCH} )
 
 set(TeraConverter_VERSION_MAJOR 3)
 set(TeraConverter_VERSION_MINOR 1)
-set(TeraConverter_VERSION_PATCH 9)
+set(TeraConverter_VERSION_PATCH 10)
 set(TeraConverter_VERSION
   "${TeraConverter_VERSION_MAJOR}.${TeraConverter_VERSION_MINOR}.${TeraConverter_VERSION_PATCH}")
 add_definitions( -DTERACONVERTER_MAJOR=${TeraConverter_VERSION_MAJOR} )

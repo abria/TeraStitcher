@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-05-25.  Giulio.     @ADDED a lossy compression based on rescalinghas been introduced
 * 2017-04-23.  Giulio.     @CHANGED the call to conversion routines has been moved to VolumeConverter.cpp (vcDriver auxiliary function)
 * 2017-04-07.  Giulio.     @ADDED the opssibility to specify a subset of channels to be converted
 * 2017-04-02.  Giulio.     @ADDED support for creation of BigTiff files
@@ -225,7 +226,9 @@ int main ( int argc, char *argv[] ) {
 			cli.timeseries,
 			cli.makeDirs, 
 			cli.metaData, 
-			cli.parallel);
+			cli.parallel,
+			"RGB",
+			cli.rescale_nbits);
 
 /* The followoing code has been substituted by the call to vcDriver
 

@@ -90,8 +90,9 @@ namespace volumemanager
     ---------------------------------------------------------------------------------------------------------------------------*/
 	const std::string MODULE_ID = "terastitcher::volumemanager";
     const double PI = 3.14159265;
-	const std::string BINARY_METADATA_FILENAME =  "mdata.bin";	// binary metadata file name
-	const float BINARY_METADATA_VERSION = 1.5;					// version of binary metadata file (used to check compatibility)
+	const std::string BINARY_METADATA_FILENAME =  "mdata.bin"; // binary metadata file name
+	const float BINARY_METADATA_VERSION = 1.5;				   // version of binary metadata file (used to check compatibility)
+	const float MECH_MISMATCH = (float) 0.099;						   // tolerated mechanical mismatch between xml and mdata.bin in um
     /*-------------------------------------------------------------------------------------------------------------------------*/
 
 

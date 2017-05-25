@@ -934,7 +934,7 @@ void BlockVolume::loadXML(const char *xml_filepath) throw (iom::exception)
 		if (reference_system_read.first != reference_system.first || reference_system_read.second != reference_system.second || reference_system_read.third != reference_system.third ) 
 		{
 			char errMsg[2000];
-			sprintf(errMsg, "in BlockVolume::loadXML(...): Mismatch in <erf_sys> field between xml file (= (%d,%d,%d) ) and %s (= (%d,%d,%d) ).", 
+			sprintf(errMsg, "in BlockVolume::loadXML(...): Mismatch in <ref_sys> field between xml file (= (%d,%d,%d) ) and %s (= (%d,%d,%d) ).", 
 				reference_system_read.first, reference_system_read.second, reference_system_read.third, vm::BINARY_METADATA_FILENAME.c_str(), reference_system.first, reference_system.second, reference_system.third);
 			throw iom::exception(errMsg);
 		}
@@ -992,7 +992,7 @@ void BlockVolume::loadXML(const char *xml_filepath) throw (iom::exception)
 	float MEC_V_read=0.0f, MEC_H_read=0.0f;
 	pelem->QueryFloatAttribute("V", &MEC_V_read);
 	pelem->QueryFloatAttribute("H", &MEC_H_read);
-	if(MEC_V_read != MEC_V || MEC_H_read != MEC_H)
+	if(fabs(MEC_V_read - MEC_V) > MECH_MISMATCH || fabs(MEC_H_read - MEC_H) > MECH_MISMATCH)
 	{
 		char errMsg[2000];
 		sprintf(errMsg, "in BlockVolume::loadXML(...): Mismatch in <mechanical_displacements> field between xml file (= %.1f x %.1f ) and %s (= %.1f x %.1f ).", MEC_V_read, MEC_H_read, vm::BINARY_METADATA_FILENAME.c_str(), MEC_V, MEC_H);

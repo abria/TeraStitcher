@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-05-25. Giulio.     @ADDED parameters for lossy compression based on rescaling
 * 2017-04-07  Giulio.     @ADDED the opssibility to specify a subset of channels to be converted
 * 2016-09-13. Giulio.     @ADDED flag for channel subdirectory name (single channel to tiled 4D format only)
 * 2016-09-13. Giulio.     @FIXED initialized flag for time series
@@ -167,7 +168,11 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::SwitchArg p_libtiff_bigtiff("","libtiff_bigtiff","Forces the creation of BigTiff files (default: BigTiff disabled).", false);
 	TCLAP::ValueArg<int> p_libtiff_rowsperstrip("","libtiff_rowsperstrip","Configure libtiff library to pack n rows per strip when compression is enabled (default: 1 row per strip).",false,1,"integer");
 
+	TCLAP::ValueArg<int> p_rescale_nbits("","rescale","Applies a lossy ccompression based on rescaling the values to multiples of 2^n (default: n=0).",false,0,"integer");
+
 	//argument objects must be inserted using LIFO policy (last inserted, first shown)
+	cmd.add(p_rescale_nbits);
+
 	cmd.add(p_libtiff_rowsperstrip);
 	cmd.add(p_libtiff_bigtiff);
 	cmd.add(p_libtiff_uncompressed);
@@ -442,6 +447,8 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	this->libtiff_uncompressed = p_libtiff_uncompressed.getValue();
 	this->libtiff_bigtiff = p_libtiff_bigtiff.getValue();
 	this->libtiff_rowsPerStrip = p_libtiff_rowsperstrip.getValue();
+
+	this->rescale_nbits = p_rescale_nbits.getValue();
 
 	if(p_verbose.getValue())
 	{
