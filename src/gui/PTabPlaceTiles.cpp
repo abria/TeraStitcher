@@ -26,11 +26,18 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2017-06-07. Giulio.   @ADDED update of tile positions in the stitcher internal to CMergeTiles::_unstitchedVolume
+*/
+
 #include "PTabPlaceTiles.h"
 #include "iomanager.config.h"
 #include "vmStackedVolume.h"
 #include "PTeraStitcher.h"
 #include "CImportUnstitched.h"
+#include "CMergeTiles.h" // 2017-06-07. Giulio @ADDED
 #include "StackStitcher.h"
 
 using namespace terastitcher;
@@ -171,6 +178,10 @@ void PTabPlaceTiles::start()
         if(PTeraStitcher::instance()->modeAdvancedAction->isChecked())
             QMessageBox::information(this, "Operation successful", "Place step successfully performed!", QMessageBox::Ok);
 
+		// 2017-06-07. Giulio @ADDED update the stitcher internal to CMergeTiles::_unstitchedVolume
+		CMergeTiles::instance()->unstitchedVolume()->updateTilesPositions();
+		PTabMergeTiles::getInstance()->setEnabled(true);
+		
         //stop animation and reset some widgets
         stop();
 
