@@ -219,7 +219,7 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
     char buffer[STATIC_STRINGS_SIZE];
     // Giulio_CV IplImage* img = 0;
 	uint8 *img = (uint8 *) 0;
-    int img_height, img_width;
+    sint64 img_height, img_width;
     int nchannels = 0;
 
     //detecting the number of channels (WARNING: the number of channels is an attribute of the volume
@@ -275,7 +275,7 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
 		if(nchannels == 3)
 		{
 			img = new uint8[img_width * img_height * nchannels * (img_depth/8)]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 3);
-			int img_data_step = img_width * nchannels;
+			sint64 img_data_step = img_width * nchannels;
 			if(img_depth == 8)
 			{
 				for(int i = 0; i <img_height; i++)
@@ -307,7 +307,7 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
 		{
 			// stores in any case as a 3 channels image (RGB)
 			img = new uint8[img_width * img_height * (nchannels+1) * (img_depth/8)]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 3);
-			int img_data_step = img_width * (nchannels+1); 
+			sint64 img_data_step = img_width * (nchannels+1); 
 			if(img_depth == 8)
 			{
 				for(int i = 0; i <img_height; i++)
@@ -338,7 +338,7 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
 		else if(nchannels == 1) // source and destination depths are guarenteed to be the same
 		{
 			img = new uint8[img_width * img_height * nchannels * (img_depth/8)]; // Giulio_CV cvCreateImage(cvSize(img_width, img_height), (img_depth == 8 ? IPL_DEPTH_8U : IPL_DEPTH_16U), 1);
-			int img_data_step = img_width * nchannels;
+			sint64 img_data_step = img_width * nchannels;
 			//float scale_factor_16b = 65535.0F/255; // conversion is not supported yet
 			if(img_depth == 8)
 			{
@@ -391,14 +391,14 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
 		if ( nchannels > 1 ) { // there are al least two channels
 // 			if ( (raw_ch2 - raw_ch1) != (sz[0] * sz[1] * sz[2] * (img_depth/8)) )
 // 				throw iom::exception(iom::strprintf("error in saving 2D image (%lld x %lld) in file %s: channel buffers not contiguous",img_height,img_width,buffer), __iom__current__function__);
-			int chanSize = img_width * img_height * (img_depth/8);
+			sint64 chanSize = img_width * img_height * (img_depth/8);
 			img = new uint8[chanSize * nchannels]; 
-			memcpy(img,(raw_ch1 + (start_height*raw_img_width + start_width)),chanSize);
-			memcpy(img + chanSize,(raw_ch2 + (start_height*raw_img_width + start_width)),chanSize);
+			memcpy(img,(raw_ch1 + (start_height*((sint64)raw_img_width) + start_width)),chanSize);
+			memcpy(img + chanSize,(raw_ch2 + (start_height*((sint64)raw_img_width) + start_width)),chanSize);
 			if ( nchannels > 2 ) { // there are three channels
 // 				if ( (raw_ch3 - raw_ch2) != (sz[0] * sz[1] * sz[2] * (img_depth/8)) )
 // 					throw iom::exception(iom::strprintf("error in saving 2D image (%lld x %lld) in file %s: channel buffers not contiguous",img_height,img_width,buffer), __iom__current__function__);
-				memcpy(img + 2*chanSize,(raw_ch3 + (start_height*raw_img_width + start_width)),chanSize);
+				memcpy(img + 2*chanSize,(raw_ch3 + (start_height*((sint64)raw_img_width) + start_width)),chanSize);
 			}
 		}
 
@@ -456,7 +456,7 @@ void VirtualVolume::saveImage_to_Vaa3DRaw(int slice, std::string img_path, real3
 	uint16 *row_data_16bit;
 	//uint32 img_data_step;
 	float scale_factor_16b, scale_factor_8b;
-	int img_height, img_width;
+	sint64 img_height, img_width;
 	int i, j, k;
 	char img_filepath[5000];
 
@@ -500,7 +500,7 @@ void VirtualVolume::saveImage_to_Vaa3DRaw(int slice, std::string img_path, real3
 		for(i = 0, k = 0; i <img_height; i++)
 		{
 			for(j = 0; j < img_width; j++, k++)
-				row_data_8bit[k] = (uint8) (raw_img[(i+start_height)*raw_img_width+j+start_width] * scale_factor_8b);
+				row_data_8bit[k] = (uint8) (raw_img[(i+start_height)*((sint64)raw_img_width)+j+start_width] * scale_factor_8b);
 		}
 	}
 	else // img_depth = 16 (because of the check above)
@@ -509,7 +509,7 @@ void VirtualVolume::saveImage_to_Vaa3DRaw(int slice, std::string img_path, real3
 		for(i = 0, k = 0; i <img_height; i++)
 		{
 			for(j = 0; j < img_width; j++, k++)
-				row_data_16bit[k] = (uint16) (raw_img[(i+start_height)*raw_img_width+j+start_width] * scale_factor_16b);
+				row_data_16bit[k] = (uint16) (raw_img[(i+start_height)*((sint64)raw_img_width)+j+start_width] * scale_factor_16b);
 		}
 		row_data_8bit = (uint8 *) row_data_16bit;
 	}
