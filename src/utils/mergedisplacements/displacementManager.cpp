@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-05-10. Giulio.     @ADDED 'input_plugin' attribute to <TeraStitcher> XML node
 * 2014-11-23. Giulio.     @CREATED 
 */
 
@@ -164,6 +165,10 @@ void XMLDisplacementBag::merge ( const char *xml_out_file ) {
 	out_root = new TiXmlElement("TeraStitcher");  
 	out_xml.LinkEndChild( out_root );  
 	out_root->SetAttribute("volume_format", hRoot.ToElement()->Attribute("volume_format"));
+
+	// 2017-05-10. Giulio. ADDED 'input_plugin' attribute to <TeraStitcher> XML node
+	if(hRoot.ToElement()->Attribute("input_plugin"))
+		out_root->SetAttribute("input_plugin", hRoot.ToElement()->Attribute("input_plugin"));
 
 	// IN: reading fields and checking coherence with metadata previously read from VM_BIN_METADATA_FILE_NAME
 	TiXmlElement *pelem = hRoot.FirstChildElement("stacks_dir").Element();
@@ -443,6 +448,10 @@ void XMLDisplacementBag::mergeTileGroups ( const char *xml_out_file ) {
 	out_root = new TiXmlElement("TeraStitcher");  
 	out_xml.LinkEndChild( out_root );  
 	out_root->SetAttribute("volume_format", hRoot.ToElement()->Attribute("volume_format"));
+
+	// 2017-05-10. Giulio. ADDED 'input_plugin' attribute to <TeraStitcher> XML node
+	if(hRoot.ToElement()->Attribute("input_plugin"))
+		out_root->SetAttribute("input_plugin", hRoot.ToElement()->Attribute("input_plugin"));
 
 	// IN: reading fields and checking coherence with metadata previously read from VM_BIN_METADATA_FILE_NAME
 	TiXmlElement *pelem = hRoot.FirstChildElement("stacks_dir").Element();

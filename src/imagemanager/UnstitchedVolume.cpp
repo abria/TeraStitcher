@@ -634,6 +634,9 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 		slice_width  = (int)(slice_width  == -1 ? width  : slice_width);
 
 		buffer = new iom::real_t[height*width*depth];
+		if ( !buffer )
+ 			throw iim::IOException(iom::strprintf("cannot allocate the buffer of float (%llu x %llu x %u x %llu = %llu bytes)",
+ 											height, width, depth, sizeof(iom::real_t), height*width*depth), __iom__current__function__);
 		for (int i=0; i<height*width*depth; i++)
 			buffer[i]=0;
 
@@ -874,7 +877,6 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 	}
 
 	real32 *buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1); 
-
 	if ( VV0 > V0 || HH0 > H0 || DD0 > D0 || VV1 < V1 || HH1 < H1 || DD1 < D1 )
   		throw iim::IOException(iom::strprintf("returned buffer is smaller than the requested subvolume (requested [V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d] -- returned [VV0=%d, VV1=%d, HH0=%d, HH1=%d, DD0=%d, DD1=%d])", 
 												V0, V1, H0, H1, D0, D1, VV0, VV1, HH0, HH1, DD0, DD1), __iim__current__function__);
@@ -888,6 +890,9 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 	sint64 sbv_depth = D1 - D0;
 
     uint8 *subvol = new uint8[sbv_width * sbv_height * sbv_depth * n_chans * (BYTESxCHAN/red_factor)];
+	if ( !subvol )
+ 		throw iim::IOException(iom::strprintf("cannot allocate the buffer of uint8 (%llu x %llu x %llu x %u x %u = %llu bytes)",
+ 			sbv_width, sbv_height, sbv_depth, n_chans, (BYTESxCHAN/red_factor), sbv_width * sbv_height * sbv_depth * n_chans * (BYTESxCHAN/red_factor)), __iom__current__function__);
 
 	int i, j, k, c;
 	real32 *ptr_s_xy;
