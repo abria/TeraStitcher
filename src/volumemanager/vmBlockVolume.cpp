@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-06-27. Giulio.     @CHANGED If the attributes 'resolution' and 'timepoint' in section 'subimage' of xml file are present additional parameters are always enabled 
 * 2017-04-27. Giulio.     @ADDED code to get and initialize the input plugin from the xml if specified
 * 2017-04-12. Giulio.     @ADDED method to release all buffers allocated in VirtualStack
 * 2017-04-09. Giulio.     @FIXED the case when the xml file is incoplete in method 'loadXML'
@@ -967,19 +968,21 @@ void BlockVolume::loadXML(const char *xml_filepath) throw (iom::exception)
 		int value;
 		std::stringstream str;
 		if ( pelem->QueryIntAttribute("resolution", &value) == TIXML_SUCCESS ) {
-			if ( value ) {// additional parameters are not needed if resolution is zero
+			// 2017-06-27. Giulio. If the attribute is present additional parameters are always enabled 
+			//if ( value ) {// additional parameters are not needed if resolution is zero
 				additionalIOPluginParams = true;
 				str << value;
 				active_res = str.str();
-			}
+			//}
 		}
 		if ( pelem->QueryIntAttribute("timepoint", &value) == TIXML_SUCCESS ) {
-			if ( value ) { // additional parameters are not needed if resolution is zero
+			// 2017-06-27. Giulio. If the attribute is present additional parameters are always enabled 
+			//if ( value ) { // additional parameters are not needed if resolution is zero
 				additionalIOPluginParams = true;
 				str.str("");
 				str << value;
 				active_tp = str.str();
-			}
+			//}
 		}
 		const char *series_no_flag=pelem->Attribute("series_no");
 		if ( series_no_flag ) {

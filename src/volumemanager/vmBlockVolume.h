@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-06-26. Giulio.     @ADDED methods to set active resolution and active timepoint
 * 2017-04-12. Giulio.     @ADDED method to release all buffers allocated in VirtualStack
 * 2016-10-27. Giulio.     @ADDED string fields for control over the subimage to be exposed through the xml import file  
 * 2015-06-12. Giulio      @ADDED 'check' method to check completeness and coherence of a volume
@@ -60,6 +61,7 @@ class vm::BlockVolume : public vm::VirtualVolume
 		vm::Block ***BLOCKS;			    //2-D array of <Block*>
 
 		// these private fields are initialized internally from the xml import file if specified
+		// there are setters for active_res and acrive_tp, but they are intended to be used by teraconverter only when it has to stitch timeseries from unstitched datasets
 		std::string active_res;   // active resolution (default. 0)
 		std::string active_tp;    // active timepoint (default: 0)
 		bool series_no;
@@ -104,7 +106,11 @@ class vm::BlockVolume : public vm::VirtualVolume
 		vm::VirtualStack*** getSTACKS()  {return (vm::VirtualStack***)this->BLOCKS;}
 
 		std::string getACTIVE_RES ( ) { return active_res; }
+		void        setACTIVE_REC (int r) { active_res = r; }
+
 		std::string getACTIVE_TP  ( ) { return active_tp; }
+		void        setACTIVE_TP  (int t) { active_tp = t; }
+
 		bool getSERIES_NO ( ) { return series_no; }
 		bool getADDITIONAL_IOPLUGIN_PARAMETERS ( ) { return additionalIOPluginParams; }
 

@@ -25,6 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-06-26. Giulio.     @ADDED parameter 'isotropic' and 'mdata_file' to method 'convertTo'
+* 2017-06-26. Giulio.     @ADDED timeseries to Imaris format
 * 2017-05-25. Giulio.     @ADDED method for enabling lossy compression based on rescaling and implemented rescaling in all output formats
 * 2017-04-03. Giulio.     @CHANGED a new configuration of the libtiff library is carried out even if it has already been configured
 * 2017-04-20. Giulio      @CHANGED calls to 'IMS_HDF5init' to improve structure initialization
@@ -162,7 +164,7 @@ void vcDriver (
 		if ( dst_format == iim::SIMPLE_RAW_FORMAT )
 			if ( timeseries ) {
 				vc.convertTo(dst_root_dir.c_str(),dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,resolutions,
-					slice_height,slice_width,slice_depth,halving_method);
+					slice_height,slice_width,slice_depth,halving_method,isotropic);
 			}
 			else if ( makeDirs ) {
 				vc.createDirectoryHierarchySimple(dst_root_dir.c_str(),resolutions,
@@ -185,7 +187,7 @@ void vcDriver (
 		else if ( dst_format == iim::SIMPLE_FORMAT )
 			if ( timeseries ) {
 				vc.convertTo(dst_root_dir.c_str(),dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,resolutions,
-					slice_height,slice_width,slice_depth,halving_method);
+					slice_height,slice_width,slice_depth,halving_method,isotropic);
 			}
 			else if ( makeDirs ) {
 				vc.createDirectoryHierarchySimple(dst_root_dir.c_str(),resolutions,
@@ -208,7 +210,7 @@ void vcDriver (
 		else if ( dst_format == iim::STACKED_RAW_FORMAT )
 			if ( timeseries ) {
 				vc.convertTo(dst_root_dir.c_str(),dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,resolutions,
-					slice_height,slice_width,slice_depth,halving_method);
+					slice_height,slice_width,slice_depth,halving_method,isotropic);
 			}
 			else if ( makeDirs ) {
 				vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
@@ -228,7 +230,7 @@ void vcDriver (
 		else if ( dst_format == iim::STACKED_FORMAT )
 			if ( timeseries ) {
 				vc.convertTo(dst_root_dir.c_str(),dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,resolutions,
-					slice_height,slice_width,slice_depth,halving_method);
+					slice_height,slice_width,slice_depth,halving_method,isotropic);
 			}
 			else if ( makeDirs ) {
 				vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
@@ -248,7 +250,7 @@ void vcDriver (
 		else if ( dst_format == iim::TILED_FORMAT ) {
 			if ( timeseries ) {
 				vc.convertTo(dst_root_dir.c_str(),dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,resolutions,
-					slice_height,slice_width,slice_depth,halving_method);
+					slice_height,slice_width,slice_depth,halving_method,isotropic);
 			}
 			else if ( makeDirs ) {
 				vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
@@ -269,7 +271,7 @@ void vcDriver (
 		else if ( dst_format == iim::TILED_TIF3D_FORMAT ) {
 			if ( timeseries ) {
 				vc.convertTo(dst_root_dir.c_str(),dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,resolutions,
-					slice_height,slice_width,slice_depth,halving_method);
+					slice_height,slice_width,slice_depth,halving_method,isotropic);
 			}
 			else if ( makeDirs ) {
 				vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
@@ -290,7 +292,7 @@ void vcDriver (
 		else if ( dst_format == iim::TILED_MC_FORMAT )
 			if ( timeseries ) {
 				vc.convertTo(dst_root_dir.c_str(),dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,resolutions,
-					slice_height,slice_width,slice_depth,halving_method);
+					slice_height,slice_width,slice_depth,halving_method,isotropic);
 			}
 			else if ( makeDirs ) {
 				vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
@@ -310,7 +312,7 @@ void vcDriver (
 		else if ( dst_format == iim::TILED_MC_TIF3D_FORMAT )
 			if ( timeseries ) {
 				vc.convertTo(dst_root_dir.c_str(),dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,resolutions,
-					slice_height,slice_width,slice_depth,halving_method);
+					slice_height,slice_width,slice_depth,halving_method,isotropic);
 			}
 			else if ( makeDirs ) {
 				vc.createDirectoryHierarchy(dst_root_dir.c_str(),ch_dir,resolutions,
@@ -331,10 +333,18 @@ void vcDriver (
 			vc.generateTilesBDV_HDF5(dst_root_dir.c_str(),resolutions,
 				slice_height,slice_width,slice_depth,halving_method,isotropic,
 				show_progress_bar,"Fiji_HDF5",8*vc.getVolume()->getBYTESxCHAN());
-		else if ( dst_format == iim::IMS_HDF5_FORMAT )
-			vc.generateTilesIMS_HDF5(dst_root_dir.c_str(),mdata_fname,resolutions,
-				slice_height,slice_width,slice_depth,halving_method,isotropic,
-				show_progress_bar,"Fiji_HDF5",8*vc.getVolume()->getBYTESxCHAN());
+		else if ( dst_format == iim::IMS_HDF5_FORMAT ) {
+			if ( timeseries ) {
+				// missing parameters: mdata_fname, isotropic, 
+				vc.convertTo(dst_root_dir.c_str(),dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,resolutions,
+					slice_height,slice_width,slice_depth,halving_method,isotropic);
+			}
+			else {
+				vc.generateTilesIMS_HDF5(dst_root_dir.c_str(),mdata_fname,resolutions,
+					slice_height,slice_width,slice_depth,halving_method,isotropic,
+					show_progress_bar,"Fiji_HDF5",8*vc.getVolume()->getBYTESxCHAN());
+			}
+		}
 }
 
 
@@ -4353,6 +4363,13 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 	int resolutions_size = 0;
 	int halve_pow2[TMITREE_MAX_HEIGHT];
 
+	int cur_tp = 0;  // current timepoint
+	// determine the time point to be generated
+	if ( frame_dir == "" )
+		; // use default time point
+	else
+		cur_tp = atoi(frame_dir.c_str());
+
 	void *file_descr;
 	sint64 *hyperslab_descr = new sint64[4*3]; // four 3-valued parameters: [ start(offset), stride count(size), block ]
 	memset(hyperslab_descr,0,4*3*sizeof(sint64));
@@ -4449,53 +4466,65 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 		else
 			hist[i] = (histogram_t *) 0;
 	}
+
+	iim::uint32 thumbnail_size;
+	iim::uint8 *thumbnail_buf;
+
+	if ( cur_tp == 0 ) { // thumbnail, metadata, resolutions and other initializations must be processed only for the first timepoint
 	
-	// allocate the buffer for the thuumnail
-	iim::uint32 thumbnail_size = (std::min(width,height) < 512) ? 256 : 512;
-	int total_size = thumbnail_size * thumbnail_size * 4;
-	iim::uint8 *thumbnail_buf = new iim::uint8[total_size];
-	memset(thumbnail_buf,0,total_size*sizeof(iim::uint8));
+		// allocate the buffer for the thuumnail
+		thumbnail_size = (std::min(width,height) < 512) ? 256 : 512;
+		int total_size = thumbnail_size * thumbnail_size * 4;
+		thumbnail_buf = new iim::uint8[total_size];
+		memset(thumbnail_buf,0,total_size*sizeof(iim::uint8));
 
-	// get metadata to be transferred to image to be generated
-	void *olist;
-	void *rootalist;
-	if ( metadata_file == "default" || metadata_file == "null" ) {
-		// default metadata have to be generated
-		olist = IMS_HDF5get_olist((void *)0,output_path,(int)height,(int)width,(int)depth,channels,1,volume->getORG_V(),volume->getORG_H()); // assumes 1 timepoint
-		rootalist = IMS_HDF5get_rootalist((void *)0);
-	}
-	else {
-		IMS_HDF5init(metadata_file,file_descr,true);
-		olist = IMS_HDF5get_olist(file_descr);
-		rootalist = IMS_HDF5get_rootalist(file_descr);
-		IMS_HDF5close(file_descr);
-		// adjust the object/attribute structure to the file to be generated
-		olist = IMS_HDF5adjust_olist(olist,output_path,(int)height,(int)width,(int)depth,this->volume->getActiveChannels(),channels,volume->getORG_V(),volume->getORG_H());
-	}
+		// get metadata to be transferred to image to be generated
+		void *olist;
+		void *rootalist;
+		if ( metadata_file == "default" || metadata_file == "null" ) {
+			// default metadata have to be generated
+			olist = IMS_HDF5get_olist((void *)0,output_path,(int)height,(int)width,(int)depth,channels,1,volume->getORG_V(),volume->getORG_H()); // assumes 1 timepoint
+			rootalist = IMS_HDF5get_rootalist((void *)0);
+		}
+		else {
+			IMS_HDF5init(metadata_file,file_descr,true);
+			olist = IMS_HDF5get_olist(file_descr);
+			rootalist = IMS_HDF5get_rootalist(file_descr);
+			IMS_HDF5close(file_descr);
+			// adjust the object/attribute structure to the file to be generated
+			olist = IMS_HDF5adjust_olist(olist,output_path,(int)height,(int)width,(int)depth,this->volume->getActiveChannels(),channels,volume->getORG_V(),volume->getORG_H());
+		}
 
 
-	// create output file with acquisition metadata
-	IMS_HDF5init(output_path,file_descr,false,volume->getBYTESxCHAN(),olist,rootalist); // set the same voxel size of the file containaing metadata 
- 	olist     = (void *) 0;
- 	rootalist = (void *) 0;
+		// create output file with acquisition metadata
+		IMS_HDF5init(output_path,file_descr,false,volume->getBYTESxCHAN(),olist,rootalist); // set the same voxel size of the file containaing metadata 
+ 		olist     = (void *) 0;
+ 		rootalist = (void *) 0;
 
-	// voxel size must be the one corresponding to the height, width and depth used to create resolutions (see call to 'IMS_HDF5addResolution' below)
-	// voxel size must be correctly set before creating resolutions
-	IMS_HDF5setVxlSize(file_descr,fabs(volume->getVXL_1()),fabs(volume->getVXL_2()),fabs(volume->getVXL_3()));
+		// voxel size must be the one corresponding to the height, width and depth used to create resolutions (see call to 'IMS_HDF5addResolution' below)
+		// voxel size must be correctly set before creating resolutions
+		IMS_HDF5setVxlSize(file_descr,fabs(volume->getVXL_1()),fabs(volume->getVXL_2()),fabs(volume->getVXL_3()));
 
-	// create output file structure and add specific image metadata
-	bool is_first = true;
-	for ( int i=0; i<resolutions_size; i++ ) {
+		// create output file structure and add specific image metadata
+		bool is_first = true;
+		for ( int i=0; i<resolutions_size; i++ ) {
 
-		if(resolutions[i]) {
-			IMS_HDF5addResolution(file_descr,height,width,depth,channels,i,is_first); // istotropic: must pass halve_pow2
-			is_first = false;
+			if(resolutions[i]) {
+				IMS_HDF5addResolution(file_descr,height,width,depth,channels,i,is_first); // istotropic: must pass halve_pow2
+				is_first = false;
+			}
+
 		}
 
 	}
+	else { // cur_tp > 0
+
+		IMS_HDF5init(output_path,file_descr,false,volume->getBYTESxCHAN(),(void *) 0,(void *) 0); // set the same voxel size of the file containaing metadata 
+
+	} 
 
 	// create timepoint groups (default: timepoint 0)
-	IMS_HDF5addTimepoint(file_descr);
+	IMS_HDF5addTimepoint(file_descr,cur_tp);
 
 	//ALLOCATING  the MEMORY SPACE for image buffer
     z_max_res = powInt(2,resolutions_size-1); // isotropic: z_max_res = powInt(2,halve_pow2[resolutions_size-1]);
@@ -4652,7 +4681,7 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 						hyperslab_descr[9]  = 1; // [3][0]
 						hyperslab_descr[10] = 1; // [3][1]
 						hyperslab_descr[11] = 1; // [3][2]
-						IMS_HDF5writeHyperslab(file_descr,ubuffer[c],buf_dims,hyperslab_descr,i,c,0); // fixed timepoint: 0 
+						IMS_HDF5writeHyperslab(file_descr,ubuffer[c],buf_dims,hyperslab_descr,i,c,cur_tp); // fixed timepoint: 0 
 					}
 
 				}
@@ -4697,14 +4726,15 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 	for (int i=0; i<TMITREE_MAX_HEIGHT; i++) {
 		if(resolutions[i]) {
 			for (int j=0; j<channels; j++) {
-				IMS_HDF5set_histogram(file_descr,&hist[i][j],i,j,0);
+				IMS_HDF5set_histogram(file_descr,&hist[i][j],i,j,cur_tp);
 				hist[i][j].hist = (iim::uint64 *) 0;
 			}
 			delete []hist[i];
 		}
 	}
 
-	IMS_HDF5set_thumbnail(file_descr,thumbnail_buf,thumbnail_size);
+	if ( cur_tp == 0 )
+		IMS_HDF5set_thumbnail(file_descr,thumbnail_buf,thumbnail_size);
 
 	IMS_HDF5close(file_descr);
 
@@ -4721,7 +4751,9 @@ void VolumeConverter::convertTo(
     int block_height /*= -1*/,                      // tile's height (for tiled formats)
     int block_width  /*= -1*/,                      // tile's width  (for tiled formats)
     int block_depth  /*= -1*/,                      // tile's depth  (for tiled formats)
-    int method /*=HALVE_BY_MEAN*/                   // downsampling method
+    int method /*=HALVE_BY_MEAN*/,                  // downsampling method
+	bool isotropic /*=false*/,                      // perform an isotropic conversion 
+	std::string metadata_file /*= "null"*/          // last parameter, used only by Imaris file format
 ) throw (iim::IOException, iom::exception)
 {
     printf("in VolumeConverter::convertTo(output_path = \"%s\", output_format = \"%s\", output_bitdepth = %d, isTimeSeries = %s, resolutions = ",
@@ -4739,21 +4771,25 @@ void VolumeConverter::convertTo(
             volume->setActiveFrames(t,t);
             std::string frame_dir = iim::TIME_FRAME_PREFIX + strprintf("%06d", t);
             if(output_format.compare(iim::STACKED_FORMAT) == 0)
-                generateTiles(output_path, resolutions, block_height, block_width, method, false, true, "tif", output_bitdepth, frame_dir, false);
+                generateTiles(output_path, resolutions, block_height, block_width, method, isotropic, true, "tif", output_bitdepth, frame_dir, false);
             else if(output_format.compare(iim::STACKED_RAW_FORMAT) == 0)
-                generateTiles(output_path, resolutions, block_height, block_width, method, false, true, "raw", output_bitdepth, frame_dir, false);
+                generateTiles(output_path, resolutions, block_height, block_width, method, isotropic, true, "raw", output_bitdepth, frame_dir, false);
             else if(output_format.compare(iim::TILED_FORMAT) == 0)
-                generateTilesVaa3DRaw(output_path, resolutions, block_height, block_width, block_depth, method, false, true, "raw", output_bitdepth, frame_dir, false);
+                generateTilesVaa3DRaw(output_path, resolutions, block_height, block_width, block_depth, method, isotropic, true, "raw", output_bitdepth, frame_dir, false);
             else if(output_format.compare(iim::TILED_MC_FORMAT) == 0)
-                generateTilesVaa3DRawMC(output_path, "", resolutions, block_height, block_width, block_depth, method, false, true, "raw", output_bitdepth, frame_dir, false);
+                generateTilesVaa3DRawMC(output_path, "", resolutions, block_height, block_width, block_depth, method, isotropic, true, "raw", output_bitdepth, frame_dir, false);
             else if(output_format.compare(iim::TILED_TIF3D_FORMAT) == 0)
-                generateTilesVaa3DRaw(output_path, resolutions, block_height, block_width, block_depth, method, false, true, "Tiff3D", output_bitdepth, frame_dir, false);
+                generateTilesVaa3DRaw(output_path, resolutions, block_height, block_width, block_depth, method, isotropic, true, "Tiff3D", output_bitdepth, frame_dir, false);
             else if(output_format.compare(iim::TILED_MC_TIF3D_FORMAT) == 0)
-                generateTilesVaa3DRawMC(output_path, "", resolutions, block_height, block_width, block_depth, method, false, true, "Tiff3D", output_bitdepth, frame_dir, false);
+                generateTilesVaa3DRawMC(output_path, "", resolutions, block_height, block_width, block_depth, method, isotropic, true, "Tiff3D", output_bitdepth, frame_dir, false);
             else if(output_format.compare(iim::SIMPLE_RAW_FORMAT) == 0)
-                generateTilesSimple(output_path, resolutions, block_height, block_width, method, false, true, "raw", output_bitdepth, frame_dir, false);
+                generateTilesSimple(output_path, resolutions, block_height, block_width, method, isotropic, true, "raw", output_bitdepth, frame_dir, false);
             else if(output_format.compare(iim::SIMPLE_FORMAT) == 0)
-                generateTilesSimple(output_path, resolutions, block_height, block_width, method, false, true, "tif", output_bitdepth, frame_dir, false);
+                generateTilesSimple(output_path, resolutions, block_height, block_width, method, isotropic, true, "tif", output_bitdepth, frame_dir, false);
+			else if(output_format.compare(iim::IMS_HDF5_FORMAT) == 0) {
+				frame_dir = strprintf("%d", t);
+				generateTilesIMS_HDF5(output_path, metadata_file, resolutions, block_height,block_width,block_depth, method, isotropic, true,"Fiji_HDF5",output_bitdepth,frame_dir);
+			}
             else
                 throw iim::IOException(strprintf("Output format \"%s\" not supported", output_format.c_str()).c_str());
         }
@@ -4762,23 +4798,25 @@ void VolumeConverter::convertTo(
     else
     {
         if(output_format.compare(iim::STACKED_FORMAT) == 0)
-            generateTiles(output_path, resolutions, block_height, block_width, method, false, true, iim::DEF_IMG_FORMAT.c_str(), output_bitdepth, "", false);
+            generateTiles(output_path, resolutions, block_height, block_width, method, isotropic, true, iim::DEF_IMG_FORMAT.c_str(), output_bitdepth, "", false);
+		else if(output_format.compare(iim::STACKED_RAW_FORMAT) == 0)
+			generateTiles(output_path, resolutions, block_height, block_width, method, isotropic, true, "raw", output_bitdepth, "", false);
         else if(output_format.compare(iim::TILED_FORMAT) == 0)
-            generateTilesVaa3DRaw(output_path, resolutions, block_height, block_width, block_depth, method, false, true, "raw", output_bitdepth, "", false);
+            generateTilesVaa3DRaw(output_path, resolutions, block_height, block_width, block_depth, method, isotropic, true, "raw", output_bitdepth, "", false);
         else if(output_format.compare(iim::TILED_MC_FORMAT) == 0)
-            generateTilesVaa3DRawMC(output_path, "", resolutions, block_height, block_width, block_depth, method, false, true, "raw", output_bitdepth, "", false);
+            generateTilesVaa3DRawMC(output_path, "", resolutions, block_height, block_width, block_depth, method, isotropic, true, "raw", output_bitdepth, "", false);
         else if(output_format.compare(iim::TILED_TIF3D_FORMAT) == 0)
-            generateTilesVaa3DRaw(output_path, resolutions, block_height, block_width, block_depth, method, false, true, "Tiff3D", output_bitdepth, "", false);
+            generateTilesVaa3DRaw(output_path, resolutions, block_height, block_width, block_depth, method, isotropic, true, "Tiff3D", output_bitdepth, "", false);
         else if(output_format.compare(iim::TILED_MC_TIF3D_FORMAT) == 0)
-            generateTilesVaa3DRawMC(output_path, "", resolutions, block_height, block_width, block_depth, method, false, true, "Tiff3D", output_bitdepth, "", false);
+            generateTilesVaa3DRawMC(output_path, "", resolutions, block_height, block_width, block_depth, method, isotropic, true, "Tiff3D", output_bitdepth, "", false);
         else if(output_format.compare(iim::BDV_HDF5_FORMAT) == 0)
-            generateTilesBDV_HDF5(output_path,resolutions, block_height,block_width,block_depth, method, false, true,"Tiff3D",output_bitdepth);
-        //else if(output_format.compare(iim::IMS_HDF5_FORMAT) == 0)
-        //    generateTilesIMS_HDF5(output_path,resolutions, block_height,block_width,block_depth, method, false, true,"Tiff3D",output_bitdepth);
+            generateTilesBDV_HDF5(output_path,resolutions, block_height,block_width,block_depth, method, isotropic, true,"Fiji_HDF5",output_bitdepth);
+        else if(output_format.compare(iim::IMS_HDF5_FORMAT) == 0)
+			generateTilesIMS_HDF5(output_path, metadata_file, resolutions, block_height,block_width,block_depth, method, isotropic, true,"Fiji_HDF5",output_bitdepth);
         else if(output_format.compare(iim::SIMPLE_RAW_FORMAT) == 0)
-            generateTilesSimple(output_path, resolutions, block_height, block_width, method, false, true, "raw", output_bitdepth, "", false);
+            generateTilesSimple(output_path, resolutions, block_height, block_width, method, isotropic, true, "raw", output_bitdepth, "", false);
         else if(output_format.compare(iim::SIMPLE_FORMAT) == 0)
-            generateTilesSimple(output_path, resolutions, block_height, block_width, method, false, true, "tif", output_bitdepth, "", false);
+            generateTilesSimple(output_path, resolutions, block_height, block_width, method, isotropic, true, "tif", output_bitdepth, "", false);
         else
             throw iim::IOException(strprintf("Output format \"%s\" not supported", output_format.c_str()).c_str());
     }

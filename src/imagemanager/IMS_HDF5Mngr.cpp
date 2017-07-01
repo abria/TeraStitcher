@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2017-06-27. Giulio  @ADDED code for managing the addition of timepoints to an existing file (many changes search for '2017-06-27')
 * 2017-04-22. Giulio  @ADDED adjustment in the file structure inheroted from another file 
 * 2017-04-20. Giulio  @CHANGED creation of a default file strucure 
 * 2017-04-20. Giulio. @FIXED HDF5 error messages when resolutions were added after the first
@@ -76,9 +77,9 @@ static char *get_time_str ( ) {
 
 
 
-#define MAXSTP   10 // maximim number of channels (aka setups)
-#define MAXRES   10 // maximim number of resolutions
-#define MAXTPS   50 // maximum number of timepoints
+#define MAXSTP   10     // maximim number of channels (aka setups)
+#define MAXRES   10     // maximim number of resolutions
+#define MAXTPS   1024   // maximum number of timepoints
 
 #define DEF_CHNK_DIM_XY   128
 #define DEF_CHNK_DIM_Z   8
@@ -1085,6 +1086,7 @@ int IMS_HDF5_fdescr_t::addResolution ( int r, hsize_t dimV, hsize_t dimH, hsize_
 	vol_dims[r][1] = dimV / iim::powInt(2,r);
 	vol_dims[r][2] = dimH / iim::powInt(2,r);
 
+	// WARNING: chunk_dims have fixed size at all resolutions
 	chunk_dims[r][0] = DEF_CHNK_DIM_Z; 
 	chunk_dims[r][1] = DEF_CHNK_DIM_XY; 
 	chunk_dims[r][2] = DEF_CHNK_DIM_XY; 
@@ -1342,11 +1344,19 @@ int IMS_HDF5_fdescr_t::addTimePoint ( int t ) {
 				status = H5Gclose(ch_grpid);
 			}
 
-			H5Gclose(tp_grpid);
+			// 2017-06-27. Giulio. @ADDED The group id of the new timepoint must saved and left open only if active_res is not changed by the next call to getDATASETS_ID
+			if ( active_res == max_res ) 
+				tp_groups_id[t] = tp_grpid;
+			else
+				// the group must be closed if active_res will be changed by the next call to getDATASETS_ID
+				H5Gclose(tp_grpid);
 		}
 	}
 
 	n_timepoints++; // timepoins are added in order starting from timepoint 0' 
+
+	// 2017-06-27. Giulio. @ADDED enable the addition of the histogram and other metadata
+	creating = true;
 
 	// allocate n_slices for timepoint t at each existing resolution 
 	for ( int r=0; r<n_res; r++ ) { 
@@ -1354,18 +1364,44 @@ int IMS_HDF5_fdescr_t::addTimePoint ( int t ) {
 			n_slices[r][t] = new hsize_t [MAXTPS];
 			memset(n_slices[r][t],0,MAXTPS*sizeof(hsize_t));
 		}
+		else { 
+			// 2017-06-27. Giulio. If the time point is added to an exixsting file the n_slices structure must be recreated
+			// initialize n_slices[r]
+			n_slices[r] = new hsize_t *[MAXTPS];
+			memset(n_slices[r],0,MAXTPS*sizeof(hsize_t *));
+			for ( int t=0; t<n_timepoints; t++ ) {
+				n_slices[r][t] = new hsize_t[MAXSTP];
+				memset(n_slices[r][t],0,MAXSTP*sizeof(hsize_t));
+			}
+		}
 	}
 
 	// allocate hists for timepoint t at each existing resolution 
+	// 2017-06-27. Giulio. If the time point is added to an exixsting file the hisy structure must be recreated from scratch
+	if ( !hist ) {
+		hist = new histogram_t **[MAXRES];
+		memset(hist,0,MAXRES*sizeof(histogram_t **)); 
+	}
 	for ( int r=0; r<n_res; r++ ) { 
 		if ( hist[r] ) { // resolution r exists
 			hist[r][t] = new histogram_t [MAXTPS];
 			memset(hist[r][t],0,MAXTPS*sizeof(histogram_t));
 		}
+		else {
+			// 2017-06-27. Giulio. If the time point is added to an exixsting file the hisy structure must be recreated
+			// initialize hist[r]
+			hist[r] = new histogram_t *[MAXTPS];
+			memset(hist[r],0,MAXTPS*sizeof(histogram_t *));
+			for ( int t=0; t<n_timepoints; t++ ) {
+				hist[r][t] = new histogram_t[MAXSTP];
+				memset(hist[r][t],0,MAXSTP*sizeof(histogram_t));
+			}
+		}
 	}
 
 	// set the maximum resolution as current one and t as the current timepoint
 	hid_t *dset_id = IMS_HDF5_fdescr_t::getDATASETS_ID ( t, max_res, false );
+
 	// load dataset ids
 	//for ( int c=0; c<n_chans; c++ ) {
 	//	status = H5Dclose(dset_id[c]);
@@ -1452,9 +1488,15 @@ void IMS_HDF5_fdescr_t::scan_root ( ) {
 					// get the number of resolutions
 					err = H5Gget_num_objs(grpid, &n_res);
 					vol_dims = new dims_t[n_res]; 
+					chunk_dims = new subdvsns_t[n_res]; // 2017-06-27. Giulio. @ADDED in case an existing file is re-opened for update
 					active_res = 0; // stores timepoints at resolution 0
 					active_tp  = 0; // stores channels at timepoint 0
 					for ( j = 0; j < n_res; j++ ) { // process resolution j
+						// 2017-06-27. Giulio. @ADDED initialization of chunk_dims at all existing resolutions
+						// WARNING: chunk_dims have fixed size at all resolutions
+						chunk_dims[j][0] = DEF_CHNK_DIM_Z; 
+						chunk_dims[j][1] = DEF_CHNK_DIM_XY; 
+						chunk_dims[j][2] = DEF_CHNK_DIM_XY; 
 						len = H5Gget_objname_by_idx(grpid, (hsize_t)j, submemb_name, (size_t)MAX_NAME );
 						otype =  H5Gget_objtype_by_idx(grpid, (size_t)j);
 						if ( otype == H5G_GROUP ) {
@@ -1796,9 +1838,9 @@ hid_t *IMS_HDF5_fdescr_t::getDATASETS_ID ( int tp, int r, bool get ) {
 		active_res = r; // r is now the active resolution
 	} 
 	else if ( tp != active_tp ) { // timepoint is not active: load channel info at timepoint tp 
-		// get the number of timepoints at resolution r
+		// get the number of channels at timepoint tp
 		err = H5Gget_num_objs(tp_groups_id[tp], &n_chans);
-		for ( int m = 0; m < n_chans; m++ ) { // process chan m of time point k at resolution r
+		for ( int m = 0; m < n_chans; m++ ) { // process chan m of timepoint tp at resolution r
 			len = H5Gget_objname_by_idx(tp_groups_id[tp], (hsize_t)m, memb_name, (size_t)MAX_NAME );
 			otype =  H5Gget_objtype_by_idx(tp_groups_id[tp], (size_t)m);
 			if ( otype == H5G_GROUP ) {
@@ -1904,38 +1946,42 @@ herr_t IMS_HDF5_fdescr_t::addFinalInfo ( ) {
 			for ( int t=0; t<n_timepoints; t++ ) {
 				getDATASETS_ID(t,r,false);
 				for ( int c=0; c<n_chans; c++ ) {
-					/* add histogram attributes to channel group */
-					sprintf(num_str,"%.2f",(double)hist[r][t][c].hmax);
-					create_string_attribute(chan_groups_id[c],"HistogramMax",std::string(num_str).c_str());
-					sprintf(num_str,"%.2f",(double)hist[r][t][c].hmin);
-					create_string_attribute(chan_groups_id[c],"HistogramMin",std::string(num_str).c_str());
 
-					/* Create the data space for the Data datasets. */
-					dims[0] = hist[r][t][c].hlen;
-					dataspace_id = H5Screate_simple(1, dims, maxdims);
+					if ( hist[r][t][c].hlen ) { // 2017-06-27. Giulio. @ADDED if hlen is 0 the histogram has not been added and no metadata must be written
 
-					/* Create the parameter list for cells datasets. */
-					cparms = H5Pcreate(H5P_DATASET_CREATE);
-					status = H5Pset_chunk(cparms, 1, dims);
-					status = H5Pset_fill_time(cparms,H5D_FILL_TIME_NEVER);
+						/* add histogram attributes to channel group */
+						sprintf(num_str,"%.2f",(double)hist[r][t][c].hmax);
+						create_string_attribute(chan_groups_id[c],"HistogramMax",std::string(num_str).c_str());
+						sprintf(num_str,"%.2f",(double)hist[r][t][c].hmin);
+						create_string_attribute(chan_groups_id[c],"HistogramMin",std::string(num_str).c_str());
 
-					/* Create the cells dataset. */
-					dataset_id = H5Dcreate(chan_groups_id[c], "Histogram", H5T_NATIVE_ULLONG, dataspace_id, H5P_DEFAULT, cparms, H5P_DEFAULT);
+						/* Create the data space for the Data datasets. */
+						dims[0] = hist[r][t][c].hlen;
+						dataspace_id = H5Screate_simple(1, dims, maxdims);
 
-					/* Write data */
-					status = H5Dwrite (dataset_id, H5T_NATIVE_ULLONG, H5S_ALL, H5S_ALL, H5P_DEFAULT, hist[r][t][c].hist);
+						/* Create the parameter list for cells datasets. */
+						cparms = H5Pcreate(H5P_DATASET_CREATE);
+						status = H5Pset_chunk(cparms, 1, dims);
+						status = H5Pset_fill_time(cparms,H5D_FILL_TIME_NEVER);
 
-					/* Terminate access to the parameters. */ 
-					status = H5Pclose(cparms);
+						/* Create the cells dataset. */
+						dataset_id = H5Dcreate(chan_groups_id[c], "Histogram", H5T_NATIVE_ULLONG, dataspace_id, H5P_DEFAULT, cparms, H5P_DEFAULT);
 
-					/* Terminate access to the data space. */ 
-					status = H5Sclose(dataspace_id);
+						/* Write data */
+						status = H5Dwrite (dataset_id, H5T_NATIVE_ULLONG, H5S_ALL, H5S_ALL, H5P_DEFAULT, hist[r][t][c].hist);
 
-					/* End access to the dataset and release resources used by it. */
-					status = H5Dclose(dataset_id);
+						/* Terminate access to the parameters. */ 
+						status = H5Pclose(cparms);
 
-					/* chan_groups_id[c] shold not be closed */
-					//status = H5Gclose(chan_groups_id[c]);
+						/* Terminate access to the data space. */ 
+						status = H5Sclose(dataspace_id);
+
+						/* End access to the dataset and release resources used by it. */
+						status = H5Dclose(dataset_id);
+
+						/* chan_groups_id[c] shold not be closed */
+						//status = H5Gclose(chan_groups_id[c]);
+					}
 				}
 			}
 		}

@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-06-26. Giulio.     @ADDED parameter 'isotropic' and 'mdata_file' to method 'convertTo'
 * 2017-05-25. Giulio.     @ADDED method for enabling lossy compression based on rescaling
 * 2017-04-23. Giulio.     @ADDED auxiliary function vcDriver to call the actual conversion method
 * 2017-04-18. Alessandro. @ADDED setSrcVolume that directly takes vm::VirtualVolume in input, and added 'volume_external' attribute
@@ -206,7 +207,9 @@ class VolumeConverter
             int block_height = -1,                      // tile's height (for tiled formats)
             int block_width  = -1,                      // tile's width  (for tiled formats)
             int block_depth  = -1,                      // tile's depth  (for tiled formats)
-            int method = HALVE_BY_MEAN                  // downsampling method
+            int method = HALVE_BY_MEAN,                 // downsampling method
+			bool isotropic = false,                     // perform an isotropic conversion 
+			std::string metadata_file = "null"          // last parameter, used only by Imaris file format
         ) throw (iim::IOException, iom::exception);
 
 		/*************************************************************************************************************
