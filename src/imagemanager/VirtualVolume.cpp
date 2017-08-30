@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-08-30. Giulio.     @FIXED introduced sint64 variables to avoid overflow in indices on slices larger than 4 GBs
 * 2017-04-13. Giulio.     @ADDED the case 2D slices multi-channel 16 bit in 'saveImage_from_UINT8'
 * 2016-05-11. Giluio.     @FIXED a bug in 'halveSample2D_UINT8' ('img16' in plage of 'img' at line 1085)
 * 2016-04-15. Giluio.     @FIXED in 'saveImage_from_UINT8' offset must not be doubled when color depth is 16 bits
@@ -107,7 +108,7 @@ void VirtualVolume::saveImage(std::string img_path, real32* raw_img, int raw_img
 	// Giulio_CV uint16 *row_data_16bit;
 	// Giulio_CV uint32 img_data_step;
 	// Giulio_CV float scale_factor_16b, scale_factor_8b;
-	int img_height, img_width;
+	sint64 img_height, img_width;
 	// Giulio_CV int i,j;
 	char img_filepath[5000];
 
@@ -142,7 +143,7 @@ void VirtualVolume::saveImage(std::string img_path, real32* raw_img, int raw_img
 		{
 			uint8* img_data = buffer + i*img_width;
 			for(int j = 0, jj = start_width; j < img_width; j++, jj++)
-				img_data[j] = static_cast<uint8>(raw_img[ii*raw_img_width+jj] * 255.0f + 0.5f);
+				img_data[j] = static_cast<uint8>(raw_img[ii*((sint64)raw_img_width)+jj] * 255.0f + 0.5f);
 		}
 	}
 	else // img_depth == 16
@@ -151,7 +152,7 @@ void VirtualVolume::saveImage(std::string img_path, real32* raw_img, int raw_img
 		{
 			uint16* img_data = ((uint16 *)buffer) + i*img_width; // the cast to uint16* guarantees the right offset
 			for(int j = 0, jj = start_width; j < img_width; j++, jj++)
-				img_data[j] = static_cast<uint16>(raw_img[ii*raw_img_width+jj] * 65535.0f + 0.5f);
+				img_data[j] = static_cast<uint16>(raw_img[ii*((sint64)raw_img_width)+jj] * 65535.0f + 0.5f);
 		}
 	}
 
@@ -164,13 +165,13 @@ void VirtualVolume::saveImage(std::string img_path, real32* raw_img, int raw_img
 		//iomanager::IOPluginFactory::getPlugin2D(iomanager::IMOUT_PLUGIN)->writeData(
 		//	img_filepath, raw_img, img_height, img_width, 1, start_height, end_height, start_width, end_width, img_depth);
 		iomanager::IOPluginFactory::getPlugin2D(iomanager::IMOUT_PLUGIN)->writeData(
-			img_filepath, buffer, img_height, img_width, img_depth/8, 1, 0, img_height, 0, img_width); // ROI limits specify right-open intervals  
+			img_filepath, buffer, (int)img_height, (int)img_width, img_depth/8, 1, 0, (int)img_height, 0, (int)img_width); // ROI limits specify right-open intervals  
 	}
 	catch (iom::exception & ex)
 	{
 		if ( strstr(ex.what(),"it is not a 2D I/O plugin") ) // this method has be called to save the middle slice for test purposes, even though output plugin is not a 2D plugin
 			iomanager::IOPluginFactory::getPlugin2D("tiff2D")->writeData(
-				img_filepath, buffer, img_height, img_width, img_depth/8, 1, 0, img_height, 0, img_width); // ROI limits specify right-open intervals
+				img_filepath, buffer, (int)img_height, (int)img_width, img_depth/8, 1, 0, (int)img_height, 0, (int)img_width); // ROI limits specify right-open intervals
 		else
 			throw iom::exception(iom::strprintf(ex.what()), __iom__current__function__);
 	}
@@ -283,9 +284,9 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
 					uint8* row_data_8bit = img + i*img_data_step;
 					for(int j1 = 0, j2 = start_width; j1 < img_width*3; j1+=3, j2++)
 					{
-						row_data_8bit[j1  ] = raw_ch1[(i+start_height)*raw_img_width + j2];
-						row_data_8bit[j1+1] = raw_ch2[(i+start_height)*raw_img_width + j2];
-						row_data_8bit[j1+2] = raw_ch3[(i+start_height)*raw_img_width + j2];
+						row_data_8bit[j1  ] = raw_ch1[(i+start_height)*((sint64)raw_img_width) + j2];
+						row_data_8bit[j1+1] = raw_ch2[(i+start_height)*((sint64)raw_img_width) + j2];
+						row_data_8bit[j1+2] = raw_ch3[(i+start_height)*((sint64)raw_img_width) + j2];
 					}
 				}
 			}
@@ -296,9 +297,9 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
 					uint16* row_data_16bit = ((uint16*)img) + i*img_data_step;
 					for(int j1 = 0, j2 = start_width; j1 < img_width*3; j1+=3, j2++) {
 						// row_data_16bit[j] = (uint16) (raw_ch1[(i+start_height)*raw_img_width+j+start_width] * scale_factor_16b); // conversion is not supported yet
-						row_data_16bit[j1  ] = ((uint16 *) raw_ch1)[(i+start_height)*raw_img_width+j2];
-						row_data_16bit[j1+1] = ((uint16 *) raw_ch2)[(i+start_height)*raw_img_width+j2];
-						row_data_16bit[j1+2] = ((uint16 *) raw_ch3)[(i+start_height)*raw_img_width+j2];
+						row_data_16bit[j1  ] = ((uint16 *) raw_ch1)[(i+start_height)*((sint64)raw_img_width)+j2];
+						row_data_16bit[j1+1] = ((uint16 *) raw_ch2)[(i+start_height)*((sint64)raw_img_width)+j2];
+						row_data_16bit[j1+2] = ((uint16 *) raw_ch3)[(i+start_height)*((sint64)raw_img_width)+j2];
 					}
 				}
 			}
@@ -315,8 +316,8 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
 					uint8* row_data_8bit = img + i*img_data_step;
 					for(int j1 = 0, j2 = start_width; j1 < img_width*3; j1+=3, j2++)
 					{
-						row_data_8bit[j1  ] = raw_ch1[(i+start_height)*raw_img_width + j2];
-						row_data_8bit[j1+1] = raw_ch2[(i+start_height)*raw_img_width + j2];
+						row_data_8bit[j1  ] = raw_ch1[(i+start_height)*((sint64)raw_img_width) + j2];
+						row_data_8bit[j1+1] = raw_ch2[(i+start_height)*((sint64)raw_img_width) + j2];
 						row_data_8bit[j1+2] = 0;
 					}
 				}
@@ -328,8 +329,8 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
 					uint16* row_data_16bit = ((uint16*)img) + i*img_data_step;
 					for(int j1 = 0, j2 = start_width; j1 < img_width*3; j1+=3, j2++) {
 						// row_data_16bit[j] = (uint16) (raw_ch1[(i+start_height)*raw_img_width+j+start_width] * scale_factor_16b); // conversion is not supported yet
-						row_data_16bit[j1  ] = ((uint16 *) raw_ch1)[(i+start_height)*raw_img_width+j2];
-						row_data_16bit[j1+1] = ((uint16 *) raw_ch2)[(i+start_height)*raw_img_width+j2];
+						row_data_16bit[j1  ] = ((uint16 *) raw_ch1)[(i+start_height)*((sint64)raw_img_width)+j2];
+						row_data_16bit[j1+1] = ((uint16 *) raw_ch2)[(i+start_height)*((sint64)raw_img_width)+j2];
 						row_data_16bit[j1+2] = 0;
 					}
 				}
@@ -346,7 +347,7 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
 				{
 					uint8* row_data_8bit = img + i*img_data_step;
 					for(int j = 0; j < img_width; j++)
-						row_data_8bit[j] = raw_ch1[(i+start_height)*raw_img_width+j+start_width];
+						row_data_8bit[j] = raw_ch1[(i+start_height)*((sint64)raw_img_width)+j+start_width];
 				}
 			}
 			else // img->depth == 16
@@ -357,8 +358,8 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
 				{
 					uint16* row_data_16bit = ((uint16*)img) + i*img_data_step;
 					for(int j = 0; j < img_width; j++)
-						// row_data_16bit[j] = (uint16) (raw_ch1[(i+start_height)*raw_img_width+j+start_width] * scale_factor_16b); // conversion is not supported yet
-						row_data_16bit[j] = ((uint16 *) raw_ch1)[(i+start_height)*raw_img_width+j+start_width] /* 2014-11-10. Giulio.    removed: [* scale_factor_16b )] */;
+						// row_data_16bit[j] = (uint16) (raw_ch1[(i+start_height)*((sint64)raw_img_width)+j+start_width] * scale_factor_16b); // conversion is not supported yet
+						row_data_16bit[j] = ((uint16 *) raw_ch1)[(i+start_height)*((sint64)raw_img_width)+j+start_width] /* 2014-11-10. Giulio.    removed: [* scale_factor_16b )] */;
 				}
 			}
 		}
@@ -366,7 +367,7 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
 		char *err_tiff_fmt;
 
 		// creates the file (2D image: depth is 1)
-		if ( (err_tiff_fmt = initTiff3DFile((char *)img_path.c_str(),img_width,img_height,1,(nchannels>1 ? 3 : 1),img_depth/8)) != 0 ) {
+		if ( (err_tiff_fmt = initTiff3DFile((char *)img_path.c_str(),(int)img_width,(int)img_height,1,(nchannels>1 ? 3 : 1),img_depth/8)) != 0 ) {
 			throw iom::exception(iom::strprintf("unable to create tiff file (%s)",err_tiff_fmt), __iom__current__function__);
 		}
 
@@ -457,7 +458,8 @@ void VirtualVolume::saveImage_to_Vaa3DRaw(int slice, std::string img_path, real3
 	//uint32 img_data_step;
 	float scale_factor_16b, scale_factor_8b;
 	sint64 img_height, img_width;
-	int i, j, k;
+	int i, j;
+	sint64 k; // 2017-08-30. Giulio. in case a slice is larger than 4 GB
 	char img_filepath[5000];
 
 	// WARNING: currently supported only 8/16 bits depth by VirtualVolume::saveImage_from_UINT8_to_Vaa3DRaw
@@ -516,11 +518,11 @@ void VirtualVolume::saveImage_to_Vaa3DRaw(int slice, std::string img_path, real3
 
 	if ( strcmp(img_format,"Vaa3DRaw")==0 ) {
 		VirtualVolume::saveImage_from_UINT8_to_Vaa3DRaw (slice,img_path, &row_data_8bit, 1, 0, 
-								img_height, img_width, 0, -1, 0, -1, img_format, img_depth); // the ROI coincides with the whole buffer (row_data8bit) 
+								(int)img_height, (int)img_width, 0, -1, 0, -1, img_format, img_depth); // the ROI coincides with the whole buffer (row_data8bit) 
 	}
 	else if ( strcmp(img_format,"Tiff3D")==0 ) {
 		VirtualVolume::saveImage_from_UINT8_to_Tiff3D (slice,img_path, &row_data_8bit, 1, 0, 
-								img_height, img_width, 0, -1, 0, -1, img_format, img_depth); // the ROI coincides with the whole buffer (row_data8bit) 
+								(int)img_height, (int)img_width, 0, -1, 0, -1, img_format, img_depth); // the ROI coincides with the whole buffer (row_data8bit) 
 	}
 
 	delete row_data_8bit;
@@ -602,7 +604,7 @@ void VirtualVolume::saveImage_from_UINT8_to_Vaa3DRaw (int slice, std::string img
 		{
 			uint8* row_data_8bit = imageData + c*img_height*img_width_b + i*img_width_b;
 			for(sint64 j=0; j<img_width_b; j++)
-				row_data_8bit[j] = raw_ch_temp[c][(i+start_height)*raw_img_width + (j+start_width)];
+				row_data_8bit[j] = raw_ch_temp[c][(i+start_height)*((sint64)raw_img_width) + (j+start_width)];
             }
 	}
 
@@ -691,7 +693,7 @@ void VirtualVolume::saveImage_from_UINT8_to_Tiff3D (int slice, std::string img_p
 			uint8* row_data_8bit = imageData + i*img_width_b*temp_n_chans;
 			for(sint64 j=0; j<img_width_b; j++) {
 				for ( int c=0; c<n_chans; c++ ) {
-					row_data_8bit[j*temp_n_chans + c] = raw_ch_temp[c][(i+start_height)*raw_img_width + (j+start_width)];
+					row_data_8bit[j*temp_n_chans + c] = raw_ch_temp[c][(i+start_height)*((sint64)raw_img_width) + (j+start_width)];
 				}
 				if ( n_chans < temp_n_chans )
 					row_data_8bit[j*temp_n_chans + n_chans] = (uint8) 0;
@@ -708,7 +710,7 @@ void VirtualVolume::saveImage_from_UINT8_to_Tiff3D (int slice, std::string img_p
 			uint16* row_data_16bit = imageData16 + i*img_width*temp_n_chans;
 			for(sint64 j=0; j<img_width; j++) { // 
 				for ( int c=0; c<n_chans; c++ ) {
-					row_data_16bit[j*temp_n_chans + c] = raw_ch_temp16[c][(i+start_height)*raw_img_width + (j+start_width)];
+					row_data_16bit[j*temp_n_chans + c] = raw_ch_temp16[c][(i+start_height)*((sint64)raw_img_width) + (j+start_width)];
 				}
 				if ( n_chans < temp_n_chans )
 					row_data_16bit[j*temp_n_chans + n_chans] = (uint16) 0;
