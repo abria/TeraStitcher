@@ -126,7 +126,7 @@ void vcDriver (
     bool        parallel = false,                   //parallel mode: does not perform side-effect operations during merge
 	std::string outFmt = "RGB",                      // no more used: pass always the default
 	int         nbits  = 0
-);
+) throw (iim::IOException, iom::exception);
 
 class VolumeConverter
 {

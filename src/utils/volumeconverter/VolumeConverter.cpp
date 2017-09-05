@@ -144,7 +144,7 @@ void vcDriver (
     bool        metaData,                   //creates the mdata.bin file of the output volume
     bool        parallel,                   //parallel mode: does not perform side-effect operations during merge
 	std::string outFmt,
-	int         nbits ) {
+	int         nbits ) throw (iim::IOException, iom::exception) {
 		// do what you have to do
 		VolumeConverter vc;
 
@@ -268,7 +268,7 @@ void vcDriver (
 					show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
 			}
 		}
-		else if ( dst_format == iim::TILED_TIF3D_FORMAT ) {
+		else if ( dst_format == iim::TILED_TIF3D_FORMAT || dst_format == iim::TIF3D_FORMAT) {
 			if ( timeseries ) {
 				vc.convertTo(dst_root_dir.c_str(),dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,resolutions,
 					slice_height,slice_width,slice_depth,halving_method,isotropic);
@@ -345,6 +345,8 @@ void vcDriver (
 					show_progress_bar,"Fiji_HDF5",8*vc.getVolume()->getBYTESxCHAN());
 			}
 		}
+		else
+			throw iim::IOException(iim::strprintf("in vcDriver(): unsupported format \"%s\"", dst_format.c_str()));
 }
 
 

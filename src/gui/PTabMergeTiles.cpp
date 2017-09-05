@@ -121,7 +121,7 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
 	vol_format_cbox->addItem(iim::STACKED_FORMAT.c_str());
 	vol_format_cbox->addItem(iim::TILED_TIF3D_FORMAT.c_str());
 	vol_format_cbox->addItem(iim::TILED_MC_TIF3D_FORMAT.c_str());
-	//vol_format_cbox->addItem(iim::TIF3D_FORMAT.c_str());
+	vol_format_cbox->addItem(iim::TIF3D_FORMAT.c_str());
 	vol_format_cbox->addItem(iim::BDV_HDF5_FORMAT.c_str());
 	vol_format_cbox->addItem(iim::IMS_HDF5_FORMAT.c_str());
 	vol_format_cbox->addItem(iim::SIMPLE_RAW_FORMAT.c_str());
