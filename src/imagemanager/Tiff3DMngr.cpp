@@ -47,7 +47,9 @@
 #include <stdlib.h> // needed by clang: defines size_t
 #include <string.h>
 #include "tiffio.h"
-#include "tiffiop.h"
+#ifndef _VAA3D_TERAFLY_PLUGIN_MODE
+    #include "tiffiop.h"
+#endif
 #include "IM_config.h"
 
 #ifdef _VAA3D_TERAFLY_PLUGIN_MODE
@@ -214,9 +216,11 @@ char *openTiff3DFile ( char *filename, char *mode, void *&fhandle, bool reopen )
 	if ( mode[0] == 'w' && reopen ) {
 		fhandle = TIFFOpen(completeFilename,"r");
 		if ( fhandle ) {
+#ifndef _VAA3D_TERAFLY_PLUGIN_MODE
 			// get the file format (classic tiff of bigtiff)
 			if ( ((TIFF *) fhandle)->tif_flags&TIFF_BIGTIFF ) 
-				mybigtiff = true;
+                mybigtiff = true;
+#endif
 			TIFFClose((TIFF *) fhandle);
 		}
 	}
