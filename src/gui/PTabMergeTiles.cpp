@@ -48,7 +48,8 @@
 
 using namespace terastitcher;
 
-std::string PTabMergeTiles::metadata_path_null = "Enter or select image metadata .ims file";
+std::string PTabMergeTiles::metadata_path_null = "Enter or select image metadata .ims file (optional)";
+std::string PTabMergeTiles::b3d_compressor_line_null = "Enter B3D compressor options (optional)";
 
 /*********************************************************************************
 * Singleton design pattern: this class can have one instance only,  which must be
@@ -178,6 +179,8 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
 	mdata_line = new QLineEdit(this);
 	mdata_line->setFont(smallFont);
 	mdata_browse_button = new QPushButton ("...", this);
+	b3d_compressor_line = new QLineEdit(this);
+	b3d_compressor_line->setFont(smallFont);
 
     //advanced panel widgets
     advanced_panel = new QWidget();
@@ -310,10 +313,14 @@ PTabMergeTiles::PTabMergeTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     basicpanel_layout->addLayout(basic_panel_row_3);
     /**/
     QHBoxLayout* basic_panel_row_4 = new QHBoxLayout();
+	basic_panel_row_4->setAlignment(Qt::AlignLeft);
     basic_panel_row_4->setContentsMargins(0,0,0,0);
     basic_panel_row_4->setSpacing(0);
     basic_panel_row_4->addSpacing(left_margin);
-	basic_panel_row_4->addWidget(memocc_field, 1);
+	basic_panel_row_4->addWidget(memocc_field);
+	memocc_field->setFixedWidth(300);
+	basic_panel_row_4->addSpacing(25);
+	basic_panel_row_4->addWidget(b3d_compressor_line, 1);
 	basicpanel_layout->addLayout(basic_panel_row_4);
 	basicpanel_layout->addSpacing(5);
     /**/
@@ -488,6 +495,7 @@ void PTabMergeTiles::reset()
 	channel_selection->clear();
 
 	mdata_line->setText(metadata_path_null.c_str());
+	b3d_compressor_line->setText(b3d_compressor_line_null.c_str());
 }
 
 /*********************************************************************************
@@ -913,6 +921,8 @@ void PTabMergeTiles::volumeformat_changed(QString str)
 		mdata_line->setEnabled(true);
 		mdata_browse_button->setVisible(true);
 		mdata_browse_button->setEnabled(true);
+		b3d_compressor_line->setVisible(true);
+		b3d_compressor_line->setEnabled(true);
 	}
 	else
 	{
@@ -920,6 +930,8 @@ void PTabMergeTiles::volumeformat_changed(QString str)
 		mdata_line->setEnabled(false);
 		mdata_browse_button->setVisible(false);
 		mdata_browse_button->setEnabled(false);
+		b3d_compressor_line->setVisible(false);
+		b3d_compressor_line->setEnabled(false);
 	}
 
 	libtiff_bigtiff_checkbox->setEnabled(stdstr.find("TIFF") != std::string::npos);

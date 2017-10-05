@@ -118,6 +118,9 @@ void CMergeTiles::run()
 		std::string mdata_fname = pMergeTiles->mdata_line->text().toStdString();
 		if(mdata_fname == PTabMergeTiles::metadata_path_null || mdata_fname.empty())
 			mdata_fname = "null";
+		std::string b3d_compressor_options = pMergeTiles->b3d_compressor_line->text().toStdString();
+		if(b3d_compressor_options == PTabMergeTiles::b3d_compressor_line_null || b3d_compressor_options.empty())
+			b3d_compressor_options = "null";
 		int downsamplingFactor = 1;        // currently cannot be changed, the default is passed
 		//std::string outFmt = "RGB";      // no more used
 
