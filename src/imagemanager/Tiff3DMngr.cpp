@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2017-10-05. Giulio.     @FIXED a problem with slices having very large width in 'initTiff3DFile' and 'appendSlice2Tiff3DFile'
 * 2017-05-03. Giulio.     @ADDED ruotine resetLibTIFFcfg to reconfigure an already configured library
 * 2017-04-02. Giulio.     @ADDED support for creation of BigTiff files
 * 2017-04-02. Giulio.     @FIXED a memory leak in 'openTiff3DFile'
@@ -275,7 +276,7 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 	else
 		return ((char *) "More than 3 channels in Tiff files.");
 
-	unsigned char *fakeData=new unsigned char[XSIZE * YSIZE * spp * (bpp/8)];
+	unsigned char *fakeData=new unsigned char[((iim::sint64) XSIZE) * ((iim::sint64) YSIZE) * spp * (bpp/8)];
 
 	char *completeFilename = (char *) 0;
 	int fname_len = (int) strlen(filename);
@@ -309,8 +310,13 @@ char *initTiff3DFile ( char *filename, unsigned int sz0, unsigned int sz1, unsig
 	
 	iim::sint64 expectedSize = ((iim::sint64) sz0) * ((iim::sint64) sz1) * ((iim::sint64) sz2) * ((iim::sint64) sz3) * ((iim::sint64) datatype); 
 
-	if ( bigtiff || expectedSize > (4*GBSIZE) )
-		output = TIFFOpen(completeFilename,"w8");
+	if ( bigtiff || expectedSize > (4*GBSIZE) ) {
+		if ( (rowsPerStrip == -1 && (((iim::sint64) sz0) * ((iim::sint64) sz1)) > (4*GBSIZE)) || ((rowsPerStrip * ((iim::sint64) sz0)) > (4*GBSIZE)) )
+			// one strip is larger than 4GB
+			return ((char *) "Too many rows per strip for this image width.");
+		else 
+			output = TIFFOpen(completeFilename,"w8");
+	}
 	else
 		output = TIFFOpen(completeFilename,"w");
 
@@ -479,8 +485,13 @@ char *appendSlice2Tiff3DFile ( char *filename, int slice, unsigned char *img, un
 
 	iim::sint64 expectedSize = ((iim::sint64) img_width) * ((iim::sint64) img_height) * ((iim::sint64) NPages) * ((iim::sint64) spp) * ((iim::sint64) (bpp/8)); 
 
-	if ( bigtiff || expectedSize > (4*GBSIZE) )
-		output = (slice==0)? TIFFOpen(filename,"w8") : TIFFOpen(filename,"a8");
+	if ( bigtiff || expectedSize > (4*GBSIZE) ) {
+		if ( (rowsPerStrip == -1 && (((iim::sint64) img_width) * ((iim::sint64) img_height)) > (4*GBSIZE)) || ((rowsPerStrip * ((iim::sint64) img_width)) > (4*GBSIZE)) )
+			// one strip is larger than 4GB
+			return ((char *) "Too many rows per strip for this image width.");
+		else 
+			output = (slice==0)? TIFFOpen(filename,"w8") : TIFFOpen(filename,"a8");
+	}
 	else
 		output = (slice==0)? TIFFOpen(filename,"w") : TIFFOpen(filename,"a");
 
@@ -554,6 +565,7 @@ char *appendSlice2Tiff3DFile ( void *fhandler, int slice, unsigned char *img, un
 	TIFFSetField(output, TIFFTAG_SUBFILETYPE, FILETYPE_PAGE);
 	TIFFSetField(output, TIFFTAG_PAGENUMBER, (uint16)slice, (uint16)NPages); 
 
+	// the file has been already opened: rowsPerStrip it is not too large for this image width
 	if ( rowsPerStrip == -1 ) 
 		TIFFWriteEncodedStrip(output, 0, img, img_width * img_height * spp * (bpp/8));
 	else { 
