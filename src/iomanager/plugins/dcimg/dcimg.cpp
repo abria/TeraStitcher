@@ -28,32 +28,28 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2017-04-20. Giulio      @CHANGED calls to 'IMS_HDF5init' 
-* 2017-04-20. Giulio      @FIXED a missing parameter in the call to 'IMS_HDF5init' in 'appendSlice'
-* 2017-04-17. Giulio.     @ADDED the generation of IMS files with default metadata
-* 2017-04-07. Giulio.     @ADDED ability to return a selected channel instead of all channels
-* 2016-10-27. Giulio.     @ADDED routines for extracting additional parameters
-* 2016-10-16. Giulio.     @CREATED
+* 2017-07-11. Giulio.     @CREATED
 */
 
+#define _FILE_OFFSET_BITS 64
+
 #include <cstddef>			// 2014-09-18. Alessandro. @FIXED compilation issue on gcc compilers.
-#include "IMS_HDF5.h"
-#include "IMS_HDF5Mngr.h"
-#include "hdf5.h"
+#include "dcimg.h"
+#include "IM_config.h"
 
 // just call this macro to register your plugin
-TERASTITCHER_REGISTER_IO_PLUGIN_3D(IMS_HDF5)
+TERASTITCHER_REGISTER_IO_PLUGIN_3D(dcimg)
 
 
 // insert here your plugin description that will be displayed on the user interface
-std::string iomanager::IMS_HDF5::desc()
+std::string iomanager::dcimg::desc()
 {
 	return	"******************************************************\n"
-			"* Imaris IMS HDF5 v.1.1                              *\n"
+			"* Hamamatsu DCIMG v.1.0                              *\n"
 			"******************************************************\n"
 			"*                                                    *\n"
-			"* 3D image-based I/O plugin that uses the HDF5       *\n"
-			"* library to implement the format used by Imaris     *\n"
+			"* 3D image-based I/O plugin that implements          *\n"
+			"* the format used by Hamamtsu cameras                *\n"
 			"*                                                    *\n"
 			"* Accepted configuration parameters:                 *\n"
 			"*  - resolution=R                                    *\n"
@@ -66,7 +62,7 @@ std::string iomanager::IMS_HDF5::desc()
 
 // Return if channels are interleaved (in case the image has just one channel return value is indefinite)
 bool 
-	iomanager::IMS_HDF5::isChansInterleaved( ) 
+	iomanager::dcimg::isChansInterleaved( ) 
 {
 	return false;
 }
@@ -74,12 +70,12 @@ bool
 
 // read image metadata
 void 
-	iomanager::IMS_HDF5::readMetadata(
+	iomanager::dcimg::readMetadata(
 	std::string img_path,		// (INPUT)	image filepath
 	int & img_width,			// (OUTPUT) image width  (in pixels)
 	int & img_height,			// (OUTPUT) image height (in pixels)
 	int & img_depth,			// (OUTPUT) image depth (in pixels)
-	int & img_bytes_x_chan,	// (OUTPUT) number of bytes per channel
+	int & img_bytes_x_chan,	    // (OUTPUT) number of bytes per channel
 	int & img_chans,			// (OUTPUT) number of channels
 	const std::string & params)	// (INPUT)	additional parameters <param1=val, param2=val, ...> 
 throw (iom::exception)
@@ -89,45 +85,73 @@ throw (iom::exception)
 	/**/iom::debug(iom::LEV3, iom::strprintf("img_path = %s, img_width = %d, img_height = %d, img_depth = %d, img_bytes_x_chan = %d, img_chans = %d, params = \"%s\"",
 		img_path.c_str(), img_width, img_height, img_depth,	img_bytes_x_chan, img_chans, params.c_str()).c_str(), __iom__current__function__);
 
-	void *file_descr;
-	void *volume_descr;
-	float vxl1;
-	float vxl2;
-	float vxl3;
-	float org1;
-	float org2;
-	float org3;
-	int n_timepoints;
-	int t0;
-	int t1;
-	iim::uint32 width;
-	iim::uint32 height;
-	iim::uint32 depth;
+	unsigned char dummy[256];
+	char file_format[9];
+	iim::uint32 format_version;
+	iim::uint32 nsess;
+	iim::uint32 nfrms;
+	iim::uint32 header_size;
+	//iim::uint64 file_size;
+	//iim::uint64 file_size2;
 
-	int res = 0;
-	int tp  = 0;
-	std::string str_value;
+	iim::uint64 session_size;
+	iim::uint32 nfrms2;
+	iim::uint32 byte_depth;
+	iim::uint32 xsize;
+	iim::uint32 byte_per_row;
+	iim::uint32 ysize;
+	//iim::uint32 byte_per_img;
+	//iim::uint32 header_size2;
+	//iim::uint64 session_data_size;
 
-	if ( getParamValue(params,"resolution",str_value) )
-		res = atoi(str_value.c_str());
-	if ( getParamValue(params,"timepoint",str_value) )
-		tp = atoi(str_value.c_str());
+	FILE *fin;
 
-	IMS_HDF5init(img_path,file_descr);
-	IMS_HDF5getVolumeInfo(file_descr,tp,res,volume_descr,vxl1,vxl2,vxl3,org1,org2,org3,height,width,depth,img_chans,img_bytes_x_chan,n_timepoints,t0,t1);
-	IMS_HDF5closeVolume(volume_descr);
-	IMS_HDF5close(file_descr);
+	if ( (fin = fopen(img_path.c_str(),"rb")) == NULL ) 
+		throw iom::exception(iom::strprintf("cannot open file %s",img_path.c_str()), __iom__current__function__);
 
-	img_width  = width;
-	img_height = height;
-	img_depth  = depth;
+	fread(file_format,sizeof(char),8,fin);
+	file_format[8] = '\0';
+	if ( strcmp(file_format,"DCIMG") != 0 )
+		throw iom::exception(iom::strprintf("invalid DCIMG file (%s)",file_format), __iom__current__function__);
+
+	fread(&format_version,sizeof(iim::uint32),1,fin);
+	fread(dummy,sizeof(iim::uint32),5,fin);
+	fread(&nsess,sizeof(iim::uint32),1,fin);
+	fread(&nfrms,sizeof(iim::uint32),1,fin);
+	fread(&header_size,sizeof(iim::uint32),1,fin);
+	//fread(dummy,sizeof(iim::uint32),1,fin);
+	//fread(&file_size,sizeof(iim::uint64),1,fin);
+	//fread(dummy,sizeof(iim::uint32),2,fin);
+	//fread(&file_size2,sizeof(iim::uint64),1,fin);
+
+	fseek(fin,header_size,SEEK_SET);
+
+	fread(&session_size,sizeof(iim::uint64),1,fin);
+	fread(dummy,sizeof(iim::uint32),6,fin);
+	fread(&nfrms2,sizeof(iim::uint32),1,fin);
+	fread(&byte_depth,sizeof(iim::uint32),1,fin);
+	fread(dummy,sizeof(iim::uint32),1,fin);
+	fread(&xsize,sizeof(iim::uint32),1,fin);
+	fread(&byte_per_row,sizeof(iim::uint32),1,fin);
+	fread(&ysize,sizeof(iim::uint32),1,fin);
+	//fread(&byte_per_img,sizeof(iim::uint32),1,fin);
+	//fread(dummy,sizeof(iim::uint32),2,fin);
+	//fread(&header_size2,sizeof(iim::uint32),1,fin);
+	//fread(&session_data_size,sizeof(iim::uint64),1,fin);
+
+	img_width        = ysize;
+	img_height       = xsize;
+	img_depth        = nfrms;
+	img_bytes_x_chan = byte_depth;   
+	img_chans        = 1;
 	
+	fclose(fin);		
 }
 
 
 // Read 3D image data
 unsigned char *						// (OUTPUT) buffer containing the read image data
-	iomanager::IMS_HDF5::readData(
+	iomanager::dcimg::readData(
 	std::string img_path,			// (INPUT) image filepath
 	int & img_width,				// (INPUT/OUTPUT) image width  (in pixels)
 	int & img_height,				// (INPUT/OUTPUT) image height (in pixels)
@@ -145,26 +169,7 @@ throw (iom::exception)
 	/**/iom::debug(iom::LEV3, iom::strprintf("img_path = %s, img_width = %d, img_height = %d, img_depth = %d, img_bytes_x_chan = %d, img_chans = %d, data = %p, z0 = %d, z1 = %d, params = \"%s\"",
 		img_path.c_str(), img_width, img_height, img_depth,	img_bytes_x_chan, img_chans, data, z0, z1, params.c_str()).c_str(), __iom__current__function__);
 
-	void *file_descr;
-	void *volume_descr;
-	float vxl1;
-	float vxl2;
-	float vxl3;
-	float org1;
-	float org2;
-	float org3;
-	int n_timepoints;
-	int t0;
-	int t1;
-	iim::uint32 width;
-	iim::uint32 height;
-	iim::uint32 depth;
-	int c;
-	iim::uint8 *ptr;
-	iim::sint64 chan_size;
-
-	int res = 0;
-	int tp  = 0;
+//printf("--> params = \"%s\"\n",params.c_str());
 	int chID = -1; // invalid value: return all channels
 	std::string str_value;
 
@@ -172,43 +177,106 @@ throw (iom::exception)
 	z0 = (z0 < 0) ? 0: z0;
 	z1 = (z1 < 0) ? img_depth : z1;
 
+	unsigned int _width;
+	unsigned int _height;
+	unsigned int _depth;
+	int _bytes_x_chan;
+
+	FILE *fin;
+
+	if ( (fin = fopen(img_path.c_str(),"rb")) == NULL ) 
+		throw iom::exception(iom::strprintf("cannot open file %s",img_path.c_str()), __iom__current__function__);
+
+	if ( !data ) { // recover the metadata, allocate the buffer and set parameters
+
+		iim::uint32 header_size;
+		iim::uint32 dummy;
+
+		fseek(fin,36,SEEK_SET); // jump to nfrms field of the header
+
+		fread(&_depth,sizeof(iim::uint32),1,fin);
+		fread(&header_size,sizeof(iim::uint32),1,fin);
+
+		fseek(fin,header_size,SEEK_SET);
+
+		fread(&_bytes_x_chan,sizeof(iim::uint32),1,fin);
+		fread(&dummy,sizeof(iim::uint32),1,fin);
+		fread(&_width,sizeof(iim::uint32),1,fin);
+		fread(&dummy,sizeof(iim::uint32),1,fin);
+		fread(&_height,sizeof(iim::uint32),1,fin);
+
+		data = new unsigned char[((sint64)_width) * ((sint64)_height) * ((sint64)_depth) * _bytes_x_chan];
+		img_width        = _width;
+		img_height       = _height;
+		img_depth        = _depth;
+		img_bytes_x_chan = _bytes_x_chan;
+	}
+
 	if ( z0 >= z1 )
 		throw iom::exception(iom::strprintf("wrong slice indices (z0 = %d, z1 = %d)",z0, z1), __iom__current__function__);
 
-	if ( getParamValue(params,"resolution",str_value) )
-		res = atoi(str_value.c_str());
-	if ( getParamValue(params,"timepoint",str_value) )
-		tp = atoi(str_value.c_str());
-	if ( getParamValue(params,"channel",str_value) )
-		chID = atoi(str_value.c_str());
+	iim::uint64 V0 = 0;
+	iim::uint64 V1 = img_height;
+	iim::uint64 H0 = 0;
+	iim::uint64 H1 = img_width;
 
-	IMS_HDF5init(img_path,file_descr);
-	IMS_HDF5getVolumeInfo(file_descr,tp,res,volume_descr,vxl1,vxl2,vxl3,org1,org2,org3,height,width,depth,img_chans,img_bytes_x_chan,n_timepoints,t0,t1);
-	if ( chID == -1 ) {
-		chan_size = ((iim::sint64)height) * ((iim::sint64)width) * (z1-z0) * img_bytes_x_chan;
-		for ( c=0, ptr=data; c<img_chans; c++, ptr+=chan_size ) {
-			IMS_HDF5getSubVolume(volume_descr,0,height,0,width,z0,z1,c,ptr);
-			//printf("---> [multiple] c=%d z=%d\n",c,z0);
+	if ( getParamValue(params,"V0",str_value) )
+		V0 = (iim::uint64) atoi(str_value.c_str());
+	if ( getParamValue(params,"V1",str_value) )
+		V1 = (iim::uint64) atoi(str_value.c_str());
+	if ( getParamValue(params,"H0",str_value) )
+		H0 = (iim::uint64) atoi(str_value.c_str());
+	if ( getParamValue(params,"H1",str_value) )
+		H1 = (iim::uint64) atoi(str_value.c_str());
+
+	iim::uint64 file_offset = (iim::uint64) 232 + (iim::uint64)img_width * (iim::uint64)img_height  * (iim::uint64)z0 * (iim::uint64)img_bytes_x_chan;
+
+	iim::uint64 size;
+
+	if ( V0 == 0 && V1 == img_height && H0 == 0 && H1 == img_width ) { // load the whole substack
+		size = ((iim::uint64)img_width * (iim::uint64)img_height * (iim::uint64)img_bytes_x_chan) * (iim::uint64)(z1 - z0);
+#ifdef WIN32
+		_fseeki64(fin,file_offset*sizeof(unsigned char),SEEK_SET);
+#else
+		fseeko(fin,file_offset*sizeof(unsigned char),SEEK_SET);
+#endif
+
+		fread(data,sizeof(unsigned char),size,fin);
+	}
+	else { // load selected data row by row
+		iim::uint64 rowStride = (iim::uint64)img_width * (iim::uint64)img_bytes_x_chan;
+		iim::uint64 rowSize = (iim::uint64)(img_width - H0) * (iim::uint64)img_bytes_x_chan;
+		iim::uint64 sliceStride = (iim::uint64)img_height * rowStride;
+//printf("--> rowStride = %lld, sliceStride = %lld\n",rowStride,sliceStride);
+
+		unsigned char *pSlice = data + ((iim::uint64)img_width * V0 + H0) * (iim::uint64)img_bytes_x_chan;
+		iim::uint64 sliceOffs = file_offset + ((iim::uint64)img_width * V0 + H0) * (iim::uint64)img_bytes_x_chan;
+		for ( int z=0; z<(z1-z0); z++, pSlice+=sliceStride, sliceOffs+=sliceStride ) {
+			unsigned char *pRow = pSlice;
+			iim::uint64 rowOffs = sliceOffs;
+			for ( int v=0; v<(V1-V0); v++, pRow+=rowStride, rowOffs+=rowStride ) {
+#ifdef WIN32
+				_fseeki64(fin,rowOffs*sizeof(unsigned char),SEEK_SET);
+#else
+//printf("--> v = %d, rowOffs = %lld\n",v,rowOffs);
+				fseeko(fin,rowOffs*sizeof(unsigned char),SEEK_SET);
+#endif
+//printf("--> pRow - data = %ld, rowSize = %lld\n",pRow-data,rowStride);
+				fread(pRow,sizeof(unsigned char),rowSize,fin);
+			}
 		}
 	}
-	else {
-		IMS_HDF5getSubVolume(volume_descr,0,height,0,width,z0,z1,chID,data);
-		//printf("---> [single] c=%d z=%d\n",chID,z0);
-	}
-	IMS_HDF5closeVolume(volume_descr);
-	IMS_HDF5close(file_descr);
+//printf("--> after loop\n");
 
-	img_width  = width;
-	img_height = height;
-	img_depth  = depth;
-
+	fclose(fin);
+			
 	return (unsigned char *) data;
 }
 
 
 // Write 3D image data into a single (3D) image file
 void 
-	iomanager::IMS_HDF5::writeData(
+	iomanager::dcimg::writeData(
 	std::string img_path,			// (INPUT)	image filepath (it includes the file extension)
 	unsigned char * raw_img,		// (INPUT)	image data to be saved into the file
 	int img_height,					// (INPUT)	image height (in pixels)
@@ -234,7 +302,7 @@ throw (iom::exception)
 
 // Create an empty 3D image 
 void 
-	iomanager::IMS_HDF5::create3Dimage(
+	iomanager::dcimg::create3Dimage(
 	std::string img_path,			// (INPUT)	image filepath (it includes the file extension)
 	int img_height,					// (INPUT)	image height (in pixels)
 	int img_width,					// (INPUT)	image width (in pixels)
@@ -244,72 +312,16 @@ void
 	const std::string & params)	// (INPUT) additional parameters <param1=val, param2=val, ...> 
 throw (iom::exception) 
 {
-	//throw iom::exception(iom::strprintf("not implemented yet"), __iom__current__function__);
+	throw iom::exception(iom::strprintf("not implemented yet"), __iom__current__function__);
 
 	/**/iom::debug(iom::LEV3, iom::strprintf("img_path = %s, img_width = %d, img_height = %d, img_depth = %d, img_bytes_x_chan = %d, img_chans = %d, params = \"%s\"",
 		img_path.c_str(), img_width, img_height, img_depth,	img_bytes_x_chan, img_chans, params.c_str()).c_str(), __iom__current__function__);
-
-	void *file_descr;
-
-	const char *sPtr;
-	int sLen;
-	char *src_value;
-
-	// load the metadata (mandatory)
-	if ( (sPtr = strstr(params.c_str(),"source_metadata")) == 0 )
-		throw iom::exception(iom::strprintf("source metadata parameter missing"), __iom__current__function__);
-
-	sPtr = strstr(sPtr,"=") + 1; // start of source path
-	sLen = (int) (strstr(sPtr,",") ? strstr(sPtr,",") - sPtr : strlen(sPtr));
-	src_value = new char[sLen + 1];
-	strncpy(src_value,sPtr,sLen);
-	src_value[sLen] = '\0';
-
-	void *olist;
-	void *rootalist;
-	if ( strcmp(src_value,"default") == 0 || strcmp(src_value,"null") == 0 ) {
-		olist = IMS_HDF5get_olist((void *)0,img_path,img_height,img_width,img_depth,img_chans,1); // assumes 1 timepoint
-		rootalist = IMS_HDF5get_rootalist((void *)0);
-	}
-	else {
-		IMS_HDF5init(src_value,file_descr,true);
-		olist = IMS_HDF5get_olist(file_descr); // assumes 1 timepoint
-		rootalist = IMS_HDF5get_rootalist(file_descr);
-		IMS_HDF5close(file_descr);
-	}
-
-	delete src_value;
-
-	IMS_HDF5init(img_path,file_descr,false,img_bytes_x_chan,olist);
-	olist = (void *) 0;
-	
-	// set the resolutions
-	if ( (sPtr = strstr(params.c_str(),"resolutions")) == 0 ) { // use default
-		IMS_HDF5addResolution(0,img_height,img_width,img_depth,img_chans);
-	}
-	else {
-		sPtr = strstr(sPtr,"=") + 1; // start of source path
-		sLen = (int) (strstr(sPtr,",") ? strstr(sPtr,",") - sPtr : strlen(sPtr));
-		src_value = new char[sLen + 1];
-		strncpy(src_value,sPtr,sLen);
-		src_value[sLen] = '\0';
-
-		for ( int i=0; i<sLen; i++ ) {
-			IMS_HDF5addResolution(file_descr,img_height,img_width,img_depth,img_chans,(src_value[i] - '0'));
-		}
-
-		delete src_value;
-	}
-
-	IMS_HDF5addTimepoint(file_descr);
-
-	IMS_HDF5close(file_descr); 
 }
 
 
 // Append a single slice at the bottom of a 3D image file
 void 
-	iomanager::IMS_HDF5::appendSlice(
+	iomanager::dcimg::appendSlice(
 	std::string img_path,			// (INPUT)	image filepath (it includes the file extension)
 	unsigned char * raw_img,		// (INPUT)	slice to be saved into the file
 	int img_height,					// (INPUT)	slice height (in pixels)
@@ -338,66 +350,13 @@ throw (iom::exception)
 		throw iom::exception(iom::strprintf("wrong ROI (y0 = %d, y1 = %d, x0 = %d, x1 = %d)", y0, y1, x0, x1), __iom__current__function__);
 
 	if ( !( x0 == 0 && x1 == img_width && y0 == 0 && y1 == img_height) )  // not all buffer must be written
-		throw iom::exception(iom::strprintf("ioplugin IMS_HDF5 supports only the append of the whole buffer"), __iom__current__function__);
-
-	const char *sPtr;
-	int sLen;
-	char *src_value;
-	int tp;
-
-	if ( (sPtr = strstr(params.c_str(),"timepoint")) == 0 ) { // use default
-		tp = 0;
-	}
-	else {
-		sPtr = strstr(sPtr,"=") + 1; // start of source path
-		sLen = (int) (strstr(sPtr,",") ? strstr(sPtr,",") - sPtr : strlen(sPtr));
-		src_value = new char[sLen + 1];
-		strncpy(src_value,sPtr,sLen);
-		src_value[sLen] = '\0';
-		tp = atoi(src_value);
-		delete src_value;
-	}
-
-	void *file_descr;
-	sint64 *hyperslab_descr = new sint64[4*3]; // four 3-valued parameters: [ start(offset), stride count(size), block ]
-	memset(hyperslab_descr,0,4*3*sizeof(sint64));
-	sint64 *buf_dims = new sint64[3];  // dimensions of the buffer in which the subvolume is stored at a given resolution
-	memset(buf_dims,0,3*sizeof(sint64));
-
-	buf_dims[1] = img_height; 
-	buf_dims[2] = img_width; 
-	buf_dims[0] = 1; // append just one slice
-	// start
-	hyperslab_descr[0] = 0; // [0][0]
-	hyperslab_descr[1] = 0; // [0][1]
-	hyperslab_descr[2] = 0; // [0][2]
-	// stride
-	hyperslab_descr[3] = 1;  // [1][0]
-	hyperslab_descr[4] = 1;  // [1][1]
-	hyperslab_descr[5] = 1;  // [1][2]
-	// count
-	hyperslab_descr[6] = buf_dims[0]; //height/(powInt(2,i)); // [2][0]
-	hyperslab_descr[7] = buf_dims[1]; //width/(powInt(2,i));  // [2][1]
-	hyperslab_descr[8] = buf_dims[2]; //z_size/(powInt(2,i)); // [2][2]
-	// block
-	hyperslab_descr[9]  = 1; // [3][0]
-	hyperslab_descr[10] = 1; // [3][1]
-	hyperslab_descr[11] = 1; // [3][2]
-
-	IMS_HDF5init(img_path,file_descr,false,img_bytes_x_chan);
-
-	for ( int c=0; c<img_chans; c++ ) {
-		IMS_HDF5writeHyperslab(file_descr,raw_img,buf_dims,hyperslab_descr,tp,c);
-		raw_img += img_height * img_width * img_bytes_x_chan;
-	}
-
-	IMS_HDF5close(file_descr); 
+		throw iom::exception(iom::strprintf("ioplugin dcimg supports only the append of the whole buffer"), __iom__current__function__);
 }
 
 
 // read image data
 void
-	iomanager::IMS_HDF5::readData(
+	iomanager::dcimg::readData(
 	char *finName,					// image filepath
 	int XSIZE,						// image width (in pixels)
 	int YSIZE,						// image height (in pixels)

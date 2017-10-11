@@ -89,7 +89,7 @@ class terastitcher::PTabMergeTiles : public QWidget
 	QCheckBox *isotropic_checkbox;
 	QLineEdit *mdata_line;
 	QPushButton *mdata_browse_button;
-	QLineEdit *b3d_compressor_line;
+	QLineEdit *external_compressor_line;
 
 
     //advanced settings panel widgets
@@ -213,7 +213,7 @@ public slots:
 public:
 
 	static std::string metadata_path_null;
-	static std::string b3d_compressor_line_null;
+	static std::string external_compressor_line_null;
 
 };
 

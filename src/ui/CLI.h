@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-06-30. Giulio.     @ADDED control over displacement computation of last row and last column of tiles
 * 2016-09-04. Giulio.     @ADDED the options for setting the configuration of the LibTIFF library
 */
 
@@ -102,6 +103,10 @@ class TeraStitcherCLI
 		bool libtiff_uncompressed;
 		bool libtiff_bigtiff;
 		int libtiff_rowsPerStrip;
+
+		// parameters for disabling some displacement computations
+		bool disable_last_row;
+		bool disable_last_col;
 
 		//constructor - deconstructor
 		TeraStitcherCLI(void);					//set default params

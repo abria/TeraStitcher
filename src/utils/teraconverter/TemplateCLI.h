@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-09-11. Giulio.     @ADDED parameter controlloing the compression algorithm to be used with HDf5 files
 * 2017-05-25. Giulio.     @ADDED parameters for lossy compression based on rescaling
 * 2017-04-07  Giulio.     @ADDED the opssibility to specify a subset of channels to be converted
 * 2016-09-13. Giulio.     @ADDED flag for channel subdirectory name (single channel to tiled 4D format only)
@@ -92,6 +93,9 @@ class TemplateCLI
 		bool libtiff_uncompressed;
 		bool libtiff_bigtiff;
 		int libtiff_rowsPerStrip;
+
+		// parameters for compression algorithms in HDF5 files
+		std::string compress_params;
 
 		// parameters for lossy compression algorithms
 		int rescale_nbits;

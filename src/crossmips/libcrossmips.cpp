@@ -68,7 +68,7 @@
 
 # include "compute_funcs.h"
 
-// 2014-11-04 Giulio. @ADDED improved the conditionally compiled code thaa can be used to save images involved in NCC
+// 2014-11-04 Giulio. @ADDED improved the conditionally compiled code that can be used to save images involved in NCC
 
 /* Flag _WRITE_IMGS enables the saving of MIPs and NCCs
  * Flag _WRITE_STKS enables the saving of the input substacks too

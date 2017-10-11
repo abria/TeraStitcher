@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-06-30. Giulio.     @ADDED control over displacement computation of last row and last column of tiles
 * 2017-03-27. Giulio.     @ADDED full support for multi-channel images (more than three channels are allowed) 
 * 2016-09-04. Giulio.     @ADDED the options for setting the configuration of the LibTIFF library
 * 2015-08-16. Giulio.     @ADDED the 'method' and 'isotropi' parameters 
@@ -143,7 +144,13 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::SwitchArg p_libtiff_bigtiff("","libtiff_bigtiff","Foces the creation of BigTiff files (default: BigTiff disabled).", false);
 	TCLAP::ValueArg<int> p_libtiff_rowsperstrip("","libtiff_rowsperstrip","Configure libtiff library to pack n rows per strip when compression is enabled (default: 1 row per strip).",false,1,"integer");
 
+	TCLAP::SwitchArg p_disable_last_row("","disable_last_row","disable displacement computation of last row (default: last row enabled, active only in parallel mode).", false);
+	TCLAP::SwitchArg p_disable_last_col("","disable_last_col","disable displacement computation of last column (default: last column enabled, active only in parallel mode).", false);
+
 	// argument objects must be inserted using FIFO policy (first inserted, first shown)
+	cmd.add(p_disable_last_col);
+	cmd.add(p_disable_last_row);
+
 	cmd.add(p_libtiff_rowsperstrip);
 	cmd.add(p_libtiff_bigtiff);
 	cmd.add(p_libtiff_uncompressed);
@@ -244,8 +251,8 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 		throw iom::exception(errMsg);
 	}
 
-	if(p_parallel.isSet() && !(p_stitch.isSet() || p_merge.isSet())) {
-		throw iom::exception("--parallel option is set, but neither --stitch nor --merge have been launched");
+	if(p_parallel.isSet() && !(p_stitch.isSet() || p_computedisplacements.isSet() || p_merge.isSet())) {
+		throw iom::exception("--parallel option is set, but neither --stitch, nor --displcompute, nor --merge have been launched");
 	}
 
 	//STEP 1
@@ -612,6 +619,12 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	this->libtiff_uncompressed = p_libtiff_uncompressed.getValue();
 	this->libtiff_bigtiff = p_libtiff_bigtiff.getValue();
 	this->libtiff_rowsPerStrip = p_libtiff_rowsperstrip.getValue();
+
+	if(p_parallel.isSet() && p_computedisplacements.isSet() ) { // set only if compute displacements is performed in parallel
+		this->disable_last_row = p_disable_last_row.getValue();
+		this->disable_last_col = p_disable_last_col.getValue();
+	}
+
 }
 
 //checks parameters correctness

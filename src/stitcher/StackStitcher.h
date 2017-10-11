@@ -28,6 +28,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-07-06. Giulio.     @ADDED method 'getStripe2' to enable selective reads of data
+* 2017-06-30. Giulio.     @ADDED control over displacement computation of last row and last column of tiles
 * 2015-08-16. Giulio.     @ADDED method for halvesampling only V and H dimensions
 * 2015-02-26. Giulio.     @ADDED a destructor to class StackStitcher
 * 2015-02-18. Giulio.     @ADDED declared class UnstitchedVolume as a friend of class StackStitcher
@@ -96,6 +98,15 @@ class StackStitcher
 		**************************************************************************************************************/
 		iom::real_t* getStripe(int row_index, int d_index, int restore_direction=-1, StackRestorer* stk_rst=NULL,
 						  int blending_algo=S_SINUSOIDAL_BLENDING)    							   throw (iom::exception);
+
+		/*************************************************************************************************************
+		* Merges all slices of the given row at the given depth index, so obtaining the stripe that is returned.
+		* Uses [...]_blending() functions to blend pixels in  overlapping zones.  The appropriate blending function is
+		* selected by the [blending_algo] parameter. If a  <StackRestorer>  object has been passed,  each slice is re-
+		* stored before it is combined into the final stripe.
+		**************************************************************************************************************/
+		iom::real_t* getStripe2(int row_index, int d_index, int _V0=-1, int _V1=-1, int _H0=-1, int _H1=-1, 
+							int restore_direction=-1, StackRestorer* stk_rst=NULL, int blending_algo=S_SINUSOIDAL_BLENDING) throw (iom::exception);
 
 		/*************************************************************************************************************
 		* Returns the (up = true -> TOP, up = false -> BOTTOM) V coordinate of the virtual stripe at <row_index> row. 
@@ -191,7 +202,10 @@ class StackStitcher
 			int restore_direction=-1,					// ... along the given direction.
 			bool show_progress_bar=true,				// enable/disable progress bar with estimated time remaining
 			int z0=-1,									// subdata selection along Z: [z0, z1] slices will be processed only
-			int z1=-1)									// subdata selection along Z: [z0, z1] slices will be processed only
+			int z1=-1,                                  // subdata selection along Z: [z0, z1] slices will be processed only
+			bool skip_V=false,                          // skip displacement computation for pairs in the last row
+			bool skip_H=false                           // skip displacement computation for pairs in the last column
+		)									            
 		throw (iom::exception);
 
 

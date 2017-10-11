@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-09-11. Giulio.     @ADDED parameter controlloing the compression algorithm to be used with HDf5 files
 * 2017-05-25. Giulio.     @ADDED parameters for lossy compression based on rescaling
 * 2017-04-07  Giulio.     @ADDED the opssibility to specify a subset of channels to be converted
 * 2016-09-13. Giulio.     @ADDED flag for channel subdirectory name (single channel to tiled 4D format only)
@@ -170,9 +171,12 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	TCLAP::ValueArg<int> p_rescale_nbits("","rescale","Applies a lossy ccompression based on rescaling the values to multiples of 2^n (default: n=0).",false,0,"integer");
 
+	TCLAP::ValueArg<std::string> p_compress_params("","compress_params","ID and list of parameters of HDF5 registerd compression algorithms given in the form: \"ID:param1:param2:...\" where ID is an integer identfying the compression algorithm (see https://support.hdfgroup.org/services/filters.html for IDs of registered compression algorithms)", false, "","string");
+
 	//argument objects must be inserted using LIFO policy (last inserted, first shown)
 	cmd.add(p_rescale_nbits);
 
+	cmd.add(p_compress_params);
 	cmd.add(p_libtiff_rowsperstrip);
 	cmd.add(p_libtiff_bigtiff);
 	cmd.add(p_libtiff_uncompressed);
@@ -447,6 +451,11 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	this->libtiff_uncompressed = p_libtiff_uncompressed.getValue();
 	this->libtiff_bigtiff = p_libtiff_bigtiff.getValue();
 	this->libtiff_rowsPerStrip = p_libtiff_rowsperstrip.getValue();
+
+	if ( p_dst_format.getValue() == iim::IMS_HDF5_FORMAT )
+		this->compress_params = p_compress_params.getValue();
+	else
+		this->compress_params = "";
 
 	this->rescale_nbits = p_rescale_nbits.getValue();
 

@@ -28,6 +28,9 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-07-06. Giulio.     @CHANGED call to 'loadImageStack2' in 'getStripe2' to enable selective read of data
+* 2017-07-06. Giulio.     @ADDED method 'getStripe2' to enable selective reads of data
+* 2017-06-30. Giulio.     @ADDED control over displacement computation of last row and last column of tiles
 * 2017-04-12. Giulio.     @ADDED release of allocated buffers if an exception is raised in 'getStripe' (prevent further exceptions in the GUI version)
 * 2017-04-01. Giulio.     @ADDED function for enhanced no blending
 * 2016-04-29. Giulio.     @ADDED input plugin substitution before metadata genration (restored afterwards)
@@ -124,7 +127,10 @@ void StackStitcher::computeDisplacements(
 	int restore_direction/*=-1*/,					// ... along the given direction.
 	bool show_progress_bar/*=true*/,				// enable/disable progress bar with estimated time remaining
 	int z0/*=-1*/,									// subdata selection along Z: [z0, z1] slices will be processed only
-	int z1/*=-1*/)									// subdata selection along Z: [z0, z1] slices will be processed only
+	int z1/*=-1*/,				                    // subdata selection along Z: [z0, z1] slices will be processed only
+	bool skip_V/*=false*/,                          // skip displacement computation for pairs in the last row
+	bool skip_H/*=false*/                           // skip displacement computation for pairs in the last column
+)					
 throw (iom::exception)
 {
 	#if S_VERBOSE>2
@@ -246,26 +252,34 @@ throw (iom::exception)
 
 					//  row_wise -> stkA == stk[i,j], stkB == stk[i,j+1] -> skip if i == row1 && skip_H
 					// !row_wise -> stkA == stk[j,i], stkB == stk[j+1,i] -> skip if i == col1 && skip_V
-// 					if ( i == (row_wise ? row1 : col1) ) // skip
-// 						printf("---> %s: stkA=[%d,%d], stkB=[%d,%d] - skip\n",
-// 							row_wise ? "row wise" : "column wise", row_wise ? i : j, row_wise ? j : i, row_wise ? i : j+1, row_wise ? j+1 : i);
+					//if ( skip_V && stk_A->getROW_INDEX() == row1 && stk_B->getROW_INDEX() == row1 ) // skip
+ 				//		printf("---> %s: stkA=[%d,%d], stkB=[%d,%d] - skip\n",
+ 				//			row_wise ? "row wise" : "column wise", stk_A->getROW_INDEX(), stk_A->getCOL_INDEX(), stk_B->getROW_INDEX(), stk_B->getCOL_INDEX());
+					//if ( skip_H && stk_A->getCOL_INDEX() == col1 && stk_B->getCOL_INDEX() == col1 ) // skip
+ 				//		printf("---> %s: stkA=[%d,%d], stkB=[%d,%d] - skip\n",
+ 				//			row_wise ? "row wise" : "column wise", stk_A->getROW_INDEX(), stk_A->getCOL_INDEX(), stk_B->getROW_INDEX(), stk_B->getCOL_INDEX());
 
-					// 2014-09-09. @ADDED sparse tile support: incomplete or empty substacks are not processed.
-					if(stk_A->isComplete(z_start, z_start+subvol_DIM_D_k-1) && stk_B->isComplete(z_start, z_start+subvol_DIM_D_k-1) )
-					{
-						#ifdef S_TIME_CALC
-						double proc_time = -TIME(0);
-						#endif
-						volume->insertDisplacement(stk_A, stk_B, 
-												  algorithm->execute(stk_A->getSTACKED_IMAGE(), stk_A->getHEIGHT(), stk_A->getWIDTH(), subvol_DIM_D_k,
-												  stk_B->getSTACKED_IMAGE(), stk_B->getHEIGHT(), stk_B->getWIDTH(), subvol_DIM_D_k, displ_max_V, 
-												  displ_max_H, displ_max_D, row_wise ? dir_horizontal : dir_vertical, row_wise ? overlap_H : overlap_V ));
-						displ_computations_idx++;
-						#ifdef S_TIME_CALC
-						proc_time += TIME(0);
-						StackStitcher::time_displ_comp+=proc_time;
-						proc_time = -TIME(0);
-						#endif
+					if ( !(skip_V && stk_A->getROW_INDEX() == row1 && stk_B->getROW_INDEX() == row1) &&
+						 !(skip_H && stk_A->getCOL_INDEX() == col1 && stk_B->getCOL_INDEX() == col1)   ) {
+
+						// 2014-09-09. @ADDED sparse tile support: incomplete or empty substacks are not processed.
+						if(stk_A->isComplete(z_start, z_start+subvol_DIM_D_k-1) && stk_B->isComplete(z_start, z_start+subvol_DIM_D_k-1) )
+						{
+							#ifdef S_TIME_CALC
+							double proc_time = -TIME(0);
+							#endif
+							volume->insertDisplacement(stk_A, stk_B, 
+													  algorithm->execute(stk_A->getSTACKED_IMAGE(), stk_A->getHEIGHT(), stk_A->getWIDTH(), subvol_DIM_D_k,
+													  stk_B->getSTACKED_IMAGE(), stk_B->getHEIGHT(), stk_B->getWIDTH(), subvol_DIM_D_k, displ_max_V, 
+													  displ_max_H, displ_max_D, row_wise ? dir_horizontal : dir_vertical, row_wise ? overlap_H : overlap_V ));
+							displ_computations_idx++;
+							#ifdef S_TIME_CALC
+							proc_time += TIME(0);
+							StackStitcher::time_displ_comp+=proc_time;
+							proc_time = -TIME(0);
+							#endif
+						}
+
 					}
 				}
 				//if #rows>=#columns, checking if southern VirtualStack exists, otherwise checking if eastern VirtualStack exists
@@ -287,26 +301,34 @@ throw (iom::exception)
 
 					//  row_wise -> stkA == stk[i,j], stkB == stk[i+1,j] -> skip if j == col1 && skip_V
 					// !row_wise -> stkA == stk[j,i], stkB == stk[j,i+1] -> skip if j == row1 && skip_H
-// 					if ( j == (row_wise ? col1 : row1) ) // skip
-// 						printf("---> %s: stkA=[%d,%d], stkB=[%d,%d] - skip\n",
-// 							row_wise ? "row wise" : "column wise", row_wise ? i : j, row_wise ? j : i, row_wise ? i+1 : j, row_wise ? j : i+1);
+					//if ( skip_V && stk_A->getROW_INDEX() == row1 && stk_B->getROW_INDEX() == row1 ) // skip
+ 				//		printf("---> %s: stkA=[%d,%d], stkB=[%d,%d] - skip\n",
+ 				//			row_wise ? "row wise" : "column wise", stk_A->getROW_INDEX(), stk_A->getCOL_INDEX(), stk_B->getROW_INDEX(), stk_B->getCOL_INDEX());
+					//if ( skip_H && stk_A->getCOL_INDEX() == col1 && stk_B->getCOL_INDEX() == col1 ) // skip
+ 				//		printf("---> %s: stkA=[%d,%d], stkB=[%d,%d] - skip\n",
+ 				//			row_wise ? "row wise" : "column wise", stk_A->getROW_INDEX(), stk_A->getCOL_INDEX(), stk_B->getROW_INDEX(), stk_B->getCOL_INDEX());
 
-					// 2014-09-09. @ADDED sparse tile support: incomplete or empty substacks are not processed.
-					if(stk_A->isComplete(z_start, z_start+subvol_DIM_D_k-1) && stk_B->isComplete(z_start, z_start+subvol_DIM_D_k-1) )
-					{
-						#ifdef S_TIME_CALC
-						double proc_time = -TIME(0);
-						#endif
-						volume->insertDisplacement(stk_A, stk_B, 
-												  algorithm->execute(stk_A->getSTACKED_IMAGE(), stk_A->getHEIGHT(), stk_A->getWIDTH(), subvol_DIM_D_k,
-												  stk_B->getSTACKED_IMAGE(), stk_B->getHEIGHT(), stk_B->getWIDTH(), subvol_DIM_D_k, displ_max_V, 
-												  displ_max_H, displ_max_D, row_wise ? dir_vertical : dir_horizontal, row_wise ? overlap_V : overlap_H ));
-											displ_computations_idx++;
-											#ifdef S_TIME_CALC
-						proc_time += TIME(0);
-						StackStitcher::time_displ_comp+=proc_time;
-						proc_time = -TIME(0);
-						#endif
+					if ( !(skip_V && stk_A->getROW_INDEX() == row1 && stk_B->getROW_INDEX() == row1) &&
+						 !(skip_H && stk_A->getCOL_INDEX() == col1 && stk_B->getCOL_INDEX() == col1)   ) {
+
+						// 2014-09-09. @ADDED sparse tile support: incomplete or empty substacks are not processed.
+						if(stk_A->isComplete(z_start, z_start+subvol_DIM_D_k-1) && stk_B->isComplete(z_start, z_start+subvol_DIM_D_k-1) )
+						{
+							#ifdef S_TIME_CALC
+							double proc_time = -TIME(0);
+							#endif
+							volume->insertDisplacement(stk_A, stk_B, 
+													  algorithm->execute(stk_A->getSTACKED_IMAGE(), stk_A->getHEIGHT(), stk_A->getWIDTH(), subvol_DIM_D_k,
+													  stk_B->getSTACKED_IMAGE(), stk_B->getHEIGHT(), stk_B->getWIDTH(), subvol_DIM_D_k, displ_max_V, 
+													  displ_max_H, displ_max_D, row_wise ? dir_vertical : dir_horizontal, row_wise ? overlap_V : overlap_H ));
+												displ_computations_idx++;
+												#ifdef S_TIME_CALC
+							proc_time += TIME(0);
+							StackStitcher::time_displ_comp+=proc_time;
+							proc_time = -TIME(0);
+							#endif
+						}
+
 					}
 				}
 
@@ -1795,4 +1817,221 @@ void StackStitcher::saveComputationTimes(const char *filename, volumemanager::Vi
 		fclose(file);
 	}
 
+}
+
+
+
+/*************************************************************************************************************
+* Merges all slices of the given row at the given depth index, so obtaining the stripe that is returned.
+* Uses [...]_blending() functions to blend pixels in  overlapping zones.  The appropriate blending function is
+* selected by the [blending_algo] parameter. If a  <StackRestorer>  object has been passed,  each slice is re-
+* stored before it is combined into the final stripe.
+**************************************************************************************************************/
+iom::real_t* StackStitcher::getStripe2(int row_index, int d_index, int _V0, int _V1, int _H0, int _H1, 
+									   int restore_direction, StackRestorer* stk_rst, int blending_algo) throw (iom::exception)
+{
+        #if S_VERBOSE >2
+	printf("........in StackStitcher::getStripe(short row_index=%d, short d_index=%d, restore_direction=%d, blending_algo=%d)\n",
+		row_index, d_index, restore_direction, blending_algo);
+	#endif
+
+	//LOCAL VARIABLES
+	iom::real_t* stripe = NULL;							//stripe, the result of merging all VirtualStack's of a row
+	int width=0;									//width of stripe
+	int height=0;									//height of stripe
+	int stripe_V_top;								//top    V(ertical)   coordinate of current stripe
+	int stripe_V_bottom;							//bottom V(ertical)   coordinate of current stripe
+	int stripe_H_right;								//right  H(orizontal) coordinate of current stripe
+	int stripe_H_left;								//left   H(orizontal) coordinate of current stripe
+	int r_stk_top_displ , l_stk_top_displ;			//displacements of right and left stack from <stripe_V_top> respectively
+	int rr_stk_left_displ;							//displacement of right-right stack from <stripe_H_left>
+	int l_stk_right_displ;							//displacement of left stack from <stripe_H_right>
+	int r_stk_left_displ, l_stk_left_displ;			//displacements of right and left stack from <stripe_H_left> respectively
+	int stack_width  = volume->getStacksWidth();	//stacks H dimension
+	int stack_height = volume->getStacksHeight();	//stacks V dimension
+	VirtualStack  *l_stk    = NULL, *r_stk, *rr_stk;		//pointers to left stack, right stack and right-right stack respectively
+	iom::real_t *slice_left = NULL, *slice_right;		//"iterating" images, because current method merges images 2-by-2
+	double angle=0;									//angle between 0 and PI
+	double delta_angle;								//angle step used to sample the overlapping zone in [0,PI]
+	char errMsg[5000];								//buffer where to store error messages
+	iom::real_t *stripe_ptr;								//buffer where to store the resulting stripe
+	iom::real_t *rslice_ptr, *lslice_ptr;				//buffers where to store each loaded pair of right and left slices
+	sint64 i,j;										//pixel indexes
+	iom::real_t (*blending)(double& angle, iom::real_t& pixel1, iom::real_t& pixel2); //pointer to blending function
+
+	//retrieving blending function
+	if(blending_algo == S_SINUSOIDAL_BLENDING)
+		blending = sinusoidal_blending;
+	else if(blending_algo == S_NO_BLENDING)
+		blending = no_blending;
+	else if(blending_algo == S_SHOW_STACK_MARGIN)
+		blending = stack_margin;
+	else if(blending_algo == S_ENHANCED_NO_BLENDING)
+		blending = StackStitcher::enhanced_no_blending;
+	else
+		throw iom::exception("in StackStitcher::getStripe(...): unrecognized blending function");
+
+	//checking that <row_index> is not out of bounds
+	if(row_index>=volume->getN_ROWS() || row_index < 0)
+	{
+		sprintf(errMsg, "in StackStitcher::getStripe(...): row %d to be merged is out of bounds [%d,%d]", row_index, 0, volume->getN_ROWS()-1);
+		throw iom::exception(errMsg);
+	}
+
+	//checking that <d_index> is not out of bounds
+	if(!(d_index>=D0 && d_index<D1))
+	{
+		sprintf(errMsg, "in StackStitcher::getStripe(...): d_index (= %d) is out of bounds [%d,%d]", d_index, D0, D1-1);
+		throw iom::exception(errMsg);
+	}
+
+	//computing current stripe VH coordinates and size
+	stripe_V_top  = volume->getSTACKS()[row_index][COL_START]->getABS_V();
+	stripe_V_bottom = stripe_V_top;
+	stripe_H_left = volume->getSTACKS()[row_index][COL_START]->getABS_H();
+	stripe_H_right = volume->getSTACKS()[row_index][COL_END]->getABS_H() +  volume->getStacksWidth();
+	for(int j=COL_START+1; j<=COL_END; j++)
+	{
+		if(volume->getSTACKS()[row_index][j]->getABS_V() < stripe_V_top)
+			stripe_V_top = volume->getSTACKS()[row_index][j]->getABS_V();
+
+		if(volume->getSTACKS()[row_index][j]->getABS_V() > stripe_V_bottom)
+			stripe_V_bottom = volume->getSTACKS()[row_index][j]->getABS_V();
+	}
+	stripe_V_bottom += volume->getStacksHeight();
+	height=stripe_V_bottom-stripe_V_top;
+	width=stripe_H_right-stripe_H_left;
+
+	// 2017-07-16. Giulio. @ADDED take into account the values of _V0, _V1, _H0, _H1 to reduce the amount of copy operations
+	// nothing must change if 'delta' variables are all 0
+//printf("--> row_index = %d, _V0 = %d, stripe_V_top = %d, _V1 = %d, stripe_V_bottom = %d\n",row_index,_V0,stripe_V_top,_V1,stripe_V_bottom);
+	int stripe_V_top_delta    = (_V0 <= stripe_V_top)    ? 0 : _V0 - stripe_V_top;			//top    V(ertical)   offset of actual stripe
+	int stripe_V_bottom_delta = (_V1 >= stripe_V_bottom) ? 0 : stripe_V_bottom -_V1;		//bottom V(ertical)   offset of actual stripe
+	//int stripe_H_left_delta   = (_H0 <= stripe_H_left)   ? 0 : _H0 - stripe_H_left;		//right  H(orizontal) offset of actual stripe
+	//int stripe_H_right_delta  = (_H1 >= stripe_H_right)  ? 0 : stripe_H_right - _H1;		//left   H(orizontal) offset of actual stripe
+
+//printf("--> height = %d, width = %d\n",height,width);
+	//ALLOCATING once for all the MEMORY SPACE for current stripe
+	stripe = new iom::real_t[height*width];
+
+	// 2014-09-09. Alessandro. @FIXED missing buffer initialization in 'getStripe()' method.
+	for(int i=0; i<height*width; i++)
+		stripe[i]=0;
+//printf("--> buffer has been initialized\n");
+
+	//looping on all slices with row='row_index'
+	stripe_ptr = stripe;
+	for(int column_index=COL_START; column_index<=COL_END; column_index++, angle=0)
+	{
+		// INV: column_index !=COL_START -> is allocated only data of stack (row_index,column_index-1)
+
+		l_stk  =  column_index !=COL_START ? volume->getSTACKS()[row_index][column_index-1] : NULL;
+
+		// INV: column_index !=COL_START -> slice_left points to data of l_stk 
+
+		r_stk  =  volume->getSTACKS()[row_index][column_index];
+		rr_stk =  column_index !=COL_END   ? volume->getSTACKS()[row_index][column_index+1] : NULL;
+
+		r_stk_top_displ               = r_stk->getABS_V()  - stripe_V_top;
+		if(l_stk)   l_stk_top_displ   = l_stk->getABS_V()  - stripe_V_top;
+		r_stk_left_displ              = r_stk->getABS_H()  - stripe_H_left;
+		if(l_stk)   l_stk_left_displ  = l_stk->getABS_H()  - stripe_H_left;
+		if(l_stk)   l_stk_right_displ = l_stk->getABS_H()  - stripe_H_left + stack_width;
+		if(rr_stk)  rr_stk_left_displ = rr_stk->getABS_H() - stripe_H_left;
+//printf("--> (b3) _H0 = %d, _H1 = %d\n",_H0,_H1);
+
+		//loading right slice (slice_right) into memory
+		slice_right = r_stk->loadImageStack2(d_index-r_stk->getABS_D(), d_index-r_stk->getABS_D(),_V0,_V1,_H0,_H1);
+//printf("--> (b4)\n");
+
+		// INV: column_index !=COL_START -> slice_left points to data of l_stk AND slice_right points to data of r_stk
+
+		#ifdef S_TIME_CALC
+		double proc_time = -TIME(0);
+		#endif
+
+		//restoring right slice if restoring is enabled
+		if(stk_rst)
+			stk_rst->repairSlice(slice_right,d_index-r_stk->getABS_D(), r_stk,restore_direction);
+		#ifdef S_TIME_CALC
+		proc_time += TIME(0);
+		StackStitcher::time_stack_restore+=proc_time;
+		proc_time = -TIME(0);
+		#endif
+
+		//setting delta_angle
+		if(l_stk) delta_angle = PI/((l_stk->getABS_H()+stack_width-r_stk->getABS_H())-1);
+                angle = 0;
+
+//printf("--> l_stk_top_displ = %d, r_stk_top_displ = %d, stack_height 0 %d\n",l_stk_top_displ,r_stk_top_displ,stack_height);
+//printf("--> first = %d, last 0 %d\n",stripe_V_top_delta,height-stripe_V_bottom_delta);
+		//for every pair of adjacent slices, writing 2 different zones
+		for(j=(l_stk ? r_stk_left_displ : 0); j<(rr_stk? rr_stk_left_displ : width); j++)
+		{
+			//FIRST ZONE: overlapping zone (iff l_stk exists)
+			if(l_stk && j < l_stk_right_displ)
+			{	
+				// 2017-07-16. Giulio. @ADDED added delta to displacements in V direction 
+				stripe_ptr = &stripe[j + stripe_V_top_delta * width]; // 2017-07-16. Giulio. @ADDED offset taking into accoint that there may be empty rows at the top of the stripe 
+				lslice_ptr = &slice_left [(stripe_V_top_delta-l_stk_top_displ)*stack_width+j-l_stk_left_displ];
+				rslice_ptr = &slice_right[(stripe_V_top_delta-r_stk_top_displ)*stack_width+j-r_stk_left_displ];
+				// 2017-07-16. Giulio. @ADDED reduced the height to be copied into the buffer 
+				// now the source buffers start from actually extracted data and the copy ends when all actually extracted data have been copied
+				// and the destination buffer skip the first 'stripe_V_top_delta' rows if empty
+				for(i=stripe_V_top_delta; i<(height - stripe_V_bottom_delta); i++, stripe_ptr+=width, lslice_ptr+=stack_width, rslice_ptr+=stack_width)
+					if(i - r_stk_top_displ >= 0 && i - r_stk_top_displ < stack_height && i - l_stk_top_displ >= 0 && i - l_stk_top_displ < stack_height)
+                        *stripe_ptr = blending(angle,*lslice_ptr,*rslice_ptr);
+					else if (i - r_stk_top_displ >= 0 && i - r_stk_top_displ < stack_height)
+						*stripe_ptr=*rslice_ptr;
+					else if (i - l_stk_top_displ >= 0 && i - l_stk_top_displ < stack_height)
+						*stripe_ptr= *lslice_ptr;
+//else
+//{if ( j==(l_stk ? r_stk_left_displ : 0)) printf("--> (1) [i,j] = [ %lld, %lld ] \n",i,j);}
+
+				angle=angle+delta_angle;
+			}
+
+			//SECOND ZONE: slice_right remainder by excluding overlapping zone between previous slice and overlapping zone between next slice
+			else
+			{
+				// 2017-07-16. Giulio. @ADDED added delta to displacements in V direction 
+				stripe_ptr = &stripe[j + stripe_V_top_delta * width];
+				rslice_ptr = &slice_right[(stripe_V_top_delta-r_stk_top_displ)*stack_width+j-r_stk_left_displ];
+				// 2017-07-16. Giulio. @ADDED reduced the height to be copied into the buffer 
+				// now the source buffers start from actually extracted data and the copy ends when all actually extracted data have been copied
+				// and the destination buffer skip the first 'stripe_V_top_delta' rows if empty
+				for(i=stripe_V_top_delta; i<(height - stripe_V_bottom_delta); i++, stripe_ptr+=width, rslice_ptr+=stack_width)
+					if(i - r_stk_top_displ >= 0 && i - r_stk_top_displ < stack_height)
+						*stripe_ptr=*rslice_ptr;
+//else
+//{if ( j==(l_stk ? r_stk_left_displ : 0)) printf("--> (2) [i,j] = [ %lld, %lld ] \n",i,j);}
+			}
+		}
+
+		#ifdef S_TIME_CALC
+		proc_time += TIME(0);
+		StackStitcher::time_merging+=proc_time;
+		#endif
+
+		//releasing memory allocated for last left VirtualStack
+		slice_left = NULL;
+		if(l_stk)
+			l_stk->releaseImageStack();
+
+		//moving to right slice_left
+		slice_left=slice_right;
+
+		// INV: is allocated only data of stack (row_index,column_index)
+	}
+
+	//releasing memory allocated for last right VirtualStack
+	slice_right = NULL;
+	volume->getSTACKS()[row_index][COL_END]->releaseImageStack();
+
+	// no more data is allocated
+
+	//iomanager::IOManager::saveImage(vm::strprintf("C:/debug/stripe_Z%04d_R%02d.tif", d_index, row_index), stripe, height, width);
+	//system("pause");
+
+	return stripe;
 }

@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-07-06. Giulio.     @ADDED method 'loadImageStack2' to enable selective reads of data
 * 2016-11-14. Giulio.     @CHANGED interface of constructor from xml to manage of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
 * 2015-02-26. Giulio.     @ADDED fields N_CHANS and N_BYTESxCHAN
 * 2015-01-17. Alessandro. @ADDED constructor for initialization from XML.
@@ -91,6 +92,7 @@ class vm::Stack : public vm::VirtualStack
 
 		//LOAD and RELEASE methods
 		iom::real_t* loadImageStack(int first_file=-1, int last_file=-1) throw (iom::exception);
+		iom::real_t* loadImageStack2(int first_file=-1, int last_file=-1, int V0=-1, int V1=-1, int H0=-1, int H1=-1) throw (iom::exception);
 		void releaseImageStack();
 
 		//XML methods

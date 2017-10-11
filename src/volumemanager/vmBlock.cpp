@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-07-06. Giulio.     @ADDED method 'loadImageStack2' to enable selective reads of data
 * 2017-04-02. Giulio.     @FIXED missing check that the active channel is correctly selected before loading image data
 * 2017-04-26. Alessandro. @FIXED issue on Windows with Thumbs.db files that need to be ignored
 * 2017-04-12. Giulio.     @ADDED check on a precondition of 'loadImageStack'
@@ -1093,4 +1094,205 @@ void
 	}
 	if(!z_ranges.empty() && z_ranges.back().end == -1)
 		z_ranges.back().end = DEPTH;
+}
+
+
+//loads image stack from <first_file> to <last_file> extremes included, if not specified loads entire Stack
+iom::real_t* Block::loadImageStack2(int first_file, int last_file, int V0, int V1, int H0, int H1) throw (iom::exception)
+{
+	#if VM_VERBOSE > 3
+    printf("\t\t\t\tin Block[%d,%d]::loadImageStack(first_file = %d, last_file = %d)\n",ROW_INDEX, COL_INDEX, first_file, last_file);
+	#endif
+	int first, last;
+	float scale_factor;
+	char slice_fullpath[2000];
+
+	if ( STACKED_IMAGE ) {
+		delete[] STACKED_IMAGE;
+    	STACKED_IMAGE=0;
+		throw iom::exception(iom::strprintf("precondition violated in Block [%d,%d] loading slices [%d,%d]: buffer is already allocated", ROW_INDEX, COL_INDEX, first_file, last_file), __iom__current__function__);
+	}
+
+	// 2014-09-09. Alessandro. @BUG. 'first_file' and 'last_file' are set to '-1' by default. But here, they are never checked nor corrected. 
+	// I added a very simple (but not complete) check here.
+	// Be careful if you want to adjust 'last_file' to 'DEPTH' when 'last_file == -1'. 'DEPTH' could be 0 if stack is empty.
+	if(first_file < 0 || last_file < 0 || first_file > last_file)
+		throw iom::exception(vm::strprintf("in Block[%d,%d]::loadImageStack(): invalid file selection [%d,%d]", ROW_INDEX, COL_INDEX, first_file, last_file).c_str());
+
+	string chan_select_str = "";
+	bool chan_select = !iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() && (iom::IMIN_PLUGIN == "IMS_HDF5");
+	if ( chan_select ) {
+		if ( this->CONTAINER->getACTIVE_CHAN() < 0 || N_CHANS <= this->CONTAINER->getACTIVE_CHAN() ) 
+			throw iom::exception(vm::strprintf("in Block[%d,%d]::loadImageStack(): input channel not selected.", ROW_INDEX, COL_INDEX).c_str());
+		// the plugin support channel selection: pass the requested channel
+		chan_select_str = "channel=" + num2str<int>(this->CONTAINER->getACTIVE_CHAN()) + ",";
+		//printf("-----> %s\n",chan_select_str.c_str());
+	}
+
+	// 2014-09-09. Alessandro. @FIXED 'loadImageStack()' method to deal with empty tiles.
+	// if stack is empty in the given range, just return a black image
+	if(isEmpty(first_file, last_file))
+	{
+		// allocate and initialize a black stack
+		uint64 image_size = static_cast<uint64>(WIDTH) * static_cast<uint64>(HEIGHT) * static_cast<uint64>(last_file-first_file+1);
+		STACKED_IMAGE = new iom::real_t[image_size];
+		for(uint64 k=0; k<image_size; k++)
+			STACKED_IMAGE[k] = 0;
+
+		return STACKED_IMAGE;
+	}
+
+	unsigned char *data = new unsigned char[HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN * (chan_select ? 1 : N_CHANS)];
+	memset(data,0,sizeof(unsigned char) * (HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN * (chan_select ? 1 : N_CHANS)));
+
+	bool inCache = false;
+	if ( first_file == last_file ) { // only one slice has been requested
+		if ( CONTAINER->getCACHEBUFFER()->getSlice(ROW_INDEX,COL_INDEX,first_file,data) ) 
+			inCache = true;
+	}
+
+	unsigned char *temp = data;
+	Segm_t *intersect_segm;
+
+	if ( !inCache ) {
+
+		intersect_segm = Intersects(first_file, last_file+1); // the second parameter should be the last slice + 1
+
+		for(int i = intersect_segm->ind0; i <= intersect_segm->ind1; i++)
+		{
+			//if ( temp - data > (HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN * N_CHANS) )
+			//	throw iom::exception(vm::strprintf("in Block[%s]::loadImageStack(): buffer overrun at block %d", DIR_NAME, i-1).c_str());
+			
+			first = (first_file > BLOCK_ABS_D[i]) ? first_file-BLOCK_ABS_D[i] : 0 ;
+			last = (last_file < BLOCK_ABS_D[i]+BLOCK_SIZE[i]-1) ?  last_file-BLOCK_ABS_D[i] : BLOCK_SIZE[i]-1 ;
+			if ( FILENAMES[i] ) { // 2015-07-26. Giulio. @ADDED sparsedata support
+				sprintf(slice_fullpath, "%s/%s/%s", CONTAINER->getSTACKS_DIR(), DIR_NAME, FILENAMES[i]);
+
+				if ( (V0 <= ABS_V || V0 == -1) && (V1 >= (ABS_V+HEIGHT) || V1 == -1) && (H0 <= ABS_H || H0 == -1) && (H1 >= (ABS_H+WIDTH) || H1 == -1) ) { // all data have to be extracted
+					// 2014-09-05. Alessandro & Iannello. @MODIFIED to deal with IO plugins
+					// 2016_10_27. Giulio. @ADDED the string with additional parameters is passed only if they are not the default
+					iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->readData(slice_fullpath,WIDTH,HEIGHT,BLOCK_SIZE[i],N_BYTESxCHAN,N_CHANS,temp,first,last+1,
+							(CONTAINER->getADDITIONAL_IOPLUGIN_PARAMETERS() ? 
+								"resolution=" + CONTAINER->getACTIVE_RES() + ",timepoint=" + CONTAINER->getACTIVE_TP() + ",series_no=" + series_no + ",": 
+								"") + chan_select_str);
+				}
+				else { // only selected data should be extracted if the plugin support data selection
+					V0 = (V0 <= ABS_V || V0 == -1) ? 0 : (V0 - ABS_V);
+					V1 = (V1 >= (ABS_V+HEIGHT) || V1 == -1) ? HEIGHT : (V1 - ABS_V);
+					H0 = (H0 <= ABS_H || H0 == -1) ? 0 : (H0 - ABS_H); 
+					H1 = (H1 >= (ABS_H+WIDTH) || H1 == -1) ? WIDTH : (H1 - ABS_H);
+					iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->readData(slice_fullpath,WIDTH,HEIGHT,BLOCK_SIZE[i],N_BYTESxCHAN,N_CHANS,temp,first,last+1,
+							(CONTAINER->getADDITIONAL_IOPLUGIN_PARAMETERS() ? 
+								"resolution=" + CONTAINER->getACTIVE_RES() + ",timepoint=" + CONTAINER->getACTIVE_TP() + ",series_no=" + series_no + ",": 
+								"") + chan_select_str + "V0=" + num2str<int>(V0) + ",V1=" + num2str<int>(V1) + ",H0=" + num2str<int>(H0) + ",H1=" + num2str<int>(H1) + "," );
+				}
+			}
+			temp +=  HEIGHT * WIDTH * (last-first+1) * N_BYTESxCHAN * (chan_select ? 1 : N_CHANS);
+		}
+	}
+
+	//conversion from unsigned char to iom::real_t
+	//if (N_CHANS == 2 || N_CHANS > 3) // only monocromatic or RGB images are supported
+	//{
+	//	char errMsg[2000];
+	//	sprintf(errMsg, "in Block[%d,%d]::loadImageStack(...): %d channels are not supported.", ROW_INDEX, COL_INDEX, N_CHANS);
+	//	throw iom::exception(errMsg);
+	//}
+
+	if ( N_BYTESxCHAN == 1 )
+		scale_factor  = 255.0F;
+	else if ( N_BYTESxCHAN == 2 )
+		scale_factor = 65535.0F;
+	else
+	{
+		char errMsg[2000];
+		sprintf(errMsg, "in Block[%d,%d]::loadImageStack(...): Too many bytes per channel (%d).", ROW_INDEX, COL_INDEX, N_BYTESxCHAN);
+		throw iom::exception(errMsg);
+	}
+
+	STACKED_IMAGE = new iom::real_t[HEIGHT * WIDTH * (last_file-first_file+1)]; // this image is an intensity image (only one channel)
+
+	int offset;
+
+	if ( N_CHANS == 1 ) {
+		// 2014-11-04. Giulio. @FIXED
+		if ( N_BYTESxCHAN == 1 )
+			for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
+				STACKED_IMAGE[i] = (iom::real_t) data[i]/scale_factor;
+		else // N_BYTESxCHAN == 2
+			for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
+				STACKED_IMAGE[i] = (iom::real_t) ((iom::uint16 *)data)[i]/scale_factor; // data must be interpreted as a uint16 array
+	}
+	else { // conversion to an intensity image
+		// test how channel are stored in the returned buffer 'data'
+		if ( iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() ) {
+			if ( iom::CHANS == iom::ALL ) {
+				char errMsg[2000];
+				sprintf(errMsg, "in Block[%d,%d]::loadImageStack(...): conversion from multi-channel to intensity images not supported.", ROW_INDEX, COL_INDEX);
+				throw iom::exception(errMsg);
+			}
+			else if ( iom::CHANS == iom::R ) {
+				offset = 0;
+			}
+			else if ( iom::CHANS == iom::G ) {
+				offset = 1;
+			}
+			else if ( iom::CHANS == iom::B ) {
+				offset = 2;
+			}
+			else {
+				char errMsg[2000];
+				sprintf(errMsg, "in Block[%d,%d]::loadImageStack(...): wrong value for parameter iom::CHANNEL_SELECTION.", ROW_INDEX, COL_INDEX);
+				throw iom::exception(errMsg);
+			}
+			// 2014-11-04. Giulio. @FIXED
+			if ( N_BYTESxCHAN == 1 )
+				for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
+					STACKED_IMAGE[i] = (iom::real_t) data[3*i + offset]/scale_factor;
+			else // N_BYTESxCHAN == 2
+				for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
+					STACKED_IMAGE[i] = (iom::real_t) ((iom::uint16 *)data)[3*i + offset]/scale_factor; // data must be interpreted as a uint16 array
+		}
+		else { // channels are not interleaved in the returned buffer 'data'
+			//char errMsg[2000];
+			//sprintf(errMsg, "in Block[%d,%d]::loadImageStack(...): channels are not interleaved in the returned buffer 'data', conversion to intensity images not supported yet.", ROW_INDEX, COL_INDEX);
+			//throw iom::exception(errMsg);
+			// 2016-06-09. Giulio. @ADDED
+
+			// if the input plugin supports channel selection just one channel has been returned and no offset is needed
+			// otherwise the channel number provides the offset on the buffer to be filled
+			offset = chan_select ? 0 : this->CONTAINER->getACTIVE_CHAN();
+			if ( 0 <= offset && offset < N_CHANS ) { 
+				if ( N_BYTESxCHAN == 1 ) {
+					temp = data + (offset * HEIGHT * WIDTH * (last_file-first_file+1));
+					for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
+						STACKED_IMAGE[i] = (iom::real_t) temp[i]/scale_factor;
+				}
+				else { // N_BYTESxCHAN == 2
+					temp = data + (offset * HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN);
+					for(int i = 0; i <HEIGHT * WIDTH * (last_file-first_file+1); i++)
+						STACKED_IMAGE[i] = (iom::real_t) ((iom::uint16 *)temp)[i]/scale_factor; // data must be interpreted as a uint16 array
+				}
+			}
+			else {
+				char errMsg[2000];
+				sprintf(errMsg, "in Block[%d,%d]::loadImageStack(...): input channel not selected.", ROW_INDEX, COL_INDEX);
+				throw iom::exception(errMsg);
+			}
+		}
+	}
+
+	if ( first_file == last_file && !inCache ) {
+		if ( !CONTAINER->getCACHEBUFFER()->cacheSlice(ROW_INDEX,COL_INDEX,first_file,data) ) { // slice cannot be cached
+			delete [] data;
+		}
+	}
+	else { // data has to be released since inCache must be false (first != last -> !inCache)
+		delete [] data;
+	}
+
+	if ( !inCache )
+		delete intersect_segm;
+
+	return STACKED_IMAGE;
 }

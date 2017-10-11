@@ -60,8 +60,31 @@ void compute_3_MIPs ( iom::real_t *A, iom::real_t *B,
 
 void compute_NCC_map ( iom::real_t *NCC_map, iom::real_t *MIP_1, iom::real_t *MIP_2, 
 					       int dimu, int dimv, int delayu, int delayv );
+/* Parameters:
+ *    NCC_map:      externaly allocated buffer of size (2*delayu+1) rows x (2*delayv+1)
+ *    MIP_1, MIP_2: matrices of size dimu x dimv
+ *
+ * returns in NCC_map a map of Normalized Cross Correlations (NCC) 
+ * each pixel of the map is the NCC computed on two 2D sub-matrices of identical size of 
+ * matrices MIP_1 and MIP_2
+ * more specifically, pixel (u,v) of the map is the NCC of the sub-matrices (using a 
+ * Python-like notation:
+ *
+ *    MIP_1[ max(0,u-delayu) : (dimu - 1 + min(0,u-delayu)) , max(0,v-delayv) : (dimv - 1 + min(0,v-delayv)) ]
+ *    MIP_2[ max(0,delayu-u) : (dimu - 1 - min(0,delayu-u)) , max(0,delayv-v) : (dimv - 1 + min(0,delayv-v)) ]
+ *
+ * these matrices have size:
+ *
+ *    (dimu - |u - delayu|) x (dimv - |v - delayv|)
+ */
 
 iom::real_t compute_NCC ( iom::real_t *im1, iom::real_t *im2, int dimi, int dimj, int stride );
+/* Parameters:
+ *    im1, im2: buffer of size at least dimi x stride containing matrices of size dimi x dimj
+ *              which rows begin every stride cells 
+ *
+ * returns in Normalized Cross Correlations (NCC) of the two matrices
+ */
 
 int compute_MAX_ind ( iom::real_t *vect, int len );
 

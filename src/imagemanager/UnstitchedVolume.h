@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-08-19. Giulio.     @ADDED getter for data member 'enabled'
 * 2017-04-18. Alessandro. @ADDED constructor that directly takes vm::VirtualVolume in input, and added 'volume_external' attribute
 * 2017-04-01. Giulio.     @ADDED support for multi-layer stitching
 * 2016-09-13. Giulio.     @ADDED a cache manager to store stitched subregions
@@ -231,6 +232,9 @@ public:
 
 	void enableCache ( )  { enabled = true; }
 	void disableCache ( ) { enabled = false; }
+	
+	// 2017-08-19. Giulio @ADDED
+	bool getENABLED ( ) { return enabled; }
 
 	void resetCounts ( ) { caccesses = chits = cmisses = crplcmnts = 0; }
 	void getCounts ( vm::uint64 &_caccesses, vm::uint64 &_chits, vm::uint64 &_cmisses, vm::uint64 &_crplcmnts ) { 

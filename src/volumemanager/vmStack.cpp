@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-07-06. Giulio.     @ADDED method 'loadImageStack2' to enable selective reads of data
 * 2017-04-26. Alessandro. @FIXED issue on Windows with Thumbs.db files that need to be ignored
 * 2017-04-12. Giulio.     @ADDED check on a precondition of 'loadImageStack'
 * 2016-11-14. Giulio.     @ADDED management of the case when z_end is invalid (i.e. when import is from an xml import file generated externally
@@ -841,4 +842,225 @@ void
 	}
 	if(!z_ranges.empty() && z_ranges.back().end == -1)
 		z_ranges.back().end = DEPTH;
+}
+
+
+//loads image stack from <first_file> to <last_file> extremes included, if not specified loads entire Stack
+iom::real_t* Stack::loadImageStack2(int first_file, int last_file, int V0, int V1, int H0, int H1) throw (iom::exception)
+{
+	#if VM_VERBOSE > 3
+	printf("\t\t\t\tin Stack[%d,%d](%s, empty = %s)::loadImageStack(first_file = %d, last_file = %d)\n",ROW_INDEX, COL_INDEX, DIR_NAME, isEmpty() ? "true": "false", first_file, last_file);
+	#endif
+
+	uint64 image_stack_width=0, image_stack_height=0, z=0;
+ 	iom::real_t *raw_data;
+
+	unsigned char *data = (unsigned char *) 0;
+	int img_width;
+	int img_height;
+	int img_bytes_x_chan;
+	int img_chans;
+
+	if ( STACKED_IMAGE ) {
+		delete[] STACKED_IMAGE;
+    	STACKED_IMAGE=0;
+		throw iom::exception(iom::strprintf("precondition violated in Stack [%d,%d] loading slices [%d,%d]: buffer is already allocated", ROW_INDEX, COL_INDEX,first_file, last_file), __iom__current__function__);
+	}
+
+	// check and adjust file selection
+	first_file = (first_file == -1 ? 0 : first_file);
+	last_file  = (last_file  == -1 ? DEPTH - 1 : last_file );
+	first_file = min(first_file, DEPTH-1);
+	last_file = min(last_file, DEPTH-1);
+
+	if(isEmpty(first_file, last_file))
+	{
+		// allocate and initialize a black stack
+		uint64 image_size = static_cast<uint64>(WIDTH) * static_cast<uint64>(HEIGHT) * static_cast<uint64>(last_file-first_file+1);
+		STACKED_IMAGE = new iom::real_t[image_size];
+		for(uint64 k=0; k<image_size; k++)
+			STACKED_IMAGE[k] = 0;
+
+		return STACKED_IMAGE;
+	}
+
+	if ( first_file == last_file ) { // only one slice has been requested
+		if ( CONTAINER->getCACHEBUFFER()->getSlice(ROW_INDEX,COL_INDEX,first_file,data) ) {
+			img_width        = WIDTH;
+			img_height       = HEIGHT;
+			img_bytes_x_chan = N_BYTESxCHAN;
+			img_chans        = N_CHANS;
+
+			/**** DUPLICATED CODE (BEGIN) ***/
+			// initialize output data and image dimensions
+			if(!STACKED_IMAGE)
+			{
+				image_stack_height = (uint64) img_height;
+				image_stack_width  = (uint64) img_width;
+				uint64 image_stack_size = image_stack_width * image_stack_height * (last_file - first_file + 1);
+				STACKED_IMAGE = new iom::real_t[image_stack_size];
+				for(uint64 j=0; j < image_stack_size; j++)
+					STACKED_IMAGE[j] = 0;		// default is 0 (black)
+			}
+			else if(image_stack_width != (uint64)img_width || image_stack_height != (uint64)img_height)
+				throw iom::exception(iom::strprintf("images in stack have not the same dimensions (%d x %d != %d x %d)", img_width, img_height, image_stack_width, image_stack_height), __iom__current__function__);
+
+			int offset;
+
+			// convert image to [0.0,1.0]-valued array
+			if ( img_chans == 1 ) {
+				raw_data = &STACKED_IMAGE[z*img_height*img_width];
+				if ( img_bytes_x_chan == 1 ) {
+					for(int i = 0; i < (img_height * img_width); i++)
+						raw_data[i] = (iom::real_t) data[i]/255.0f;
+				}
+				else { // img_bytes_x_chan == 2
+					for(int i = 0; i < (img_height * img_width); i++)
+						raw_data[i] = (iom::real_t) ((uint16 *)data)[i]/65535.0f; // data must be interpreted as a uint16 array
+				}
+			}
+			else { // conversion to an intensity image
+				// test how channel are stored in the returned buffer 'data'
+				if ( iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved() ) {
+					if ( CHANS == iom::ALL ) {
+						throw iom::exception("conversion from multi-channel to intensity images not supported.", __iom__current__function__);
+					}
+					else if ( CHANS == iom::R ) {
+						offset = 0;
+					}
+					else if ( CHANS == iom::G ) {
+						offset = 1;
+					}
+					else if ( CHANS == iom::B ) {
+						offset = 2;
+					}
+					else {
+						throw iom::exception("wrong value for parameter iom::CHANNEL_SELECTION.", __iom__current__function__);
+					}
+					raw_data = &STACKED_IMAGE[z*img_height*img_width];
+					if ( img_bytes_x_chan == 1 )
+						for(int i = 0; i < (img_height * img_width); i++)
+							raw_data[i] = (iom::real_t) data[3*i + offset]/255.0f;
+					else // img_bytes_x_chan == 2
+						for(int i = 0; i < (img_height * img_width); i++)
+							raw_data[i] = (iom::real_t) ((uint16 *)data)[3*i + offset]/65535.0f; // data must be interpreted as a uint16 array
+				}
+				else {
+					throw iom::exception("2D image formats with non-interleaved channels are not supported yet.");
+				}
+			}
+			/**** DUPLICATED CODE (END) ***/
+
+			return STACKED_IMAGE;
+		}
+	}
+
+	// build absolute image path of first file in the stack
+	int i = first_file;
+	while ( isSparse() && i<=last_file && FILENAMES[i]==0 ) // look for existing file
+		i++;
+	if ( i > last_file )
+		throw iom::exception("unexpected exception: substack is entirely empty", __iom__current__function__);
+
+	std::string image_path = std::string(CONTAINER->getSTACKS_DIR()) + "/" + DIR_NAME + "/" + FILENAMES[i];
+
+	iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->readMetadata(image_path,img_width,img_height,img_bytes_x_chan,img_chans);
+
+	// 2016-08-29. Giulio. @ADDED check of coherence
+	if ( (img_width != WIDTH) ||  (img_height != HEIGHT) || (img_bytes_x_chan != N_BYTESxCHAN) || (img_chans != N_CHANS) )
+		throw iom::exception(iom::strprintf("incosistent metadata in file %s",image_path.c_str()).c_str(), __iom__current__function__);
+
+	// 2016-04-29. Giulio. patch to test opencv2D when using jpeg
+	//img_chans = 1;
+
+	// allocate buffer
+	data = new unsigned char[img_width * img_height * img_bytes_x_chan * img_chans];
+
+	// loop over files
+	for(int file_i = first_file; file_i <= last_file; file_i++, z++) {
+
+		// skip missing slices if stack is sparse
+		if(isSparse() && !FILENAMES[file_i])
+			continue;
+
+		// if stack is not sparse, a missing slice must throw an iom::exception
+		if(!FILENAMES[file_i])
+			throw iom::exception("invalid slice filename in non-sparse tile", __iom__current__function__);
+
+		// build absolute image path
+		image_path = std::string(CONTAINER->getSTACKS_DIR()) + "/" + DIR_NAME + "/" + FILENAMES[file_i];
+
+		iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->readData(image_path,img_width,img_height,img_bytes_x_chan,img_chans,data);
+
+		// initialize output data and image dimensions
+		if(!STACKED_IMAGE)
+		{
+			image_stack_height = (uint64) img_height;
+			image_stack_width  = (uint64) img_width;
+			uint64 image_stack_size = image_stack_width * image_stack_height * (last_file - first_file + 1);
+			STACKED_IMAGE = new iom::real_t[image_stack_size];
+			for(uint64 j=0; j < image_stack_size; j++)
+				STACKED_IMAGE[j] = 0;		// default is 0 (black)
+		}
+		else if(image_stack_width != (uint64)img_width || image_stack_height != (uint64)img_height)
+			throw iom::exception(iom::strprintf("images in stack have not the same dimensions (%d x %d != %d x %d)", img_width, img_height, image_stack_width, image_stack_height), __iom__current__function__);
+
+		int offset;
+
+		// convert image to [0.0,1.0]-valued array
+		if ( img_chans == 1 ) {
+			raw_data = &STACKED_IMAGE[z*img_height*img_width];
+			if ( img_bytes_x_chan == 1 ) {
+				for(int i = 0; i < (img_height * img_width); i++)
+					raw_data[i] = (iom::real_t) data[i]/255.0f;
+			}
+			else { // img_bytes_x_chan == 2
+				for(int i = 0; i < (img_height * img_width); i++)
+					raw_data[i] = (iom::real_t) ((uint16 *)data)[i]/65535.0f; // data must be interpreted as a uint16 array
+			}
+		}
+		else { // conversion to an intensity image
+			// test how channel are stored in the returned buffer 'data'
+			if ( iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved() ) {
+				if ( CHANS == iom::ALL ) {
+					throw iom::exception("conversion from multi-channel to intensity images not supported.", __iom__current__function__);
+				}
+				else if ( CHANS == iom::R ) {
+					offset = 0;
+				}
+				else if ( CHANS == iom::G ) {
+					offset = 1;
+				}
+				else if ( CHANS == iom::B ) {
+					offset = 2;
+				}
+				else {
+					throw iom::exception("wrong value for parameter iom::CHANNEL_SELECTION.", __iom__current__function__);
+				}
+				raw_data = &STACKED_IMAGE[z*img_height*img_width];
+				if ( img_bytes_x_chan == 1 )
+					for(int i = 0; i < (img_height * img_width); i++)
+						raw_data[i] = (iom::real_t) data[3*i + offset]/255.0f;
+				else // img_bytes_x_chan == 2
+					for(int i = 0; i < (img_height * img_width); i++)
+						raw_data[i] = (iom::real_t) ((uint16 *)data)[3*i + offset]/65535.0f; // data must be interpreted as a uint16 array
+			}
+			else {
+				throw iom::exception("2D image formats with non-interleaved channels are not supported yet.");
+			}
+		}
+	}
+
+	if ( first_file == last_file ) {
+		if ( !CONTAINER->getCACHEBUFFER()->cacheSlice(ROW_INDEX,COL_INDEX,first_file,data) ) { // slice cannot be cached
+			// 2015-08-24. Giulio. data must be released
+			delete [] data;
+		}
+	}
+	else {
+		// 2015-08-24. Giulio. data must be released
+		delete [] data;
+	}
+
+	return STACKED_IMAGE;
 }

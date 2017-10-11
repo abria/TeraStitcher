@@ -25,6 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-09-11. Giulio.     @CHANGED interfaces of 'vcDriver' and 'convetTo' to enable passing parameters controlloing the compression algorithm to be used with HDf5 files
+* 2017-09-11. Giulio.     @ADDED parameters controlloing the compression algorithm to be used with HDf5 files
 * 2017-06-26. Giulio.     @ADDED parameter 'isotropic' and 'mdata_file' to method 'convertTo'
 * 2017-05-25. Giulio.     @ADDED method for enabling lossy compression based on rescaling
 * 2017-04-23. Giulio.     @ADDED auxiliary function vcDriver to call the actual conversion method
@@ -124,7 +126,7 @@ void vcDriver (
     bool        makeDirs = false,                   //creates the directory hiererchy
     bool        metaData = false,                   //creates the mdata.bin file of the output volume
     bool        parallel = false,                   //parallel mode: does not perform side-effect operations during merge
-	std::string outFmt = "RGB",                      // no more used: pass always the default
+	std::string outFmt = "RGB",                     //additional information about the output format (default: "")
 	int         nbits  = 0
 ) throw (iim::IOException, iom::exception);
 
@@ -209,8 +211,9 @@ class VolumeConverter
             int block_depth  = -1,                      // tile's depth  (for tiled formats)
             int method = HALVE_BY_MEAN,                 // downsampling method
 			bool isotropic = false,                     // perform an isotropic conversion 
-			std::string metadata_file = "null"          // last parameter, used only by Imaris file format
-        ) throw (iim::IOException, iom::exception);
+			std::string metadata_file = "null",         // last parameter, used only by Imaris file format
+ 			std::string compression_info = ""           // last parameter, used only by Imaris file format
+       ) throw (iim::IOException, iom::exception);
 
 		/*************************************************************************************************************
 		* Method to set a lossy compression algorithm

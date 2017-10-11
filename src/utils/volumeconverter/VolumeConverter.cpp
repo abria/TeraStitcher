@@ -25,6 +25,9 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-09-11. Giulio.     @CHANGED interfaces of vcDriver and convetTo to enable passing parameters controlloing the compression algorithm to be used with HDf5 files
+* 2017-09-11. Giulio.     @ADDED parameters controlloing the compression algorithm to be used with HDf5 files
+* 2017-09-09. Giulio.     @ADDED code to manage compression algorithms to be used in Imaris IMS files generation
 * 2017-06-26. Giulio.     @ADDED parameter 'isotropic' and 'mdata_file' to method 'convertTo'
 * 2017-06-26. Giulio.     @ADDED timeseries to Imaris format
 * 2017-05-25. Giulio.     @ADDED method for enabling lossy compression based on rescaling and implemented rescaling in all output formats
@@ -143,7 +146,7 @@ void vcDriver (
     bool        makeDirs,                   //creates the directory hiererchy
     bool        metaData,                   //creates the mdata.bin file of the output volume
     bool        parallel,                   //parallel mode: does not perform side-effect operations during merge
-	std::string outFmt,
+	std::string outFmt,                     //additional information about the output format (default: "")
 	int         nbits ) throw (iim::IOException, iom::exception) {
 		// do what you have to do
 		VolumeConverter vc;
@@ -152,9 +155,9 @@ void vcDriver (
 		resetLibTIFFcfg(!libtiff_uncompressed,libtiff_bigtiff,libtiff_rowsPerStrip);
 
 		if ( vPtr ) 
-			vc.setSrcVolume(vPtr,outFmt.c_str(),timeseries,downsamplingFactor,chanlist);
+			vc.setSrcVolume(vPtr,"RGB",timeseries,downsamplingFactor,chanlist);
 		else
-			vc.setSrcVolume(src_root_dir.c_str(),src_format.c_str(),outFmt.c_str(),timeseries,downsamplingFactor,chanlist);
+			vc.setSrcVolume(src_root_dir.c_str(),src_format.c_str(),"RGB",timeseries,downsamplingFactor,chanlist);
 
 		vc.setSubVolume(V0,V1,H0,H1,D0,D1);
 
@@ -337,12 +340,12 @@ void vcDriver (
 			if ( timeseries ) {
 				// missing parameters: mdata_fname, isotropic, 
 				vc.convertTo(dst_root_dir.c_str(),dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,resolutions,
-					slice_height,slice_width,slice_depth,halving_method,isotropic);
+					slice_height,slice_width,slice_depth,halving_method,isotropic,mdata_fname,outFmt);
 			}
 			else {
 				vc.generateTilesIMS_HDF5(dst_root_dir.c_str(),mdata_fname,resolutions,
 					slice_height,slice_width,slice_depth,halving_method,isotropic,
-					show_progress_bar,"Fiji_HDF5",8*vc.getVolume()->getBYTESxCHAN());
+					show_progress_bar,(outFmt == "" ? "Fiji_HDF5" : outFmt.c_str()),8*vc.getVolume()->getBYTESxCHAN());
 			}
 		}
 		else
@@ -2076,7 +2079,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 
 		// 2017-05-25. Giulio. Added code for simple lossy compression (suggested by Hanchuan Peng)
 		if ( nbits ) {
-			printf("----> lossy compression nbits = %d\n",nbits);
+			//printf("----> lossy compression nbits = %d\n",nbits);
 			iim::sint64 tot_size = (height * width * ((z_parts<=z_ratio) ? z_max_res : (depth%z_max_res))) * channels;
 			if ( bytes_chan == 1 ) {
 				iim::uint8 *ptr = ubuffer[0];
@@ -4414,6 +4417,15 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
     //    throw IOException(err_msg);
     //}
 
+	// 2017-09-09. Giulio. @ADDED code for analyzing the string 'saved_img_format' and extract information to be passed to HDF5 routines
+	std::string output_params = saved_img_format;
+	if ( output_params.find("ims") != std::string::npos || output_params.find("Fiji_HDF5") != std::string::npos ) {
+		output_params = "";
+	}
+	else {
+		; // WARNINIG: assume that 'saved_img_format' is a string of the form uint[:uint:...:uint] where uint is an unsigner integer between 0 and 65535
+	}
+
 
 	if(resolutions == NULL)
 	{
@@ -4526,7 +4538,7 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 	} 
 
 	// create timepoint groups (default: timepoint 0)
-	IMS_HDF5addTimepoint(file_descr,cur_tp);
+	IMS_HDF5addTimepoint(file_descr,cur_tp,output_params);
 
 	//ALLOCATING  the MEMORY SPACE for image buffer
     z_max_res = powInt(2,resolutions_size-1); // isotropic: z_max_res = powInt(2,halve_pow2[resolutions_size-1]);
@@ -4755,7 +4767,8 @@ void VolumeConverter::convertTo(
     int block_depth  /*= -1*/,                      // tile's depth  (for tiled formats)
     int method /*=HALVE_BY_MEAN*/,                  // downsampling method
 	bool isotropic /*=false*/,                      // perform an isotropic conversion 
-	std::string metadata_file /*= "null"*/          // last parameter, used only by Imaris file format
+	std::string metadata_file /*= "null"*/,         // last parameter, used only by Imaris file format
+	std::string compression_info/*= ""*/            // last parameter, used only by Imaris file format
 ) throw (iim::IOException, iom::exception)
 {
     printf("in VolumeConverter::convertTo(output_path = \"%s\", output_format = \"%s\", output_bitdepth = %d, isTimeSeries = %s, resolutions = ",
@@ -4790,7 +4803,7 @@ void VolumeConverter::convertTo(
                 generateTilesSimple(output_path, resolutions, block_height, block_width, method, isotropic, true, "tif", output_bitdepth, frame_dir, false);
 			else if(output_format.compare(iim::IMS_HDF5_FORMAT) == 0) {
 				frame_dir = strprintf("%d", t);
-				generateTilesIMS_HDF5(output_path, metadata_file, resolutions, block_height,block_width,block_depth, method, isotropic, true,"Fiji_HDF5",output_bitdepth,frame_dir);
+				generateTilesIMS_HDF5(output_path, metadata_file, resolutions, block_height,block_width,block_depth, method, isotropic, true,(compression_info == "" ? "Fiji_HDF5" : compression_info.c_str()),output_bitdepth,frame_dir);
 			}
             else
                 throw iim::IOException(strprintf("Output format \"%s\" not supported", output_format.c_str()).c_str());
@@ -4814,7 +4827,7 @@ void VolumeConverter::convertTo(
         else if(output_format.compare(iim::BDV_HDF5_FORMAT) == 0)
             generateTilesBDV_HDF5(output_path,resolutions, block_height,block_width,block_depth, method, isotropic, true,"Fiji_HDF5",output_bitdepth);
         else if(output_format.compare(iim::IMS_HDF5_FORMAT) == 0)
-			generateTilesIMS_HDF5(output_path, metadata_file, resolutions, block_height,block_width,block_depth, method, isotropic, true,"Fiji_HDF5",output_bitdepth);
+			generateTilesIMS_HDF5(output_path, metadata_file, resolutions, block_height,block_width,block_depth, method, isotropic, true,(compression_info == "" ? "Fiji_HDF5" : compression_info.c_str()),output_bitdepth);
         else if(output_format.compare(iim::SIMPLE_RAW_FORMAT) == 0)
             generateTilesSimple(output_path, resolutions, block_height, block_width, method, isotropic, true, "raw", output_bitdepth, "", false);
         else if(output_format.compare(iim::SIMPLE_FORMAT) == 0)

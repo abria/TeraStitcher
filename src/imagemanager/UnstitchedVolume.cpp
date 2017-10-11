@@ -25,6 +25,10 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-08-19. Giulio.     @CHANGED only requested data (actually only whole rows) are copied into the internal buffer if buffering is not enabled 
+* 2017-08-19. Giulio.     @CHANGED the method reading only the actually requested data is invoked only if buffering is not enabled 
+* 2017-07-15. Giulio.     @CHANGED the way the returned stitched buffer is copied to the final buffer in order to cope with the case the returned buffer is smaller than the requeste one
+* 2017-07-06. Giulio.     @CHANGED call to 'getStripe2' in 'internal_loadSubvolume_to_real32' to enable selective read of data
 * 2017-04-12. Giulio.     @ADDED release of allocated buffers if an exception is raised in 'getStripe' (prevent further exceptions in the GUI version)
 * 2017-04-01. Giulio.     @ADDED support for multi-layer stitching
 * 2016-09-13. Giulio.     @ADDED a cache manager to store stitched subregions
@@ -53,6 +57,7 @@
 #include "vmStackedVolume.h"
 
 #include "IOPluginAPI.h"
+#include "iomanager.config.h"
 
 #ifdef _WIN32
 #include "dirent_win.h"
@@ -500,9 +505,16 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 	stitcher->computeVolumeDims(false,row_start,row_end,col_start,col_end,D0+D0_offs,D1+D0_offs); // D indices are mapped from stitched to unstitched volume
 
 	/* WARNING: it is possible that selected tiles do not contain all the subvolume requested 
-	 * a check between indices on unstitched volume (data members of stitcher) and indices on stitched volume (method input parameters)
-	 * should be done and 'computeVolumeDims' possibly re-executed with diferent input parameters
+	 * this should be accepted since it a consequence of how tile submatrices are stitched
+	 * the issue must be managed in the calling code that receives a buffer that may not cover the whole subvolume requested
+	 * id some data are missing they shoulbe set to zero since it means that the voxel in the missing position is empty
 	 */
+
+	// save indices to be used to load selected data
+	VV0 = V0 + V0_offs;
+	VV1 = V1 + V0_offs;
+	HH0 = H0 + H0_offs;
+	HH1 = H1 + H0_offs;
 
 	V0 = stitcher->V0;
 	V1 = stitcher->V1;
@@ -590,16 +602,18 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 			stripesCorners[row_index-1].merged.merge(stripesCorners[row_index  ].ups,       compareCorners);
 		}
 
-		sint64 u_strp_bottom_displ;
-		sint64 d_strp_top_displ;
-		sint64 u_strp_top_displ;
+		sint64 u_strp_bottom_displ; // bottom displacement of up stripe
+		sint64 d_strp_top_displ;    // top displacement of down stripe
+		sint64 u_strp_top_displ;    // top displacement of up stripe
 		sint64 d_strp_left_displ;
 		sint64 u_strp_left_displ;
 		sint64 d_strp_width;
 		sint64 u_strp_width;
 		sint64 dd_strp_top_displ;
-		sint64 u_strp_d_strp_overlap = 0; // WARNING: check how initialize
-		sint64 h_up, h_down, h_overlap;
+		sint64 u_strp_d_strp_overlap = 0; // overlap between up and down stripes; WARNING: check how initialize
+		sint64 h_up;
+		sint64 h_down;
+		sint64 h_overlap;
 		iom::real_t *buffer_ptr, *ustripe_ptr, *dstripe_ptr;	
 
 		iom::real_t* stripe_up=NULL, *stripe_down;                                   //will contain up-stripe and down-stripe computed by calling 'getStripe' method
@@ -640,7 +654,21 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 		for (int i=0; i<height*width*depth; i++)
 			buffer[i]=0;
 
-		sint64 z = D0;
+		sint64 z = D0; // starting slice (offset is index 'k')
+		
+		// 2017-08-19. Giulio. @ADDED offsets on whole buffer to reduce the amount of data to be copied
+		// if 'delta' variables are zero the whole buffer is filled with data returned by getStripe method
+		sint64 subvol_V_top_delta    = cb->getENABLED() ? 0 : VV0 - V0;		//top    V(ertical) offset of actual subvolume
+		sint64 subvol_V_bottom_delta = cb->getENABLED() ? 0 : V1 - VV1;		//bottom V(ertical) offset of actual subvolume
+		
+		if ( subvol_V_top_delta < 0 ) {
+ 			iom::warning(iom::strprintf("V top offset negative: set to 0").c_str(), __iom__current__function__);
+ 			subvol_V_top_delta = 0;
+ 		}
+		if ( subvol_V_bottom_delta < 0 ) {
+ 			iom::warning(iom::strprintf("V bottom offset negative: set to 0").c_str(), __iom__current__function__);
+ 			subvol_V_bottom_delta = 0;
+ 		}
 
 		for(sint64 k = 0; k < depth; k++)
 		{
@@ -652,7 +680,13 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 
 				// 2017-04-12. Giulio. @ADDED release of allocated buffers if an exception is raised in 'getStripe' (prevent further exceptions in the GUI version)
 				try {
-					stripe_down = stitcher->getStripe(row_index,(int)(z+k), restore_direction, stk_rst, blending_algo);
+					// 2017-08-19. Giulio. @CHANGED the method reading only the actually requested data is invoked only if buffering is not enabled
+					if ( cb->getENABLED() ) 
+						// since 'delta' variables are zero all returned data will be copied in the final buffer
+						stripe_down = stitcher->getStripe(row_index,(int)(z+k), restore_direction, stk_rst, blending_algo);
+					else
+						// only requested data are actually read into the returned buffer and will be copied into the final buffer
+						stripe_down = stitcher->getStripe2(row_index,(int)(z+k), VV0, VV1, HH0, HH1, restore_direction, stk_rst, blending_algo);
 				}
     			catch( iom::exception& exception) {
     				stitcher->volume->releaseBuffers();
@@ -671,9 +705,63 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 					dd_strp_top_displ				= stripesCoords[row_index+1].up_left.V		 - V0;
 				h_up =  h_down						= u_strp_d_strp_overlap;
 
+/**********************************************************************************************************************************************************************************************************
+
+This comment assumes h_overlap >= 0
+The actual code manages also the case h_overlap < 0 (meaning that there are regions uncovered between the up stripe and the down stripe  
+The loop copies the down stripe onto the buffer merged with the overlapping zone of the up stripe
+
+
+                                                                      | index on whole buffer                                        | index on up stripe                           |index on down stripe |
+                                                                      |                                                              |                                              |                     |
+           -------  -----------------------------------------------   | u_strp_top_displ                                             |                                              |                     |
+           |                                                          |                                                              |                                              |                     |
+           |                                                          |                                                              |                                              |                     |
+           |                                                          |                                                              |                                              |                     |
+           |                  already copied in previous cycle        |                                                              |                                              |                     |
+           |                                                          |                                                              |                                              |                     |
+           /                                                          |                                                              |                                              |                     |
+up stripe -                                                           |                                                              |                                              |                     |
+           \    --  ...............................................   | d_strp_top_displ                                             | (d_strp_top_displ - u_strp_top_displ)        |                     |
+           |    |                      first cycle (only up stripe)   |                                                              |                                              |                     | 
+           |    |                      ............................   | d_strp_top_displ+h_up                                        | (d_strp_top_displ + h_up - u_strp_top_displ) | h_up                |
+           |    |   OVERLAPPING ZONE   second  cycle (both stripes)   |                                                              |                                              |                     |
+           |    |                      ----------------------------   | d_strp_top_displ+h_up+h_overlap                              |                                              | h_up + h_overlap    |
+           |    |                      third cycle (only down stripe) |                                                              |                                              |                     |
+           ---- /   -----------------------------------------------   | d_strp_top_displ+h_up+h_overlap+h_down = u_strp_bottom_displ | (u_strp_bottom_displ - d_strp_top_displ)     |                     |
+down stripe    -                                                      |                                                              |                                              |                     |
+                \                                                     |                                                              |                                              |                     |
+                |   NON OVERLAPPING ZONE                              | i                                                            | (i - d_strp_top_displ)                       |                     |
+                |                                                     |                                                              |                                              |                     |
+           ---- |   ___.___.___.___.___.___.___.___.___.___.___.___   | dd_strp_top_displ                                            |                                              |                     |
+           |    |                                                     |                                                              |                                              |                     |
+           |    |                                                      
+           |    --  ...............................................   
+           | 
+           | 
+           /         
+dd stripe -                                                           
+           \                           next stripe 
+           |
+           |  
+           |  
+           |         
+           | 
+           -------  ___.___.___.___.___.___.___.___.___.___.___.___ 
+        
+**********************************************************************************************************************************************************************************************************/
+
+				// 2017-08-19. Giulio. @ADDED top offset on down stripe to reduce the amount of data to be copied
+				// subvol_V_top_delta = 0 -> d_strp_V_top_delta = 0
+				sint64 d_strp_V_top_delta    = (subvol_V_top_delta > d_strp_top_displ) ? (subvol_V_top_delta - d_strp_top_displ) : 0;
+							
 				//overlapping zone
 				if(row_index!=stitcher->ROW_START)
 				{	
+					// 2017-08-19. Giulio. @ADDED top offset on up stripe to reduce the amount of data to be copied
+					// subvol_V_top_delta = 0 -> u_strp_V_top_delta = 0
+					sint64 u_strp_V_top_delta    = (subvol_V_top_delta > u_strp_top_displ) ? (subvol_V_top_delta - u_strp_top_displ) : 0;
+
 					std::list<stripe_corner>::iterator cnr_i_next, cnr_i = stripesCorners[row_index-1].merged.begin();
 					stripe_corner *cnr_left=&(*cnr_i), *cnr_right;
 					cnr_i++;
@@ -702,24 +790,24 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 						{
 							delta_angle = PI/(h_overlap-1);
 							angle = 0;
-
+							
 							//UP stripe zone
-							buffer_ptr  = &buffer[k*height*width+d_strp_top_displ*width+j];
-							ustripe_ptr = &stripe_up[(d_strp_top_displ-u_strp_top_displ)*u_strp_width +j - u_strp_left_displ];
-							for(sint64 i=d_strp_top_displ; i<d_strp_top_displ+h_up+(h_overlap >= 0 ?  0 : h_overlap); i++, buffer_ptr+=width, ustripe_ptr+= u_strp_width)
+							buffer_ptr  = &buffer[k*height*width+std::max<sint64>(d_strp_top_displ,subvol_V_top_delta)*width+j];
+							ustripe_ptr = &stripe_up[std::max<sint64>((d_strp_top_displ-u_strp_top_displ),u_strp_V_top_delta)*u_strp_width +j - u_strp_left_displ];
+							for(sint64 i=std::max<sint64>(d_strp_top_displ,subvol_V_top_delta); i<std::min<sint64>(d_strp_top_displ+h_up+(h_overlap >= 0 ?  0 : h_overlap),height-subvol_V_bottom_delta); i++, buffer_ptr+=width, ustripe_ptr+= u_strp_width)
 								*buffer_ptr = *ustripe_ptr;
 
 							//OVERLAPPING zone
-							buffer_ptr  = &buffer[k*height*width+(d_strp_top_displ+h_up)*width+j];
-							ustripe_ptr = &stripe_up[(d_strp_top_displ+h_up-u_strp_top_displ)*u_strp_width +j - u_strp_left_displ];
-							dstripe_ptr = &stripe_down[(d_strp_top_displ+h_up-d_strp_top_displ)*d_strp_width +j - d_strp_left_displ];
-							for(sint64 i=d_strp_top_displ+h_up; i<d_strp_top_displ+h_up+h_overlap; i++, buffer_ptr+=width, ustripe_ptr+= u_strp_width, dstripe_ptr+=d_strp_width, angle+=delta_angle)
+							buffer_ptr  = &buffer[k*height*width+std::max<sint64>((d_strp_top_displ+h_up),subvol_V_top_delta)*width+j];
+							ustripe_ptr = &stripe_up[std::max<sint64>((d_strp_top_displ+h_up-u_strp_top_displ),u_strp_V_top_delta)*u_strp_width +j - u_strp_left_displ];
+							dstripe_ptr = &stripe_down[std::max<sint64>((d_strp_top_displ+h_up-d_strp_top_displ),d_strp_V_top_delta)*d_strp_width +j - d_strp_left_displ];
+							for(sint64 i=std::max<sint64>(d_strp_top_displ+h_up,subvol_V_top_delta); i<std::min<sint64>(d_strp_top_displ+h_up+h_overlap,height-subvol_V_bottom_delta); i++, buffer_ptr+=width, ustripe_ptr+= u_strp_width, dstripe_ptr+=d_strp_width, angle+=delta_angle)
 								*buffer_ptr = blending(angle,*ustripe_ptr,*dstripe_ptr);
 
 							//DOWN stripe zone
-							buffer_ptr = &buffer[k*height*width+(d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0))*width+j];
-							dstripe_ptr = &stripe_down[((d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0))-d_strp_top_displ)*d_strp_width +j - d_strp_left_displ];
-							for(sint64 i=d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0); i<d_strp_top_displ+h_up+h_overlap+h_down; i++, buffer_ptr+=width, dstripe_ptr+=d_strp_width)
+							buffer_ptr = &buffer[k*height*width+std::max<sint64>((d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0)),subvol_V_top_delta)*width+j];
+							dstripe_ptr = &stripe_down[std::max<sint64>(((d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0))-d_strp_top_displ),d_strp_V_top_delta)*d_strp_width +j - d_strp_left_displ];
+							for(sint64 i=std::max<sint64>(d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0),subvol_V_top_delta); i<std::min<sint64>(d_strp_top_displ+h_up+h_overlap+h_down,height-subvol_V_bottom_delta); i++, buffer_ptr+=width, dstripe_ptr+=d_strp_width)
 								*buffer_ptr = *dstripe_ptr;
 						}
 
@@ -731,10 +819,11 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 				}
 
 				//non-overlapping zone
-				buffer_ptr = &buffer[k*height*width+((row_index==stitcher->ROW_START ? 0 : u_strp_bottom_displ))*width];
-				for(sint64 i= (row_index==stitcher->ROW_START ? 0 : u_strp_bottom_displ); i<(row_index==stitcher->ROW_END? height : dd_strp_top_displ); i++)
+				// 2017-08-19. Giulio. @CHANGED only requested data is copied of first stripe if subvol_V_top_delta > 0 and of last stripe if subvol_V_bottom_delta > 0
+				buffer_ptr = &buffer[k*height*width+((row_index==stitcher->ROW_START ? subvol_V_top_delta : u_strp_bottom_displ))*width];
+				for(sint64 i=(row_index==stitcher->ROW_START ? subvol_V_top_delta : u_strp_bottom_displ); i<(row_index==stitcher->ROW_END? height-subvol_V_bottom_delta : dd_strp_top_displ); i++)
 				{
-					dstripe_ptr = &stripe_down[(i-d_strp_top_displ)*d_strp_width - d_strp_left_displ];
+					dstripe_ptr = &stripe_down[std::max<sint64>((i-d_strp_top_displ),d_strp_V_top_delta)*d_strp_width - d_strp_left_displ];
 					for(sint64 j=0; j<width; j++, buffer_ptr++, dstripe_ptr++)
 						if(j - d_strp_left_displ >= 0 && j - d_strp_left_displ < stripesCoords[row_index].bottom_right.H)
 							*buffer_ptr = *dstripe_ptr;
@@ -764,6 +853,8 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 	HH1 = H1 - H0_offs;
 	DD0 = D0 - D0_offs;
 	DD1 = D1 - D0_offs;
+//printf("---> (3) VV0 = %d, V0 = %d, V0_offs = %d\n",VV0,V0,V0_offs);
+//printf("---> (3) HH0 = %d, H0 = %d, H0_offs = %d\n",HH0,H0,H0_offs);
 
 	return buffer;
 }
@@ -797,23 +888,46 @@ real32* UnstitchedVolume::loadSubvolume_to_real32(int V0,int V1, int H0, int H1,
 
 	// extract requested subvolume from the returned buffer
 
-	sint64 stridex  = HH1 - HH0;
-	sint64 stridexy = stridex * (VV1 - VV0);
+	sint64 s_stridex  = HH1 - HH0;
+	sint64 s_stridexy = s_stridex * (VV1 - VV0);
+
+	// 2017-07-15. Giulio. must be introduces in case the returned buffer is smaller than the requested subvolume
+	sint64 d_stridex  = H1 - H0;
+	sint64 d_stridexy = d_stridex * (V1 - V0);
 
 	sint64 sbv_width = H1 - H0;
 	sint64 sbv_height = V1 - V0;
 	sint64 sbv_depth = D1 - D0;
 
     real32 *subvol = new real32[sbv_width * sbv_height * sbv_depth];
+	memset(subvol,0,sizeof(real32)*(sbv_width * sbv_height * sbv_depth));
 
 	int i, j, k;
+	real32 *ptr_d_xy;
+	real32 *ptr_d_x;
+	real32 *ptr_d;
 	real32 *ptr_s_xy;
 	real32 *ptr_s_x;
 	real32 *ptr_s;
-	real32  *ptr_d = subvol;
-	for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
-		for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
-			for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
+
+	// 2017-07-15. Giulio. The following for loop manage both the case the returned buffer is larger than the requested subvolume (typical case)
+	// and the case the returned buffer is smaller than the requested subvolume
+
+	for ( k=std::max<int>(D0,DD0), 
+			ptr_d_xy=subvol + std::max<int>(0,(VV0 - V0))*d_stridex + std::max<int>(0,(HH0 - H0)), 
+			ptr_s_xy=buf + std::max<int>(0,(V0 - VV0))*s_stridex + std::max<int>(0,(H0 - HH0)); 
+			k<std::min<int>(D1,DD1); 
+			k++, ptr_d_xy+=d_stridexy, ptr_s_xy+=s_stridexy )
+		for ( i=std::max<int>(V0,VV0), 
+				ptr_d_x=ptr_d_xy, 
+				ptr_s_x=ptr_s_xy; 
+			    i<std::min<int>(V1,VV1); 
+				i++, ptr_d_x+=d_stridex, ptr_s_x+=s_stridex )
+			for ( j=std::max<int>(H0,HH0), 
+					ptr_d=ptr_d_x, 
+					ptr_s=ptr_s_x; 
+				    j<std::min<int>(H1,HH1); 
+					j++, ptr_d++, ptr_s++ )
 				*ptr_d = *ptr_s;
 
 	if ( internal_buffer_deallocate ) 
@@ -876,14 +990,20 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 		current_channel = active[0];
 	}
 
-	real32 *buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1); 
-	if ( VV0 > V0 || HH0 > H0 || DD0 > D0 || VV1 < V1 || HH1 < H1 || DD1 < D1 )
-  		throw iim::IOException(iom::strprintf("returned buffer is smaller than the requested subvolume (requested [V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d] -- returned [VV0=%d, VV1=%d, HH0=%d, HH1=%d, DD0=%d, DD1=%d])", 
-												V0, V1, H0, H1, D0, D1, VV0, VV1, HH0, HH1, DD0, DD1), __iim__current__function__);
+	real32 *buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1);
+	// 2017-07-15. Giulio. this check is no more needed: the case the returned buffer is smaller than the requested subvolume is explicitly managed by the code 
+	//if ( VV0 > V0 || HH0 > H0 || DD0 > D0 || VV1 < V1 || HH1 < H1 || DD1 < D1 ) {
+ // 		throw iim::IOException(iom::strprintf("returned buffer is smaller than the requested subvolume (requested [V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d] -- returned [VV0=%d, VV1=%d, HH0=%d, HH1=%d, DD0=%d, DD1=%d])", 
+	//											V0, V1, H0, H1, D0, D1, VV0, VV1, HH0, HH1, DD0, DD1), __iim__current__function__);
+	//}
 
 	// change when subvolumes are enabled
-	sint64 stridex  = HH1 - HH0;
-	sint64 stridexy = stridex * (VV1 - VV0);
+	sint64 s_stridex  = HH1 - HH0;
+	sint64 s_stridexy = s_stridex * (VV1 - VV0);
+
+	// 2017-07-15. Giulio. must be introduces in case the returned buffer is smaller than the requested subvolume
+	sint64 d_stridex  = H1 - H0;
+	sint64 d_stridexy = d_stridex * (V1 - V0);
 
 	sint64 sbv_width = H1 - H0;
 	sint64 sbv_height = V1 - V0;
@@ -893,6 +1013,10 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 	if ( !subvol )
  		throw iim::IOException(iom::strprintf("cannot allocate the buffer of uint8 (%llu x %llu x %llu x %u x %u = %llu bytes)",
  			sbv_width, sbv_height, sbv_depth, n_chans, (BYTESxCHAN/red_factor), sbv_width * sbv_height * sbv_depth * n_chans * (BYTESxCHAN/red_factor)), __iom__current__function__);
+	memset(subvol,0,sizeof(uint8)*(sbv_width * sbv_height * sbv_depth * n_chans * (BYTESxCHAN/red_factor)));
+
+	// 2017-07-15. Giulio. All the following for loops manage both the case the returned buffer is larger than the requested subvolume (typical case)
+	// and the case the returned buffer is smaller than the requested subvolume
 
 	int i, j, k, c;
 	real32 *ptr_s_xy;
@@ -900,10 +1024,25 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 	real32 *ptr_s;
 	if ( BYTESxCHAN == 1 ) {
 
-		uint8  *ptr_d = subvol;
-		for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
-			for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
-				for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
+		uint8  *ptr_d_xy;
+		uint8  *ptr_d_x;
+		uint8  *ptr_d;
+
+		for ( k=std::max<int>(D0,DD0), 
+			  ptr_d_xy=subvol + std::max<int>(0,(VV0 - V0))*d_stridex + std::max<int>(0,(HH0 - H0)), 
+			  ptr_s_xy=buf + std::max<int>(0,(V0 - VV0))*s_stridex + std::max<int>(0,(H0 - HH0)); 
+			  k<std::min<int>(D1,DD1); 
+			  k++, ptr_d_xy+=d_stridexy, ptr_s_xy+=s_stridexy )
+			for ( i=std::max<int>(V0,VV0), 
+				  ptr_d_x=ptr_d_xy, 
+				  ptr_s_x=ptr_s_xy; 
+			      i<std::min<int>(V1,VV1); 
+				  i++, ptr_d_x+=d_stridex, ptr_s_x+=s_stridex )
+				for ( j=std::max<int>(H0,HH0), 
+					  ptr_d=ptr_d_x, 
+					  ptr_s=ptr_s_x; 
+				      j<std::min<int>(H1,HH1); 
+					  j++, ptr_d++, ptr_s++ )
 					*ptr_d = uint8(*ptr_s * 255.0f);
 
 		for ( c=1; c<n_chans; c++ ) { // more than one channel
@@ -932,19 +1071,47 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 			// loads next channel
 			buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1);
 			// append next channel to the subvolume buffer
-			for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
-				for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
-					for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
+			for ( k=std::max<int>(D0,DD0), 
+				  // 2017-07-15. Giulio. ptr_d_xy does not need to be initialized, it is correctly set by previous loops 
+				  ptr_s_xy=buf + std::max<int>(0,(V0 - VV0))*s_stridex + std::max<int>(0,(H0 - HH0)); 
+				  k<std::min<int>(D1,DD1); 
+				  k++, ptr_d_xy+=d_stridexy, ptr_s_xy+=s_stridexy )
+				for ( i=std::max<int>(V0,VV0), 
+					  ptr_d_x=ptr_d_xy, 
+					  ptr_s_x=ptr_s_xy; 
+					  i<std::min<int>(V1,VV1); 
+					  i++, ptr_d_x+=d_stridex, ptr_s_x+=s_stridex )
+					for ( j=std::max<int>(H0,HH0), 
+						  ptr_d=ptr_d_x, 
+						  ptr_s=ptr_s_x; 
+						  j<std::min<int>(H1,HH1); 
+						  j++, ptr_d++, ptr_s++ )
 						*ptr_d = uint8(*ptr_s * 255.0f);
 		}
 	}
 	else if ( BYTESxCHAN == 2 ) {
 
 		if ( red_factor == 1 ) {
-			uint16  *ptr_d = (uint16 *) subvol;
-			for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
-				for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
-					for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
+
+			uint16  *ptr_d_xy;
+			uint16  *ptr_d_x;
+			uint16  *ptr_d;
+
+			for ( k=std::max<int>(D0,DD0), 
+				  ptr_d_xy=(uint16 *)subvol + std::max<int>(0,(VV0 - V0))*d_stridex + std::max<int>(0,(HH0 - H0)), 
+				  ptr_s_xy=buf + std::max<int>(0,(V0 - VV0))*s_stridex + std::max<int>(0,(H0 - HH0)); 
+				  k<std::min<int>(D1,DD1); 
+				  k++, ptr_d_xy+=d_stridexy, ptr_s_xy+=s_stridexy )
+				for ( i=std::max<int>(V0,VV0), 
+					  ptr_d_x=ptr_d_xy, 
+					  ptr_s_x=ptr_s_xy; 
+					  i<std::min<int>(V1,VV1); 
+					  i++, ptr_d_x+=d_stridex, ptr_s_x+=s_stridex )
+					for ( j=std::max<int>(H0,HH0), 
+						  ptr_d=ptr_d_x, 
+						  ptr_s=ptr_s_x; 
+						  j<std::min<int>(H1,HH1); 
+						  j++, ptr_d++, ptr_s++ )
 						*ptr_d = uint16(*ptr_s * 65535.0F);
 
 			for ( c=1; c<n_chans; c++ ) { // more than one channel
@@ -973,26 +1140,63 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 				// loads next channel
 				buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1);
 				// append next channels to the subvolume buffer
-				for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
-					for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
-						for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
+				for ( k=std::max<int>(D0,DD0), 
+					  // 2017-07-15. Giulio. ptr_d_xy does not need to be initialized, it is correctly set by previous loops 
+					  ptr_s_xy=buf + std::max<int>(0,(V0 - VV0))*s_stridex + std::max<int>(0,(H0 - HH0)); 
+					  k<std::min<int>(D1,DD1); 
+					  k++, ptr_d_xy+=d_stridexy, ptr_s_xy+=s_stridexy )
+					for ( i=std::max<int>(V0,VV0), 
+						  ptr_d_x=ptr_d_xy, 
+						  ptr_s_x=ptr_s_xy; 
+						  i<std::min<int>(V1,VV1); 
+						  i++, ptr_d_x+=d_stridex, ptr_s_x+=s_stridex )
+						for ( j=std::max<int>(H0,HH0), 
+							  ptr_d=ptr_d_x, 
+							  ptr_s=ptr_s_x; 
+							  j<std::min<int>(H1,HH1); 
+							  j++, ptr_d++, ptr_s++ )
 							*ptr_d = uint16(*ptr_s * 65535.0F);
 			}
 		}
 		// 2015-12-28. Giulio. @ADDED conversion from 16 to 8 bits depth
 		else if ( red_factor == 2 ) { 
-			uint8  *ptr_d = subvol; // WARNING: assumes that red_factor = 2 (see check on ret_type)
+
+			uint8  *ptr_d_xy;
+			uint8  *ptr_d_x;
+			uint8  *ptr_d;   // WARNING: assumes that red_factor = 2 (see check on ret_type)
+
 			// find maximum value in channel R
 			real32 valmax = 0;
-			for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
-				for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
-					for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_s++ )
+			for ( k=std::max<int>(D0,DD0), 
+				  ptr_s_xy=buf + std::max<int>(0,(V0 - VV0))*s_stridex + std::max<int>(0,(H0 - HH0)); 
+				  k<std::min<int>(D1,DD1); 
+				  k++, ptr_s_xy+=s_stridexy )
+				for ( i=std::max<int>(V0,VV0), 
+					  ptr_s_x=ptr_s_xy; 
+					  i<std::min<int>(V1,VV1); 
+					  i++, ptr_s_x+=s_stridex )
+					for ( j=std::max<int>(H0,HH0), 
+						  ptr_s=ptr_s_x; 
+						  j<std::min<int>(H1,HH1); 
+						  j++, ptr_s++ )
 						if (*ptr_s > valmax )
 							valmax = *ptr_s;
 			// normalize and convert to required depth
-			for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
-				for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
-					for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
+			for ( k=std::max<int>(D0,DD0), 
+				  ptr_d_xy=subvol + std::max<int>(0,(VV0 - V0))*d_stridex + std::max<int>(0,(HH0 - H0)), 
+				  ptr_s_xy=buf + std::max<int>(0,(V0 - VV0))*s_stridex + std::max<int>(0,(H0 - HH0)); 
+				  k<std::min<int>(D1,DD1); 
+				  k++, ptr_d_xy+=d_stridexy, ptr_s_xy+=s_stridexy )
+				for ( i=std::max<int>(V0,VV0), 
+					  ptr_d_x=ptr_d_xy, 
+					  ptr_s_x=ptr_s_xy; 
+					  i<std::min<int>(V1,VV1); 
+					  i++, ptr_d_x+=d_stridex, ptr_s_x+=s_stridex )
+					for ( j=std::max<int>(H0,HH0), 
+						  ptr_d=ptr_d_x, 
+						  ptr_s=ptr_s_x; 
+						  j<std::min<int>(H1,HH1); 
+						  j++, ptr_d++, ptr_s++ )
 						*ptr_d = uint8((*ptr_s/valmax) * 255.0F);
 
 			for ( c=1; c<n_chans; c++ ) { // more than one channel
@@ -1022,15 +1226,36 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
 				buf = internal_loadSubvolume_to_real32(VV0, VV1, HH0, HH1, DD0, DD1, V0, V1, H0, H1, D0, D1);
 				// append next channels to the subvolume buffer
 				// find maximum value in channel c
-				for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
-					for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
-						for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_s++ )
+				for ( k=std::max<int>(D0,DD0), 
+					  ptr_s_xy=buf + std::max<int>(0,(V0 - VV0))*s_stridex + std::max<int>(0,(H0 - HH0)); 
+					  k<std::min<int>(D1,DD1); 
+					  k++, ptr_s_xy+=s_stridexy )
+					for ( i=std::max<int>(V0,VV0), 
+						  ptr_s_x=ptr_s_xy; 
+						  i<std::min<int>(V1,VV1); 
+						  i++, ptr_s_x+=s_stridex )
+						for ( j=std::max<int>(H0,HH0), 
+							  ptr_s=ptr_s_x; 
+							  j<std::min<int>(H1,HH1); 
+							  j++, ptr_s++ )
 							if (*ptr_s > valmax )
 								valmax = *ptr_s;
 				// normalize and convert to required depth
-				for ( k=D0, ptr_s_xy=buf + (V0 - VV0)*stridex + (H0 - HH0); k<D1; k++, ptr_s_xy+=stridexy )
-					for ( i=V0, ptr_s_x=ptr_s_xy; i<V1; i++, ptr_s_x+=stridex )
-						for ( j=H0, ptr_s=ptr_s_x; j<H1; j++, ptr_d++, ptr_s++ )
+				for ( k=std::max<int>(D0,DD0), 
+					  // 2017-07-15. Giulio. ptr_d_xy does not need to be initialized, it is correctly set by previous loops 
+					  ptr_s_xy=buf + std::max<int>(0,(V0 - VV0))*s_stridex + std::max<int>(0,(H0 - HH0)); 
+					  k<std::min<int>(D1,DD1); 
+					  k++, ptr_d_xy+=d_stridexy, ptr_s_xy+=s_stridexy )
+					for ( i=std::max<int>(V0,VV0), 
+						  ptr_d_x=ptr_d_xy, 
+						  ptr_s_x=ptr_s_xy; 
+						  i<std::min<int>(V1,VV1); 
+						  i++, ptr_d_x+=d_stridex, ptr_s_x+=s_stridex )
+						for ( j=std::max<int>(H0,HH0), 
+							  ptr_d=ptr_d_x, 
+							  ptr_s=ptr_s_x; 
+							  j<std::min<int>(H1,HH1); 
+							  j++, ptr_d++, ptr_s++ )
 							*ptr_d = uint8((*ptr_s/valmax) * 255.0F);
 			}
 		}

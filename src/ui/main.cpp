@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-06-30. Giulio.     @ADDED control over displacement computation of last row and last column of tiles
 * 2017-04-02. Giulio.     @ADDED support for creation of BigTiff files
 * 2017-04-02. Giulio.     @ADDED setting of the input channel in case the plugin is not interleaved (allow more than 3 channels)
 * 2016-09-04. Giulio.     @ADDED the setting of the configuration of the LibTIFF library
@@ -249,7 +250,8 @@ int main(int argc, char** argv)
 		{
 			stitcher->computeDisplacements(cli.pd_algo, cli.start_stack_row, cli.start_stack_col, cli.end_stack_row, cli.end_stack_col, 
 										   cli.overlap_V, cli.overlap_H, cli.search_radius_V, cli.search_radius_H, cli.search_radius_D, 
-										   cli.subvol_dim_D, cli.enable_restore, cli.restoring_direction, cli.show_progress_bar, cli.D0, cli.D1);
+										   cli.subvol_dim_D, cli.enable_restore, cli.restoring_direction, cli.show_progress_bar, cli.D0, cli.D1, 
+										   cli.disable_last_row, cli.disable_last_col);
 			defaultOutputFileName = "xml_displcomp";
 		}
 		if(cli.projdisplacements || cli.stitch)

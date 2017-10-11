@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2017-09-09. Giulio. @ADDED code to manage compression algorithms to be used in Imaris IMS files generation
 * 2017-06-27. Giulio  @ADDED code for managing the addition of timepoints to an existing file (many changes search for '2017-06-27')
 * 2017-04-22. Giulio  @ADDED adjustment in the file structure inheroted from another file 
 * 2017-04-20. Giulio  @CHANGED creation of a default file strucure 
@@ -62,6 +63,7 @@
 #define HDF5_SUFFIX   "ims"
 
 #include <string.h>
+#include "iomanager.config.h"
 
 
 // code to get time in string format
@@ -75,6 +77,11 @@ static char *get_time_str ( ) {
 	return time_str;
 }
 
+
+#define FILTER_NOTHING 0
+#define FILTER_GZIP 1
+#define FILTER_SZIP 2
+#define DELIMITATOR ":"
 
 
 #define MAXSTP   10     // maximim number of channels (aka setups)
@@ -417,7 +424,7 @@ IMS_obj_list_t *adjust_obj_list ( IMS_obj_list_t *olist, std::string fname, int 
 	}
 	for ( int c=0; c<n_chans; c++ ) {
 		sprintf(num_str,"%u",c);
-		dsi_obj_list->insert(std::make_pair("Channel" + std::string(num_str),IMS_obj_info_t(H5G_GROUP,new IMS_obj_list_t,chan_attr_list[chans[c]])));
+		dsi_obj_list->insert(std::make_pair("Channel " + std::string(num_str),IMS_obj_info_t(H5G_GROUP,new IMS_obj_list_t,chan_attr_list[chans[c]])));
 	}
 
 	// adjust DataSetInfo
@@ -643,7 +650,7 @@ public:
 	//int addResolution ( int r, float vxlszV, float vxlszH, float vxlszD, hsize_t dimV, hsize_t dimH, hsize_t dimD, hsize_t chnk_dimV, hsize_t chnk_dimH, hsize_t chnk_dimD );	
 	/* add resolution r with voxel size (vxlszV x vxlszH x vxlszD), dimensions (dimV x dimH x dimD) and chunk dimensions (chnk_dimV x chnk_dimH x chnk_dimD) to all chans */
 
-	int addTimePoint ( int t );
+	int addTimePoint ( int t, std::string params = "" );
 	/* add time point t (with all chans and all resolutions) */
 
 	void setVXL_SZ ( double szV, double szH, double szD );
@@ -1252,7 +1259,7 @@ int IMS_HDF5_fdescr_t::addResolution ( int r, hsize_t dimV, hsize_t dimH, hsize_
 
 
 
-int IMS_HDF5_fdescr_t::addTimePoint ( int t ) {
+int IMS_HDF5_fdescr_t::addTimePoint ( int t, std::string params ) {
 
     hsize_t maxdims[3] = {H5S_UNLIMITED, H5S_UNLIMITED, H5S_UNLIMITED};
 
@@ -1314,14 +1321,68 @@ int IMS_HDF5_fdescr_t::addTimePoint ( int t ) {
 
 				/* Set ZLIB / DEFLATE Compression using compression level 6.
 				 * To use SZIP Compression comment out these lines. 
-				 */ 
+				  
 				status = H5Pset_deflate (cparms, 3); 
+				*/
 
 				/* Uncomment these lines to set SZIP Compression 
+				
 				szip_options_mask = H5_SZIP_NN_OPTION_MASK;
 				szip_pixels_per_block = 16;
 				status = H5Pset_szip (cparms, szip_options_mask, szip_pixels_per_block);
 				*/
+				
+				/* Uncomment and modify these lines to generalize filter setting */
+
+				H5Z_filter_t h5z_filter_ID; 
+				std::vector<std::string> tokens;
+				
+				if ( params == "" ) {
+					tokens.push_back("1");
+					tokens.push_back("3");
+				}
+				else {
+					iom::split(params,DELIMITATOR,tokens);
+				}
+				// extract the filter ID
+				h5z_filter_ID = (H5Z_filter_t) atoi(tokens[0].c_str());
+				
+				// Set up the filter if any
+				// Note the "optional" flag is necessary, as with the DEFLATE filter
+				if (h5z_filter_ID != FILTER_NOTHING) {
+					if (h5z_filter_ID == FILTER_GZIP) {						
+						unsigned int compression_level;
+						if ( tokens.size() > 1 )
+							compression_level = (unsigned int)atoi(tokens[1].c_str());
+						else
+							compression_level = 3;
+						status = H5Pset_deflate(cparms, compression_level);
+					}
+					else if (h5z_filter_ID == FILTER_SZIP) {
+						unsigned int szip_options_mask;
+						if ( tokens.size() > 1 )
+							szip_options_mask = (unsigned int)atoi(tokens[1].c_str());
+						else
+							szip_options_mask = H5_SZIP_NN_OPTION_MASK;
+						unsigned int szip_pixels_per_block;
+						if ( tokens.size() > 2 )
+							szip_pixels_per_block = (unsigned int)atoi(tokens[2].c_str());
+						else
+							szip_pixels_per_block = 16;
+						status = H5Pset_szip (cparms, szip_options_mask, szip_pixels_per_block);
+					}
+					else {
+						size_t cd_nelmts = tokens.size()-1;
+						unsigned int *cd_values;
+						// extract compressor parameters
+						cd_values = new unsigned int[cd_nelmts];
+						for ( int t=0; t<cd_nelmts; t++ )
+							cd_values[t] = (unsigned int) atoi(tokens[t+1].c_str());
+						status = H5Pset_filter(cparms, h5z_filter_ID, H5Z_FLAG_OPTIONAL, cd_nelmts, cd_values);
+						delete []cd_values;
+					}
+				}
+				/**/
 
 				/* Create the cells dataset. */
 				dataset_id = H5Dcreate(ch_grpid, "Data", vxl_type, dataspace_id, H5P_DEFAULT, cparms, H5P_DEFAULT);
@@ -2191,11 +2252,11 @@ void IMS_HDF5addChans ( void *file_descr, iim::sint64 height, iim::sint64 width,
 }
 
 
-void IMS_HDF5addTimepoint ( void *file_descr, int tp ) throw (iim::IOException) {
+void IMS_HDF5addTimepoint ( void *file_descr, int tp, std::string params ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
 	IMS_HDF5_fdescr_t *int_descr = (IMS_HDF5_fdescr_t *) file_descr;
 
-	if ( int_descr->addTimePoint(tp) != tp )
+	if ( int_descr->addTimePoint(tp,params) != tp )
 		throw iim::IOException(iim::strprintf("cannot add time point %d",tp).c_str(),__iim__current__function__);
 #else
 	throw iim::IOException(iim::strprintf(

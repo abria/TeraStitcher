@@ -118,9 +118,9 @@ void CMergeTiles::run()
 		std::string mdata_fname = pMergeTiles->mdata_line->text().toStdString();
 		if(mdata_fname == PTabMergeTiles::metadata_path_null || mdata_fname.empty())
 			mdata_fname = "null";
-		std::string b3d_compressor_options = pMergeTiles->b3d_compressor_line->text().toStdString();
-		if(b3d_compressor_options == PTabMergeTiles::b3d_compressor_line_null || b3d_compressor_options.empty())
-			b3d_compressor_options = "null";
+		std::string external_compressor_options = pMergeTiles->external_compressor_line->text().toStdString();
+		if(external_compressor_options == PTabMergeTiles::external_compressor_line_null || external_compressor_options.empty())
+			external_compressor_options = ""; // use default compressor with default options (GZIP level 3)
 		int downsamplingFactor = 1;        // currently cannot be changed, the default is passed
 		//std::string outFmt = "RGB";      // no more used
 
@@ -151,7 +151,12 @@ void CMergeTiles::run()
 			pMergeTiles->libtiff_bigtiff_checkbox->isChecked(), 
 			show_progress_bar, 
 			isotropic, 
-			y0, y1, x0, x1, z0, z1
+			y0, y1, x0, x1, z0, z1,
+			false,
+			false,
+			false,
+			false,
+			external_compressor_options
 			// the other parameters are for command line version only, the default values are passed
 		);
 

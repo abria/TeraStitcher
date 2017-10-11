@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-09-11.  Giulio.     @ADDED parameter controlloing the compression algorithm to be used with HDf5 files
 * 2017-05-25.  Giulio.     @ADDED a lossy compression based on rescalinghas been introduced
 * 2017-04-23.  Giulio.     @CHANGED the call to conversion routines has been moved to VolumeConverter.cpp (vcDriver auxiliary function)
 * 2017-04-07.  Giulio.     @ADDED the opssibility to specify a subset of channels to be converted
@@ -190,6 +191,8 @@ int main ( int argc, char *argv[] ) {
 			fprintf(fout,"HEIGHT=%d\n",vc.getV1() - vc.getV0());
 			fprintf(fout,"WIDTH=%d\n",vc.getH1() - vc.getH0());
 			fprintf(fout,"DEPTH=%d\n",vc.getD1() - vc.getD0());
+			fprintf(fout,"BYTESxCHAN=%d\n",vc.getVolume()->getBYTESxCHAN());
+			fprintf(fout,"DIM_C=%d\n",vc.getVolume()->getDIM_C());
 
 			fclose(fout);
 			return EXIT_SUCCESS;
@@ -227,196 +230,8 @@ int main ( int argc, char *argv[] ) {
 			cli.makeDirs, 
 			cli.metaData, 
 			cli.parallel,
-			"RGB",
+			cli.compress_params,
 			cli.rescale_nbits);
-
-/* The followoing code has been substituted by the call to vcDriver
-
-		setLibTIFFcfg(!cli.libtiff_uncompressed,cli.libtiff_bigtiff,cli.libtiff_rowsPerStrip);
-
-		// do what you have to do
-		VolumeConverter vc;
-		
-		vc.setSrcVolume(cli.src_root_dir.c_str(),cli.src_format.c_str(),cli.outFmt.c_str(),cli.timeseries,cli.downsamplingFactor,cli.chanlist);
-		vc.setSubVolume(cli.V0,cli.V1,cli.H0,cli.H1,cli.D0,cli.D1);
-
-		if ( cli.dst_format == iim::SIMPLE_RAW_FORMAT )
-			if ( cli.timeseries ) {
-				vc.convertTo(cli.dst_root_dir.c_str(),cli.dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method);
-			}
-			else if ( cli.makeDirs ) {
-				vc.createDirectoryHierarchySimple(cli.dst_root_dir.c_str(),cli.resolutions,
-					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-// 				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
-// 					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
-// 					cli.show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-			else if ( cli.metaData ) {
-				//vc.mdataGenerator(cli.dst_root_dir.c_str(),cli.resolutions,
-				//	cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
-				//	cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-			else {
-				vc.generateTilesSimple(cli.dst_root_dir.c_str(),cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-		else if ( cli.dst_format == iim::SIMPLE_FORMAT )
-			if ( cli.timeseries ) {
-				vc.convertTo(cli.dst_root_dir.c_str(),cli.dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method);
-			}
-			else if ( cli.makeDirs ) {
-				vc.createDirectoryHierarchySimple(cli.dst_root_dir.c_str(),cli.resolutions,
-					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-// 				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
-// 					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
-// 					cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-			else if ( cli.metaData ) {
-				//vc.mdataGenerator(cli.dst_root_dir.c_str(),cli.resolutions,
-				//	cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
-				//	cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-			else {
-				vc.generateTilesSimple(cli.dst_root_dir.c_str(),cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-		else if ( cli.dst_format == iim::STACKED_RAW_FORMAT )
-			if ( cli.timeseries ) {
-				vc.convertTo(cli.dst_root_dir.c_str(),cli.dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method);
-			}
-			else if ( cli.makeDirs ) {
-				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
-					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-			else if ( cli.metaData ) {
-				vc.mdataGenerator(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
-					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-			else {
-				vc.generateTiles(cli.dst_root_dir.c_str(),cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-		else if ( cli.dst_format == iim::STACKED_FORMAT )
-			if ( cli.timeseries ) {
-				vc.convertTo(cli.dst_root_dir.c_str(),cli.dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method);
-			}
-			else if ( cli.makeDirs ) {
-				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
-					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-			else if ( cli.metaData ) {
-				vc.mdataGenerator(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
-					cli.slice_height,cli.slice_width,-1,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-			else {
-				vc.generateTiles(cli.dst_root_dir.c_str(),cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-		else if ( cli.dst_format == iim::TILED_FORMAT ) {
-			if ( cli.timeseries ) {
-				vc.convertTo(cli.dst_root_dir.c_str(),cli.dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method);
-			}
-			else if ( cli.makeDirs ) {
-				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-			else if ( cli.metaData ) {
-				vc.mdataGenerator(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-			else {
-				vc.generateTilesVaa3DRaw(cli.dst_root_dir.c_str(),cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-		}
-		else if ( cli.dst_format == iim::TILED_TIF3D_FORMAT ) {
-			if ( cli.timeseries ) {
-				vc.convertTo(cli.dst_root_dir.c_str(),cli.dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method);
-			}
-			else if ( cli.makeDirs ) {
-				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-			else if ( cli.metaData ) {
-				vc.mdataGenerator(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-			else {
-				vc.generateTilesVaa3DRaw(cli.dst_root_dir.c_str(),cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-		}
-		else if ( cli.dst_format == iim::TILED_MC_FORMAT )
-			if ( cli.timeseries ) {
-				vc.convertTo(cli.dst_root_dir.c_str(),cli.dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method);
-			}
-			else if ( cli.makeDirs ) {
-				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"Vaa3DRawMC",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-			else if ( cli.metaData ) {
-				vc.mdataGenerator(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"Vaa3DRawMC",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-			else {
-				vc.generateTilesVaa3DRawMC(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",false);
-			}
-		else if ( cli.dst_format == iim::TILED_MC_TIF3D_FORMAT )
-			if ( cli.timeseries ) {
-				vc.convertTo(cli.dst_root_dir.c_str(),cli.dst_format,8*vc.getVolume()->getBYTESxCHAN(),true,cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method);
-			}
-			else if ( cli.makeDirs ) {
-				vc.createDirectoryHierarchy(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"Tiff3DMC",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-			else if ( cli.metaData ) {
-				vc.mdataGenerator(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"Tiff3DMC",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-			else {
-				vc.generateTilesVaa3DRawMC(cli.dst_root_dir.c_str(),cli.ch_dir,cli.resolutions,
-					cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,cli.isotropic,
-					cli.show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN(),"",cli.parallel);
-			}
-		else if ( cli.dst_format == iim::BDV_HDF5_FORMAT )
-			vc.generateTilesBDV_HDF5(cli.dst_root_dir.c_str(),cli.resolutions,
-				cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,
-				cli.show_progress_bar,"Fiji_HDF5",8*vc.getVolume()->getBYTESxCHAN());
-		else if ( cli.dst_format == iim::IMS_HDF5_FORMAT )
-			vc.generateTilesIMS_HDF5(cli.dst_root_dir.c_str(),cli.mdata_fname,cli.resolutions,
-				cli.slice_height,cli.slice_width,cli.slice_depth,cli.halving_method,
-				cli.show_progress_bar,"Fiji_HDF5",8*vc.getVolume()->getBYTESxCHAN());
-*/
 
 		// display elapsed time
 		printf("\nTime elapsed: %.1f seconds\n\n", proctime + TIME(0));

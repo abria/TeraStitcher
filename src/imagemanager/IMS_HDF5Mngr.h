@@ -97,7 +97,7 @@ void IMS_HDF5init ( std::string fname, void *&descr, bool loadstruct = false, in
  * fname:      HDF5 filename
  * vxl_nbytes: number of bytes per voxel of datasets to be stored in the file; it is ignored if the file already exists
  * descr:      pointer to the returned opaque descriptor
- * obj_info:   to be used only if the file does not exist yet and must be created; is the description of the structure of the 
+ * obj_info:   to be used only if the file does not exist yet and it must be created; is the description of the structure of the 
  *             file to be created; the description is deallocated after it is used and cannot be used by the caller
  */
  
@@ -174,7 +174,7 @@ void IMS_HDF5addChans ( void *file_descr, iim::sint64 height, iim::sint64 width,
  */
 
 
-void IMS_HDF5addTimepoint ( void *file_descr, int tp = 0 ) throw (iim::IOException); 
+void IMS_HDF5addTimepoint ( void *file_descr, int tp = 0, std::string params = "" ) throw (iim::IOException); 
 /* add time point at time tp (first time point is the default)
  */
 
@@ -189,7 +189,7 @@ void IMS_HDF5getVolumeInfo ( void *descr, int tp, int res, void *&volume_descr,
 								float &ORG_V, float &ORG_H, float &ORG_D, 
 								iim::uint32 &DIM_V, iim::uint32 &DIM_H, iim::uint32 &DIM_D,
 							    int &DIM_C, int &BYTESxCHAN, int &DIM_T, int &t0, int &t1 ) throw (iim::IOException);
-/* Open a volume (i.e. a resolution) and return corresponding metadata 
+/* Open a volume (i.e. a resolution) and return the opaque descriptor of the volume and the corresponding metadata 
  */
 
 
