@@ -9,7 +9,7 @@ SUBDIRLIST(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR}/plugins)
 # ask for selection of the plugins to be included in the project
 # tiff2D and tiff3D are mandatory, thus they are set to ON by default
 FOREACH(subdir ${SUBDIRS})
-	if(subdir STREQUAL "tiff2D" OR subdir STREQUAL "tiff3D")
+	if(subdir STREQUAL "tiff2D" OR subdir STREQUAL "tiff3D" OR subdir STREQUAL "dcimg")
 		option (WITH_IO_PLUGIN_${subdir} "Include this plugin (mandatory) in the project" ON)
 	else()
 		option (WITH_IO_PLUGIN_${subdir} "Include this plugin (optional) in the project" OFF)
