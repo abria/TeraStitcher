@@ -205,8 +205,13 @@ namespace volumemanager
 
     //returns true if the given path is a directory
     inline bool isDirectory(std::string path){
-        struct stat s;
-        if( stat(path.c_str(),&s) == 0 )
+#ifdef _WIN32
+        struct _stat64 s;
+        if( _stat64(path.c_str(),&s) == 0 )
+#else
+		struct stat s;
+		if( stat(path.c_str(),&s) == 0 )
+#endif
         {
             if( s.st_mode & S_IFDIR )
                 return true;
@@ -219,8 +224,13 @@ namespace volumemanager
 
     //returns true if the given path is a file
     inline bool isFile(std::string path){
-        struct stat s;
-        if( stat(path.c_str(),&s) == 0 )
+#ifdef _WIN32
+		struct _stat64 s;
+		if( _stat64(path.c_str(),&s) == 0 )
+#else
+		struct stat s;
+		if( stat(path.c_str(),&s) == 0 )
+#endif
         {
             if( s.st_mode & S_IFDIR )
                 return false;

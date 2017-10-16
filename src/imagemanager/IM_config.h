@@ -317,8 +317,8 @@ namespace IconImageManager
         struct _stat64 s;
         if( _stat64(path.c_str(),&s) == 0 )
 #else
-		struct stat64 s;
-		if( stat64(path.c_str(),&s) == 0 )
+		struct stat s;
+		if( stat(path.c_str(),&s) == 0 )
 #endif
         {
             if( s.st_mode & S_IFDIR )
@@ -336,8 +336,8 @@ namespace IconImageManager
 		struct _stat64 s;
 		if( _stat64(path.c_str(),&s) == 0 )
 #else
-		struct stat64 s;
-		if( stat64(path.c_str(),&s) == 0 )
+		struct stat s;
+		if( stat(path.c_str(),&s) == 0 )
 #endif
         {
             if( s.st_mode & S_IFDIR )
