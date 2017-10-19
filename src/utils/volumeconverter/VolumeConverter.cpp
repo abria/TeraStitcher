@@ -412,7 +412,7 @@ void VolumeConverter::setSrcVolume(const char* _root_dir, const char* _fmt, cons
 		channels = volume->getDIM_C();
 	else { // a channel list has been specified
 		channels = (int) chanlist.size();
-		uint32 *active_chans = new uint32[channels];
+		iim::uint32 *active_chans = new iim::uint32[channels];
 		for ( int i=0; i<channels; i++) {
 			if ( isdigit(chanlist.at(i)) )
 				active_chans[i] = chanlist.at(i) - '0';
@@ -480,7 +480,7 @@ void VolumeConverter::setSrcVolume(iim::VirtualVolume * _imported_volume,
 		 channels = volume->getDIM_C();
 	 else { // a channel list has been specified
 		 channels = (int) chanlist.size();
-		 uint32 *active_chans = new uint32[channels];
+		 iim::uint32 *active_chans = new iim::uint32[channels];
 		 for ( int i=0; i<channels; i++) {
 			 if ( isdigit(chanlist.at(i)) )
 				 active_chans[i] = chanlist.at(i) - '0';
