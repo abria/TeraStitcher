@@ -26,7 +26,7 @@
 *    CHANGELOG    *
 *******************
 * 2015-04-15. Alessandro. @ADDED definition for default constructor.
-* 2015-04-06. Giulio.       @CHANGED Modified prunt method: printing stacks information is now off by default
+* 2015-04-06. Giulio.     @CHANGED Modified prunt method: printing stacks information is now off by default
 * 2015-02-28. Giulio.     @FIXED removed deallocation of data member 'active' in the destructor because it is performed by the desctructor of the base class iim::VirtualVolume
 */
 

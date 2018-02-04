@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-02-03. Giulio.     @ADDED internal method to correct non symmetric displacements between tiles
 * 2017-04-27. Giulio.     @ADDED static method to get the input plugin from the xml if specified
 * 2017-03-27. Giulio.     @ADDED initialization of 'active_channel' with iom::CHANS_no in case more than three channels are possible (iom::CHANS = NONE)
 * 2016-09-01. Giulio.     @ADDED Cache buffer.
@@ -260,7 +261,8 @@ void VirtualVolume::insertDisplacement(VirtualStack *stk_A, VirtualStack *stk_B,
 		displacement->setDefaultH(getDEFAULT_DISPLACEMENT_H());
 		displacement->setDefaultD(getDEFAULT_DISPLACEMENT_D());
 		stk_A->getEAST().push_back(displacement);
-		stk_B->getWEST().push_back(displacement->getMirrored(dir_horizontal));
+		//stk_B->getWEST().push_back(displacement->getMirrored(dir_horizontal));
+		stk_B->getWEST().push_back(displacement->getMirrored(dir_all));
 	}
 	else if(stk_B_row == stk_A_row +1 && stk_B_col == stk_A_col)
 	{
@@ -268,7 +270,8 @@ void VirtualVolume::insertDisplacement(VirtualStack *stk_A, VirtualStack *stk_B,
 		displacement->setDefaultH(0);	//we assume that adjacent tiles are aligned with respect to motorized stages coordinates					
 		displacement->setDefaultD(getDEFAULT_DISPLACEMENT_D());
 		stk_A->getSOUTH().push_back(displacement);
-		stk_B->getNORTH().push_back(displacement->getMirrored(dir_vertical));
+		//stk_B->getNORTH().push_back(displacement->getMirrored(dir_vertical));
+		stk_B->getNORTH().push_back(displacement->getMirrored(dir_all));
 	}
 	else
 	{
@@ -278,6 +281,34 @@ void VirtualVolume::insertDisplacement(VirtualStack *stk_A, VirtualStack *stk_B,
 		throw iom::exception(errMsg);
 	}
 }
+
+
+void VirtualVolume::adjustDisplacements ( ) {
+	VirtualStack *stk_A;
+	VirtualStack *stk_B;
+	//printf("---> VirtualVolume::adjustDisplacements- entered\n");
+	for ( int i=0; i<N_ROWS; i++ ) {
+		for ( int j=0; j<N_COLS; j++ ) {
+			stk_A = getSTACKS()[i][j];
+			if ( j < (N_COLS - 1) ) {
+				stk_B = getSTACKS()[i][j+1];
+				stk_B->getWEST().clear();
+				for ( int k=0; k<(stk_A->getEAST().size()); k++ ) {
+					stk_B->getWEST().push_back(stk_A->getEAST()[k]->getMirrored(dir_all));
+				}
+			}
+			if ( i < (N_ROWS - 1) ) {
+				stk_B = getSTACKS()[i+1][j];
+				stk_B->getNORTH().clear();
+				for ( int k=0; k<(stk_A->getSOUTH().size()); k++ ) {
+					stk_B->getNORTH().push_back(stk_A->getSOUTH()[k]->getMirrored(dir_all));
+				}
+			}
+		}
+	}
+	//printf("---> VirtualVolume::adjustDisplacements - terminated\n");
+}
+
 
 // return 'volume_format' attribute of <TeraStitcher> node from the given xml. 
 std::string VirtualVolume::getVolumeFormat(const std::string& xml_path) throw (iom::exception)

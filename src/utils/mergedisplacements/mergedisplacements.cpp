@@ -51,7 +51,7 @@ int main(int argc, char** argv)
 		TemplateCLI cli;
 		cli.readParams(argc, argv);
 		cli.checkParams();
-		
+
 		// do what you have to do
 		XMLDisplacementBag dispBag(cli.main_dir.c_str());
 

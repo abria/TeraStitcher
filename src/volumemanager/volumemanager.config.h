@@ -29,6 +29,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-01-20. Giulio.     @ADDED include of MCVolume.h
 * 2016-09-01. Giulio.     @ADDED type uint64.
 * 2015-08-26. Giulio.     @ADDED a function to remove an empty directory
 * 2014-09-01. Alessandro. @ADDED template class 'interval'.
@@ -70,6 +71,7 @@ namespace volumemanager
 	class VirtualStack;
 	class StackedVolume;
 	class BlockVolume;
+	class MCVolume;
 	class Stack;
 	class Block;
 	class CacheBuffer;

@@ -7,6 +7,7 @@ include_directories (${TeraStitcher_SOURCE_DIR}/crossmips)
 include_directories (${TeraStitcher_SOURCE_DIR}/stitcher)
 include_directories (${TeraStitcher_SOURCE_DIR}/common)
 include_directories (${TeraStitcher_SOURCE_DIR}/imagemanager)
+include_directories (${TeraStitcher_SOURCE_DIR}/utils/volumeconverter)
 
 # add 3rd party modules to include path
 include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty)
@@ -16,6 +17,12 @@ include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty/tinyxml)
 # add executable from the all .h and .cpp files
 file(GLOB UI_headers *.h)
 file(GLOB UI_sources *.cpp)
+
+option (WITH_NEW_MERGE "Use new merge code" OFF) 
+if(WITH_NEW_MERGE)
+		add_definitions(-DNEW_MERGE_ACTIVE)
+endif(WITH_NEW_MERGE)
+
 add_executable(terastitcher ${UI_headers} ${UI_sources})
 
 # add executable to install target
@@ -25,6 +32,7 @@ install(TARGETS terastitcher
 
 # link the executable to the other modules 
 target_link_libraries(terastitcher stitcher )
+target_link_libraries(terastitcher volumeconverter )
 target_link_libraries(terastitcher volumemanager )
 target_link_libraries(terastitcher crossmips )
 target_link_libraries(terastitcher iomanager )

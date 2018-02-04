@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-01-21. Giulio.     @ADDED in 'loadImageStack2' conditions to check if the requested region does not overlap with stack
 * 2017-07-06. Giulio.     @ADDED method 'loadImageStack2' to enable selective reads of data
 * 2017-04-26. Alessandro. @FIXED issue on Windows with Thumbs.db files that need to be ignored
 * 2017-04-12. Giulio.     @ADDED check on a precondition of 'loadImageStack'
@@ -873,7 +874,8 @@ iom::real_t* Stack::loadImageStack2(int first_file, int last_file, int V0, int V
 	first_file = min(first_file, DEPTH-1);
 	last_file = min(last_file, DEPTH-1);
 
-	if(isEmpty(first_file, last_file))
+	if(isEmpty(first_file, last_file) ||
+		V0 >= ABS_V+HEIGHT || V1 <= ABS_V || H0 >= ABS_H+WIDTH || H1 <= ABS_H ) //2018-01-21. Giulio. @ADDED conditions to check if the requested region does not overlap with stack
 	{
 		// allocate and initialize a black stack
 		uint64 image_size = static_cast<uint64>(WIDTH) * static_cast<uint64>(HEIGHT) * static_cast<uint64>(last_file-first_file+1);

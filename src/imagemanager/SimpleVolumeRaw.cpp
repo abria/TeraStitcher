@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-10-21. Giulio.    @ADDED compact active channels if not all channels are active in 'loadSubvolume_to_UINT8'
 * 2016-06-17. Giulio.    @ADDED ability to read a downsampled image 
 * 2016-03-24. Giulio.    @ADDED 16 bit support.
 * 2015-04-15 Alessandro. @ADDED definition for default constructor.
@@ -327,6 +328,7 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
 	sint64 sbv_height = V1 - V0;
 	sint64 sbv_width  = H1 - H0;
 	sint64 sbv_depth  = D1 - D0;
+	int datatype;
 
 	uint8 *subvol;
 
@@ -374,7 +376,6 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
 					//loading image
 					char *err_rawfmt;
 					V3DLONG *sz = 0;
-					int datatype;
 					int b_swap;
 					void *fhandle;
 					int header_len;
@@ -494,6 +495,11 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
 				}
 			}
 		}
+	}
+
+	if ( n_active < DIM_C ) { // not all channels are active
+		compact_active_chans((sbv_height * sbv_width * datatype),subvol);
+		sbv_channels = n_active;
 	}
 
     if(channels)

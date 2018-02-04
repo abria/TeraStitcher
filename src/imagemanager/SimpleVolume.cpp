@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-10-21. Giulio.     @ADDED compact active channels if not all channels are active in 'loadSubvolume_to_UINT8'
 * 2016-06-16. Giulio.     @ADDED ability to read a downsampled image 
 * 2016-03-24. Giulio.     @ADDED 16 bit support.
 * 2015-04-15. Alessandro. @ADDED definition for default constructor.
@@ -358,6 +359,7 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
     //initializing the number of channels with an undefined value (it will be detected from the first slice read)
     sint64 sbv_channels = -1;
 	sint64 sbv_bytes_chan = -1;
+	int bytes_x_chan;
 
 	//scanning of stacks matrix for data loading and storing into subvol
 	Rect_t subvol_area;
@@ -392,13 +394,12 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
 					unsigned int rows;
 					unsigned int cols;
 					unsigned int n_slices;
-					unsigned int channels;
-					int bytes_x_chan;
+					unsigned int native_channels;
 					int swap;
 					void *dummy;
 					int dummy_len;
 
-					if ( (err_Tiff3Dfmt = loadTiff3D2Metadata((char *)slice_fullpath,cols,rows,n_slices,channels,bytes_x_chan,swap,dummy,dummy_len)) != 0 ) {
+					if ( (err_Tiff3Dfmt = loadTiff3D2Metadata((char *)slice_fullpath,cols,rows,n_slices,native_channels,bytes_x_chan,swap,dummy,dummy_len)) != 0 ) {
 						throw iom::exception(iom::strprintf("unable to read tiff file (%s)",err_Tiff3Dfmt), __iom__current__function__);
 					}
 					closeTiff3DFile(dummy);
@@ -412,7 +413,7 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
 																												rows, cols, sbv_height, sbv_width, downsamplingFactor), __iom__current__function__);
 					}
 
-					uint8 *slice = ( DIM_C == 1 ) ? subvol + (k*sbv_height*sbv_width*bytes_x_chan) : new uint8[sbv_height * sbv_width * channels * bytes_x_chan]; // sbv variable should be used here
+					uint8 *slice = ( DIM_C == 1 ) ? subvol + (k*sbv_height*sbv_width*bytes_x_chan) : new uint8[sbv_height * sbv_width * native_channels * bytes_x_chan]; // sbv variable should be used here
 
 					// cols and rows should be passed here because sbv variables have a different value when a subregion is to be loaded
 					if ( (err_Tiff3Dfmt = readTiff3DFile2Buffer((char *)slice_fullpath,slice,cols,rows,0,0,downsamplingFactor,V0,V1-1,H0,H1-1)) != 0 ) {
@@ -442,7 +443,7 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
                     if(first_time)
                     {
                         first_time = false;
-                        sbv_channels = channels; // Giulio_Cv slice->nChannels;
+                        sbv_channels = native_channels; // Giulio_Cv slice->nChannels;
 						sbv_bytes_chan = bytes_x_chan; // Giulio_Cv slice->depth / 8;
                         if(sbv_channels != 1 && sbv_channels != 3)
                             throw IOException(std::string("in SimpleVolume::loadSubvolume_to_UINT8: Unsupported number of channels at \"").append(slice_fullpath).append("\". Only 1 and 3-channels images are supported").c_str());
@@ -460,14 +461,14 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
                     //otherwise checking that all the other slices have the same bitdepth of the first one
                     else
                     {
-                        if (channels != sbv_channels)
+                        if (native_channels != sbv_channels)
                             throw iim::IOException(iim::strprintf("in SimpleVolume::loadSubvolume_to_UINT8: TIFF 2D series channel mismatch: slice at \"%s\" has %d channels, but the first slice has %d channels", slice_fullpath, sbv_channels, channels));
                         if (bytes_x_chan != sbv_bytes_chan)
                             throw iim::IOException(iim::strprintf("in SimpleVolume::loadSubvolume_to_UINT8: TIFF 2D series bytes per channel mismatch: slice at \"%s\" has %d, but the first slice has %d", slice_fullpath, bytes_x_chan, sbv_bytes_chan));
 					}
 
 					//computing offsets
-                    sint64 slice_step = sbv_width * bytes_x_chan * channels; // Giulio_CV slice->widthStep / sizeof(uint8); // widthStep takes already into account the number of bytes per channel
+                    sint64 slice_step = sbv_width * bytes_x_chan * sbv_channels; // Giulio_CV slice->widthStep / sizeof(uint8); // widthStep takes already into account the number of bytes per channel
                     int ABS_V_offset = V0 - STACKS[row][col]->getABS_V();
                     int ABS_H_offset = (H0 - STACKS[row][col]->getABS_H())*((int)sbv_channels);
 
@@ -541,6 +542,11 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
 				}
 			}
 		}
+	}
+
+	if ( n_active < DIM_C ) { // not all channels are active
+		compact_active_chans((sbv_height * sbv_width * bytes_x_chan),subvol);
+		sbv_channels = n_active;
 	}
 
     if(channels)

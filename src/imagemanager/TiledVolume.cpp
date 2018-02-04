@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-10-21. Giulio.     @ADDED compact active channels if not all channels are active in 'loadSubvolume_to_UINT8'
 * 2016-09-01. Giulio.     @DELETED old commented code
 * 2016-04-10. Giulio.     @FIXED the set of the right input plugin when input volume contains TIFF 3D files (in init or load, not in the constructor)
 * 2015-04-15. Alessandro. @FIXED bad/missing exception handling in loadSubvolume_to_UINT8.
@@ -1154,6 +1155,11 @@ iim::uint8* TiledVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, i
 	else
         throw IOException("in TiledVolume::loadSubvolume_to_UINT8: depth interval out of range");
 	
+	if ( n_active < DIM_C ) { // not all channels are active
+		compact_active_chans((sbv_height * sbv_width * sbv_bytes_chan),subvol);
+		sbv_channels = n_active;
+	}
+
     //returning outputs
     if(channels)
         *channels = (int)sbv_channels;

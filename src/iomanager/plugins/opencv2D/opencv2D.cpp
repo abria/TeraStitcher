@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-02-04. Giulio.     @ADDED initalization of newly allocated buffer in 'readData'
 * 2016-04-29. Giulio.     @FIXED many bugs in the implementation of readData and writeData using uint8 buffers
 * 2015-01-02. Giulio.     @IMPLEMENTED new plugins interface
 */
@@ -150,7 +151,8 @@ throw (iom::exception)
 
 		iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->readMetadata(img_path,_width,_height,_bytes_x_chan,_chans);
 
-		data = new unsigned char[_width * _height * _chans * _bytes_x_chan];
+		data = new unsigned char[((sint64)_width) * ((sint64)_height) * _chans * _bytes_x_chan];
+		memset(data,0,sizeof(unsigned char) * ((sint64)_width) * ((sint64)_height) * _bytes_x_chan);
 		img_width        = _width;
 		img_height       = _height;
 		img_bytes_x_chan = _bytes_x_chan;

@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-02-04.  Giulio.     @ADDED support for BigTIFF
 * 2017-02-14.  Giulio.     @CHANGED step 3 (place tiles) is executed after step 4 (threshold displacement)
 * 2017-02-13.  Giulio.     @CHANGED step 3 it is now place tiles (3D optimization) and no more project displacements
 * 2016-09-04.  Giulio.     @ADDED the setting of the configuration of the LibTIFF library 
@@ -166,7 +167,7 @@ int main(int argc, char** argv)
 		cli.checkParams();
 		string defaultOutputFileName = "null";
 
-		setLibTIFFcfg(!cli.libtiff_uncompressed,cli.libtiff_rowsPerStrip);
+		setLibTIFFcfg(!cli.libtiff_uncompressed,cli.libtiff_bigtiff,cli.libtiff_rowsPerStrip);
 
 		// set a IOManager parameter replicated in ImageManager
 		//iim::CHANNEL_SELECTION = iom::CHANNEL_SELECTION;
@@ -218,8 +219,8 @@ int main(int argc, char** argv)
 		else if(cli.placetiles || cli.stitch)
 		{
 			stitcher->computeTilesPlacement(cli.tp_algo); // compute optimal placement and set to 1.0 the reliability of displacement of tile (0,0) of each layer
+			volume->saveLayersXML(0, fillPath(cli.projfile_save_path, volume->getLAYERS_DIR(), defaultOutputFileName, "xml").c_str()); // save the global optimum tile placement for all layers
 			stitcher->projectDisplacements();             // maintain only displacement of tile (0,0) of each layer
-			volume->saveLayersXML(0, fillPath(cli.projfile_save_path, volume->getLAYERS_DIR(), defaultOutputFileName, "xml").c_str());
 			defaultOutputFileName = "xml_placetiles";
 		}
 		if(cli.placelayers || cli.stitch)

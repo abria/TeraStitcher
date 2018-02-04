@@ -28,6 +28,9 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-01-23. Giulio.     @ADDED check to set always the input format of a MultiVolume dataset as a non-interleaved input format
+* 2017-12-01. Giulio      @ADDED conditional code to activate the new merge step 
+* 2017-06-30. Giulio.     @FIXED the coding of iom::CHANS was not coherent with the one used internally by vmVirtualVolume
 * 2017-06-30. Giulio.     @ADDED control over displacement computation of last row and last column of tiles
 * 2017-04-02. Giulio.     @ADDED support for creation of BigTiff files
 * 2017-04-02. Giulio.     @ADDED setting of the input channel in case the plugin is not interleaved (allow more than 3 channels)
@@ -47,10 +50,16 @@
 #include "vmVirtualVolume.h"
 #include "vmStackedVolume.h"
 #include "vmBlockVolume.h"
+#include "vmMCVolume.h"
 #include "IOPluginAPI.h"
 #include "ProgressBar.h"
 
 #include "Tiff3DMngr.h"
+
+#ifdef NEW_MERGE_ACTIVE
+#include "VolumeConverter.h"
+#include "UnstitchedVolume.h"
+#endif
 
 using namespace std;
 
@@ -188,6 +197,18 @@ int main(int argc, char** argv)
 				throw iom::exception(vm::strprintf("Volume \"%s\" is incomplete or not coherent: look at error log file \"%s\"",
 					volume->getSTACKS_DIR(),fillPath(cli.errlogfile_path, volume->getSTACKS_DIR(), "err_log_file", "txt").c_str()).c_str());
 			}
+			if ( vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(vm::MCVolume::id) == 0 ) { // it is a Multivolume: set the enabled channel
+				// channels are not interleaved 'active' channel has to be set after checking that the channel exists
+				if ( iom::CHANS == iom::NONE ) { // a channel has been specified: the enabled subvolume should be reset
+					if ( iom::CHANS_no < volume->getDIM_C() ) {
+						((vm::MCVolume *) volume)->setENABLEDSV(iom::CHANS_no);
+						if ( !((vm::MCVolume *) volume)->getALIGNED() )
+							((vm::MCVolume *) volume)->resetTilePositions();
+					}
+					else
+						throw iom::exception(vm::strprintf("Channel %d does not exist", iom::CHANS_no).c_str());
+				}
+			}
 		}
 		else if( (cli.computedisplacements && cli.volume_load_path.compare("null")==0) || cli.projdisplacements || cli.thresholddisplacements || cli.placetiles || cli.mergetiles || cli.makeDirs || cli.metaData) {
             volume = volumemanager::VirtualVolumeFactory::createFromXML(cli.projfile_load_path.c_str(), cli.rescanFiles || !vm::IMG_FILTER_REGEX.empty());
@@ -212,7 +233,8 @@ int main(int argc, char** argv)
  				throw iom::exception(iomanager::strprintf("cannot determine the type of the input plugin"), __iom__current__function__);
 			if ( (plugin_type.compare("3D image-based I/O plugin") == 0) ?
 									iomanager::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() :
-									iomanager::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved() )
+									iomanager::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved() && 
+															vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(vm::MCVolume::id) != 0 ) // 2018-01-23. Giulio. if is an MCVolume then channels are not interleaved
 
   				; // channels are interleaved: do nothing
 			else {
@@ -225,7 +247,8 @@ int main(int argc, char** argv)
 				}
 				else {
 					if ( iom::CHANS == iom::ALL ) {
-						if ( volume->getDIM_C() > 1 )
+						if ( volume->getDIM_C() > 1 && vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(vm::MCVolume::id) != 0 ) 
+							// the exception is not raised when it is a MultiVolume; in this case both the enabled subvolume and the active channel have been set (possibily to 0 which is the default value)
 							throw iom::exception(vm::strprintf("Conversion from multi-channel to intensity images not supported").c_str());
 					}
 					else if ( iom::CHANS == iom::G ) {
@@ -236,7 +259,10 @@ int main(int argc, char** argv)
 						if ( volume->getDIM_C() < 3 )
 							throw iom::exception(vm::strprintf("Blue channel does not exist").c_str());
 					}
-					volume->setACTIVE_CHAN(iom::CHANS);
+					// iom::CHANS is an enumerated type and it represents RGB channels with 1(R), 2(G), 3(B)
+					// conversely, in a vmVirtualVolume channels are coded starting form 0
+					// hence the value of iom::CHANS must be decremented by 1
+					volume->setACTIVE_CHAN(iom::CHANS-1); 
 				}
 			}
 		}
@@ -281,6 +307,65 @@ int main(int argc, char** argv)
 		}
 		if(cli.mergetiles || cli.stitch)
 		{
+#ifdef NEW_MERGE_ACTIVE
+
+			// 2017-12-01. Giulio. @ADDED step 6 is substituted by TeraConverter
+
+			string dst_format;
+
+			if ( vm::VOLUME_OUTPUT_FORMAT_PLUGIN.compare(vm::BlockVolume::id)==0 ) {
+				if ( cli.img_format == "raw" )
+					dst_format = iim::TILED_FORMAT;
+				else if ( cli.img_format == "tif" )
+					dst_format = iim::TILED_TIF3D_FORMAT;
+				else
+					throw iom::exception(iom::strprintf("unsupported file format %s",cli.img_format.c_str()), __iom__current__function__);
+			}
+			else if ( vm::VOLUME_OUTPUT_FORMAT_PLUGIN.compare(vm::StackedVolume::id)==0 ) {
+				if ( cli.img_format == "raw" )
+					dst_format = iim::STACKED_RAW_FORMAT;
+				else if ( cli.img_format == "tif" )
+					dst_format = iim::STACKED_FORMAT;
+				else
+					throw iom::exception(iom::strprintf("unsupported file format %s",cli.img_format.c_str()), __iom__current__function__);
+			}
+			else
+				throw iom::exception(vm::strprintf("Unsupported output volume format plugin \"%s\"", vm::VOLUME_OUTPUT_FORMAT_PLUGIN.c_str()).c_str());
+
+			UnstitchedVolume *uvolume = new UnstitchedVolume(stitcher->getVOLUME());  
+			
+			vcDriver(
+				uvolume, // the volume has not been imported, the source path has to be passed
+				"", // not used
+				cli.volume_save_path, 
+				"", // not used
+				dst_format, 
+				0, // invalid value: imout_depth is set inside
+				cli.resolutions, 
+				"", // select all channels
+				"", // not used
+				"", // not used
+				cli.slice_depth, 
+				cli.slice_height, 
+				cli.slice_width, 
+				1, // no down sampling
+				cli.halving_method, 
+				cli.libtiff_rowsPerStrip, 
+				cli.libtiff_uncompressed, 
+				cli.libtiff_bigtiff, 
+				cli.show_progress_bar, 
+				cli.isotropic, 
+				-1, -1, -1, -1, cli.D0, (cli.D1 == -1 ? -1 : cli.D1+1), // all tiles are always selected, if cli.D1 is not default, it is the last slice to be merged (included)
+				false, // no time series allowed
+				cli.makeDirs, 
+				cli.metaData, 
+				cli.parallel,
+				"", // not used
+				0); // no bit compression allowed
+				
+				// WARNING: uvolume is not deallocated to avoid deallocation of the volume internal to stitcher which is still needed
+#else
+
 			// 2015-02-03. Alessandro. @FIXED bug in the call of mergeTiles (wrong D1 if D1 was not set).
 			if ( vm::VOLUME_OUTPUT_FORMAT_PLUGIN.compare(vm::BlockVolume::id)==0 )
 				stitcher->mergeTilesVaa3DRaw(cli.volume_save_path, cli.slice_height, cli.slice_width, cli.slice_depth, cli.resolutions, cli.exclude_nonstitchables, 
@@ -292,11 +377,14 @@ int main(int argc, char** argv)
 									 cli.enable_restore, cli.restoring_direction, cli.tm_blending, cli.halving_method, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
 			else
 				throw iom::exception(vm::strprintf("Unsupported output volume format plugin \"%s\"", vm::VOLUME_OUTPUT_FORMAT_PLUGIN.c_str()).c_str());
+
+#endif //  _NEW_MERGE_ACTIVE
 		}
 		if(cli.test || cli.import)
 		{
-			stitcher->mergeTiles(cli.volume_save_path, -1, -1, NULL, false, -1, -1, -1, -1, volume->getN_SLICES()/2, volume->getN_SLICES()/2 +1, 
-			                     false, false, S_SHOW_STACK_MARGIN, cli.halving_method, true, false, cli.img_format.c_str(), cli.img_depth);
+			if ( cli.test )
+				stitcher->mergeTiles(cli.volume_save_path, -1, -1, NULL, false, -1, -1, -1, -1, volume->getN_SLICES()/2, volume->getN_SLICES()/2 +1, 
+									 false, false, S_SHOW_STACK_MARGIN, cli.halving_method, true, false, cli.img_format.c_str(), cli.img_depth);
 			defaultOutputFileName = "xml_import";
 		}
 		total_time += TIME(0);

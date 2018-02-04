@@ -29,6 +29,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-01-25. Giulio.     @ADDED supporto for MultiVolume format
 * 2016-05-03. Giulio.     @CHANGED ComboBox for selecting the reference system: eliminated configurations that are not supported
 * 2017-04-30. Giulio.     @ADDED propagation to PTabDisplComp of all operation over the channel_selection combo box
 * 2017-04-27. Giulio.     @ADDED code to get and initialize the input plugin form the xml if specified
@@ -37,6 +38,8 @@
 #include "PTabImport.h"
 #include "iomanager.config.h"
 #include "vmStackedVolume.h"
+#include "vmBlockVolume.h"
+#include "vmMCVolume.h"
 #include "PTeraStitcher.h"
 #include "CImportUnstitched.h"
 #include "CPreview.h"
@@ -46,7 +49,6 @@
 #include "PTabMergeTiles.h"
 #include "PTabPlaceTiles.h"
 #include "IOPluginAPI.h"
-#include "vmBlockVolume.h"
 #include <QGridLayout>
 #include <QMessageBox>
 
@@ -98,6 +100,7 @@ PTabImport::PTabImport(QMyTabWidget* _container, int _tab_index) : QWidget(), co
     imin_plugin_cbox->addItem("--- I/O plugin: ---");
     for(int i=0; i<ioplugins.size(); i++)
         imin_plugin_cbox->addItem(ioplugins[i].c_str());
+    imin_plugin_cbox->addItem("MultiVolume");
     imin_plugin_cbox->setEditable(true);
     imin_plugin_cbox->lineEdit()->setReadOnly(true);
     imin_plugin_cbox->lineEdit()->setAlignment(Qt::AlignCenter);
@@ -732,7 +735,8 @@ void PTabImport::import_done(iom::exception *ex)
 		// 2017-04-29. Giulio. @ADDED setup of the channel selection combo box
 		// the channel combo has already been emptied
 		if ( CImportUnstitched::instance()->getVolume()->getDIM_C() > 1 ) {
-			if(iom::IMIN_PLUGIN == "tiff2D" || iom::IMIN_PLUGIN == "opencv2D" || iom::IMIN_PLUGIN == "tiff3D") {
+			if( (iom::IMIN_PLUGIN == "tiff2D" || iom::IMIN_PLUGIN == "opencv2D" || iom::IMIN_PLUGIN == "tiff3D") && 
+														vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(vm::MCVolume::id) != 0) {
 				channel_selection->addItem("Channel R");
 				channel_selection->addItem("Channel G");
 				channel_selection->addItem("Channel B");
@@ -952,7 +956,8 @@ void PTabImport::rescanCheckboxChanged(int checked)
 void PTabImport::channelSelectedChanged(int c)
 {
 	// 2017-04-29. Giulio. @ADDED distinguish between interleaved and non-interleaved plugins
-	if(iom::IMIN_PLUGIN == "tiff2D" || iom::IMIN_PLUGIN == "opencv2D" || iom::IMIN_PLUGIN == "tiff3D") {
+	if( (iom::IMIN_PLUGIN == "tiff2D" || iom::IMIN_PLUGIN == "opencv2D" || iom::IMIN_PLUGIN == "tiff3D") && 
+												vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(vm::MCVolume::id) != 0) {
     	iom::CHANS = iom::channel(c);
     }
     else { // non-interleaved input plugin: the channel number has to be set
@@ -1002,7 +1007,11 @@ void PTabImport::iopluginChanged(QString str)
 	PTabDisplComp::getInstance()->channel_selection->setVisible(true);
 		
 	// 2017-04-25 by Alessandro: @ADDED automatic selection of volume format plugin
-	if(str == "tiff2D" || str == "opencv2D") {
+	// 2018-01-25 by Giulio: @ADDED selection of MultiVolume format 
+	if(str == "MultiVolume") {
+		vm::VOLUME_INPUT_FORMAT_PLUGIN = vm::MCVolume::id;
+	}
+	else if(str == "tiff2D" || str == "opencv2D") {
 		vm::VOLUME_INPUT_FORMAT_PLUGIN = vm::StackedVolume::id;
 	}
 	else {

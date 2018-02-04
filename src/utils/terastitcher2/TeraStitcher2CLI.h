@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-02-04.  Giulio.     @ADDED option for BigTIFF
 * 2017-02-10.  Giulio.     @ADDED options to specify the blending algorithm to be used for layers 
 * 2016-09-04.  Giulio.     @ADDED the options for setting the configuration of the LibTIFF library 
 */
@@ -104,6 +105,7 @@ class TeraStitcher2CLI
 
 		// parameters to configure LibTIFF
 		bool libtiff_uncompressed;
+		bool libtiff_bigtiff;
 		int libtiff_rowsPerStrip;
 
 		//constructor - deconstructor

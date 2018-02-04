@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-01-23. Giulio.     @ADDED include of MCVolume.h
 * 2017-06-30. Giulio.     @ADDED control over displacement computation of last row and last column of tiles
 * 2016-09-04. Giulio.     @ADDED the options for setting the configuration of the LibTIFF library
 */
@@ -38,6 +39,7 @@
 #include <string>
 #include "vmStackedVolume.h"
 #include "vmBlockVolume.h"
+#include "vmMCVolume.h"
 #include "S_config.h"
 
 using namespace std;

@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-02-04. Giulio.     @ADDED initalization of newly allocated buffer in 'readData'
 * 2016-10-07. Giulio.     @CHANGED in 'readMetadata' img_chans set to 1 if SAMPLESPERPIXEL is not defined
 * 2015-01-02. Giulio.     @IMPLEMENTED new plugins interface
 */
@@ -165,6 +166,7 @@ throw (iom::exception)
 		closeTiff3DFile(fhandle);
 
 		data = new unsigned char[((sint64)_width) * ((sint64)_height) * ((sint64)_depth) * _chans * _bytes_x_chan];
+		memset(data,0,sizeof(unsigned char) * ((sint64)_width) * ((sint64)_height) * ((sint64)_depth) * _chans * _bytes_x_chan);
 		img_width        = _width;
 		img_height       = _height;
 		img_depth        = _depth;

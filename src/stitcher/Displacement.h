@@ -25,6 +25,13 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2018-02-03. Giulio.     @ADDED constant 'dir_all' to enum type 'direction'
+*/
+
+
 #ifndef DISPLACEMENT_H
 #define DISPLACEMENT_H
 
@@ -32,7 +39,7 @@
 #include <vector>
 #include "iomanager.config.h"
 
-enum direction {dir_vertical = 0, dir_horizontal = 1, dir_depth = 2, invalid = -1};
+enum direction {dir_vertical = 0, dir_horizontal = 1, dir_depth = 2, invalid = -1, dir_all = 3}; // 2018-02-03. Giulio. @ADDED 'dir_all'
 
 class Displacement
 {

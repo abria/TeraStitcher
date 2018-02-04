@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-02-03. Giulio.     @ADDED call to 'adjustDisplacements' in method reading the xml file to force all displacements of adjacent tile symmetric
 * 2017-06-27. Giulio.     @CHANGED If the attributes 'resolution' and 'timepoint' in section 'subimage' of xml file are present additional parameters are always enabled 
 * 2017-04-27. Giulio.     @ADDED code to get and initialize the input plugin from the xml if specified
 * 2017-04-12. Giulio.     @ADDED method to release all buffers allocated in VirtualStack
@@ -207,6 +208,7 @@ BlockVolume::~BlockVolume()
 
 	if(stacks_dir)
 		delete[] stacks_dir;
+
 
 	if(BLOCKS)
 	{
@@ -1030,6 +1032,8 @@ void BlockVolume::loadXML(const char *xml_filepath) throw (iom::exception)
 			}
 		}
 	}
+	
+	adjustDisplacements();  // 2018-02-03. Giulio. @ADDED correction of displacements to force them to be symmetric
 }
 
 void BlockVolume::initFromXML(const char *xml_filepath) throw (iom::exception)
@@ -1144,6 +1148,7 @@ void BlockVolume::initFromXML(const char *xml_filepath) throw (iom::exception)
 	// 2014-09-09. Alessandro. @FIXED both 'init()' and 'initFromXML()' methods to deal with empty stacks. Added call of 'normalize_stacks_attributes()' method.
 	// make stacks have the same attributes
 	normalize_stacks_attributes();
+	adjustDisplacements();  // 2018-02-03. Giulio. @ADDED correction of displacements to force them to be symmetric
 }
 
 void BlockVolume::saveXML(const char *xml_filename, const char *xml_filepath) throw (iom::exception)

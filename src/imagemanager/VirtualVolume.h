@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-10-21. Giulio.     @ADDED method to compact active channels when not all channels are active (n_active < DIM_C)
 * 2016-04-27. Giulio.     @ADDED method to rearrange indices in order to meet pre-conditions of loadSubVolume methods
 * 2016-04-27. Giulio.     @ADDED data members and methods to convert indices to coordinates and viceversa
 * 2015-04-14. Alessandro. @ADDED 'instance_format' method with inputs = {path, format}.
@@ -71,6 +72,25 @@ protected:
     	else // if indices are equal there is a potential error 
 			throw IOException(strprintf("indices i0=%d and i1=%d are equal", i0, i1), __iim__current__function__);
     }
+
+	// this method compacts the active channels starting from a buffer in which are stored all channels
+	// assume n_active < DIM_C, i.e. that not all channels are active, which imply that in list 'active' some valid channel index is missing
+	void compact_active_chans ( sint64 totalChanSize, uint8 *subvol ) {
+		int c;  // active channels index 
+		int cc; // all channels index
+		uint8 *src; // pointer to source buffer
+		uint8 *dst; // pointer to destination buffer
+
+		for ( c=0, cc=0; c<n_active && active[c]==cc; c++, cc++ );
+		src = dst = subvol + c * totalChanSize;
+		for ( ; c<n_active; c++, cc++, src+=totalChanSize, dst+=totalChanSize ) {
+			while ( active[c]!=cc ) {
+				src += totalChanSize;
+				cc++;
+			}
+			memcpy(dst,src,totalChanSize);
+		}
+	}
 
 public:
 	//CONSTRUCTORS-DESTRUCTOR

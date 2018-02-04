@@ -49,8 +49,8 @@
 using namespace terastitcher;
 
 std::string PTabMergeTiles::metadata_path_null = "Enter or select image metadata .ims file (optional)";
-std::string PTabMergeTiles::external_compressor_line_null = "Compressor options (not enabled yet)";
-//std::string PTabMergeTiles::external_compressor_line_null = "Compressor options (optional, format: ID[:opt1:opt2:...])";
+//std::string PTabMergeTiles::external_compressor_line_null = "Compressor options (not enabled yet)";
+std::string PTabMergeTiles::external_compressor_line_null = "Compressor options (optional, format: ID[:opt1:opt2:...])";
 
 /*********************************************************************************
 * Singleton design pattern: this class can have one instance only,  which must be

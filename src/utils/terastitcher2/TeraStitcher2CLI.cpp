@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-02-04.  Giulio.     @ADDED option for BigTIFF
 * 2017-02-10.  Giulio.     @CHANGED the name and the order of some options 
 * 2017-02-10.  Giulio.     @ADDED options to specify the blending algorithm to be used for layers 
 * 2016-09-04.  Giulio.     @ADDED the options for setting the configuration of the LibTIFF library 
@@ -65,10 +66,10 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 	TCLAP::SwitchArg p_stitch("S","stitch","Stitches a volume by executing the entire pipeline (steps 1-6).",false);
 	TCLAP::SwitchArg p_import("1","import","Step 1: imports a volume to TeraStitcher XML project file.", false);
 	//TCLAP::ValueArg<std::string> p_image_format("f","imfmt","Format of input images (2D/Tiff3D).",false,"2D","string");
-	TCLAP::SwitchArg p_computedisplacements("2","displcompute","Step 2: computes pairwise stacks displacements.", false);
-	TCLAP::SwitchArg p_projdisplacements("7","displproj","Step 3b: projects existing displacements along Z axis for each stack by selecting the most reliable one.", false);
+	TCLAP::SwitchArg p_computedisplacements("2","displcompute","Step 2: computes pairwise stacks displacements between adjacent layers.", false);
 	TCLAP::SwitchArg p_thresholdisplacements("3","displthres","Step 3: thresholds displacements using the given reliability threshold.", false);
-	TCLAP::SwitchArg p_placetiles("4","placetiles","Step 4: places tiles in the image space using a globally optimal tiles placement algorithm.", false);
+	TCLAP::SwitchArg p_projdisplacements("7","displproj","Step 4a: projects pairwise displacements between layers along X-Y axes by selecting the most reliable one (to be used in alternative to step 4).", false);
+	TCLAP::SwitchArg p_placetiles("4","placetiles","Step 4b: places tiles of all layers in the image space using a globally optimal tiles placement algorithm (to be used in alternative to step 7).", false);
 	TCLAP::SwitchArg p_placelayers("5","placelayers","Step 5: places layers in the image space and determines the final image size.", false);
 	TCLAP::SwitchArg p_merge("6","merge","Step 6: merges tiles at different resolutions.", false);
 	//TCLAP::SwitchArg p_test("t","test","Stitches the middle slice of the whole volume and saves it locally. Stage coordinates will be used, so this can be used to test their precision as well as the selected reference system.",false);
@@ -119,10 +120,12 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 	TCLAP::ValueArg<float> p_cut_depth("","depthcut","Depth of cut (in microns).",false,CLI_DEF_CUT_DEPTH,"real");
 
 	TCLAP::SwitchArg p_libtiff_uncompressed("","libtiff_uncompress","Configure libtiff library to not compress output files (default: compression enabled).", false);
+	TCLAP::SwitchArg p_libtiff_bigtiff("","libtiff_bigtiff","Foces the creation of BigTiff files (default: BigTiff disabled).", false);
 	TCLAP::ValueArg<int> p_libtiff_rowsperstrip("","libtiff_rowsperstrip","Configure libtiff library to pack n rows per strip when compression is enabled (default: 1 row per strip).",false,1,"integer");
 
 	//argument objects must be inserted using LIFO policy (last inserted, first shown)
 	cmd.add(p_libtiff_rowsperstrip);
+	cmd.add(p_libtiff_bigtiff);
 	cmd.add(p_libtiff_uncompressed);
 
 	cmd.add(p_cut_depth);
@@ -174,8 +177,8 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 	cmd.add(p_merge);
 	cmd.add(p_placelayers);
 	cmd.add(p_placetiles);
-	cmd.add(p_thresholdisplacements);
 	cmd.add(p_projdisplacements);
+	cmd.add(p_thresholdisplacements);
 	cmd.add(p_computedisplacements);
 	//cmd.add(p_image_format);
 	cmd.add(p_import);
@@ -549,6 +552,7 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 	this->cut_depth = p_cut_depth.getValue();
 
 	this->libtiff_uncompressed = p_libtiff_uncompressed.getValue();
+	this->libtiff_bigtiff = p_libtiff_bigtiff.getValue();
 	this->libtiff_rowsPerStrip = p_libtiff_rowsperstrip.getValue();
 }
 

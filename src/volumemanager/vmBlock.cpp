@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-01-21. Giulio.     @ADDED in 'loadImageStack2' conditions to check if the requested region does not overlap with stack
 * 2017-07-06. Giulio.     @ADDED method 'loadImageStack2' to enable selective reads of data
 * 2017-04-02. Giulio.     @FIXED missing check that the active channel is correctly selected before loading image data
 * 2017-04-26. Alessandro. @FIXED issue on Windows with Thumbs.db files that need to be ignored
@@ -1119,19 +1120,10 @@ iom::real_t* Block::loadImageStack2(int first_file, int last_file, int V0, int V
 	if(first_file < 0 || last_file < 0 || first_file > last_file)
 		throw iom::exception(vm::strprintf("in Block[%d,%d]::loadImageStack(): invalid file selection [%d,%d]", ROW_INDEX, COL_INDEX, first_file, last_file).c_str());
 
-	string chan_select_str = "";
-	bool chan_select = !iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() && (iom::IMIN_PLUGIN == "IMS_HDF5");
-	if ( chan_select ) {
-		if ( this->CONTAINER->getACTIVE_CHAN() < 0 || N_CHANS <= this->CONTAINER->getACTIVE_CHAN() ) 
-			throw iom::exception(vm::strprintf("in Block[%d,%d]::loadImageStack(): input channel not selected.", ROW_INDEX, COL_INDEX).c_str());
-		// the plugin support channel selection: pass the requested channel
-		chan_select_str = "channel=" + num2str<int>(this->CONTAINER->getACTIVE_CHAN()) + ",";
-		//printf("-----> %s\n",chan_select_str.c_str());
-	}
-
 	// 2014-09-09. Alessandro. @FIXED 'loadImageStack()' method to deal with empty tiles.
 	// if stack is empty in the given range, just return a black image
-	if(isEmpty(first_file, last_file))
+	if(isEmpty(first_file, last_file) || 
+		V0 >= ABS_V+HEIGHT || V1 <= ABS_V || H0 >= ABS_H+WIDTH || H1 <= ABS_H ) //2018-01-21. Giulio. @ADDED conditions to check if the requested region does not overlap with stack
 	{
 		// allocate and initialize a black stack
 		uint64 image_size = static_cast<uint64>(WIDTH) * static_cast<uint64>(HEIGHT) * static_cast<uint64>(last_file-first_file+1);
@@ -1140,6 +1132,16 @@ iom::real_t* Block::loadImageStack2(int first_file, int last_file, int V0, int V
 			STACKED_IMAGE[k] = 0;
 
 		return STACKED_IMAGE;
+	}
+
+	string chan_select_str = "";
+	bool chan_select = !iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() && (iom::IMIN_PLUGIN == "IMS_HDF5");
+	if ( chan_select ) {
+		if ( this->CONTAINER->getACTIVE_CHAN() < 0 || N_CHANS <= this->CONTAINER->getACTIVE_CHAN() ) 
+			throw iom::exception(vm::strprintf("in Block[%d,%d]::loadImageStack(): input channel not selected.", ROW_INDEX, COL_INDEX).c_str());
+		// the plugin support channel selection: pass the requested channel
+		chan_select_str = "channel=" + num2str<int>(this->CONTAINER->getACTIVE_CHAN()) + ",";
+		//printf("-----> %s\n",chan_select_str.c_str());
 	}
 
 	unsigned char *data = new unsigned char[HEIGHT * WIDTH * (last_file-first_file+1) * N_BYTESxCHAN * (chan_select ? 1 : N_CHANS)];

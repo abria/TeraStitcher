@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2018-01-07. Giulio. @FIXED the resolution index was in a wrong position in method 'getN_SLICES'
 * 2017-09-09. Giulio. @ADDED code to manage compression algorithms to be used in Imaris IMS files generation
 * 2017-06-27. Giulio  @ADDED code for managing the addition of timepoints to an existing file (many changes search for '2017-06-27')
 * 2017-04-22. Giulio  @ADDED adjustment in the file structure inheroted from another file 
@@ -88,8 +89,8 @@ static char *get_time_str ( ) {
 #define MAXRES   10     // maximim number of resolutions
 #define MAXTPS   1024   // maximum number of timepoints
 
-#define DEF_CHNK_DIM_XY   128
-#define DEF_CHNK_DIM_Z   8
+#define DEF_CHNK_DIM_XY   256
+#define DEF_CHNK_DIM_Z   16
 
 #define MAX_NAME 1024
 
@@ -625,7 +626,7 @@ public:
 	int     *getCHUNK_DIMS ( int r )              { return chunk_dims[r]; }
 	int      getVXL_NBYTES ( )                    { return vxl_nbytes; }  
 	hsize_t  getVXL_TYPE ( )                      { return vxl_type; }
-	hsize_t  getN_SLICES ( int tp, int s, int r ) { return n_slices[tp][s][r]; }
+	hsize_t  getN_SLICES ( int tp, int s, int r ) { return n_slices[r][tp][s]; } // 2018-01-07. Giulio. @FIXED position of index r
 
 	hid_t *getDATASETS_ID ( int tp, int r, bool get = true );
 	/* set tp and r as current timepoint and resolution
@@ -1174,7 +1175,7 @@ int IMS_HDF5_fdescr_t::addResolution ( int r, hsize_t dimV, hsize_t dimH, hsize_
 	// initialize n_slices[r]
 	n_slices[r] = new hsize_t *[MAXTPS];
 	memset(n_slices[r],0,MAXTPS*sizeof(hsize_t *));
-	for ( int t=0; t<n_timepoints; t++ ) {
+	for ( int t=0; t<n_timepoints; t++ ) { // creates the data structure for already existing timepoints
 		n_slices[r][t] = new hsize_t[MAXSTP];
 		memset(n_slices[r][t],0,MAXSTP*sizeof(hsize_t));
 	}
@@ -1182,7 +1183,7 @@ int IMS_HDF5_fdescr_t::addResolution ( int r, hsize_t dimV, hsize_t dimH, hsize_
 	// initialize hist[r]
 	hist[r] = new histogram_t *[MAXTPS];
 	memset(hist[r],0,MAXTPS*sizeof(histogram_t *));
-	for ( int t=0; t<n_timepoints; t++ ) {
+	for ( int t=0; t<n_timepoints; t++ ) { // creates the data structure for already existing timepoints
 		hist[r][t] = new histogram_t[MAXSTP];
 		memset(hist[r][t],0,MAXSTP*sizeof(histogram_t));
 	}
@@ -1420,13 +1421,13 @@ int IMS_HDF5_fdescr_t::addTimePoint ( int t, std::string params ) {
 	creating = true;
 
 	// allocate n_slices for timepoint t at each existing resolution 
+	// 2017-06-27. Giulio. If the time point is added to an exixsting file the n_slices structure must be updated
 	for ( int r=0; r<n_res; r++ ) { 
 		if ( n_slices[r] ) { // resolution r exists
-			n_slices[r][t] = new hsize_t [MAXTPS];
+			n_slices[r][t] = new hsize_t [MAXTPS]; // creates the data structure for the new timepoint
 			memset(n_slices[r][t],0,MAXTPS*sizeof(hsize_t));
 		}
 		else { 
-			// 2017-06-27. Giulio. If the time point is added to an exixsting file the n_slices structure must be recreated
 			// initialize n_slices[r]
 			n_slices[r] = new hsize_t *[MAXTPS];
 			memset(n_slices[r],0,MAXTPS*sizeof(hsize_t *));
@@ -1438,18 +1439,17 @@ int IMS_HDF5_fdescr_t::addTimePoint ( int t, std::string params ) {
 	}
 
 	// allocate hists for timepoint t at each existing resolution 
-	// 2017-06-27. Giulio. If the time point is added to an exixsting file the hisy structure must be recreated from scratch
+	// 2017-06-27. Giulio. If the time point is added to an exixsting file the hist structure must be updated
 	if ( !hist ) {
 		hist = new histogram_t **[MAXRES];
 		memset(hist,0,MAXRES*sizeof(histogram_t **)); 
 	}
 	for ( int r=0; r<n_res; r++ ) { 
 		if ( hist[r] ) { // resolution r exists
-			hist[r][t] = new histogram_t [MAXTPS];
+			hist[r][t] = new histogram_t [MAXTPS];  // creates the data structure for the new timepoint
 			memset(hist[r][t],0,MAXTPS*sizeof(histogram_t));
 		}
 		else {
-			// 2017-06-27. Giulio. If the time point is added to an exixsting file the hisy structure must be recreated
 			// initialize hist[r]
 			hist[r] = new histogram_t *[MAXTPS];
 			memset(hist[r],0,MAXTPS*sizeof(histogram_t *));

@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-12-01. Giulio.     @ADDED getter for internal volume
 * 2017-07-06. Giulio.     @ADDED method 'getStripe2' to enable selective reads of data
 * 2017-06-30. Giulio.     @ADDED control over displacement computation of last row and last column of tiles
 * 2015-08-16. Giulio.     @ADDED method for halvesampling only V and H dimensions
@@ -293,6 +294,7 @@ class StackStitcher
         int getROW1(){return ROW_END;}
         int getCOL0(){return COL_START;}
         int getCOL1(){return COL_END;}
+        volumemanager::VirtualVolume *getVOLUME() { return volume; }
 
         /*************************************************************************************************************
         * Functions used to obtain absolute coordinates at different resolutions from relative coordinates

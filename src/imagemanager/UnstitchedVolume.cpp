@@ -25,6 +25,9 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-01-23. Giulio.     @ADDED check to set always the input format of a MultiVolume dataset as a non-interleaved input format
+* 2018-01-20. Giulio.     @ADDED a check to avoid performing stitching if there is no intersection between the requested region and the selected matrix of tiles
+* 2018-01-18. Giulio.     @CHANGED the initialization of the input plugin in the constructors
 * 2017-08-19. Giulio.     @CHANGED only requested data (actually only whole rows) are copied into the internal buffer if buffering is not enabled 
 * 2017-08-19. Giulio.     @CHANGED the method reading only the actually requested data is invoked only if buffering is not enabled 
 * 2017-07-15. Giulio.     @CHANGED the way the returned stitched buffer is copied to the final buffer in order to cope with the case the returned buffer is smaller than the requeste one
@@ -55,6 +58,7 @@
 #include "UnstitchedVolume.h"
 #include "vmBlockVolume.h"
 #include "vmStackedVolume.h"
+#include "vmMCVolume.h"
 
 #include "IOPluginAPI.h"
 #include "iomanager.config.h"
@@ -104,17 +108,33 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir, bool cacheEnabled, int
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir=%s", _root_dir).c_str(), __iim__current__function__);
 
-	// 2014-09-29. Alessandro. @ADDED automated selection of IO plugin if not provided.
-	if(iom::IMIN_PLUGIN.compare("empty") == 0)
-	{
-		std::string volformat = vm::VirtualVolume::getVolumeFormat(_root_dir);
+// 2018-01-18. Giulio. The xml file now set 'iom::IMIN_PLUGIN', hence this code is no longer needed
+//	// 2014-09-29. Alessandro. @ADDED automated selection of IO plugin if not provided.
+// 	if(iom::IMIN_PLUGIN.compare("empty") == 0)
+// 	{
+// 		std::string volformat = vm::VirtualVolume::getVolumeFormat(_root_dir);
+// 
+// 		if(volformat.compare(vm::StackedVolume::id) == 0)
+// 			iom::IMIN_PLUGIN = "tiff2D";
+// 		else if(volformat.compare(vm::BlockVolume::id) == 0)
+// 			iom::IMIN_PLUGIN = "tiff3D";
+// 	}
 
-		if(volformat.compare(vm::StackedVolume::id) == 0)
-			iom::IMIN_PLUGIN = "tiff2D";
-		else if(volformat.compare(vm::BlockVolume::id) == 0)
-			iom::IMIN_PLUGIN = "tiff3D";
-	}
-
+    // @FIXED by Alessandro on 2016-12-15. Convert iom::exception to iim::IOException (the only ones this function can throw)
+    try
+    {
+        volume = volumemanager::VirtualVolumeFactory::createFromXML(_root_dir,false); // last version of xml set 'iom::IMIN_PLUGIN'
+    }
+    catch(iom::exception & ex)
+    {
+        throw iim::IOException(ex.what());
+    }
+    
+    // 2018-01-18. Giulio. This check has been maintained in case an old xml is used
+    if(iom::IMIN_PLUGIN.compare("empty") == 0)
+		throw iim::IOException(iom::strprintf("the xml file has not be able to set the input plugin"), __iom__current__function__);
+	
+	// 2018-01-18. Giulio. this code is still needed to initialize 'plugin_type'
 	bool flag = false;
 	try{
 		plugin_type = "3D image-based I/O plugin";
@@ -126,16 +146,6 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir, bool cacheEnabled, int
 	}
 	if ( !flag )
  		throw iim::IOException(iom::strprintf("cannot determine the type of the input plugin"), __iom__current__function__);
-
-    // @FIXED by Alessandro on 2016-12-15. Convert iom::exception to iim::IOException (the only ones this function can throw)
-    try
-    {
-        volume = volumemanager::VirtualVolumeFactory::createFromXML(_root_dir,false);
-    }
-    catch(iom::exception & ex)
-    {
-        throw iim::IOException(ex.what());
-    }
 
 	stitcher = new StackStitcher(volume);
 
@@ -160,7 +170,8 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir, bool cacheEnabled, int
     {
         if ( (plugin_type.compare("3D image-based I/O plugin") == 0) ?
               iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() :
-              iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved() ) {
+              iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved()  && 
+								vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(vm::MCVolume::id) != 0) { // 2018-01-23. Giulio. if is an MCVolume then channels are not interleaved
             if ( DIM_C > 3 || BYTESxCHAN > 2 )
                 throw iim::IOException(iom::strprintf("image not supported by UnstitchedVolume (DIM_C=%d, BYTESxCHAN=%d)", DIM_C, BYTESxCHAN), __iom__current__function__);
         }
@@ -215,15 +226,22 @@ UnstitchedVolume::UnstitchedVolume(vm::VirtualVolume * _imported_volume, bool ca
 {
 	/**/iim::debug(iim::LEV3, strprintf("_root_dir=%s", volume->getSTACKS_DIR()).c_str(), __iim__current__function__);
 
-	// 2014-09-29. Alessandro. @ADDED automated selection of IO plugin if not provided.
-	if(iom::IMIN_PLUGIN.compare("empty") == 0)
-	{
-		if(dynamic_cast<vm::StackedVolume*>(volume))
-			iom::IMIN_PLUGIN = "tiff2D";
-		else if(dynamic_cast<vm::BlockVolume*>(volume))
-			iom::IMIN_PLUGIN = "tiff3D";
-	}
+// 2018-01-18. Giulio. The xml file now set iom::IMIN_PLUGIN, hence this code is no longer needed
+// 	//2014-09-29. Alessandro. @ADDED automated selection of IO plugin if not provided.
+// 	if(iom::IMIN_PLUGIN.compare("empty") == 0)
+// 	{
+// 		if(dynamic_cast<vm::StackedVolume*>(volume))
+// 			iom::IMIN_PLUGIN = "tiff2D";
+// 		else if(dynamic_cast<vm::BlockVolume*>(volume))
+// 			iom::IMIN_PLUGIN = "tiff3D";
+// 	}
+// 
 
+    // 2018-01-18. Giulio. This check has been maintained in case iom::IMIN_PLUGIN has not been initialized when the volume has been imported
+    if(iom::IMIN_PLUGIN.compare("empty") == 0)
+		throw iim::IOException(iom::strprintf("the xml file has not be able to set the input plugin"), __iom__current__function__);
+	
+	// 2018-01-18. Giulio. this code is still needed to initialize 'plugin_type'
 	bool flag = false;
 	try{
 		plugin_type = "3D image-based I/O plugin";
@@ -235,9 +253,7 @@ UnstitchedVolume::UnstitchedVolume(vm::VirtualVolume * _imported_volume, bool ca
 	}
 	if ( !flag )
 		throw iim::IOException(iom::strprintf("cannot determine the type of the input plugin"), __iom__current__function__);
-
 	
-
 	stitcher = new StackStitcher(volume);
 
 	reference_system.first  = (iim::axis(volume->getREF_SYS().first));
@@ -261,7 +277,8 @@ UnstitchedVolume::UnstitchedVolume(vm::VirtualVolume * _imported_volume, bool ca
 	{
 		if ( (plugin_type.compare("3D image-based I/O plugin") == 0) ?
 			iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() :
-			iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved() ) {
+			iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved()  && 
+								vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(vm::MCVolume::id) != 0 ) { // 2018-01-23. Giulio. if is an MCVolume then channels are not interleaved
 				if ( DIM_C > 3 || BYTESxCHAN > 2 )
 					throw iim::IOException(iom::strprintf("image not supported by UnstitchedVolume (DIM_C=%d, BYTESxCHAN=%d)", DIM_C, BYTESxCHAN), __iom__current__function__);
 		}
@@ -526,184 +543,188 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 	iom::real_t* buffer;								//buffer temporary image data are stored
 
 	if ( !cb->getSubvolume(current_channel,V0,V1,H0,H1,D0,D1,buffer) ) {
-	
-		//computing VH coordinates of all stripes
-		for(int row_index=stitcher->ROW_START; row_index<=stitcher->ROW_END; row_index++)
-		{
-			stripesCoords[row_index].up_left.V		= stitcher->getStripeABS_V(row_index,true);
-			stripesCoords[row_index].up_left.H      = volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_H();
-			stripesCoords[row_index].bottom_right.V = stitcher->getStripeABS_V(row_index,false);
-			stripesCoords[row_index].bottom_right.H = volume->getSTACKS()[row_index][stitcher->COL_END]->getABS_H()+volume->getStacksWidth();
-		}
 
-		// clear stripesCorners
-		for ( int i=0; i<volume->getN_ROWS(); i++ ) {
-			stripesCorners[i].ups.clear();
-			stripesCorners[i].bottoms.clear();
-			stripesCorners[i].merged.clear();
-		}
-	
-		//computing stripes corners, i.e. corners that result from the overlap between each pair of adjacent stripes
-		for(int row_index=stitcher->ROW_START; row_index<=stitcher->ROW_END; row_index++)
-		{
-			stripe_corner tmp;
+		// 2018-01-20. Giulio. moved before checking if the requested region intersects the selected matrix of tiles
+		sint64 width  = H1 - H0;
+		sint64 height = V1 - V0;
+		sint64 depth  = D1 - D0;
 
-			//for first VirtualStack of every stripe
-			tmp.H = volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_H();
-			tmp.h = volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_V()-stripesCoords[row_index].up_left.V;
-			tmp.up = true;
-			stripesCorners[row_index].ups.push_back(tmp);
-		
-			tmp.h = stripesCoords[row_index].bottom_right.V - volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_V() - volume->getStacksHeight();
-			tmp.up = false;
-			stripesCorners[row_index].bottoms.push_back(tmp);
-
-			for(int col_index=stitcher->COL_START; col_index<stitcher->COL_END; col_index++)
-			{
-				if(volume->getSTACKS()[row_index][col_index]->getABS_V() < volume->getSTACKS()[row_index][col_index+1]->getABS_V())
-				{
-					tmp.H = volume->getSTACKS()[row_index][col_index]->getABS_H() + volume->getStacksWidth();
-					tmp.h = volume->getSTACKS()[row_index][col_index+1]->getABS_V() - stripesCoords[row_index].up_left.V;
-					tmp.up = true;
-					stripesCorners[row_index].ups.push_back(tmp);
-
-					tmp.H = volume->getSTACKS()[row_index][col_index+1]->getABS_H();
-					tmp.h = stripesCoords[row_index].bottom_right.V - volume->getSTACKS()[row_index][col_index+1]->getABS_V() - volume->getStacksHeight();
-					tmp.up = false;
-					stripesCorners[row_index].bottoms.push_back(tmp);
-				}
-				else
-				{
-					tmp.H = volume->getSTACKS()[row_index][col_index+1]->getABS_H();
-					tmp.h = volume->getSTACKS()[row_index][col_index+1]->getABS_V() - stripesCoords[row_index].up_left.V;
-					tmp.up = true;
-					stripesCorners[row_index].ups.push_back(tmp);
-
-					tmp.H = volume->getSTACKS()[row_index][col_index]->getABS_H()+volume->getStacksWidth();
-					tmp.h = stripesCoords[row_index].bottom_right.V - volume->getSTACKS()[row_index][col_index+1]->getABS_V() - volume->getStacksHeight();
-					tmp.up = false;
-					stripesCorners[row_index].bottoms.push_back(tmp);
-				}
-			}
-
-			//for last VirtualStack of every stripe (h is not set because it doesn't matter)
-			tmp.H = volume->getSTACKS()[row_index][stitcher->COL_END]->getABS_H() + volume->getStacksWidth();
-			tmp.up = true;
-			stripesCorners[row_index].ups.push_back(tmp);
-
-			tmp.up = false;
-			stripesCorners[row_index].bottoms.push_back(tmp);
-		}
-
-		//ordered merging between ups and bottoms corners for every stripe
-		for(int row_index = 1; row_index<=(volume->getN_ROWS()-1); row_index++)
-		{
-			stripesCorners[row_index-1].merged.merge(stripesCorners[row_index-1].bottoms,   compareCorners);
-			stripesCorners[row_index-1].merged.merge(stripesCorners[row_index  ].ups,       compareCorners);
-		}
-
-		sint64 u_strp_bottom_displ; // bottom displacement of up stripe
-		sint64 d_strp_top_displ;    // top displacement of down stripe
-		sint64 u_strp_top_displ;    // top displacement of up stripe
-		sint64 d_strp_left_displ;
-		sint64 u_strp_left_displ;
-		sint64 d_strp_width;
-		sint64 u_strp_width;
-		sint64 dd_strp_top_displ;
-		sint64 u_strp_d_strp_overlap = 0; // overlap between up and down stripes; WARNING: check how initialize
-		sint64 h_up;
-		sint64 h_down;
-		sint64 h_overlap;
-		iom::real_t *buffer_ptr, *ustripe_ptr, *dstripe_ptr;	
-
-		iom::real_t* stripe_up=NULL, *stripe_down;                                   //will contain up-stripe and down-stripe computed by calling 'getStripe' method
-		double angle;								//angle between 0 and PI used to sample overlapping zone in [0,PI]
-		double delta_angle;							//angle step
-
-		iom::real_t (*blending)(double& angle, iom::real_t& pixel1, iom::real_t& pixel2);
-
-		//retrieving blending function
-		if(blending_algo == S_SINUSOIDAL_BLENDING)
-			blending = StackStitcher::sinusoidal_blending;
-		else if(blending_algo == S_NO_BLENDING)
-			blending = StackStitcher::no_blending;
-		else if(blending_algo == S_SHOW_STACK_MARGIN)
-			blending = StackStitcher::stack_margin;
-		else if(blending_algo == S_ENHANCED_NO_BLENDING)
-			blending = StackStitcher::enhanced_no_blending;
-		else
- 			throw iim::IOException(iom::strprintf("unrecognized blending function"), __iom__current__function__);
-
-		sint64 height;
-		sint64 width;
-		sint64 depth;  
-		int slice_height = -1; 
-		int slice_width  = -1;
-
-		width  = H1 - H0;
-		height = V1 - V0;
-		depth  = D1 - D0;
-
-		slice_height = (int)(slice_height == -1 ? height : slice_height);
-		slice_width  = (int)(slice_width  == -1 ? width  : slice_width);
+		// 2018-01-20. Giulio. Unused variables
+		//int slice_height = -1; 
+		//int slice_width  = -1;
+		//slice_height = (int)(slice_height == -1 ? height : slice_height);
+		//slice_width  = (int)(slice_width  == -1 ? width  : slice_width);
 
 		buffer = new iom::real_t[height*width*depth];
 		if ( !buffer )
  			throw iim::IOException(iom::strprintf("cannot allocate the buffer of float (%llu x %llu x %u x %llu = %llu bytes)",
  											height, width, depth, sizeof(iom::real_t), height*width*depth), __iom__current__function__);
-		for (int i=0; i<height*width*depth; i++)
-			buffer[i]=0;
 
-		sint64 z = D0; // starting slice (offset is index 'k')
-		
-		// 2017-08-19. Giulio. @ADDED offsets on whole buffer to reduce the amount of data to be copied
-		// if 'delta' variables are zero the whole buffer is filled with data returned by getStripe method
-		sint64 subvol_V_top_delta    = cb->getENABLED() ? 0 : VV0 - V0;		//top    V(ertical) offset of actual subvolume
-		sint64 subvol_V_bottom_delta = cb->getENABLED() ? 0 : V1 - VV1;		//bottom V(ertical) offset of actual subvolume
-		
-		if ( subvol_V_top_delta < 0 ) {
- 			iom::warning(iom::strprintf("V top offset negative: set to 0").c_str(), __iom__current__function__);
- 			subvol_V_top_delta = 0;
- 		}
-		if ( subvol_V_bottom_delta < 0 ) {
- 			iom::warning(iom::strprintf("V bottom offset negative: set to 0").c_str(), __iom__current__function__);
- 			subvol_V_bottom_delta = 0;
- 		}
+		//for (int i=0; i<height*width*depth; i++)
+		//	buffer[i]=0;
+		memset(buffer,0,sizeof(iom::real_t)*height*width*depth);
 
-		for(sint64 k = 0; k < depth; k++)
-		{
-			//looping on all stripes
+		// 2018-01-20. Giulio. check if the requested region is outside the selected matrix of tiles
+		if ( VV0 < V1 && VV1 > V0 && HH0 < H1 && HH1 > H0 ) {
+			// there is intesection: load data
+	
+			//computing VH coordinates of all stripes
 			for(int row_index=stitcher->ROW_START; row_index<=stitcher->ROW_END; row_index++)
 			{
-				//loading down stripe
-				if(row_index==stitcher->ROW_START) stripe_up = NULL;
+				stripesCoords[row_index].up_left.V		= stitcher->getStripeABS_V(row_index,true);
+				stripesCoords[row_index].up_left.H      = volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_H();
+				stripesCoords[row_index].bottom_right.V = stitcher->getStripeABS_V(row_index,false);
+				stripesCoords[row_index].bottom_right.H = volume->getSTACKS()[row_index][stitcher->COL_END]->getABS_H()+volume->getStacksWidth();
+			}
 
-				// 2017-04-12. Giulio. @ADDED release of allocated buffers if an exception is raised in 'getStripe' (prevent further exceptions in the GUI version)
-				try {
-					// 2017-08-19. Giulio. @CHANGED the method reading only the actually requested data is invoked only if buffering is not enabled
-					if ( cb->getENABLED() ) 
-						// since 'delta' variables are zero all returned data will be copied in the final buffer
-						stripe_down = stitcher->getStripe(row_index,(int)(z+k), restore_direction, stk_rst, blending_algo);
+			// clear stripesCorners
+			for ( int i=0; i<volume->getN_ROWS(); i++ ) {
+				stripesCorners[i].ups.clear();
+				stripesCorners[i].bottoms.clear();
+				stripesCorners[i].merged.clear();
+			}
+	
+			//computing stripes corners, i.e. corners that result from the overlap between each pair of adjacent stripes
+			for(int row_index=stitcher->ROW_START; row_index<=stitcher->ROW_END; row_index++)
+			{
+				stripe_corner tmp;
+
+				//for first VirtualStack of every stripe
+				tmp.H = volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_H();
+				tmp.h = volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_V()-stripesCoords[row_index].up_left.V;
+				tmp.up = true;
+				stripesCorners[row_index].ups.push_back(tmp);
+		
+				tmp.h = stripesCoords[row_index].bottom_right.V - volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_V() - volume->getStacksHeight();
+				tmp.up = false;
+				stripesCorners[row_index].bottoms.push_back(tmp);
+
+				for(int col_index=stitcher->COL_START; col_index<stitcher->COL_END; col_index++)
+				{
+					if(volume->getSTACKS()[row_index][col_index]->getABS_V() < volume->getSTACKS()[row_index][col_index+1]->getABS_V())
+					{
+						tmp.H = volume->getSTACKS()[row_index][col_index]->getABS_H() + volume->getStacksWidth();
+						tmp.h = volume->getSTACKS()[row_index][col_index+1]->getABS_V() - stripesCoords[row_index].up_left.V;
+						tmp.up = true;
+						stripesCorners[row_index].ups.push_back(tmp);
+
+						tmp.H = volume->getSTACKS()[row_index][col_index+1]->getABS_H();
+						tmp.h = stripesCoords[row_index].bottom_right.V - volume->getSTACKS()[row_index][col_index+1]->getABS_V() - volume->getStacksHeight();
+						tmp.up = false;
+						stripesCorners[row_index].bottoms.push_back(tmp);
+					}
 					else
-						// only requested data are actually read into the returned buffer and will be copied into the final buffer
-						stripe_down = stitcher->getStripe2(row_index,(int)(z+k), VV0, VV1, HH0, HH1, restore_direction, stk_rst, blending_algo);
-				}
-    			catch( iom::exception& exception) {
-    				stitcher->volume->releaseBuffers();
-        			throw iom::exception(iom::exception(exception.what()));
-    			}
+					{
+						tmp.H = volume->getSTACKS()[row_index][col_index+1]->getABS_H();
+						tmp.h = volume->getSTACKS()[row_index][col_index+1]->getABS_V() - stripesCoords[row_index].up_left.V;
+						tmp.up = true;
+						stripesCorners[row_index].ups.push_back(tmp);
 
-				if(stripe_up) u_strp_bottom_displ	= stripesCoords[row_index-1].bottom_right.V	 - V0;
-				d_strp_top_displ					= stripesCoords[row_index  ].up_left.V	     - V0;
-				if(stripe_up) u_strp_top_displ      = stripesCoords[row_index-1].up_left.V	     - V0;
-				d_strp_left_displ					= stripesCoords[row_index  ].up_left.H		 - H0;
-				if(stripe_up) u_strp_left_displ     = stripesCoords[row_index-1].up_left.H		 - H0;
-				d_strp_width						= stripesCoords[row_index  ].bottom_right.H - stripesCoords[row_index  ].up_left.H;
-				if(stripe_up) u_strp_width			= stripesCoords[row_index-1].bottom_right.H - stripesCoords[row_index-1].up_left.H;
-				if(stripe_up) u_strp_d_strp_overlap = u_strp_bottom_displ - d_strp_top_displ;
-				if(row_index!=stitcher->ROW_END) 
-					dd_strp_top_displ				= stripesCoords[row_index+1].up_left.V		 - V0;
-				h_up =  h_down						= u_strp_d_strp_overlap;
+						tmp.H = volume->getSTACKS()[row_index][col_index]->getABS_H()+volume->getStacksWidth();
+						tmp.h = stripesCoords[row_index].bottom_right.V - volume->getSTACKS()[row_index][col_index+1]->getABS_V() - volume->getStacksHeight();
+						tmp.up = false;
+						stripesCorners[row_index].bottoms.push_back(tmp);
+					}
+				}
+
+				//for last VirtualStack of every stripe (h is not set because it doesn't matter)
+				tmp.H = volume->getSTACKS()[row_index][stitcher->COL_END]->getABS_H() + volume->getStacksWidth();
+				tmp.up = true;
+				stripesCorners[row_index].ups.push_back(tmp);
+
+				tmp.up = false;
+				stripesCorners[row_index].bottoms.push_back(tmp);
+			}
+
+			//ordered merging between ups and bottoms corners for every stripe
+			for(int row_index = 1; row_index<=(volume->getN_ROWS()-1); row_index++)
+			{
+				stripesCorners[row_index-1].merged.merge(stripesCorners[row_index-1].bottoms,   compareCorners);
+				stripesCorners[row_index-1].merged.merge(stripesCorners[row_index  ].ups,       compareCorners);
+			}
+
+			sint64 u_strp_bottom_displ; // bottom displacement of up stripe
+			sint64 d_strp_top_displ;    // top displacement of down stripe
+			sint64 u_strp_top_displ;    // top displacement of up stripe
+			sint64 d_strp_left_displ;
+			sint64 u_strp_left_displ;
+			sint64 d_strp_width;
+			sint64 u_strp_width;
+			sint64 dd_strp_top_displ;
+			sint64 u_strp_d_strp_overlap = 0; // overlap between up and down stripes; WARNING: check how initialize
+			sint64 h_up;
+			sint64 h_down;
+			sint64 h_overlap;
+			iom::real_t *buffer_ptr, *ustripe_ptr, *dstripe_ptr;	
+
+			iom::real_t* stripe_up=NULL, *stripe_down;                                   //will contain up-stripe and down-stripe computed by calling 'getStripe' method
+			double angle;								//angle between 0 and PI used to sample overlapping zone in [0,PI]
+			double delta_angle;							//angle step
+
+			iom::real_t (*blending)(double& angle, iom::real_t& pixel1, iom::real_t& pixel2);
+
+			//retrieving blending function
+			if(blending_algo == S_SINUSOIDAL_BLENDING)
+				blending = StackStitcher::sinusoidal_blending;
+			else if(blending_algo == S_NO_BLENDING)
+				blending = StackStitcher::no_blending;
+			else if(blending_algo == S_SHOW_STACK_MARGIN)
+				blending = StackStitcher::stack_margin;
+			else if(blending_algo == S_ENHANCED_NO_BLENDING)
+				blending = StackStitcher::enhanced_no_blending;
+			else
+ 				throw iim::IOException(iom::strprintf("unrecognized blending function"), __iom__current__function__);
+
+			sint64 z = D0; // starting slice (offset is index 'k')
+		
+			// 2017-08-19. Giulio. @ADDED offsets on whole buffer to reduce the amount of data to be copied
+			// if 'delta' variables are zero the whole buffer is filled with data returned by getStripe method
+			sint64 subvol_V_top_delta    = cb->getENABLED() ? 0 : VV0 - V0;		//top    V(ertical) offset of actual subvolume
+			sint64 subvol_V_bottom_delta = cb->getENABLED() ? 0 : V1 - VV1;		//bottom V(ertical) offset of actual subvolume
+		
+			if ( subvol_V_top_delta < 0 ) {
+ 				iom::warning(iom::strprintf("V top offset negative: set to 0").c_str(), __iom__current__function__);
+ 				subvol_V_top_delta = 0;
+ 			}
+			if ( subvol_V_bottom_delta < 0 ) {
+ 				iom::warning(iom::strprintf("V bottom offset negative: set to 0").c_str(), __iom__current__function__);
+ 				subvol_V_bottom_delta = 0;
+ 			}
+
+			for(sint64 k = 0; k < depth; k++)
+			{
+				//looping on all stripes
+				for(int row_index=stitcher->ROW_START; row_index<=stitcher->ROW_END; row_index++)
+				{
+					//loading down stripe
+					if(row_index==stitcher->ROW_START) stripe_up = NULL;
+
+					// 2017-04-12. Giulio. @ADDED release of allocated buffers if an exception is raised in 'getStripe' (prevent further exceptions in the GUI version)
+					try {
+						// 2017-08-19. Giulio. @CHANGED the method reading only the actually requested data is invoked only if buffering is not enabled
+						if ( cb->getENABLED() ) 
+							// since 'delta' variables are zero all returned data will be copied in the final buffer
+							stripe_down = stitcher->getStripe(row_index,(int)(z+k), restore_direction, stk_rst, blending_algo);
+						else
+							// only requested data are actually read into the returned buffer and will be copied into the final buffer
+							stripe_down = stitcher->getStripe2(row_index,(int)(z+k), VV0, VV1, HH0, HH1, restore_direction, stk_rst, blending_algo);
+					}
+    				catch( iom::exception& exception) {
+    					stitcher->volume->releaseBuffers();
+        				throw iom::exception(iom::exception(exception.what()));
+    				}
+
+					if(stripe_up) u_strp_bottom_displ	= stripesCoords[row_index-1].bottom_right.V	 - V0;
+					d_strp_top_displ					= stripesCoords[row_index  ].up_left.V	     - V0;
+					if(stripe_up) u_strp_top_displ      = stripesCoords[row_index-1].up_left.V	     - V0;
+					d_strp_left_displ					= stripesCoords[row_index  ].up_left.H		 - H0;
+					if(stripe_up) u_strp_left_displ     = stripesCoords[row_index-1].up_left.H		 - H0;
+					d_strp_width						= stripesCoords[row_index  ].bottom_right.H - stripesCoords[row_index  ].up_left.H;
+					if(stripe_up) u_strp_width			= stripesCoords[row_index-1].bottom_right.H - stripesCoords[row_index-1].up_left.H;
+					if(stripe_up) u_strp_d_strp_overlap = u_strp_bottom_displ - d_strp_top_displ;
+					if(row_index!=stitcher->ROW_END) 
+						dd_strp_top_displ				= stripesCoords[row_index+1].up_left.V		 - V0;
+					h_up =  h_down						= u_strp_d_strp_overlap;
 
 /**********************************************************************************************************************************************************************************************************
 
@@ -751,96 +772,98 @@ dd stripe -
         
 **********************************************************************************************************************************************************************************************************/
 
-				// 2017-08-19. Giulio. @ADDED top offset on down stripe to reduce the amount of data to be copied
-				// subvol_V_top_delta = 0 -> d_strp_V_top_delta = 0
-				sint64 d_strp_V_top_delta    = (subvol_V_top_delta > d_strp_top_displ) ? (subvol_V_top_delta - d_strp_top_displ) : 0;
+					// 2017-08-19. Giulio. @ADDED top offset on down stripe to reduce the amount of data to be copied
+					// subvol_V_top_delta = 0 -> d_strp_V_top_delta = 0
+					sint64 d_strp_V_top_delta    = (subvol_V_top_delta > d_strp_top_displ) ? (subvol_V_top_delta - d_strp_top_displ) : 0;
 							
-				//overlapping zone
-				if(row_index!=stitcher->ROW_START)
-				{	
-					// 2017-08-19. Giulio. @ADDED top offset on up stripe to reduce the amount of data to be copied
-					// subvol_V_top_delta = 0 -> u_strp_V_top_delta = 0
-					sint64 u_strp_V_top_delta    = (subvol_V_top_delta > u_strp_top_displ) ? (subvol_V_top_delta - u_strp_top_displ) : 0;
+					//overlapping zone
+					if(row_index!=stitcher->ROW_START)
+					{	
+						// 2017-08-19. Giulio. @ADDED top offset on up stripe to reduce the amount of data to be copied
+						// subvol_V_top_delta = 0 -> u_strp_V_top_delta = 0
+						sint64 u_strp_V_top_delta    = (subvol_V_top_delta > u_strp_top_displ) ? (subvol_V_top_delta - u_strp_top_displ) : 0;
 
-					std::list<stripe_corner>::iterator cnr_i_next, cnr_i = stripesCorners[row_index-1].merged.begin();
-					stripe_corner *cnr_left=&(*cnr_i), *cnr_right;
-					cnr_i++;
-					cnr_i_next = cnr_i;
-					cnr_i_next++;
-
-					while( cnr_i != stripesCorners[row_index-1].merged.end())
-					{
-						//computing h_up, h_overlap, h_down
-						cnr_right = &(*cnr_i);
-						if(cnr_i_next == stripesCorners[row_index-1].merged.end())
-						{
-							h_up =   cnr_left->up ? u_strp_d_strp_overlap : 0;
-							h_down = cnr_left->up ? 0                     : u_strp_d_strp_overlap;
-						}
-						else
-							if(cnr_left->up)
-								h_up = cnr_left->h;
-							else
-								h_down = cnr_left->h;
-							
-						h_overlap = u_strp_d_strp_overlap - h_up - h_down;
-
-						//splitting overlapping zone in sub-regions along H axis
-						for(sint64 j= cnr_left->H - H0; j < cnr_right->H - H0; j++)
-						{
-							delta_angle = PI/(h_overlap-1);
-							angle = 0;
-							
-							//UP stripe zone
-							buffer_ptr  = &buffer[k*height*width+std::max<sint64>(d_strp_top_displ,subvol_V_top_delta)*width+j];
-							ustripe_ptr = &stripe_up[std::max<sint64>((d_strp_top_displ-u_strp_top_displ),u_strp_V_top_delta)*u_strp_width +j - u_strp_left_displ];
-							for(sint64 i=std::max<sint64>(d_strp_top_displ,subvol_V_top_delta); i<std::min<sint64>(d_strp_top_displ+h_up+(h_overlap >= 0 ?  0 : h_overlap),height-subvol_V_bottom_delta); i++, buffer_ptr+=width, ustripe_ptr+= u_strp_width)
-								*buffer_ptr = *ustripe_ptr;
-
-							//OVERLAPPING zone
-							buffer_ptr  = &buffer[k*height*width+std::max<sint64>((d_strp_top_displ+h_up),subvol_V_top_delta)*width+j];
-							ustripe_ptr = &stripe_up[std::max<sint64>((d_strp_top_displ+h_up-u_strp_top_displ),u_strp_V_top_delta)*u_strp_width +j - u_strp_left_displ];
-							dstripe_ptr = &stripe_down[std::max<sint64>((d_strp_top_displ+h_up-d_strp_top_displ),d_strp_V_top_delta)*d_strp_width +j - d_strp_left_displ];
-							for(sint64 i=std::max<sint64>(d_strp_top_displ+h_up,subvol_V_top_delta); i<std::min<sint64>(d_strp_top_displ+h_up+h_overlap,height-subvol_V_bottom_delta); i++, buffer_ptr+=width, ustripe_ptr+= u_strp_width, dstripe_ptr+=d_strp_width, angle+=delta_angle)
-								*buffer_ptr = blending(angle,*ustripe_ptr,*dstripe_ptr);
-
-							//DOWN stripe zone
-							buffer_ptr = &buffer[k*height*width+std::max<sint64>((d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0)),subvol_V_top_delta)*width+j];
-							dstripe_ptr = &stripe_down[std::max<sint64>(((d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0))-d_strp_top_displ),d_strp_V_top_delta)*d_strp_width +j - d_strp_left_displ];
-							for(sint64 i=std::max<sint64>(d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0),subvol_V_top_delta); i<std::min<sint64>(d_strp_top_displ+h_up+h_overlap+h_down,height-subvol_V_bottom_delta); i++, buffer_ptr+=width, dstripe_ptr+=d_strp_width)
-								*buffer_ptr = *dstripe_ptr;
-						}
-
-						cnr_left = cnr_right;
+						std::list<stripe_corner>::iterator cnr_i_next, cnr_i = stripesCorners[row_index-1].merged.begin();
+						stripe_corner *cnr_left=&(*cnr_i), *cnr_right;
 						cnr_i++;
-						if(cnr_i_next != stripesCorners[row_index-1].merged.end())
-							cnr_i_next++;
+						cnr_i_next = cnr_i;
+						cnr_i_next++;
+
+						while( cnr_i != stripesCorners[row_index-1].merged.end())
+						{
+							//computing h_up, h_overlap, h_down
+							cnr_right = &(*cnr_i);
+							if(cnr_i_next == stripesCorners[row_index-1].merged.end())
+							{
+								h_up =   cnr_left->up ? u_strp_d_strp_overlap : 0;
+								h_down = cnr_left->up ? 0                     : u_strp_d_strp_overlap;
+							}
+							else
+								if(cnr_left->up)
+									h_up = cnr_left->h;
+								else
+									h_down = cnr_left->h;
+							
+							h_overlap = u_strp_d_strp_overlap - h_up - h_down;
+
+							//splitting overlapping zone in sub-regions along H axis
+							for(sint64 j= cnr_left->H - H0; j < cnr_right->H - H0; j++)
+							{
+								delta_angle = PI/(h_overlap-1);
+								angle = 0;
+							
+								//UP stripe zone
+								buffer_ptr  = &buffer[k*height*width+std::max<sint64>(d_strp_top_displ,subvol_V_top_delta)*width+j];
+								ustripe_ptr = &stripe_up[std::max<sint64>((d_strp_top_displ-u_strp_top_displ),u_strp_V_top_delta)*u_strp_width +j - u_strp_left_displ];
+								for(sint64 i=std::max<sint64>(d_strp_top_displ,subvol_V_top_delta); i<std::min<sint64>(d_strp_top_displ+h_up+(h_overlap >= 0 ?  0 : h_overlap),height-subvol_V_bottom_delta); i++, buffer_ptr+=width, ustripe_ptr+= u_strp_width)
+									*buffer_ptr = *ustripe_ptr;
+
+								//OVERLAPPING zone
+								buffer_ptr  = &buffer[k*height*width+std::max<sint64>((d_strp_top_displ+h_up),subvol_V_top_delta)*width+j];
+								ustripe_ptr = &stripe_up[std::max<sint64>((d_strp_top_displ+h_up-u_strp_top_displ),u_strp_V_top_delta)*u_strp_width +j - u_strp_left_displ];
+								dstripe_ptr = &stripe_down[std::max<sint64>((d_strp_top_displ+h_up-d_strp_top_displ),d_strp_V_top_delta)*d_strp_width +j - d_strp_left_displ];
+								for(sint64 i=std::max<sint64>(d_strp_top_displ+h_up,subvol_V_top_delta); i<std::min<sint64>(d_strp_top_displ+h_up+h_overlap,height-subvol_V_bottom_delta); i++, buffer_ptr+=width, ustripe_ptr+= u_strp_width, dstripe_ptr+=d_strp_width, angle+=delta_angle)
+									*buffer_ptr = blending(angle,*ustripe_ptr,*dstripe_ptr);
+
+								//DOWN stripe zone
+								buffer_ptr = &buffer[k*height*width+std::max<sint64>((d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0)),subvol_V_top_delta)*width+j];
+								dstripe_ptr = &stripe_down[std::max<sint64>(((d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0))-d_strp_top_displ),d_strp_V_top_delta)*d_strp_width +j - d_strp_left_displ];
+								for(sint64 i=std::max<sint64>(d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0),subvol_V_top_delta); i<std::min<sint64>(d_strp_top_displ+h_up+h_overlap+h_down,height-subvol_V_bottom_delta); i++, buffer_ptr+=width, dstripe_ptr+=d_strp_width)
+									*buffer_ptr = *dstripe_ptr;
+							}
+
+							cnr_left = cnr_right;
+							cnr_i++;
+							if(cnr_i_next != stripesCorners[row_index-1].merged.end())
+								cnr_i_next++;
+						}
 					}
-				}
 
-				//non-overlapping zone
-				// 2017-08-19. Giulio. @CHANGED only requested data is copied of first stripe if subvol_V_top_delta > 0 and of last stripe if subvol_V_bottom_delta > 0
-				buffer_ptr = &buffer[k*height*width+((row_index==stitcher->ROW_START ? subvol_V_top_delta : u_strp_bottom_displ))*width];
-				for(sint64 i=(row_index==stitcher->ROW_START ? subvol_V_top_delta : u_strp_bottom_displ); i<(row_index==stitcher->ROW_END? height-subvol_V_bottom_delta : dd_strp_top_displ); i++)
-				{
-					dstripe_ptr = &stripe_down[std::max<sint64>((i-d_strp_top_displ),d_strp_V_top_delta)*d_strp_width - d_strp_left_displ];
-					for(sint64 j=0; j<width; j++, buffer_ptr++, dstripe_ptr++)
-						if(j - d_strp_left_displ >= 0 && j - d_strp_left_displ < stripesCoords[row_index].bottom_right.H)
-							*buffer_ptr = *dstripe_ptr;
-				}
+					//non-overlapping zone
+					// 2017-08-19. Giulio. @CHANGED only requested data is copied of first stripe if subvol_V_top_delta > 0 and of last stripe if subvol_V_bottom_delta > 0
+					buffer_ptr = &buffer[k*height*width+((row_index==stitcher->ROW_START ? subvol_V_top_delta : u_strp_bottom_displ))*width];
+					for(sint64 i=(row_index==stitcher->ROW_START ? subvol_V_top_delta : u_strp_bottom_displ); i<(row_index==stitcher->ROW_END? height-subvol_V_bottom_delta : dd_strp_top_displ); i++)
+					{
+						dstripe_ptr = &stripe_down[std::max<sint64>((i-d_strp_top_displ),d_strp_V_top_delta)*d_strp_width - d_strp_left_displ];
+						for(sint64 j=0; j<width; j++, buffer_ptr++, dstripe_ptr++)
+							if(j - d_strp_left_displ >= 0 && j - d_strp_left_displ < stripesCoords[row_index].bottom_right.H)
+								*buffer_ptr = *dstripe_ptr;
+					}
 
-				//moving to bottom stripe_up
-				delete stripe_up;
-				stripe_up=stripe_down;
+					//moving to bottom stripe_up
+					delete stripe_up;
+					stripe_up=stripe_down;
+				}
+				//releasing last stripe_down
+				delete stripe_down;
 			}
-			//releasing last stripe_down
-			delete stripe_down;
-		}
 
-		if ( cb->cacheSubvolume(current_channel,V0,V1,H0,H1,D0,D1,buffer,(height*width*depth)) ) 
-			internal_buffer_deallocate = false;
-		else
-			internal_buffer_deallocate = true;
+			if ( cb->cacheSubvolume(current_channel,V0,V1,H0,H1,D0,D1,buffer,(height*width*depth)) ) 
+				internal_buffer_deallocate = false;
+			else
+				internal_buffer_deallocate = true;
+
+		} // 2018-01-20. Giulio. check if the requested region is outside the selected matrix of tiles
 	}
 	else {
 		internal_buffer_deallocate = false;
@@ -961,9 +984,11 @@ iim::uint8* UnstitchedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int 
     H1 = (H1 < 0 || H1 > (int)DIM_H) ? DIM_H : H1; 
     D1 = (D1 < 0 || D1 > (int)DIM_D) ? DIM_D : D1; 
 
-	bool chans_interleaved = (plugin_type.compare("3D image-based I/O plugin") == 0) ?
+	bool chans_interleaved = ((plugin_type.compare("3D image-based I/O plugin") == 0) ?
 								iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() :
-								iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved();
+								iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved())  && 
+								vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(vm::MCVolume::id) != 0; // 2018-01-23. Giulio. if is an MCVolume then channels are not interleaved
+
 	int n_chans = (n_active < DIM_C) ? n_active : DIM_C;
 	if ( chans_interleaved )
 		if ( n_chans <= 3 ) {

@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2017-10-21. Giulio.     @ADDED compact active channels if not all channels are active in 'loadSubvolume_to_UINT8'
 * 2016-09-02. Giulio.     @FIXED assignment of a 2D plugin when the object is created
 * 2016-09-01. Giulio.     @FIXED management of 16 bit images in loadSubvolume_to_UINT8
 * 2016-06-19. Giulio.     @ADDED the format Vaa3D raw for the slices (only initialization)
@@ -1181,6 +1182,11 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
                 }
             }
         }
+
+	if ( n_active < DIM_C ) { // not all channels are active
+		compact_active_chans((sbv_height * sbv_width * sbv_bytes_chan),subvol);
+		sbv_channels = n_active;
+	}
 
     //returning outputs
     if(channels)

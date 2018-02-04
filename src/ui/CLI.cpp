@@ -28,6 +28,10 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-01-30. Giulio.     @FIXED flags disabling last row and colum were not initialized in non-parallel executions
+* 2018-01-28. Giulio.     @CHANGED the checks about the image input channel
+* 2018-01-23. Giulio.     @ADDED check to set always the input format of a MultiVolume dataset as a non-interleaved input format
+* 2017-12-01. Giulio      @ADDED conditional code for check in case the new merge step is activated
 * 2017-06-30. Giulio.     @ADDED control over displacement computation of last row and last column of tiles
 * 2017-03-27. Giulio.     @ADDED full support for multi-channel images (more than three channels are allowed) 
 * 2016-09-04. Giulio.     @ADDED the options for setting the configuration of the LibTIFF library
@@ -232,10 +236,10 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	/* Checking mandatory parameters for each step */
 
 	//TEST
-	if(p_test.isSet() && !(
+	if(p_test.isSet() && (!p_im_in_channel.isSet() || (!(
 		p_vol_in_path.isSet() && 
 		p_refsys_1.isSet() && p_refsys_2.isSet() && p_refsys_3.isSet() &&
-		p_vxl_1.isSet() && p_vxl_2.isSet() && p_vxl_3.isSet() ) && !p_proj_in_path.isSet())
+		p_vxl_1.isSet() && p_vxl_2.isSet() && p_vxl_3.isSet() ) && !p_proj_in_path.isSet())))
 	{
 		sprintf(errMsg, "One or more required arguments missing for --%s!\nUSAGE is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s>\n\nor\n\n--%s\n\t--%s%c<%s>", 
 			p_test.getName().c_str(), p_test.getName().c_str(),
@@ -456,6 +460,15 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 		p_thresholdisplacements.isSet() || p_placetiles.isSet() || p_merge.isSet() || p_stitch.isSet() || p_dump.isSet() || p_pluginsinfo.isSet()))
 		throw iom::exception("No operation selected. See --help for usage.");
 
+#ifdef NEW_MERGE_ACTIVE
+
+	if ( (p_merge.isSet() || p_stitch.isSet()) && 
+		 (p_start_stack_row.getValue() != -1 || p_end_stack_row.getValue() != -1 || 
+		  p_start_stack_col.getValue() != -1 || p_end_stack_col.getValue() != -1) )
+		throw iom::exception("In merge step, no selection of rows/columns of the tile matrix is allowed.");
+
+#endif
+
 	//importing parameters
 	vm::VOLUME_INPUT_FORMAT_PLUGIN = p_vol_in_plugin.getValue();
 	vm::VOLUME_OUTPUT_FORMAT_PLUGIN = p_vol_out_plugin.getValue();
@@ -474,6 +487,8 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 			iom::IMIN_PLUGIN = "tiff2D";
 		else if(vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(vm::BlockVolume::id) == 0)
 			iom::IMIN_PLUGIN = "tiff3D";
+		else if(vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(vm::MCVolume::id) == 0)
+			iom::IMIN_PLUGIN = "MultiVolume";
 	}
 	else
 		iom::IMIN_PLUGIN = p_im_in_plugin.getValue();
@@ -559,26 +574,33 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 		iomanager::CHANS = iomanager::B;
 	// 2017-03-27. Giulio. Added full multi-channel support
 	else if ( isNumber(p_im_in_channel.getValue()) ) {
-		// check if the input plugin support more than three channels
-		bool flag = false;
-		std::string plugin_type;
-		try{
-			plugin_type = "3D image-based I/O plugin";
-			flag = iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->desc().find(plugin_type) != std::string::npos;
-		}
-		catch (...) {
-			plugin_type = "2D image-based I/O plugin";
-			flag = iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->desc().find(plugin_type) != std::string::npos;
-		}
-		if ( !flag )
- 			throw iom::exception(iomanager::strprintf("cannot determine the type of the input plugin"), __iom__current__function__);
-		if ( (plugin_type.compare("3D image-based I/O plugin") == 0) ?
-								iomanager::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() :
-								iomanager::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved() )
-  			throw iom::exception(iomanager::strprintf("pulgins with interleaved channels do not allow to specify a channel number: use R, G, or B"), __iom__current__function__);
-		else
-			// channels are not interleaved, more than three channels are allowed
+		if ( iom::IMIN_PLUGIN == "MultiVolume" ) {
+			// no plugin has been specified yet
 			iomanager::CHANS_no = atoi(p_im_in_channel.getValue().c_str());
+		}
+		else {
+			// check if the input plugin support more than three channels
+			bool flag = false;
+			std::string plugin_type;
+			try{
+				plugin_type = "3D image-based I/O plugin";
+				flag = iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->desc().find(plugin_type) != std::string::npos;
+			}
+			catch (...) {
+				plugin_type = "2D image-based I/O plugin";
+				flag = iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->desc().find(plugin_type) != std::string::npos;
+			}
+			if ( !flag )
+ 				throw iom::exception(iomanager::strprintf("cannot determine the type of the input plugin"), __iom__current__function__);
+			if ( (plugin_type.compare("3D image-based I/O plugin") == 0) ?
+									iomanager::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() :
+									iomanager::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved()  && 
+															vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(vm::MCVolume::id) != 0 ) // 2018-01-23. Giulio. if is an MCVolume then channels are not interleaved
+  				throw iom::exception(iomanager::strprintf("pulgins with interleaved channels do not allow to specify a channel number: use R, G, or B"), __iom__current__function__);
+			else
+				// channels are not interleaved, more than three channels are allowed
+				iomanager::CHANS_no = atoi(p_im_in_channel.getValue().c_str());
+		}
 		// channels are specified by a number: variable 'iomanager::CHANS' must be set to invalid value 
 		iomanager::CHANS = iomanager::NONE;
 
@@ -623,6 +645,9 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	if(p_parallel.isSet() && p_computedisplacements.isSet() ) { // set only if compute displacements is performed in parallel
 		this->disable_last_row = p_disable_last_row.getValue();
 		this->disable_last_col = p_disable_last_col.getValue();
+	}
+	else { 
+		this->disable_last_row = this->disable_last_col = false;
 	}
 
 }

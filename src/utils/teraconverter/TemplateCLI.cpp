@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-02-04. Giulio.     @ADDED support for converting (stitching) unstitched sparse volumes
 * 2017-09-11. Giulio.     @ADDED parameter controlloing the compression algorithm to be used with HDf5 files
 * 2017-05-25. Giulio.     @ADDED parameters for lossy compression based on rescaling
 * 2017-04-07  Giulio.     @ADDED the opssibility to specify a subset of channels to be converted
@@ -165,6 +166,8 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	TCLAP::ValueArg<int> p_dwnsmplngFactor("","dsfactor","Dowsampling factor to be used to read the source volume (only for serie of 2D slices).",false,1,"unsigned");
 
+	TCLAP::SwitchArg p_sparse_data("","sparse_data","If enabled, this option allows to import sparse data organizations, i.e. with empty or incomplete tiles",false);
+
 	TCLAP::SwitchArg p_libtiff_uncompressed("","libtiff_uncompress","Configure libtiff library to not compress output files (default: compression enabled).", false);
 	TCLAP::SwitchArg p_libtiff_bigtiff("","libtiff_bigtiff","Forces the creation of BigTiff files (default: BigTiff disabled).", false);
 	TCLAP::ValueArg<int> p_libtiff_rowsperstrip("","libtiff_rowsperstrip","Configure libtiff library to pack n rows per strip when compression is enabled (default: 1 row per strip).",false,1,"integer");
@@ -180,6 +183,8 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_libtiff_rowsperstrip);
 	cmd.add(p_libtiff_bigtiff);
 	cmd.add(p_libtiff_uncompressed);
+
+	cmd.add(p_sparse_data);
 
 	cmd.add(p_timeseries);
 
@@ -346,6 +351,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		throw iom::exception("metadata option cannot be set with parallel option. See --help for usage.");
 
 	//importing parameters not set yet
+	vm::SPARSE_DATA     = p_sparse_data.getValue();
 	this->src_root_dir  = p_src_root_dir.getValue();
 	this->dst_root_dir  = p_dst_root_dir.getValue();
 	this->mdata_fname   = p_mdata_fname.getValue();

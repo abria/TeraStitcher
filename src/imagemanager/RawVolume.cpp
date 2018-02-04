@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2017-10-21. Giulio.     @ADDED check because selection of active channel is not supported by this format
 * 2016-09-12. Giulio.     @FIXED wrong initialization of the input plugin in case of tif input format
 * 2015-12-10. Giulio.     @ADDED support for single Tiff 3D volumes 
 */
@@ -190,6 +191,12 @@ uint8 *RawVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, 
 		// return type should be converted, but not to 8 bits per channel
         char err_msg[STATIC_STRINGS_SIZE];
 		sprintf(err_msg,"in RawVolume::loadSubvolume_to_UINT8: non supported return type (%d bits) - native type is %d bits",ret_type, 8*this->BYTESxCHAN); 
+        throw IOException(err_msg);
+	}
+
+	if ( DIM_C != n_active ) {
+        char err_msg[STATIC_STRINGS_SIZE];
+		sprintf(err_msg,"in RawVolume::loadSubvolume_to_UINT8: selection of active channels not supported yet for RawVolumes (n_active = %d, DIM_C = %d)",n_active,DIM_C); 
         throw IOException(err_msg);
 	}
 

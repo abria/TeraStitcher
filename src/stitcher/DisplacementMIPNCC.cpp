@@ -25,6 +25,13 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2018-02-03. Giulio.     @ADDED complete mirroring of displacements when direction = 'dir_all'
+*/
+
+
 #include "DisplacementMIPNCC.h"
 #include "S_config.h"
 #include <limits>
@@ -203,7 +210,17 @@ Displacement* DisplacementMIPNCC::getMirrored(direction _direction) throw (iom::
 	#endif
 
 	DisplacementMIPNCC *mirrored = new DisplacementMIPNCC();
-	if(_direction == dir_vertical)
+	if(_direction == dir_all) // 2018-02-03. Giulio. @ADDED mirror all directions
+	{
+		mirrored->VHD_coords[0]		= -VHD_coords[0];
+		mirrored->VHD_def_coords[0] = -VHD_def_coords[0];
+		mirrored->VHD_coords[1]		= -VHD_coords[1];
+		mirrored->VHD_def_coords[1] = -VHD_def_coords[1];
+		mirrored->VHD_coords[2]		= -VHD_coords[2];
+		mirrored->VHD_def_coords[2] = -VHD_def_coords[2];
+
+	}
+	else if(_direction == dir_vertical)
 	{
 		mirrored->VHD_coords[0]		= -VHD_coords[0];
 		mirrored->VHD_def_coords[0] = -VHD_def_coords[0];
