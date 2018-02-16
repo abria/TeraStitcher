@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-02-11. Giulio.     @FIXED added code to correct the first 4 voxels of each slice if V0=0 and H0<4
 * 2018-02-04. Giulio.     @ADDED initalization of newly allocated buffer in 'readData'
 * 2017-07-11. Giulio.     @CREATED
 */
@@ -233,10 +234,10 @@ throw (iom::exception)
 
 	iim::uint64 file_offset = (iim::uint64) 232 + (iim::uint64)img_width * (iim::uint64)img_height  * (iim::uint64)z0 * (iim::uint64)img_bytes_x_chan;
 
-	iim::uint64 size;
+	iim::uint64 rowStride = (iim::uint64)img_width * (iim::uint64)img_bytes_x_chan;
 
 	if ( V0 == 0 && V1 == img_height && H0 == 0 && H1 == img_width ) { // load the whole substack
-		size = ((iim::uint64)img_width * (iim::uint64)img_height * (iim::uint64)img_bytes_x_chan) * (iim::uint64)(z1 - z0);
+		iim::uint64 size = ((iim::uint64)img_width * (iim::uint64)img_height * (iim::uint64)img_bytes_x_chan) * (iim::uint64)(z1 - z0);
 #ifdef WIN32
 		_fseeki64(fin,file_offset*sizeof(unsigned char),SEEK_SET);
 #else
@@ -244,9 +245,11 @@ throw (iom::exception)
 #endif
 
 		fread(data,sizeof(unsigned char),size,fin);
+		
+		// set the first four voxels of first row to the values of the first four voxels of the second row
+		memcpy(data,data+(rowStride),4*img_bytes_x_chan*sizeof(unsigned char));
 	}
 	else { // load selected data row by row
-		iim::uint64 rowStride = (iim::uint64)img_width * (iim::uint64)img_bytes_x_chan;
 		iim::uint64 rowSize = (iim::uint64)(img_width - H0) * (iim::uint64)img_bytes_x_chan;
 		iim::uint64 sliceStride = (iim::uint64)img_height * rowStride;
 //printf("--> rowStride = %lld, sliceStride = %lld\n",rowStride,sliceStride);
@@ -265,6 +268,31 @@ throw (iom::exception)
 #endif
 //printf("--> pRow - data = %ld, rowSize = %lld\n",pRow-data,rowStride);
 				fread(pRow,sizeof(unsigned char),rowSize,fin);
+			}
+		}
+		
+		if ( V0 == 0 && H0 < 4 ) { // there are voxels to be corrected
+			if ( V1 > 1 ) { // there is a second row
+				// set the first 4-H0 voxels of first row to the values of the first four voxels of the second row
+				pSlice = data + (iim::uint64)H0 * (iim::uint64)img_bytes_x_chan; // V0 = 0
+				for ( int z=0; z<(z1-z0); z++, pSlice+=sliceStride ) {
+					memcpy(pSlice,pSlice+rowStride,(4-H0)*img_bytes_x_chan*sizeof(unsigned char));
+				}
+			}
+			else if ( H1 > 4 ) { // there is not a second row, but there is a fifth voxel
+				// set the first 4-H0 voxels of first row to the value of the (4-H0+1)-th voxel of the first row
+				pSlice = data + (iim::uint64)H0 * (iim::uint64)img_bytes_x_chan; // V0 = 0
+				for ( int z=0; z<(z1-z0); z++, pSlice+=sliceStride ) {
+					for ( int h=0; h<((4-H0)*img_bytes_x_chan); h++ ) // set one byte at the time
+						*(pSlice+h) = *(pSlice + (4-H0)*img_bytes_x_chan + h%2);
+				}
+			}
+			else { //there is not a fifth voxel
+				// set the first 4-H0 voxels to 0 
+				pSlice = data + (iim::uint64)H0 * (iim::uint64)img_bytes_x_chan; // V0 = 0
+				for ( int z=0; z<(z1-z0); z++, pSlice+=sliceStride ) {
+					memset(pSlice,0,(4-H0)*img_bytes_x_chan*sizeof(unsigned char));
+				}
 			}
 		}
 	}

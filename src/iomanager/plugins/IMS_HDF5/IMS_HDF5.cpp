@@ -39,7 +39,7 @@
 #include <cstddef>			// 2014-09-18. Alessandro. @FIXED compilation issue on gcc compilers.
 #include "IMS_HDF5.h"
 #include "IMS_HDF5Mngr.h"
-#include "hdf5.h"
+//#include "hdf5.h"
 
 // just call this macro to register your plugin
 TERASTITCHER_REGISTER_IO_PLUGIN_3D(IMS_HDF5)

@@ -18,10 +18,5 @@ add_executable(mergedisplacements ${mergedisplacements_headers} ${mergedisplacem
 install (TARGETS mergedisplacements RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # link the executable to the other modules. 
-target_link_libraries(mergedisplacements iomanager )
 target_link_libraries(mergedisplacements tinyxml )
-target_link_libraries(mergedisplacements volumemanager )
-target_link_libraries(mergedisplacements tinyxml )
-target_link_libraries(mergedisplacements stitcher )
-target_link_libraries(mergedisplacements crossmips )
 target_link_libraries(mergedisplacements common )

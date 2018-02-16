@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-02-16. Giulio.     @DELETED iom::debug message in 'init' to enable CMake configuration under Linux
 * 2018-02-04. Giulio.     @FIXED bug in constructor
 * 2017-05-10. Giulio.     @ADDED 'input_plugin' attribute to <TeraStitcher> XML node
 * 2014-11-23. Giulio.     @CREATED 
@@ -66,8 +67,6 @@ XMLDisplacementBag::~XMLDisplacementBag ( ) {
 
 
 void XMLDisplacementBag::init ( ) {
-
-    /**/iom::debug(iom::LEV3, iom::strprintf("main_dir=%s", main_dir).c_str(), __iom__current__function__);
 
 	//LOCAL variables
 	string tmp;
