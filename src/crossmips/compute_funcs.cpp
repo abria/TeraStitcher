@@ -722,42 +722,42 @@ void compute_Neighborhood ( NCC_parms_t *NCC_params, iom::real_t *NCC, int delay
 		dstStartu = srcStartu - deltau;
 		dstStartv = srcStartv - deltav;
 		dstStarti = dstStartu * (2*newv+1) + dstStartv;
-				if ( srcStartu > 0 ) {     // forward copy of rows is safe
-					if ( srcStartv > 0 ) { // forward copy of columns is safe
-						i = 0; // first index of first row to be moved
-						for ( u=0; u<((2*newu+1)-abs(deltau)); u++, i+=abs(deltav) ) { // when row changes |deltav| values have to be skipped forward
-							for ( v=0; v<((2*newv+1)-abs(deltav)); v++ , i++) {
-								NCCnew[i + dstStarti] = NCCnew[i + srcStarti];
-							}
-						}
-					}
-					else { // srcStartv == 0: backward copy of columns is safe
-						i = (2*newv+1) - abs(deltav) - 1;  // last index of first row to be moved  
-						for ( u=0; u<((2*newu+1)-abs(deltau)); u++, i+=(2*(2*newv+1) - abs(deltav)) ) { // when row changes two rows - |deltav| have to be skipped forward
-							for ( v=0; v<((2*newv+1)-abs(deltav)); v++ , i--) {
-								NCCnew[i + dstStarti] = NCCnew[i + srcStarti];
-							}
-						}
+		if ( srcStartu > 0 ) {     // forward copy of rows is safe
+			if ( srcStartv > 0 ) { // forward copy of columns is safe
+				i = 0; // first index of first row to be moved
+				for ( u=0; u<((2*newu+1)-abs(deltau)); u++, i+=abs(deltav) ) { // when row changes |deltav| values have to be skipped forward
+					for ( v=0; v<((2*newv+1)-abs(deltav)); v++ , i++) {
+						NCCnew[i + dstStarti] = NCCnew[i + srcStarti];
 					}
 				}
-				else { // srcStartu == 0:     backward copy of rows is safe
-					if ( srcStartv > 0 ) { // forward copy of columns is safe
-						i = ((2*newu+1)-abs(deltau)-1)*(2*newv+1);     // first index last row to be moved
-						for ( u=0; u<((2*newu+1)-abs(deltau)); u++, i-=(2*(2*newv+1) - abs(deltav)) ) { // when row changes two rows - |deltav| values have to be skipped backward
-							for ( v=0; v<((2*newv+1)-abs(deltav)); v++ , i++) {
-								NCCnew[i + dstStarti] = NCCnew[i + srcStarti];
-							}
-						}
-					}
-					else { // srcStartv == 0: backward copy of columns is safe
-						i = ((2*newu+1)-abs(deltau))*(2*newv+1) - abs(deltav) - 1;     // last index of last rows to be moved
-						for ( u=0; u<((2*newu+1)-abs(deltau)); u++, i-=abs(deltav) ) { // when row changes |deltav| values have to be skipped backward
-							for ( v=0; v<((2*newv+1)-abs(deltav)); v++ , i--) {
-								NCCnew[i + dstStarti] = NCCnew[i + srcStarti];
-							}
-						}
+			}
+			else { // srcStartv == 0: backward copy of columns is safe
+				i = (2*newv+1) - abs(deltav) - 1;  // last index of first row to be moved  
+				for ( u=0; u<((2*newu+1)-abs(deltau)); u++, i+=(2*(2*newv+1) - abs(deltav)) ) { // when row changes two rows - |deltav| have to be skipped forward
+					for ( v=0; v<((2*newv+1)-abs(deltav)); v++ , i--) {
+						NCCnew[i + dstStarti] = NCCnew[i + srcStarti];
 					}
 				}
+			}
+		}
+		else { // srcStartu == 0:     backward copy of rows is safe
+			if ( srcStartv > 0 ) { // forward copy of columns is safe
+				i = ((2*newu+1)-abs(deltau)-1)*(2*newv+1);     // first index last row to be moved
+				for ( u=0; u<((2*newu+1)-abs(deltau)); u++, i-=(2*(2*newv+1) - abs(deltav)) ) { // when row changes two rows - |deltav| values have to be skipped backward
+					for ( v=0; v<((2*newv+1)-abs(deltav)); v++ , i++) {
+						NCCnew[i + dstStarti] = NCCnew[i + srcStarti];
+					}
+				}
+			}
+			else { // srcStartv == 0: backward copy of columns is safe
+				i = ((2*newu+1)-abs(deltau))*(2*newv+1) - abs(deltav) - 1;     // last index of last rows to be moved
+				for ( u=0; u<((2*newu+1)-abs(deltau)); u++, i-=abs(deltav) ) { // when row changes |deltav| values have to be skipped backward
+					for ( v=0; v<((2*newv+1)-abs(deltav)); v++ , i--) {
+						NCCnew[i + dstStarti] = NCCnew[i + srcStarti];
+					}
+				}
+			}
+		}
 
 		// update position of the new center (current maximum)
 		du += deltau;
