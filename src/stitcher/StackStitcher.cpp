@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-02-19. Giulio.     @ADDED check to avoid loading the tile at bottom right when both last row and last column should not be aligned
 * 2017-07-06. Giulio.     @CHANGED call to 'loadImageStack2' in 'getStripe2' to enable selective read of data
 * 2017-07-06. Giulio.     @ADDED method 'getStripe2' to enable selective reads of data
 * 2017-06-30. Giulio.     @ADDED control over displacement computation of last row and last column of tiles
@@ -74,6 +75,9 @@
 #include "../iomanager/IOPluginAPI.h"
 
 #include "resumer.h" // GI_141029: added stop and resume facility
+
+
+//#define _WRITE_STCK_INDICES
 
 
 using namespace iomanager;
@@ -225,6 +229,8 @@ throw (iom::exception)
 		if(stk_A->isComplete(z_start,z_start+subvol_DIM_D_k-1))
 			stk_A->loadImageStack(z_start,z_start+subvol_DIM_D_k-1);
 
+		int count = 0;
+
 		//scanning LAYER through columns OR through rows depending on row_wise value 
 		for(i=(row_wise ? row0 : col0); i<=(row_wise ? row1 : col1); i++)
 		{
@@ -241,7 +247,8 @@ throw (iom::exception)
 					//if #rows<#columns, checking if we are at first column. If so, allocating southern VirtualStack
 					// 2014-09-09. @ADDED sparse tile support: incomplete or empty substacks are not processed.
 					if(i== (row_wise ? row0 : col0 ) && stk_B->isComplete(z_start,z_start+subvol_DIM_D_k-1))
-						stk_B->loadImageStack(z_start, z_start+subvol_DIM_D_k-1);
+						if ( !(skip_V && skip_H && stk_B->getROW_INDEX() == row1 && stk_B->getCOL_INDEX() == col1) ) // 2018-02-19. Giulio. the tile at bottom right must not be loaded
+							stk_B->loadImageStack(z_start, z_start+subvol_DIM_D_k-1);
 
 					if(show_progress_bar)
 					{
@@ -268,6 +275,11 @@ throw (iom::exception)
 							#ifdef S_TIME_CALC
 							double proc_time = -TIME(0);
 							#endif
+
+							#ifdef _WRITE_STCK_INDICES
+							printf("count = %08d : [%d,%d] vs. [%d,%d]\n",count++,stk_A->getROW_INDEX(),stk_A->getCOL_INDEX(),stk_B->getROW_INDEX(),stk_B->getCOL_INDEX());
+							#endif
+
 							volume->insertDisplacement(stk_A, stk_B, 
 													  algorithm->execute(stk_A->getSTACKED_IMAGE(), stk_A->getHEIGHT(), stk_A->getWIDTH(), subvol_DIM_D_k,
 													  stk_B->getSTACKED_IMAGE(), stk_B->getHEIGHT(), stk_B->getWIDTH(), subvol_DIM_D_k, displ_max_V, 
@@ -290,7 +302,8 @@ throw (iom::exception)
 					//allocating southern/eastern VirtualStack
 					// 2014-09-09. @ADDED sparse tile support: incomplete or empty substacks are not processed.
 					if(stk_B->isComplete(z_start, z_start+subvol_DIM_D_k-1))
-						stk_B->loadImageStack(z_start, z_start+subvol_DIM_D_k-1);
+						if ( !(skip_V && skip_H && stk_B->getROW_INDEX() == row1 && stk_B->getCOL_INDEX() == col1) ) // 2018-02-19. Giulio. the tile at bottom right must not be loaded
+							stk_B->loadImageStack(z_start, z_start+subvol_DIM_D_k-1);
 						
 					if(show_progress_bar)
 					{
@@ -317,6 +330,11 @@ throw (iom::exception)
 							#ifdef S_TIME_CALC
 							double proc_time = -TIME(0);
 							#endif
+
+							#ifdef _WRITE_STCK_INDICES
+							printf("count = %08d : [%d,%d] vs. [%d,%d]\n",count++,stk_A->getROW_INDEX(),stk_A->getCOL_INDEX(),stk_B->getROW_INDEX(),stk_B->getCOL_INDEX());
+							#endif
+
 							volume->insertDisplacement(stk_A, stk_B, 
 													  algorithm->execute(stk_A->getSTACKED_IMAGE(), stk_A->getHEIGHT(), stk_A->getWIDTH(), subvol_DIM_D_k,
 													  stk_B->getSTACKED_IMAGE(), stk_B->getHEIGHT(), stk_B->getWIDTH(), subvol_DIM_D_k, displ_max_V, 

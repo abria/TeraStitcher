@@ -7,7 +7,9 @@ include_directories (${TeraStitcher_SOURCE_DIR}/crossmips)
 include_directories (${TeraStitcher_SOURCE_DIR}/stitcher)
 include_directories (${TeraStitcher_SOURCE_DIR}/common)
 include_directories (${TeraStitcher_SOURCE_DIR}/imagemanager)
-include_directories (${TeraStitcher_SOURCE_DIR}/utils/volumeconverter)
+if(WITH_NEW_MERGE)
+		include_directories (${TeraStitcher_SOURCE_DIR}/utils/volumeconverter)
+endif(WITH_NEW_MERGE)
 
 # add 3rd party modules to include path
 include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty)
@@ -32,7 +34,9 @@ install(TARGETS terastitcher
 
 # link the executable to the other modules 
 target_link_libraries(terastitcher stitcher )
-target_link_libraries(terastitcher volumeconverter )
+if(WITH_NEW_MERGE)
+	target_link_libraries(terastitcher volumeconverter )
+endif(WITH_NEW_MERGE)
 target_link_libraries(terastitcher volumemanager )
 target_link_libraries(terastitcher crossmips )
 target_link_libraries(terastitcher iomanager )

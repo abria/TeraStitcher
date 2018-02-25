@@ -236,10 +236,8 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	/* Checking mandatory parameters for each step */
 
 	//TEST
-	if(p_test.isSet() && (!p_im_in_channel.isSet() || (!(
-		p_vol_in_path.isSet() && 
-		p_refsys_1.isSet() && p_refsys_2.isSet() && p_refsys_3.isSet() &&
-		p_vxl_1.isSet() && p_vxl_2.isSet() && p_vxl_3.isSet() ) && !p_proj_in_path.isSet())))
+	if( p_test.isSet() && 
+		( !( p_vol_in_path.isSet() && p_refsys_1.isSet() && p_refsys_2.isSet() && p_refsys_3.isSet() && p_vxl_1.isSet() && p_vxl_2.isSet() && p_vxl_3.isSet() ) && !p_proj_in_path.isSet() ) )
 	{
 		sprintf(errMsg, "One or more required arguments missing for --%s!\nUSAGE is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s>\n\nor\n\n--%s\n\t--%s%c<%s>", 
 			p_test.getName().c_str(), p_test.getName().c_str(),
