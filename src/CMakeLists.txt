@@ -57,5 +57,12 @@ FOREACH(subdir ${SUBDIRS})
 	endif(WITH_UTILITY_MODULE_${subdir})
 ENDFOREACH()
 
+if(NOT WITH_UTILITY_MODULE_volumeconverter AND (WITH_NEW_MERGE OR WITH_GUI))
+	message(STATUS "Include utils/volumeconverter ...")
+	add_subdirectory(utils/volumeconverter)
+	message(STATUS "Include utils/volumeconverter ...")
+	set(WITH_UTILITY_MODULE_volumeconverter ON CACHE BOOL "Otherwise linker fails" FORCE)
+endif()
+
 # set CPack
 include(TeraStitcherCPack)

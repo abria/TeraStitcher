@@ -1,5 +1,7 @@
 # CMakeLists.txt in UI dir
 
+option (WITH_NEW_MERGE "Use new merge code" OFF) 
+
 # add used modules to include path
 include_directories (${TeraStitcher_SOURCE_DIR}/iomanager)
 include_directories (${TeraStitcher_SOURCE_DIR}/volumemanager)
@@ -20,9 +22,8 @@ include_directories(${TeraStitcher_SOURCE_DIR}/3rdparty/tinyxml)
 file(GLOB UI_headers *.h)
 file(GLOB UI_sources *.cpp)
 
-option (WITH_NEW_MERGE "Use new merge code" OFF) 
 if(WITH_NEW_MERGE)
-		add_definitions(-DNEW_MERGE_ACTIVE)
+	add_definitions(-DNEW_MERGE_ACTIVE)
 endif(WITH_NEW_MERGE)
 
 add_executable(terastitcher ${UI_headers} ${UI_sources})
