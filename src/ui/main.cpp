@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-03-02. Giulio.     @ADDED the possibility to set a path and a name for the mdata.bin file generated when volumes are created from data
 * 2018-01-23. Giulio.     @ADDED check to set always the input format of a MultiVolume dataset as a non-interleaved input format
 * 2017-12-01. Giulio      @ADDED conditional code to activate the new merge step 
 * 2017-06-30. Giulio.     @FIXED the coding of iom::CHANS was not coherent with the one used internally by vmVirtualVolume
@@ -190,7 +191,7 @@ int main(int argc, char** argv)
 				throw iom::exception(vm::strprintf("Volume \"%s\" is incomplete or not coherent", volume->getSTACKS_DIR()).c_str());
 		}
 		else if(cli.import || (cli.computedisplacements && cli.projfile_load_path.compare("null")==0) || cli.stitch || cli.test) {
-			volume = volumemanager::VirtualVolumeFactory::createFromData(vm::VOLUME_INPUT_FORMAT_PLUGIN, cli.volume_load_path.c_str(), cli.reference_system, cli.VXL_1, cli.VXL_2, cli.VXL_3, true);
+		volume = volumemanager::VirtualVolumeFactory::createFromData(vm::VOLUME_INPUT_FORMAT_PLUGIN, cli.volume_load_path.c_str(), cli.reference_system, cli.VXL_1, cli.VXL_2, cli.VXL_3, true, cli.mdata_fname);
 			if ( !volume->check(fillPath(cli.errlogfile_path, volume->getSTACKS_DIR(), "err_log_file", "txt").c_str()) ) {
 				// save xml for further checking
 				volume->saveXML(0, fillPath(cli.projfile_save_path, volume->getSTACKS_DIR(), "xml_import", "xml").c_str());

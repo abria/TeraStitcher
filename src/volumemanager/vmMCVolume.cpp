@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-03-01. Giulio. @FIXED global variable 'vm::VOLUME_INPUT_FORMAT_PLUGIN' is set to vm::MCVolume::id in the constructor to signal that it is a non interleaved channel representation
 * 2018-01-20. Giulio. @CREATED
 */
 
@@ -77,6 +78,9 @@ MCVolume::MCVolume(const char* _stacks_dir, vm::ref_sys _reference_system, float
 		  _stacks_dir,reference_system.first, reference_system.second, reference_system.third, VXL_1, VXL_2, VXL_3);
 	#endif
 
+	// 2018-03-01. Giulio. @FIXED global variable 'vm::VOLUME_INPUT_FORMAT_PLUGIN' has to be set to vm::MCVolume::id to signal that it is a non interleaved channel representation
+	vm::VOLUME_INPUT_FORMAT_PLUGIN = vm::MCVolume::id;
+	
 	checked = false;
 	aligned = false; // no guarantee that subvolumes are aligned
 
@@ -118,6 +122,9 @@ MCVolume::MCVolume(const char *xml_filepath, bool overwrite_mdata) throw (iom::e
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin MCVolume::MCVolume(xml_filepath=%s)\n", xml_filepath);
 	#endif
+
+	// 2018-03-01. Giulio. @FIXED global variable 'vm::VOLUME_INPUT_FORMAT_PLUGIN' has to be set to vm::MCVolume::id to signal that it is a non interleaved channel representation
+	vm::VOLUME_INPUT_FORMAT_PLUGIN = vm::MCVolume::id;
 	
  	checked = false;
 	aligned = false; // no guarantee that subvolumes are aligned

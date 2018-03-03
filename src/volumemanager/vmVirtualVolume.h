@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-03-02. Giulio.     @ADDED the possibility to set a path and a name for the mdata.bin file generated when volumes are created from data
 * 2018-02-03. Giulio.     @ADDED internal method to correct non symmetric displacements between tiles
 * 2018-01-20. Giulio.     @CHANGED some methods to virtual and the type of a few data members
 * 2017-04-27. Giulio.     @ADDED static method to get the input plugin from the xml if specified
@@ -209,7 +210,7 @@ class volumemanager::VirtualVolume
 
 // define new type: VirtualVolume plugin creator functions
 typedef volumemanager::VirtualVolume* (*VolumeCreatorXML)(const char*, bool);
-typedef volumemanager::VirtualVolume* (*VolumeCreatorData)(const char*, vm::ref_sys, float, float, float, bool);
+typedef volumemanager::VirtualVolume* (*VolumeCreatorData)(const char*, vm::ref_sys, float, float, float, bool, std::string);
 
 // Factory for plugins' registration and instantiation
 class volumemanager::VirtualVolumeFactory 
@@ -256,11 +257,11 @@ class volumemanager::VirtualVolumeFactory
             return (instance()->creators_xml[id])(xml_path, ow_mdata);
         }
 
-		static VirtualVolume* createFromData(std::string id, const char* data_path, vm::ref_sys ref, float vxl1, float vxl2, float vxl3, bool ow_mdata) throw (iom::exception)
+		static VirtualVolume* createFromData(std::string id, const char* data_path, vm::ref_sys ref, float vxl1, float vxl2, float vxl3, bool ow_mdata, std::string mdata_fname="") throw (iom::exception)
 		{ 
 			if(instance()->creators_data.find(id) == instance()->creators_data.end())
 				throw iom::exception(iom::strprintf("Cannot find VirtualVolume(data) plugin \"%s\": no such plugin", id.c_str()).c_str());
-			return (instance()->creators_data[id])(data_path, ref, vxl1, vxl2, vxl3, ow_mdata); 
+			return (instance()->creators_data[id])(data_path, ref, vxl1, vxl2, vxl3, ow_mdata, mdata_fname); 
 		}
 
 		// get list of registered plugins

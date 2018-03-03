@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-03-02. Giulio. @ADDED a parameter to set a path and a name for the mdata.bin file for compatibility, but it is not used
 * 2018-01-20. Giulio. @CREATED
 */
 
@@ -47,8 +48,8 @@ class vm::MCVolume : public vm::VirtualVolume
 		static const std::string creator_id1, creator_id2;							
         static vm::VirtualVolume* createFromXML(const char* xml_path, bool ow_mdata = false) { return new MCVolume(xml_path, ow_mdata); }
 		// 2018-01-21. Giulio @ADDED default parameters to support creation from data (folder containing xml import files)
-		static vm::VirtualVolume* createFromData(const char* data_path, vm::ref_sys ref = vm::ref_sys(vm::axis(0),vm::axis(0),vm::axis(0)), float vxl1 = 0, float vxl2 = 0, float vxl3 = 0, bool ow_mdata = false) { 
-			return new MCVolume(data_path, ref, vxl1, vxl2, vxl3, ow_mdata); 
+		static vm::VirtualVolume* createFromData(const char* data_path, vm::ref_sys ref = vm::ref_sys(vm::axis(0),vm::axis(0),vm::axis(0)), float vxl1 = 0, float vxl2 = 0, float vxl3 = 0, bool ow_mdata = false, std::string mdata_fname = "") { 
+			return new MCVolume(data_path, ref, vxl1, vxl2, vxl3, ow_mdata); // the mdata_fname parameter is not used for MCVolumes
 		}
 
 		vm::VirtualVolume **subvolumes;

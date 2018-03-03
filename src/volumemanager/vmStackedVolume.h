@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-03-02. Giulio.     @ADDED the possibility to set a path and a name for the mdata.bin file
 * 2017-04-12. Giulio.     @ADDED method to release all buffers allocated in VirtualStack
 * 2015-06-12. Giulio      @ADDED 'check' method to check completeness and coherence of a volume
 * 2015-02-26. Giulio.     @ADDED initChannels private method to initialize fields DIM_C and BYTESxCHAN
@@ -58,8 +59,8 @@ class vm::StackedVolume : public vm::VirtualVolume
 		// 2014-09-10. Alessandro. @ADDED plugin creation/registration functions to make 'StackedVolume' a volume format plugin.
 		static const std::string creator_id1, creator_id2;							
         static vm::VirtualVolume* createFromXML(const char* xml_path, bool ow_mdata) { return new StackedVolume(xml_path, ow_mdata); }
-		static vm::VirtualVolume* createFromData(const char* data_path, vm::ref_sys ref, float vxl1, float vxl2, float vxl3, bool ow_mdata) { 
-			return new StackedVolume(data_path, ref, vxl1, vxl2, vxl3, ow_mdata); 
+		static vm::VirtualVolume* createFromData(const char* data_path, vm::ref_sys ref, float vxl1, float vxl2, float vxl3, bool ow_mdata, std::string mdata_fname) { 
+			return new StackedVolume(data_path, ref, vxl1, vxl2, vxl3, ow_mdata, mdata_fname); 
 		}
 
 
@@ -91,7 +92,7 @@ class vm::StackedVolume : public vm::VirtualVolume
 
 		//CONSTRUCTORS-DECONSTRUCTOR
 		StackedVolume() : vm::VirtualVolume(){}
-        StackedVolume(const char* _stacks_dir, vm::ref_sys reference_system, float VXL_1=0, float VXL_2=0, float VXL_3=0, bool overwrite_mdata=false) throw (iom::exception);
+        StackedVolume(const char* _stacks_dir, vm::ref_sys reference_system, float VXL_1=0, float VXL_2=0, float VXL_3=0, bool overwrite_mdata=false, std::string mdata_fname="") throw (iom::exception);
         StackedVolume(const char *xml_filepath, bool overwrite_mdata=false) throw (iom::exception);
 		~StackedVolume();
 

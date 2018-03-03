@@ -88,7 +88,7 @@ protected:
 				src += totalChanSize;
 				cc++;
 			}
-			memcpy(dst,src,totalChanSize);
+			memcpy(dst,src,(size_t)totalChanSize);
 		}
 	}
 

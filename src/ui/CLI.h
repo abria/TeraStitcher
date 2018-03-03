@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-03-02. Giulio.     @ADDED an option to set a path and a name for the mdata.bin file generated when volumes are created from data
 * 2018-01-23. Giulio.     @ADDED include of MCVolume.h
 * 2017-06-30. Giulio.     @ADDED control over displacement computation of last row and last column of tiles
 * 2016-09-04. Giulio.     @ADDED the options for setting the configuration of the LibTIFF library
@@ -66,6 +67,7 @@ class TeraStitcherCLI
         bool isotropic;                         //generate lowest resolutiona with voxels as much isotropic as possible
 
 		//STITCHING pipeline parameters
+		string mdata_fname;						//path  & file mane of mdata.bin file
 		string volume_load_path;				//directory path where the volume is stored used during the volume import step
 		string volume_save_path;				//directory path where to save the stitched volume
 		string projfile_load_path;				//file path of the project XML file to be loaded

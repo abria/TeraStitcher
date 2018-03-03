@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-03-03. Giulio.     @ADDED special cases of buffer loading that can be optimized
 * 2018-01-23. Giulio.     @ADDED check to set always the input format of a MultiVolume dataset as a non-interleaved input format
 * 2018-01-20. Giulio.     @ADDED a check to avoid performing stitching if there is no intersection between the requested region and the selected matrix of tiles
 * 2018-01-18. Giulio.     @CHANGED the initialization of the input plugin in the constructors
@@ -549,121 +550,13 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 		sint64 height = V1 - V0;
 		sint64 depth  = D1 - D0;
 
-		// 2018-01-20. Giulio. Unused variables
-		//int slice_height = -1; 
-		//int slice_width  = -1;
-		//slice_height = (int)(slice_height == -1 ? height : slice_height);
-		//slice_width  = (int)(slice_width  == -1 ? width  : slice_width);
-
-		buffer = new iom::real_t[height*width*depth];
-		if ( !buffer )
- 			throw iim::IOException(iom::strprintf("cannot allocate the buffer of float (%llu x %llu x %u x %llu = %llu bytes)",
- 											height, width, depth, sizeof(iom::real_t), height*width*depth), __iom__current__function__);
-
-		//for (int i=0; i<height*width*depth; i++)
-		//	buffer[i]=0;
-		memset(buffer,0,sizeof(iom::real_t)*height*width*depth);
-
 		// 2018-01-20. Giulio. check if the requested region is outside the selected matrix of tiles
 		if ( VV0 < V1 && VV1 > V0 && HH0 < H1 && HH1 > H0 ) {
 			// there is intesection: load data
 	
-			//computing VH coordinates of all stripes
-			for(int row_index=stitcher->ROW_START; row_index<=stitcher->ROW_END; row_index++)
-			{
-				stripesCoords[row_index].up_left.V		= stitcher->getStripeABS_V(row_index,true);
-				stripesCoords[row_index].up_left.H      = volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_H();
-				stripesCoords[row_index].bottom_right.V = stitcher->getStripeABS_V(row_index,false);
-				stripesCoords[row_index].bottom_right.H = volume->getSTACKS()[row_index][stitcher->COL_END]->getABS_H()+volume->getStacksWidth();
-			}
-
-			// clear stripesCorners
-			for ( int i=0; i<volume->getN_ROWS(); i++ ) {
-				stripesCorners[i].ups.clear();
-				stripesCorners[i].bottoms.clear();
-				stripesCorners[i].merged.clear();
-			}
-	
-			//computing stripes corners, i.e. corners that result from the overlap between each pair of adjacent stripes
-			for(int row_index=stitcher->ROW_START; row_index<=stitcher->ROW_END; row_index++)
-			{
-				stripe_corner tmp;
-
-				//for first VirtualStack of every stripe
-				tmp.H = volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_H();
-				tmp.h = volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_V()-stripesCoords[row_index].up_left.V;
-				tmp.up = true;
-				stripesCorners[row_index].ups.push_back(tmp);
-		
-				tmp.h = stripesCoords[row_index].bottom_right.V - volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_V() - volume->getStacksHeight();
-				tmp.up = false;
-				stripesCorners[row_index].bottoms.push_back(tmp);
-
-				for(int col_index=stitcher->COL_START; col_index<stitcher->COL_END; col_index++)
-				{
-					if(volume->getSTACKS()[row_index][col_index]->getABS_V() < volume->getSTACKS()[row_index][col_index+1]->getABS_V())
-					{
-						tmp.H = volume->getSTACKS()[row_index][col_index]->getABS_H() + volume->getStacksWidth();
-						tmp.h = volume->getSTACKS()[row_index][col_index+1]->getABS_V() - stripesCoords[row_index].up_left.V;
-						tmp.up = true;
-						stripesCorners[row_index].ups.push_back(tmp);
-
-						tmp.H = volume->getSTACKS()[row_index][col_index+1]->getABS_H();
-						tmp.h = stripesCoords[row_index].bottom_right.V - volume->getSTACKS()[row_index][col_index+1]->getABS_V() - volume->getStacksHeight();
-						tmp.up = false;
-						stripesCorners[row_index].bottoms.push_back(tmp);
-					}
-					else
-					{
-						tmp.H = volume->getSTACKS()[row_index][col_index+1]->getABS_H();
-						tmp.h = volume->getSTACKS()[row_index][col_index+1]->getABS_V() - stripesCoords[row_index].up_left.V;
-						tmp.up = true;
-						stripesCorners[row_index].ups.push_back(tmp);
-
-						tmp.H = volume->getSTACKS()[row_index][col_index]->getABS_H()+volume->getStacksWidth();
-						tmp.h = stripesCoords[row_index].bottom_right.V - volume->getSTACKS()[row_index][col_index+1]->getABS_V() - volume->getStacksHeight();
-						tmp.up = false;
-						stripesCorners[row_index].bottoms.push_back(tmp);
-					}
-				}
-
-				//for last VirtualStack of every stripe (h is not set because it doesn't matter)
-				tmp.H = volume->getSTACKS()[row_index][stitcher->COL_END]->getABS_H() + volume->getStacksWidth();
-				tmp.up = true;
-				stripesCorners[row_index].ups.push_back(tmp);
-
-				tmp.up = false;
-				stripesCorners[row_index].bottoms.push_back(tmp);
-			}
-
-			//ordered merging between ups and bottoms corners for every stripe
-			for(int row_index = 1; row_index<=(volume->getN_ROWS()-1); row_index++)
-			{
-				stripesCorners[row_index-1].merged.merge(stripesCorners[row_index-1].bottoms,   compareCorners);
-				stripesCorners[row_index-1].merged.merge(stripesCorners[row_index  ].ups,       compareCorners);
-			}
-
-			sint64 u_strp_bottom_displ; // bottom displacement of up stripe
-			sint64 d_strp_top_displ;    // top displacement of down stripe
-			sint64 u_strp_top_displ;    // top displacement of up stripe
-			sint64 d_strp_left_displ;
-			sint64 u_strp_left_displ;
-			sint64 d_strp_width;
-			sint64 u_strp_width;
-			sint64 dd_strp_top_displ;
-			sint64 u_strp_d_strp_overlap = 0; // overlap between up and down stripes; WARNING: check how initialize
-			sint64 h_up;
-			sint64 h_down;
-			sint64 h_overlap;
-			iom::real_t *buffer_ptr, *ustripe_ptr, *dstripe_ptr;	
-
-			iom::real_t* stripe_up=NULL, *stripe_down;                                   //will contain up-stripe and down-stripe computed by calling 'getStripe' method
-			double angle;								//angle between 0 and PI used to sample overlapping zone in [0,PI]
-			double delta_angle;							//angle step
-
+			//retrieving blending function
 			iom::real_t (*blending)(double& angle, iom::real_t& pixel1, iom::real_t& pixel2);
 
-			//retrieving blending function
 			if(blending_algo == S_SINUSOIDAL_BLENDING)
 				blending = StackStitcher::sinusoidal_blending;
 			else if(blending_algo == S_NO_BLENDING)
@@ -673,197 +566,315 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 			else if(blending_algo == S_ENHANCED_NO_BLENDING)
 				blending = StackStitcher::enhanced_no_blending;
 			else
- 				throw iim::IOException(iom::strprintf("unrecognized blending function"), __iom__current__function__);
+				throw iim::IOException(iom::strprintf("unrecognized blending function"), __iom__current__function__);
 
-			sint64 z = D0; // starting slice (offset is index 'k')
-		
-			// 2017-08-19. Giulio. @ADDED offsets on whole buffer to reduce the amount of data to be copied
-			// if 'delta' variables are zero the whole buffer is filled with data returned by getStripe method
-			sint64 subvol_V_top_delta    = cb->getENABLED() ? 0 : VV0 - V0;		//top    V(ertical) offset of actual subvolume
-			sint64 subvol_V_bottom_delta = cb->getENABLED() ? 0 : V1 - VV1;		//bottom V(ertical) offset of actual subvolume
-		
-			if ( subvol_V_top_delta < 0 ) {
- 				iom::warning(iom::strprintf("V top offset negative: set to 0").c_str(), __iom__current__function__);
- 				subvol_V_top_delta = 0;
- 			}
-			if ( subvol_V_bottom_delta < 0 ) {
- 				iom::warning(iom::strprintf("V bottom offset negative: set to 0").c_str(), __iom__current__function__);
- 				subvol_V_bottom_delta = 0;
- 			}
+			// 2018-03-03. Giulio. @ADDED special cases that can be optimized
+			if ( (stitcher->ROW_START == stitcher->ROW_END) && (stitcher->COL_START == stitcher->COL_END) ) { // special case: just one tile
+				buffer = volume->getSTACKS()[stitcher->ROW_START][stitcher->COL_START]->loadImageStack2(D0,D1-1,VV0, VV1, HH0, HH1);
+				volume->getSTACKS()[stitcher->ROW_START][stitcher->COL_START]->releaseImageStackOwnership(); // acquire buffer ownership 
+			}
+			else if ( stitcher->ROW_START == stitcher->ROW_END ) { // special case: just one stripe
+				for(sint64 k = D0+0; k < D0+depth; k++)
+				{
+					if ( cb->getENABLED() ) 
+						// since 'delta' variables are zero all returned data will be copied in the final buffer
+						buffer = stitcher->getStripe(stitcher->ROW_START,(int)k, restore_direction, stk_rst, blending_algo);
+					else
+						// only requested data are actually read into the returned buffer and will be copied into the final buffer
+						buffer = stitcher->getStripe2(stitcher->ROW_START,(int)k, VV0, VV1, HH0, HH1, restore_direction, stk_rst, blending_algo);
+				}
+			}
+			else {
+				buffer = new iom::real_t[height*width*depth];
+				if ( !buffer )
+ 					throw iim::IOException(iom::strprintf("cannot allocate the buffer of float (%llu x %llu x %u x %llu = %llu bytes)",
+ 													height, width, depth, sizeof(iom::real_t), height*width*depth), __iom__current__function__);
 
-			for(sint64 k = 0; k < depth; k++)
-			{
-				//looping on all stripes
+				memset(buffer,0,sizeof(iom::real_t)*height*width*depth);
+
+				//computing VH coordinates of all stripes
 				for(int row_index=stitcher->ROW_START; row_index<=stitcher->ROW_END; row_index++)
 				{
-					//loading down stripe
-					if(row_index==stitcher->ROW_START) stripe_up = NULL;
+					stripesCoords[row_index].up_left.V		= stitcher->getStripeABS_V(row_index,true);
+					stripesCoords[row_index].up_left.H      = volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_H();
+					stripesCoords[row_index].bottom_right.V = stitcher->getStripeABS_V(row_index,false);
+					stripesCoords[row_index].bottom_right.H = volume->getSTACKS()[row_index][stitcher->COL_END]->getABS_H()+volume->getStacksWidth();
+				}
 
-					// 2017-04-12. Giulio. @ADDED release of allocated buffers if an exception is raised in 'getStripe' (prevent further exceptions in the GUI version)
-					try {
-						// 2017-08-19. Giulio. @CHANGED the method reading only the actually requested data is invoked only if buffering is not enabled
-						if ( cb->getENABLED() ) 
-							// since 'delta' variables are zero all returned data will be copied in the final buffer
-							stripe_down = stitcher->getStripe(row_index,(int)(z+k), restore_direction, stk_rst, blending_algo);
-						else
-							// only requested data are actually read into the returned buffer and will be copied into the final buffer
-							stripe_down = stitcher->getStripe2(row_index,(int)(z+k), VV0, VV1, HH0, HH1, restore_direction, stk_rst, blending_algo);
-					}
-    				catch( iom::exception& exception) {
-    					stitcher->volume->releaseBuffers();
-        				throw iom::exception(iom::exception(exception.what()));
-    				}
+				// clear stripesCorners
+				for ( int i=0; i<volume->getN_ROWS(); i++ ) {
+					stripesCorners[i].ups.clear();
+					stripesCorners[i].bottoms.clear();
+					stripesCorners[i].merged.clear();
+				}
+	
+				//computing stripes corners, i.e. corners that result from the overlap between each pair of adjacent stripes
+				for(int row_index=stitcher->ROW_START; row_index<=stitcher->ROW_END; row_index++)
+				{
+					stripe_corner tmp;
 
-					if(stripe_up) u_strp_bottom_displ	= stripesCoords[row_index-1].bottom_right.V	 - V0;
-					d_strp_top_displ					= stripesCoords[row_index  ].up_left.V	     - V0;
-					if(stripe_up) u_strp_top_displ      = stripesCoords[row_index-1].up_left.V	     - V0;
-					d_strp_left_displ					= stripesCoords[row_index  ].up_left.H		 - H0;
-					if(stripe_up) u_strp_left_displ     = stripesCoords[row_index-1].up_left.H		 - H0;
-					d_strp_width						= stripesCoords[row_index  ].bottom_right.H - stripesCoords[row_index  ].up_left.H;
-					if(stripe_up) u_strp_width			= stripesCoords[row_index-1].bottom_right.H - stripesCoords[row_index-1].up_left.H;
-					if(stripe_up) u_strp_d_strp_overlap = u_strp_bottom_displ - d_strp_top_displ;
-					if(row_index!=stitcher->ROW_END) 
-						dd_strp_top_displ				= stripesCoords[row_index+1].up_left.V		 - V0;
-					h_up =  h_down						= u_strp_d_strp_overlap;
+					//for first VirtualStack of every stripe
+					tmp.H = volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_H();
+					tmp.h = volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_V()-stripesCoords[row_index].up_left.V;
+					tmp.up = true;
+					stripesCorners[row_index].ups.push_back(tmp);
+		
+					tmp.h = stripesCoords[row_index].bottom_right.V - volume->getSTACKS()[row_index][stitcher->COL_START]->getABS_V() - volume->getStacksHeight();
+					tmp.up = false;
+					stripesCorners[row_index].bottoms.push_back(tmp);
 
-/**********************************************************************************************************************************************************************************************************
-
-This comment assumes h_overlap >= 0
-The actual code manages also the case h_overlap < 0 (meaning that there are regions uncovered between the up stripe and the down stripe  
-The loop copies the down stripe onto the buffer merged with the overlapping zone of the up stripe
-
-
-                                                                      | index on whole buffer                                        | index on up stripe                           |index on down stripe |
-                                                                      |                                                              |                                              |                     |
-           -------  -----------------------------------------------   | u_strp_top_displ                                             |                                              |                     |
-           |                                                          |                                                              |                                              |                     |
-           |                                                          |                                                              |                                              |                     |
-           |                                                          |                                                              |                                              |                     |
-           |                  already copied in previous cycle        |                                                              |                                              |                     |
-           |                                                          |                                                              |                                              |                     |
-           /                                                          |                                                              |                                              |                     |
-up stripe -                                                           |                                                              |                                              |                     |
-           \    --  ...............................................   | d_strp_top_displ                                             | (d_strp_top_displ - u_strp_top_displ)        |                     |
-           |    |                      first cycle (only up stripe)   |                                                              |                                              |                     | 
-           |    |                      ............................   | d_strp_top_displ+h_up                                        | (d_strp_top_displ + h_up - u_strp_top_displ) | h_up                |
-           |    |   OVERLAPPING ZONE   second  cycle (both stripes)   |                                                              |                                              |                     |
-           |    |                      ----------------------------   | d_strp_top_displ+h_up+h_overlap                              |                                              | h_up + h_overlap    |
-           |    |                      third cycle (only down stripe) |                                                              |                                              |                     |
-           ---- /   -----------------------------------------------   | d_strp_top_displ+h_up+h_overlap+h_down = u_strp_bottom_displ | (u_strp_bottom_displ - d_strp_top_displ)     |                     |
-down stripe    -                                                      |                                                              |                                              |                     |
-                \                                                     |                                                              |                                              |                     |
-                |   NON OVERLAPPING ZONE                              | i                                                            | (i - d_strp_top_displ)                       |                     |
-                |                                                     |                                                              |                                              |                     |
-           ---- |   ___.___.___.___.___.___.___.___.___.___.___.___   | dd_strp_top_displ                                            |                                              |                     |
-           |    |                                                     |                                                              |                                              |                     |
-           |    |                                                      
-           |    --  ...............................................   
-           | 
-           | 
-           /         
-dd stripe -                                                           
-           \                           next stripe 
-           |
-           |  
-           |  
-           |         
-           | 
-           -------  ___.___.___.___.___.___.___.___.___.___.___.___ 
-        
-**********************************************************************************************************************************************************************************************************/
-
-					// 2017-08-19. Giulio. @ADDED top offset on down stripe to reduce the amount of data to be copied
-					// subvol_V_top_delta = 0 -> d_strp_V_top_delta = 0
-					sint64 d_strp_V_top_delta    = (subvol_V_top_delta > d_strp_top_displ) ? (subvol_V_top_delta - d_strp_top_displ) : 0;
-							
-					//overlapping zone
-					if(row_index!=stitcher->ROW_START)
-					{	
-						// 2017-08-19. Giulio. @ADDED top offset on up stripe to reduce the amount of data to be copied
-						// subvol_V_top_delta = 0 -> u_strp_V_top_delta = 0
-						sint64 u_strp_V_top_delta    = (subvol_V_top_delta > u_strp_top_displ) ? (subvol_V_top_delta - u_strp_top_displ) : 0;
-
-						std::list<stripe_corner>::iterator cnr_i_next, cnr_i = stripesCorners[row_index-1].merged.begin();
-						stripe_corner *cnr_left=&(*cnr_i), *cnr_right;
-						cnr_i++;
-						cnr_i_next = cnr_i;
-						cnr_i_next++;
-
-						while( cnr_i != stripesCorners[row_index-1].merged.end())
+					for(int col_index=stitcher->COL_START; col_index<stitcher->COL_END; col_index++)
+					{
+						if(volume->getSTACKS()[row_index][col_index]->getABS_V() < volume->getSTACKS()[row_index][col_index+1]->getABS_V())
 						{
-							//computing h_up, h_overlap, h_down
-							cnr_right = &(*cnr_i);
-							if(cnr_i_next == stripesCorners[row_index-1].merged.end())
-							{
-								h_up =   cnr_left->up ? u_strp_d_strp_overlap : 0;
-								h_down = cnr_left->up ? 0                     : u_strp_d_strp_overlap;
-							}
-							else
-								if(cnr_left->up)
-									h_up = cnr_left->h;
-								else
-									h_down = cnr_left->h;
-							
-							h_overlap = u_strp_d_strp_overlap - h_up - h_down;
+							tmp.H = volume->getSTACKS()[row_index][col_index]->getABS_H() + volume->getStacksWidth();
+							tmp.h = volume->getSTACKS()[row_index][col_index+1]->getABS_V() - stripesCoords[row_index].up_left.V;
+							tmp.up = true;
+							stripesCorners[row_index].ups.push_back(tmp);
 
-							//splitting overlapping zone in sub-regions along H axis
-							for(sint64 j= cnr_left->H - H0; j < cnr_right->H - H0; j++)
-							{
-								delta_angle = PI/(h_overlap-1);
-								angle = 0;
-							
-								//UP stripe zone
-								buffer_ptr  = &buffer[k*height*width+std::max<sint64>(d_strp_top_displ,subvol_V_top_delta)*width+j];
-								ustripe_ptr = &stripe_up[std::max<sint64>((d_strp_top_displ-u_strp_top_displ),u_strp_V_top_delta)*u_strp_width +j - u_strp_left_displ];
-								for(sint64 i=std::max<sint64>(d_strp_top_displ,subvol_V_top_delta); i<std::min<sint64>(d_strp_top_displ+h_up+(h_overlap >= 0 ?  0 : h_overlap),height-subvol_V_bottom_delta); i++, buffer_ptr+=width, ustripe_ptr+= u_strp_width)
-									*buffer_ptr = *ustripe_ptr;
+							tmp.H = volume->getSTACKS()[row_index][col_index+1]->getABS_H();
+							tmp.h = stripesCoords[row_index].bottom_right.V - volume->getSTACKS()[row_index][col_index+1]->getABS_V() - volume->getStacksHeight();
+							tmp.up = false;
+							stripesCorners[row_index].bottoms.push_back(tmp);
+						}
+						else
+						{
+							tmp.H = volume->getSTACKS()[row_index][col_index+1]->getABS_H();
+							tmp.h = volume->getSTACKS()[row_index][col_index+1]->getABS_V() - stripesCoords[row_index].up_left.V;
+							tmp.up = true;
+							stripesCorners[row_index].ups.push_back(tmp);
 
-								//OVERLAPPING zone
-								buffer_ptr  = &buffer[k*height*width+std::max<sint64>((d_strp_top_displ+h_up),subvol_V_top_delta)*width+j];
-								ustripe_ptr = &stripe_up[std::max<sint64>((d_strp_top_displ+h_up-u_strp_top_displ),u_strp_V_top_delta)*u_strp_width +j - u_strp_left_displ];
-								dstripe_ptr = &stripe_down[std::max<sint64>((d_strp_top_displ+h_up-d_strp_top_displ),d_strp_V_top_delta)*d_strp_width +j - d_strp_left_displ];
-								for(sint64 i=std::max<sint64>(d_strp_top_displ+h_up,subvol_V_top_delta); i<std::min<sint64>(d_strp_top_displ+h_up+h_overlap,height-subvol_V_bottom_delta); i++, buffer_ptr+=width, ustripe_ptr+= u_strp_width, dstripe_ptr+=d_strp_width, angle+=delta_angle)
-									*buffer_ptr = blending(angle,*ustripe_ptr,*dstripe_ptr);
-
-								//DOWN stripe zone
-								buffer_ptr = &buffer[k*height*width+std::max<sint64>((d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0)),subvol_V_top_delta)*width+j];
-								dstripe_ptr = &stripe_down[std::max<sint64>(((d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0))-d_strp_top_displ),d_strp_V_top_delta)*d_strp_width +j - d_strp_left_displ];
-								for(sint64 i=std::max<sint64>(d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0),subvol_V_top_delta); i<std::min<sint64>(d_strp_top_displ+h_up+h_overlap+h_down,height-subvol_V_bottom_delta); i++, buffer_ptr+=width, dstripe_ptr+=d_strp_width)
-									*buffer_ptr = *dstripe_ptr;
-							}
-
-							cnr_left = cnr_right;
-							cnr_i++;
-							if(cnr_i_next != stripesCorners[row_index-1].merged.end())
-								cnr_i_next++;
+							tmp.H = volume->getSTACKS()[row_index][col_index]->getABS_H()+volume->getStacksWidth();
+							tmp.h = stripesCoords[row_index].bottom_right.V - volume->getSTACKS()[row_index][col_index+1]->getABS_V() - volume->getStacksHeight();
+							tmp.up = false;
+							stripesCorners[row_index].bottoms.push_back(tmp);
 						}
 					}
 
-					//non-overlapping zone
-					// 2017-08-19. Giulio. @CHANGED only requested data is copied of first stripe if subvol_V_top_delta > 0 and of last stripe if subvol_V_bottom_delta > 0
-					buffer_ptr = &buffer[k*height*width+((row_index==stitcher->ROW_START ? subvol_V_top_delta : u_strp_bottom_displ))*width];
-					for(sint64 i=(row_index==stitcher->ROW_START ? subvol_V_top_delta : u_strp_bottom_displ); i<(row_index==stitcher->ROW_END? height-subvol_V_bottom_delta : dd_strp_top_displ); i++)
-					{
-						dstripe_ptr = &stripe_down[std::max<sint64>((i-d_strp_top_displ),d_strp_V_top_delta)*d_strp_width - d_strp_left_displ];
-						for(sint64 j=0; j<width; j++, buffer_ptr++, dstripe_ptr++)
-							if(j - d_strp_left_displ >= 0 && j - d_strp_left_displ < stripesCoords[row_index].bottom_right.H)
-								*buffer_ptr = *dstripe_ptr;
-					}
+					//for last VirtualStack of every stripe (h is not set because it doesn't matter)
+					tmp.H = volume->getSTACKS()[row_index][stitcher->COL_END]->getABS_H() + volume->getStacksWidth();
+					tmp.up = true;
+					stripesCorners[row_index].ups.push_back(tmp);
 
-					//moving to bottom stripe_up
-					delete stripe_up;
-					stripe_up=stripe_down;
+					tmp.up = false;
+					stripesCorners[row_index].bottoms.push_back(tmp);
 				}
-				//releasing last stripe_down
-				delete stripe_down;
-			}
+
+				//ordered merging between ups and bottoms corners for every stripe
+				for(int row_index = 1; row_index<=(volume->getN_ROWS()-1); row_index++)
+				{
+					stripesCorners[row_index-1].merged.merge(stripesCorners[row_index-1].bottoms,   compareCorners);
+					stripesCorners[row_index-1].merged.merge(stripesCorners[row_index  ].ups,       compareCorners);
+				}
+
+				sint64 u_strp_bottom_displ; // bottom displacement of up stripe
+				sint64 d_strp_top_displ;    // top displacement of down stripe
+				sint64 u_strp_top_displ;    // top displacement of up stripe
+				sint64 d_strp_left_displ;
+				sint64 u_strp_left_displ;
+				sint64 d_strp_width;
+				sint64 u_strp_width;
+				sint64 dd_strp_top_displ;
+				sint64 u_strp_d_strp_overlap = 0; // overlap between up and down stripes; WARNING: check how initialize
+				sint64 h_up;
+				sint64 h_down;
+				sint64 h_overlap;
+				iom::real_t *buffer_ptr, *ustripe_ptr, *dstripe_ptr;	
+
+				iom::real_t* stripe_up=NULL, *stripe_down;                                   //will contain up-stripe and down-stripe computed by calling 'getStripe' method
+				double angle;								//angle between 0 and PI used to sample overlapping zone in [0,PI]
+				double delta_angle;							//angle step
+
+				sint64 z = D0; // starting slice (offset is index 'k')
+		
+				// 2017-08-19. Giulio. @ADDED offsets on whole buffer to reduce the amount of data to be copied
+				// if 'delta' variables are zero the whole buffer is filled with data returned by getStripe method
+				sint64 subvol_V_top_delta    = cb->getENABLED() ? 0 : VV0 - V0;		//top    V(ertical) offset of actual subvolume
+				sint64 subvol_V_bottom_delta = cb->getENABLED() ? 0 : V1 - VV1;		//bottom V(ertical) offset of actual subvolume
+		
+				if ( subvol_V_top_delta < 0 ) {
+					iom::warning(iom::strprintf("V top offset negative: set to 0").c_str(), __iom__current__function__);
+					subvol_V_top_delta = 0;
+				}
+				if ( subvol_V_bottom_delta < 0 ) {
+					iom::warning(iom::strprintf("V bottom offset negative: set to 0").c_str(), __iom__current__function__);
+					subvol_V_bottom_delta = 0;
+				}
+
+				for(sint64 k = 0; k < depth; k++)
+				{
+					//looping on all stripes
+					for(int row_index=stitcher->ROW_START; row_index<=stitcher->ROW_END; row_index++)
+					{
+						//loading down stripe
+						if(row_index==stitcher->ROW_START) stripe_up = NULL;
+
+						// 2017-04-12. Giulio. @ADDED release of allocated buffers if an exception is raised in 'getStripe' (prevent further exceptions in the GUI version)
+						try {
+							// 2017-08-19. Giulio. @CHANGED the method reading only the actually requested data is invoked only if buffering is not enabled
+							if ( cb->getENABLED() ) 
+								// since 'delta' variables are zero all returned data will be copied in the final buffer
+								stripe_down = stitcher->getStripe(row_index,(int)(z+k), restore_direction, stk_rst, blending_algo);
+							else
+								// only requested data are actually read into the returned buffer and will be copied into the final buffer
+								stripe_down = stitcher->getStripe2(row_index,(int)(z+k), VV0, VV1, HH0, HH1, restore_direction, stk_rst, blending_algo);
+						}
+						catch( iom::exception& exception) {
+							stitcher->volume->releaseBuffers();
+							throw iom::exception(iom::exception(exception.what()));
+						}
+
+						if(stripe_up) u_strp_bottom_displ	= stripesCoords[row_index-1].bottom_right.V	 - V0;
+						d_strp_top_displ					= stripesCoords[row_index  ].up_left.V	     - V0;
+						if(stripe_up) u_strp_top_displ      = stripesCoords[row_index-1].up_left.V	     - V0;
+						d_strp_left_displ					= stripesCoords[row_index  ].up_left.H		 - H0;
+						if(stripe_up) u_strp_left_displ     = stripesCoords[row_index-1].up_left.H		 - H0;
+						d_strp_width						= stripesCoords[row_index  ].bottom_right.H - stripesCoords[row_index  ].up_left.H;
+						if(stripe_up) u_strp_width			= stripesCoords[row_index-1].bottom_right.H - stripesCoords[row_index-1].up_left.H;
+						if(stripe_up) u_strp_d_strp_overlap = u_strp_bottom_displ - d_strp_top_displ;
+						if(row_index!=stitcher->ROW_END) 
+							dd_strp_top_displ				= stripesCoords[row_index+1].up_left.V		 - V0;
+						h_up =  h_down						= u_strp_d_strp_overlap;
+
+	/**********************************************************************************************************************************************************************************************************
+
+	This comment assumes h_overlap >= 0
+	The actual code manages also the case h_overlap < 0 (meaning that there are regions uncovered between the up stripe and the down stripe  
+	The loop copies the down stripe onto the buffer merged with the overlapping zone of the up stripe
+
+
+																		  | index on whole buffer                                        | index on up stripe                           |index on down stripe |
+																		  |                                                              |                                              |                     |
+			   -------  -----------------------------------------------   | u_strp_top_displ                                             |                                              |                     |
+			   |                                                          |                                                              |                                              |                     |
+			   |                                                          |                                                              |                                              |                     |
+			   |                                                          |                                                              |                                              |                     |
+			   |                  already copied in previous cycle        |                                                              |                                              |                     |
+			   |                                                          |                                                              |                                              |                     |
+			   /                                                          |                                                              |                                              |                     |
+	up stripe -                                                           |                                                              |                                              |                     |
+			   \    --  ...............................................   | d_strp_top_displ                                             | (d_strp_top_displ - u_strp_top_displ)        |                     |
+			   |    |                      first cycle (only up stripe)   |                                                              |                                              |                     | 
+			   |    |                      ............................   | d_strp_top_displ+h_up                                        | (d_strp_top_displ + h_up - u_strp_top_displ) | h_up                |
+			   |    |   OVERLAPPING ZONE   second  cycle (both stripes)   |                                                              |                                              |                     |
+			   |    |                      ----------------------------   | d_strp_top_displ+h_up+h_overlap                              |                                              | h_up + h_overlap    |
+			   |    |                      third cycle (only down stripe) |                                                              |                                              |                     |
+			   ---- /   -----------------------------------------------   | d_strp_top_displ+h_up+h_overlap+h_down = u_strp_bottom_displ | (u_strp_bottom_displ - d_strp_top_displ)     |                     |
+	down stripe    -                                                      |                                                              |                                              |                     |
+					\                                                     |                                                              |                                              |                     |
+					|   NON OVERLAPPING ZONE                              | i                                                            | (i - d_strp_top_displ)                       |                     |
+					|                                                     |                                                              |                                              |                     |
+			   ---- |   ___.___.___.___.___.___.___.___.___.___.___.___   | dd_strp_top_displ                                            |                                              |                     |
+			   |    |                                                     |                                                              |                                              |                     |
+			   |    |                                                      
+			   |    --  ...............................................   
+			   | 
+			   | 
+			   /         
+	dd stripe -                                                           
+			   \                           next stripe 
+			   |
+			   |  
+			   |  
+			   |         
+			   | 
+			   -------  ___.___.___.___.___.___.___.___.___.___.___.___ 
+		
+	**********************************************************************************************************************************************************************************************************/
+
+						// 2017-08-19. Giulio. @ADDED top offset on down stripe to reduce the amount of data to be copied
+						// subvol_V_top_delta = 0 -> d_strp_V_top_delta = 0
+						sint64 d_strp_V_top_delta    = (subvol_V_top_delta > d_strp_top_displ) ? (subvol_V_top_delta - d_strp_top_displ) : 0;
+							
+						//overlapping zone
+						if(row_index!=stitcher->ROW_START)
+						{	
+							// 2017-08-19. Giulio. @ADDED top offset on up stripe to reduce the amount of data to be copied
+							// subvol_V_top_delta = 0 -> u_strp_V_top_delta = 0
+							sint64 u_strp_V_top_delta    = (subvol_V_top_delta > u_strp_top_displ) ? (subvol_V_top_delta - u_strp_top_displ) : 0;
+
+							std::list<stripe_corner>::iterator cnr_i_next, cnr_i = stripesCorners[row_index-1].merged.begin();
+							stripe_corner *cnr_left=&(*cnr_i), *cnr_right;
+							cnr_i++;
+							cnr_i_next = cnr_i;
+							cnr_i_next++;
+
+							while( cnr_i != stripesCorners[row_index-1].merged.end())
+							{
+								//computing h_up, h_overlap, h_down
+								cnr_right = &(*cnr_i);
+								if(cnr_i_next == stripesCorners[row_index-1].merged.end())
+								{
+									h_up =   cnr_left->up ? u_strp_d_strp_overlap : 0;
+									h_down = cnr_left->up ? 0                     : u_strp_d_strp_overlap;
+								}
+								else
+									if(cnr_left->up)
+										h_up = cnr_left->h;
+									else
+										h_down = cnr_left->h;
+							
+								h_overlap = u_strp_d_strp_overlap - h_up - h_down;
+
+								//splitting overlapping zone in sub-regions along H axis
+								for(sint64 j= cnr_left->H - H0; j < cnr_right->H - H0; j++)
+								{
+									delta_angle = PI/(h_overlap-1);
+									angle = 0;
+							
+									//UP stripe zone
+									buffer_ptr  = &buffer[k*height*width+std::max<sint64>(d_strp_top_displ,subvol_V_top_delta)*width+j];
+									ustripe_ptr = &stripe_up[std::max<sint64>((d_strp_top_displ-u_strp_top_displ),u_strp_V_top_delta)*u_strp_width +j - u_strp_left_displ];
+									for(sint64 i=std::max<sint64>(d_strp_top_displ,subvol_V_top_delta); i<std::min<sint64>(d_strp_top_displ+h_up+(h_overlap >= 0 ?  0 : h_overlap),height-subvol_V_bottom_delta); i++, buffer_ptr+=width, ustripe_ptr+= u_strp_width)
+										*buffer_ptr = *ustripe_ptr;
+
+									//OVERLAPPING zone
+									buffer_ptr  = &buffer[k*height*width+std::max<sint64>((d_strp_top_displ+h_up),subvol_V_top_delta)*width+j];
+									ustripe_ptr = &stripe_up[std::max<sint64>((d_strp_top_displ+h_up-u_strp_top_displ),u_strp_V_top_delta)*u_strp_width +j - u_strp_left_displ];
+									dstripe_ptr = &stripe_down[std::max<sint64>((d_strp_top_displ+h_up-d_strp_top_displ),d_strp_V_top_delta)*d_strp_width +j - d_strp_left_displ];
+									for(sint64 i=std::max<sint64>(d_strp_top_displ+h_up,subvol_V_top_delta); i<std::min<sint64>(d_strp_top_displ+h_up+h_overlap,height-subvol_V_bottom_delta); i++, buffer_ptr+=width, ustripe_ptr+= u_strp_width, dstripe_ptr+=d_strp_width, angle+=delta_angle)
+										*buffer_ptr = blending(angle,*ustripe_ptr,*dstripe_ptr);
+
+									//DOWN stripe zone
+									buffer_ptr = &buffer[k*height*width+std::max<sint64>((d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0)),subvol_V_top_delta)*width+j];
+									dstripe_ptr = &stripe_down[std::max<sint64>(((d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0))-d_strp_top_displ),d_strp_V_top_delta)*d_strp_width +j - d_strp_left_displ];
+									for(sint64 i=std::max<sint64>(d_strp_top_displ+h_up+(h_overlap >= 0 ? h_overlap : 0),subvol_V_top_delta); i<std::min<sint64>(d_strp_top_displ+h_up+h_overlap+h_down,height-subvol_V_bottom_delta); i++, buffer_ptr+=width, dstripe_ptr+=d_strp_width)
+										*buffer_ptr = *dstripe_ptr;
+								}
+
+								cnr_left = cnr_right;
+								cnr_i++;
+								if(cnr_i_next != stripesCorners[row_index-1].merged.end())
+									cnr_i_next++;
+							}
+						}
+
+						//non-overlapping zone
+						// 2017-08-19. Giulio. @CHANGED only requested data is copied of first stripe if subvol_V_top_delta > 0 and of last stripe if subvol_V_bottom_delta > 0
+						buffer_ptr = &buffer[k*height*width+((row_index==stitcher->ROW_START ? subvol_V_top_delta : u_strp_bottom_displ))*width];
+						for(sint64 i=(row_index==stitcher->ROW_START ? subvol_V_top_delta : u_strp_bottom_displ); i<(row_index==stitcher->ROW_END? height-subvol_V_bottom_delta : dd_strp_top_displ); i++)
+						{
+							dstripe_ptr = &stripe_down[std::max<sint64>((i-d_strp_top_displ),d_strp_V_top_delta)*d_strp_width - d_strp_left_displ];
+							for(sint64 j=0; j<width; j++, buffer_ptr++, dstripe_ptr++)
+								if(j - d_strp_left_displ >= 0 && j - d_strp_left_displ < stripesCoords[row_index].bottom_right.H)
+									*buffer_ptr = *dstripe_ptr;
+						}
+
+						//moving to bottom stripe_up
+						delete stripe_up;
+						stripe_up=stripe_down;
+					}
+					//releasing last stripe_down
+					delete stripe_down;
+				}
+			} // 2018-03-03. Giulio. ENDIF of: special cases of buffers
 
 			if ( cb->cacheSubvolume(current_channel,V0,V1,H0,H1,D0,D1,buffer,(height*width*depth)) ) 
 				internal_buffer_deallocate = false;
 			else
 				internal_buffer_deallocate = true;
 
-		} // 2018-01-20. Giulio. check if the requested region is outside the selected matrix of tiles
+		} // 2018-01-20. Giulio. ENDIF of: check if the requested region is outside the selected matrix of tiles
 	}
 	else {
 		internal_buffer_deallocate = false;

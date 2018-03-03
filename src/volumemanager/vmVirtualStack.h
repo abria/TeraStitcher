@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-03-03. Giulio.     @ADDED method 'releaseImageSteckOwnership' to manage cases when the ownership of the internal buffer must be given to other modules
 * 2017-07-06. Giulio.     @ADDED method 'loadImageStack2' to enable selective reads of data
 * 2015-02-28. Giulio.     @ADDED fields N_CHANS and BYTESxCHAN
 * 2015-01-17. Alessandro. @ADDED support for all-in-one-folder data (import from xml only).
@@ -179,6 +180,7 @@ class vm::VirtualStack
         virtual iom::real_t* loadImageStack(int first_file=-1, int last_file=-1) throw (iom::exception) = 0;
         virtual iom::real_t* loadImageStack2(int first_file=-1, int last_file=-1, int V0=-1, int V1=-1, int H0=-1, int H1=-1) throw (iom::exception) = 0;
 		virtual void releaseImageStack()= 0;
+		void releaseImageStackOwnership() { STACKED_IMAGE = 0; }
 
         // return true if the given range [z0,z1] does not contain missing slices/blocks
         virtual bool isComplete(int z0, int z1);

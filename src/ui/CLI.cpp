@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-03-02. Giulio.     @ADDED an option to set a path and a name for the mdata.bin file generated when volumes are created from data
 * 2018-01-30. Giulio.     @FIXED flags disabling last row and colum were not initialized in non-parallel executions
 * 2018-01-28. Giulio.     @CHANGED the checks about the image input channel
 * 2018-01-23. Giulio.     @ADDED check to set always the input format of a MultiVolume dataset as a non-interleaved input format
@@ -84,6 +85,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::SwitchArg p_isotropic("","isotropic","Generate lowest resolution with voxels as much isotropic as possible. Use this flag when the high resolution image has highy anistropic voxels",false);
 	TCLAP::SwitchArg p_dump("d","dump","Print the entire content of metadata file mdata.bin",false);
 	TCLAP::SwitchArg p_pluginsinfo("p","pluginsinfo","Display plugins informations",false);
+	TCLAP::ValueArg<std::string> p_mdata_fname("","mdata_bin","Path and name of mdata.bin file.",false,"","string");
 	TCLAP::ValueArg<std::string> p_vol_in_path("","volin","Directory path where the volume is stored.",false,"null","string");
 	TCLAP::ValueArg<std::string> p_vol_out_path("","volout","Directory path where to save the stitched volume.",false,"null","string");
 	TCLAP::ValueArg<std::string> p_vol_in_plugin("","volin_plugin",vm::strprintf("Plugin that manages the input volume format/organization. Available plugins are: {%s}. Default is \"%s\".", vm::VirtualVolumeFactory::registeredPlugins().c_str(), vm::VOLUME_INPUT_FORMAT_PLUGIN.c_str()),false,vm::VOLUME_INPUT_FORMAT_PLUGIN,"string");
@@ -211,6 +213,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_vol_out_path);
 	cmd.add(p_vol_in_plugin);
 	cmd.add(p_vol_in_path);
+	cmd.add(p_mdata_fname);
 	cmd.add(p_pluginsinfo);
 	cmd.add(p_dump);
 	cmd.add(p_stitch);
@@ -520,6 +523,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	this->thresholddisplacements = p_thresholdisplacements.getValue();
 	this->placetiles = p_placetiles.getValue();
 	this->mergetiles = p_merge.getValue();
+	this->mdata_fname = p_mdata_fname.getValue();
 	this->volume_load_path = p_vol_in_path.getValue();
 	this->volume_save_path = p_vol_out_path.getValue();
 	this->projfile_load_path = p_proj_in_path.getValue();
