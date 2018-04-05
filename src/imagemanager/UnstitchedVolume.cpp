@@ -573,17 +573,17 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 				buffer = volume->getSTACKS()[stitcher->ROW_START][stitcher->COL_START]->loadImageStack2(D0,D1-1,VV0, VV1, HH0, HH1);
 				volume->getSTACKS()[stitcher->ROW_START][stitcher->COL_START]->releaseImageStackOwnership(); // acquire buffer ownership 
 			}
-			else if ( stitcher->ROW_START == stitcher->ROW_END ) { // special case: just one stripe
-				for(sint64 k = D0+0; k < D0+depth; k++)
-				{
-					if ( cb->getENABLED() ) 
-						// since 'delta' variables are zero all returned data will be copied in the final buffer
-						buffer = stitcher->getStripe(stitcher->ROW_START,(int)k, restore_direction, stk_rst, blending_algo);
-					else
-						// only requested data are actually read into the returned buffer and will be copied into the final buffer
-						buffer = stitcher->getStripe2(stitcher->ROW_START,(int)k, VV0, VV1, HH0, HH1, restore_direction, stk_rst, blending_algo);
-				}
-			}
+// 			else if ( stitcher->ROW_START == stitcher->ROW_END ) { // special case: just one stripe
+// 				for(sint64 k = D0+0; k < D0+depth; k++)
+// 				{
+// 					if ( cb->getENABLED() ) 
+// 						// since 'delta' variables are zero all returned data will be copied in the final buffer
+// 						buffer = stitcher->getStripe(stitcher->ROW_START,(int)k, restore_direction, stk_rst, blending_algo);
+// 					else
+// 						// only requested data are actually read into the returned buffer and will be copied into the final buffer
+// 						buffer = stitcher->getStripe2(stitcher->ROW_START,(int)k, VV0, VV1, HH0, HH1, restore_direction, stk_rst, blending_algo);
+// 				}
+// 			}
 			else {
 				buffer = new iom::real_t[height*width*depth];
 				if ( !buffer )

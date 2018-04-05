@@ -226,6 +226,11 @@ private:
 
 public:
 
+	/* To enable the cache set the environment variable __UNST_CACHE__ with a string containing the substring 
+	 * 'enable:mmm', where 'mmm' is an integer specifying the size of the cache in MBytes 
+	 * Cache statistics may be printed after execution. To enable printing the evironment variable must 
+	 * contain the substring 'printstats:true' 
+	 */
 	CacheBuffer ( UnstitchedVolume *_volume,  iim::uint64 _bufSizeMB = 1024, bool _enable = false, bool _printstats = false );
 
 	~CacheBuffer ();
