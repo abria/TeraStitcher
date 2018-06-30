@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-06-30. Giulio.     @ADDED attribute 'depth_conv_algo' for specifying the ID of conversion algorithm to be used to convert from arbitrary depth to 8 bits
 * 2017-10-21. Giulio.     @ADDED method to compact active channels when not all channels are active (n_active < DIM_C)
 * 2016-04-27. Giulio.     @ADDED method to rearrange indices in order to meet pre-conditions of loadSubVolume methods
 * 2016-04-27. Giulio.     @ADDED data members and methods to convert indices to coordinates and viceversa
@@ -59,8 +60,10 @@ protected:
     iim::uint32   *active;          // array  of active channels (@MOVED from "TiledMCVolume" by Alessandro on 2014-02-20)
     int           n_active;         // number of active channels (@MOVED from "TiledMCVolume" by Alessandro on 2014-02-20)
 
-    int    DIM_T;					// number of time frames         (@ADDED by Alessandro on 2014-02-20)
+    int DIM_T;					    // number of time frames         (@ADDED by Alessandro on 2014-02-20)
     int t0, t1;                     // active frames are in [t0, t1] (@ADDED by Alessandro on 2014-02-20)
+    
+    int depth_conv_algo;             // ID of the algorithm used to convert from 16 to 8 bits the image color depth
     
     // this method should be used to rearrange coordinates in order to match the pre-conditions of loadSubVolume methods
     void rearrange_indices ( int &i0, int &i1 ) { 
@@ -185,6 +188,7 @@ public:
     int getNActiveFrames(){return t1 -t0 +1;}
     virtual int getNACtiveChannels() {return n_active;}
     virtual iim::uint32* getActiveChannels(){return active;}
+    int     getDEPTH_CONV_ALGO(){return depth_conv_algo;}
     
     // @ADDED by Giulio. on 2016-04-27: methods to convert indices to coordinates and viceversa
     float ind2coord_V(int v) { return ORG_V + v*VXL_V; } 
@@ -207,6 +211,8 @@ public:
 
     // set active channels for 4D data (@MOVED from TileMCVolume.h by Alessandro on 2014-02-20)
     virtual void setActiveChannels ( iim::uint32 *_active, int _n_active );
+    
+    void setDEPTH_CONV_ALGO(int algoID) { depth_conv_algo = algoID;}
 
     // set active frame for 5D data (@MOVED from TimeSeries.h by Alessandro on 2014-02-20)
     void setActiveFrames(int _t0, int _t1)

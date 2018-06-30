@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-06-30. Giulio.    @ADDED parameter for specifying the conversion algorithm to be used to convert from arbitrary depth to 8 bits
 * 2017-10-21. Giulio.    @ADDED compact active channels if not all channels are active in 'loadSubvolume_to_UINT8'
 * 2016-06-17. Giulio.    @ADDED ability to read a downsampled image 
 * 2016-03-24. Giulio.    @ADDED 16 bit support.
@@ -507,7 +508,7 @@ uint8 *SimpleVolumeRaw::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, in
 
 	if ( red_factor > 1 ) { // the buffer has to be reduced
 
-		if ( (err_rawfmt = convert2depth8bits(red_factor,(sbv_height*sbv_width*sbv_depth),sbv_channels,subvol)) != 0  ) {
+		if ( (err_rawfmt = convert2depth8bits(red_factor,(sbv_height*sbv_width*sbv_depth),sbv_channels,subvol,(iim::uint8 *)0,depth_conv_algo)) != 0  ) {
             char err_msg[STATIC_STRINGS_SIZE];
 			sprintf(err_msg,"in SimpleVolumeRaw::loadSubvolume_to_UINT8: %s", err_rawfmt);
             throw IOException(err_msg);

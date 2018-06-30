@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-06-30. Giulio.     @ADDED parameter for specifying the conversion algorithm to be used to convert from arbitrary depth to 8 bits
 * 2015-12-29. Giulio.     @ADDED 'loadSubvolume_to_UINT8' now check the ret_type parameter to determine voxel depth to be returned 
 * 2015-12-29. Giulio.     @FIXED 'loadSubvolume_to_UINT8' did not check the ret_type parameter to determine voxel depth to be returned 
 * 2015-12-29. Giulio.     @FIXED active channel management in 'loadSubvolume_to_UINT8'
@@ -202,7 +203,7 @@ uint8* BDVVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, 
 	//uint8 *subvol_ch;
 
 	for ( int c=0; c<n_active; c++ ) {
-		BDV_HDF5getSubVolume(HDF5_descr,V0,V1,H0,H1,D0,D1,active[c],(subvol + c*sbv_ch_dim),red_factor); // 2015-12-29 Giulio. @FIXED active channels management
+		BDV_HDF5getSubVolume(HDF5_descr,V0,V1,H0,H1,D0,D1,active[c],(subvol + c*sbv_ch_dim),red_factor,depth_conv_algo); // 2015-12-29 Giulio. @FIXED active channels management
 	}
 
 	//returning outputs

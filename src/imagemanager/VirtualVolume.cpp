@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-06-30. Giulio.     @ADDED initialization of 'depth_conv_algo' (ID of algorithm to be used to convert from arbitrary depth to 8 bits)
 * 2017-08-30. Giulio.     @FIXED introduced sint64 variables to avoid overflow in indices on slices larger than 4 GBs
 * 2017-04-13. Giulio.     @ADDED the case 2D slices multi-channel 16 bit in 'saveImage_from_UINT8'
 * 2016-05-11. Giluio.     @FIXED a bug in 'halveSample2D_UINT8' ('img16' in plage of 'img' at line 1085)
@@ -83,6 +84,7 @@ VirtualVolume::VirtualVolume(void)
     n_active = 0;
     t0 = t1 = 0;
     DIM_T = 1;
+    depth_conv_algo = DEPTH_CONVERSION_LINEAR;
 }
 
 /*************************************************************************************************************

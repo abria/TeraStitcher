@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2018-06-30. Giulio. @ADDED parameter for specifying the conversion algorithm to be used to convert from arbitrary depth to 8 bits
 * 2016-10-05. Giulio. @FIXED added deallocation of 'vol_dimes' in the destructor of class 'BDV_HDF5_fdescr_t'
 * 2015-12-29. Giulio. @ADDED support for extracting 16 bits subvolumed 
 * 2015-12-10. Giulio. @ADDED conditional compilation to exclude HDF5 dependent code
@@ -933,7 +934,7 @@ void BDV_HDF5getVolumeInfo ( void *descr, int tp, int res, void *&volume_descr,
 }
 
 
-void BDV_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0, int D1, int setup, iim::uint8 *buf, int red_factor ) {
+void BDV_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0, int D1, int setup, iim::uint8 *buf, int red_factor, int depth_conv_algo ) {
 #ifdef ENABLE_BDV_HDF5
 
 	BDV_volume_descr_t *int_volume_descr = (BDV_volume_descr_t *) descr;
@@ -981,7 +982,7 @@ void BDV_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0,
 
 			// convert to 8 bit and copy to buf
 			char *err_rawfmt;
-			if ( (err_rawfmt = convert2depth8bits(int_volume_descr->vxl_nbytes, sbv_ch_dim, 1, tempbuf, buf)) != 0 )
+			if ( (err_rawfmt = convert2depth8bits(int_volume_descr->vxl_nbytes, sbv_ch_dim, 1, tempbuf, buf, depth_conv_algo)) != 0 )
 				throw iim::IOException(iim::strprintf("cannot convert buffer from %d bits to 8 bits (%s)",8*int_volume_descr->vxl_nbytes,err_rawfmt).c_str(),__iim__current__function__);
 		}
 		else 

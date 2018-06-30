@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2018-06-30. Giulio.     @ADDED parameter for specifying the conversion algorithm to be used to convert from arbitrary depth to 8 bits
 * 2017-10-21. Giulio.     @ADDED check because selection of active channel is not supported by this format
 * 2016-09-12. Giulio.     @FIXED wrong initialization of the input plugin in case of tif input format
 * 2015-12-10. Giulio.     @ADDED support for single Tiff 3D volumes 
@@ -257,7 +258,7 @@ uint8 *RawVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, 
 
 	if ( red_factor > 1 ) { // the buffer has to be reduced
 		// channels must be a valid pointer (it is &DIM_C if initially it was NULL)
-		if ( (err_rawfmt = convert2depth8bits(red_factor,(sbv_height*sbv_width*sbv_depth),*channels,subvol)) != 0  ) {
+		if ( (err_rawfmt = convert2depth8bits(red_factor,(sbv_height*sbv_width*sbv_depth),*channels,subvol,(iim::uint8 *)0,depth_conv_algo)) != 0  ) {
             char err_msg[STATIC_STRINGS_SIZE];
 			sprintf(err_msg,"in RawVolume::loadSubvolume_to_UINT8: %s", err_rawfmt);
             throw IOException(err_msg);

@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2018-06-30. Giulio. @ADDED parameter for specifying the conversion algorithm to be used to convert from arbitrary depth to 8 bits
 * 2018-01-07. Giulio. @FIXED the resolution index was in a wrong position in method 'getN_SLICES'
 * 2017-09-09. Giulio. @ADDED code to manage compression algorithms to be used in Imaris IMS files generation
 * 2017-06-27. Giulio  @ADDED code for managing the addition of timepoints to an existing file (many changes search for '2017-06-27')
@@ -2333,7 +2334,7 @@ void IMS_HDF5getVolumeInfo ( void *descr, int tp, int res, void *&volume_descr,
 }
 
 
-void IMS_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0, int D1, int chan, iim::uint8 *buf, int red_factor ) throw (iim::IOException) {
+void IMS_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0, int D1, int chan, iim::uint8 *buf, int red_factor, int depth_conv_algo ) throw (iim::IOException) {
 #ifdef ENABLE_IMS_HDF5
 
 	IMS_volume_descr_t *int_volume_descr = (IMS_volume_descr_t *) descr;
@@ -2381,7 +2382,7 @@ void IMS_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0,
 
 			// convert to 8 bit and copy to buf
 			char *err_rawfmt;
-			if ( (err_rawfmt = convert2depth8bits(int_volume_descr->vxl_nbytes, sbv_ch_dim, 1, tempbuf, buf)) != 0 )
+			if ( (err_rawfmt = convert2depth8bits(int_volume_descr->vxl_nbytes, sbv_ch_dim, 1, tempbuf, buf, depth_conv_algo)) != 0 )
 				throw iim::IOException(iim::strprintf("cannot convert buffer from %d bits to 8 bits (%s)",8*int_volume_descr->vxl_nbytes,err_rawfmt).c_str(),__iim__current__function__);
 		}
 		else 

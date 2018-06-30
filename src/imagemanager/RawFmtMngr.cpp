@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-06-30. Giulio.     @ADDED support for conversion algorithms from arbitrary depth to 8 bits
 */
 
 /*
@@ -1559,7 +1560,7 @@ char *Streamer_Descr_t::addSubBlock ( char *filename, sint64 boffs, int sV0, int
 
 /********* SUPPORT TO VISUALIZATION OF 16/32 BITS PER CHANNEL ***********/
 
-char *convert2depth8bits ( int red_factor, sint64 totalBlockSize, sint64 sbv_channels, uint8 *&subvol, iim::uint8 *dstbuf ) {
+char *convert2depth8bits ( int red_factor, sint64 totalBlockSize, sint64 sbv_channels, uint8 *&subvol, iim::uint8 *dstbuf, int algorithm ) {
 	int c, i, j, p;
 	sint64 totalUnits = totalBlockSize * sbv_channels;
 
@@ -1574,23 +1575,33 @@ char *convert2depth8bits ( int red_factor, sint64 totalBlockSize, sint64 sbv_cha
 		return ((char *) "unknown machine endianess"); 
 	}
 
-	// look for maximum values in each channel and rescale each channel separately
-	unsigned short maxVal;
-	unsigned short *temp = (unsigned short *) subvol;
-	sint64 count;
-	for ( c=0; c<sbv_channels; c++, temp+=totalBlockSize ) {
-		for ( i=0, maxVal=0; i<totalBlockSize; i++ )
-			if ( temp[i] > maxVal )
-				maxVal = temp[i];
-		for ( i=1, p=8*red_factor; i<maxVal; i<<=1, p-- )
-			;
-		// p represents the number of bits of the shift
-		for ( i=0, count=0; i<totalBlockSize; i++ ) {
-			if ( temp[i] > (0.5*maxVal) )
-				count++;
-            temp[i] <<= p;
+	// the converted value has to be stored in the MSB of the input value
+	
+	if ( algorithm == DEPTH_CONVERSION_LOCAL_MAX ) {
+		// look for maximum values in each channel and rescale each channel separately
+		unsigned short maxVal;
+		unsigned short *temp = (unsigned short *) subvol;
+		sint64 count;
+		for ( c=0; c<sbv_channels; c++, temp+=totalBlockSize ) {
+			// find the maximum
+			for ( i=0, maxVal=0; i<totalBlockSize; i++ )
+				if ( temp[i] > maxVal )
+					maxVal = temp[i];
+			// starting from 1, double until maxVal is reached: the number of steps represents how many bits have to be left-shifted 
+			for ( i=1, p=8*red_factor; i<maxVal; i<<=1, p-- )
+				;
+			// p represents the number of bits of the left-shift
+			for ( i=0, count=0; i<totalBlockSize; i++ ) {
+				if ( temp[i] > (0.5*maxVal) )
+					count++;
+				temp[i] <<= p;
+			}
+			//printf("\t\t\t\tin RawFmtMngr - convert2depth8bits: c=%d, maxVal=%d, p=%d, count=%lld\n\n",c,maxVal,p,count);
 		}
-		//printf("\t\t\t\tin RawFmtMngr - convert2depth8bits: c=%d, maxVal=%d, p=%d, count=%lld\n\n",c,maxVal,p,count);
+	}
+	else if ( algorithm == DEPTH_CONVERSION_LINEAR ) {
+		// convert linearly from [0,2^(8*red_factor)-1] to [0,2^8-1]
+		; // the most significant bit is already the converted value
 	}
 	
 	uint8 *temp_buf = dstbuf ? dstbuf : new uint8[totalUnits];

@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-06-30. Giulio.     @ADDED ID for conversion algorithms from arbitrary depth to 8 bits
 * 2017-04-01. Giulio.     @ADDED ID for 'volatile' format (not implemented yet)
 * 2015-05-11. Giulio.     @ADDED 'Mapped Format' to the list of volume formats 
 * 2015-03-17. Giulio.     @CHANGED includes of standard header files (stdlib.h and stdio.h) moved outside the directive #ifdef _WIN32 
@@ -141,6 +142,10 @@ namespace IconImageManager
     const double      PI = 3.14159265;                          // pi
     const int         TMITREE_MAX_HEIGHT  = 10;                 // maximum depth of the TMITREE
     const int         TMITREE_MIN_BLOCK_DIM = 250;              // minimum dimension of TMITREE block along X/Y/Z
+
+	/* ID of conversion algorithms from 16 to 8 bits */
+	const int DEPTH_CONVERSION_LINEAR    = 0;                   // convert linearly from [0,2^bitdepth-1] to [0,2^8-1]
+	const int DEPTH_CONVERSION_LOCAL_MAX = 1;                   // look for maximum values in each channel and rescale each channel separately
 
     /*-------------------------------------------------------------------------------------------------------------------------*/
 
