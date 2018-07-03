@@ -323,7 +323,7 @@ char *streamer_close ( Streamer_Descr_t *streamer );
 /* closes the streamed operation specified by 'streamer'
  */
 
-char *convert2depth8bits ( int red_factor, iim::sint64 totalBlockSize, iim::sint64 sbv_channels, iim::uint8 *&subvol, iim::uint8 *dstbuf = 0, int algorithm = iim::DEPTH_CONVERSION_LINEAR );
+char *convert2depth8bits ( int red_factor, iim::sint64 totalBlockSize, iim::sint64 sbv_channels, iim::uint8 *&subvol, iim::uint8 *dstbuf = 0, int algorithm = iim::DEPTH_CONVERSION_DEFAULT );
 /* convert the buffer pointed by subvol to 8 bits per channel
  *
  * red_factor:     number of bytes per channel in the input buffer 

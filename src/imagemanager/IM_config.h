@@ -146,6 +146,8 @@ namespace IconImageManager
 	/* ID of conversion algorithms from 16 to 8 bits */
 	const int DEPTH_CONVERSION_LINEAR    = 0;                   // convert linearly from [0,2^bitdepth-1] to [0,2^8-1]
 	const int DEPTH_CONVERSION_LOCAL_MAX = 1;                   // look for maximum values in each channel and rescale each channel separately
+	
+	const int DEPTH_CONVERSION_DEFAULT   = DEPTH_CONVERSION_LOCAL_MAX; // set this constant to define the default conversion algorithm
 
     /*-------------------------------------------------------------------------------------------------------------------------*/
 

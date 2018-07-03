@@ -25,7 +25,9 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2018-03-03. Giulio.     @ADDED special cases of buffer loading that can be optimized
+* 2018-04-23. Giulio.     @FIXED bug in special case of buffer loading: corrected the D indices
+* 2018-04-21. Giulio.     @FIXED bug in the constructors: voxel size was not divided by 1000 when the volume origin is initialized
+* 2018-03-03. Giulio.     @ADDED special cases of buffer loading has been optimized
 * 2018-01-23. Giulio.     @ADDED check to set always the input format of a MultiVolume dataset as a non-interleaved input format
 * 2018-01-20. Giulio.     @ADDED a check to avoid performing stitching if there is no intersection between the requested region and the selected matrix of tiles
 * 2018-01-18. Giulio.     @CHANGED the initialization of the input plugin in the constructors
@@ -204,10 +206,10 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir, bool cacheEnabled, int
 	H0_offs = stitcher->H0; // may be negative and must be subtracted to map indices of unstitched volume (that may start from a negative value) to indices of stitched volume (starting from 0)
 	D0_offs = stitcher->D0; // may be positive and must be subtracted to map indices of unstitched volume (that may start from a positive value) to indices of stitched volume (starting from 0)
 
-	// correct origin coordinates of the stitched volume
-	ORG_V += V0_offs * VXL_V;
-	ORG_H += H0_offs * VXL_H;
-	ORG_D += D0_offs * VXL_D;
+	// correct origin coordinates of the stitched volume (WARNING: ORG is in millimeters and VXL is in micrometers)
+	ORG_V += V0_offs * VXL_V/1000.0;
+	ORG_H += H0_offs * VXL_H/1000.0;
+	ORG_D += D0_offs * VXL_D/1000.0;
 
 	blending_algo = _blending_algo;
 
@@ -311,10 +313,10 @@ UnstitchedVolume::UnstitchedVolume(vm::VirtualVolume * _imported_volume, bool ca
 	H0_offs = stitcher->H0; // may be negative and must be subtracted to map indices of unstitched volume (that may start from a negative value) to indices of stitched volume (starting from 0)
 	D0_offs = stitcher->D0; // may be positive and must be subtracted to map indices of unstitched volume (that may start from a positive value) to indices of stitched volume (starting from 0)
 
-	// correct origin coordinates of the stitched volume
-	ORG_V += V0_offs * VXL_V;
-	ORG_H += H0_offs * VXL_H;
-	ORG_D += D0_offs * VXL_D;
+	// correct origin coordinates of the stitched volume (WARNING: ORG is in millimeters and VXL is in micrometers)
+	ORG_V += V0_offs * VXL_V/1000.0;
+	ORG_H += H0_offs * VXL_H/1000.0;
+	ORG_D += D0_offs * VXL_D/1000.0;
 
 	blending_algo = _blending_algo;
 
@@ -570,7 +572,8 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 
 			// 2018-03-03. Giulio. @ADDED special cases that can be optimized
 			if ( (stitcher->ROW_START == stitcher->ROW_END) && (stitcher->COL_START == stitcher->COL_END) ) { // special case: just one tile
-				buffer = volume->getSTACKS()[stitcher->ROW_START][stitcher->COL_START]->loadImageStack2(D0,D1-1,VV0, VV1, HH0, HH1);
+				int stack_ABS_D = volume->getSTACKS()[stitcher->ROW_START][stitcher->COL_START]->getABS_D(); // 2018-04-23. Giulio. @FIXED the absolute D position of the tile must be subtracted to D indices
+				buffer = volume->getSTACKS()[stitcher->ROW_START][stitcher->COL_START]->loadImageStack2(D0-stack_ABS_D,D1-stack_ABS_D-1,VV0, VV1, HH0, HH1);
 				volume->getSTACKS()[stitcher->ROW_START][stitcher->COL_START]->releaseImageStackOwnership(); // acquire buffer ownership 
 			}
 // 			else if ( stitcher->ROW_START == stitcher->ROW_END ) { // special case: just one stripe

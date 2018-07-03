@@ -84,7 +84,7 @@ VirtualVolume::VirtualVolume(void)
     n_active = 0;
     t0 = t1 = 0;
     DIM_T = 1;
-    depth_conv_algo = DEPTH_CONVERSION_LINEAR;
+    depth_conv_algo = DEPTH_CONVERSION_DEFAULT;
 }
 
 /*************************************************************************************************************

@@ -110,7 +110,7 @@ void BDV_HDF5getVolumeInfo ( void *descr, int tp, int res, void *&volume_descr,
  */
 
 
-void BDV_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0, int D1, int setup, iim::uint8 *buf, int red_factor = 1, int depth_conv_algo = iim::DEPTH_CONVERSION_LINEAR );
+void BDV_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0, int D1, int setup, iim::uint8 *buf, int red_factor = 1, int depth_conv_algo = iim::DEPTH_CONVERSION_DEFAULT );
 /* must copy a subvolume into buffer buf; voxels have to be converted to 8-bit if needed
  */
 
