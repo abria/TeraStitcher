@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-07-05. Giulio.     @ADDED function 'remap2depth8bits' to remap the voxel values also for buffer coding voxels on 8 bits
 * 2018-06-30. Giulio.     @ADDED support for conversion algorithms from arbitrary depth to 8 bits
 */
 
@@ -1577,10 +1578,18 @@ char *convert2depth8bits ( int red_factor, sint64 totalBlockSize, sint64 sbv_cha
 
 	// the converted value has to be stored in the MSB of the input value
 	
-	if ( algorithm == DEPTH_CONVERSION_LOCAL_MAX ) {
+	if ( algorithm == DEPTH_CONVERSION_LINEAR ) {
+		// convert linearly from [0,2^(8*red_factor)-1] to [0,2^8-1]
+		; // the most significant bit is already the converted value
+	}
+	else if ( algorithm == DEPTH_CONVERSION_LOCAL_MAX ) {
+		
+		if ( red_factor != 2 )  
+			return ((char *) "conversion from more than 16 bits to 8 bits not yet implemented");
+			 
 		// look for maximum values in each channel and rescale each channel separately
 		unsigned short maxVal;
-		unsigned short *temp = (unsigned short *) subvol;
+		unsigned short *temp = (unsigned short *) subvol; // WARNING: assumes depth = 16 bits
 		sint64 count;
 		for ( c=0; c<sbv_channels; c++, temp+=totalBlockSize ) {
 			// find the maximum
@@ -1599,10 +1608,20 @@ char *convert2depth8bits ( int red_factor, sint64 totalBlockSize, sint64 sbv_cha
 			//printf("\t\t\t\tin RawFmtMngr - convert2depth8bits: c=%d, maxVal=%d, p=%d, count=%lld\n\n",c,maxVal,p,count);
 		}
 	}
-	else if ( algorithm == DEPTH_CONVERSION_LINEAR ) {
-		// convert linearly from [0,2^(8*red_factor)-1] to [0,2^8-1]
-		; // the most significant bit is already the converted value
+	else if ( algorithm == DEPTH_CONVERSION_4_11 ) {
+
+		if ( red_factor != 2 )  
+			return ((char *) "conversion from more than 16 bits to 8 bits not yet implemented");
+			 
+		unsigned short *temp = (unsigned short *) subvol;  // WARNING: assumes depth = 16 bits
+		for ( i=0; i<totalBlockSize; i++ ) {
+			if ( temp[i] & 0xf000 )
+				temp[i] = 0x0ff0;
+			temp[i] <<= 4;
+		}
 	}
+	else 
+		return ((char *) "unknown conversion algorithm to 8 bits");
 	
 	uint8 *temp_buf = dstbuf ? dstbuf : new uint8[totalUnits];
 	memset(temp_buf,0,totalUnits);
@@ -1614,6 +1633,28 @@ char *convert2depth8bits ( int red_factor, sint64 totalBlockSize, sint64 sbv_cha
 
 	return 0;
 }
+
+
+char *remap2depth8bits ( iim::sint64 totalBlockSize, iim::sint64 sbv_channels, iim::uint8 *subvol, int algorithm ) {
+
+	int i;
+	
+	if ( algorithm == REMAP_NULL ) { 
+		; // no remap is requested, the buffer is returned unchanged
+	}
+	else if ( algorithm == REMAP_6_TO_8_BITS ) {
+		for ( i=0; i<totalBlockSize; i++ ) {
+			if ( subvol[i] & 0xd0 )
+				subvol[i] = 0x3f;
+			subvol[i] <<= 2;
+		}
+	}
+	else 
+		return ((char *) "unknown remap algorithm from 8 bits to 8 bits");
+	
+	return 0;
+}
+
 
 
 

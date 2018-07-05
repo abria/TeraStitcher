@@ -25,7 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2018-06-30. Giulio.     @ADDED ID for conversion algorithms from arbitrary depth to 8 bits
+* 2018-07-05. Giulio.     @ADDED IDs for remapping algorithms from 8 bits values to rescaled 8 bits values
+* 2018-06-30. Giulio.     @ADDED IDs for conversion algorithms from arbitrary depth to 8 bits
 * 2017-04-01. Giulio.     @ADDED ID for 'volatile' format (not implemented yet)
 * 2015-05-11. Giulio.     @ADDED 'Mapped Format' to the list of volume formats 
 * 2015-03-17. Giulio.     @CHANGED includes of standard header files (stdlib.h and stdio.h) moved outside the directive #ifdef _WIN32 
@@ -119,7 +120,7 @@ namespace IconImageManager
     const std::string TIME_FRAME_PREFIX = "T_";                 // prefix identifying a folder containing data of a certain time frame
     const int         DEF_IMG_DEPTH = 8;                        // default image depth
     const int         NUL_IMG_DEPTH = 0;                        // invalid image depth
-    const int         NATIVE_RTYPE = 0;                         // loadVolume returns 1 byte per channel type
+    const int         NATIVE_RTYPE  = 0;                        // loadVolume returns the same bytes per channel as in the input image
     const std::string DEF_IMG_FORMAT = "tif";                   // default image format
     const int         STATIC_STRINGS_SIZE = 1024;               // size of static C-strings
     const std::string RAW_FORMAT            = "Vaa3D raw";                  // unique ID for the RawVolume class
@@ -142,13 +143,34 @@ namespace IconImageManager
     const double      PI = 3.14159265;                          // pi
     const int         TMITREE_MAX_HEIGHT  = 10;                 // maximum depth of the TMITREE
     const int         TMITREE_MIN_BLOCK_DIM = 250;              // minimum dimension of TMITREE block along X/Y/Z
+    /*-------------------------------------------------------------------------------------------------------------------------*/
 
+    /***************************
+    * TRANSFORM ALGORITHMS IDs *
+    ****************************
+    ---------------------------------------------------------------------------------------------------------------------------*/
+	/* ID of remap algorithms from 8 bits to 8 bits */
+	const int REMAP_NULL                 = 0x0000;                   // null map (it also not reconized as an actually requested map
+	const int REMAP_6_TO_8_BITS          = 0x0001;                   // multply by 4 the voxel value and set to 255 all voxels with value >= 64
+	
+	const int N_REMAP_ALGORITHMS    = 2;	
+	extern const char *remap_algorithms_strings[];
+	
+	const int REMAP_8_BITS_DEFAULT   = REMAP_NULL;                   // set this constant to define the default remap algorithm
+
+	const int MASK_REMAP_ALGORITHM       = 0x00ff;                   // remap algorithms have only bits 0-7 not zero
+	
 	/* ID of conversion algorithms from 16 to 8 bits */
-	const int DEPTH_CONVERSION_LINEAR    = 0;                   // convert linearly from [0,2^bitdepth-1] to [0,2^8-1]
-	const int DEPTH_CONVERSION_LOCAL_MAX = 1;                   // look for maximum values in each channel and rescale each channel separately
+	const int DEPTH_CONVERSION_LINEAR    = 0x0100;                   // convert linearly from [0,2^bitdepth-1] to [0,2^8-1]
+	const int DEPTH_CONVERSION_LOCAL_MAX = 0x0200;                   // look for maximum values in each channel and rescale each channel separately
+	const int DEPTH_CONVERSION_4_11      = 0x0300;                   // maintain bits 4-11, set to 255 values larger than 4095
+	
+	const int N_CONVERSION_ALGORITHMS    = 3;	
+	extern const char *conversion_algorithms_strings[];
 	
 	const int DEPTH_CONVERSION_DEFAULT   = DEPTH_CONVERSION_LOCAL_MAX; // set this constant to define the default conversion algorithm
 
+	const int MASK_CONVERSION_ALGORITHM  = 0xff00;                   // conversion algorithms have only bits 8-15 not zero
     /*-------------------------------------------------------------------------------------------------------------------------*/
 
 

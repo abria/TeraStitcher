@@ -213,7 +213,8 @@ public:
     // set active channels for 4D data (@MOVED from TileMCVolume.h by Alessandro on 2014-02-20)
     virtual void setActiveChannels ( iim::uint32 *_active, int _n_active );
     
-    void setDEPTH_CONV_ALGO(int algoID) { depth_conv_algo = algoID;}
+    // set the remap or conversion algorithm used for visualization of subregions
+    void setDEPTH_CONV_ALGO(int algoID);
 
     // set active frame for 5D data (@MOVED from TimeSeries.h by Alessandro on 2014-02-20)
     void setActiveFrames(int _t0, int _t1)

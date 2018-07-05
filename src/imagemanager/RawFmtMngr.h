@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-07-05. Giulio.     @ADDED function 'remap2depth8bits' to remap the voxel values also for buffer coding voxels on 8 bits
 * 2018-06-30. Giulio.     @ADDED support for conversion algorithms from arbitrary depth to 8 bits
 * 2015-03-17. Giulio.     @CHANGED definition of V3DLONG in Windows context using the standard type int64_t defined in stdint.h
 */
@@ -335,6 +336,23 @@ char *convert2depth8bits ( int red_factor, iim::sint64 totalBlockSize, iim::sint
  *                 if dstbuf = 0, a newly allocated converted buffer (of length totalBlockSize*sbv_channels) is returned
  *                 otherwise dstbuf buffer is returned
  * dstbuf:         if != 0 points to destination buffer (which has been allocated by the caller)
+ * algorithm:      ID of the algorithm used to perform conversion (see IM_config.h for definitions)
+ *
+ * PRE: subvol is a buffer of length at least equal to (red_factor * totalBlockSize * sbv_channels)
+ *
+ * WARNING: the interface is designed for conversion from more than 8 bits to 8 bits, but currently some algorithms 
+ *          support only conversion from 16 buts to 8 bits
+ */
+
+char *remap2depth8bits ( iim::sint64 totalBlockSize, iim::sint64 sbv_channels, iim::uint8 *subvol, int algorithm = iim::REMAP_8_BITS_DEFAULT );
+/* remap the buffer pointed by subvol from 8 bits to 8 bits per channel
+ *
+ * totalBlockSize: number of voxels in each channel (sbv_height*sbv_width*sbv_depth)
+ * sbv_channels:   number of channels
+ * subvol:         buffer to be converted (of length totalBlockSize*sbv_channels*red_factor)
+ *                 the input buffer is always deallocated before returning 
+ *                 if dstbuf = 0, a newly allocated converted buffer (of length totalBlockSize*sbv_channels) is returned
+ *                 otherwise dstbuf buffer is returned
  * algorithm:      ID of the algorithm used to perform conversion (see IM_config.h for definitions)
  */
 

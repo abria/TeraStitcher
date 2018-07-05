@@ -87,6 +87,16 @@ VirtualVolume::VirtualVolume(void)
     depth_conv_algo = DEPTH_CONVERSION_DEFAULT;
 }
 
+
+void VirtualVolume::setDEPTH_CONV_ALGO(int algoID) {
+	if ( ((BYTESxCHAN == 1) && ((algoID & MASK_REMAP_ALGORITHM) || algoID == REMAP_NULL)) || ((BYTESxCHAN > 1) && (algoID & MASK_CONVERSION_ALGORITHM)) )
+		// either it is an 8 bits image and algorithm is a remapping or a null transformation, or it is a 16 or more bits images and the algorithm is a conversion to 8 bits
+		depth_conv_algo = algoID; 
+	else
+		throw iom::exception(iom::strprintf("invalid remap or conversion algorithm (%d) for %d bits per sample ", algoID, BYTESxCHAN * 8), __iom__current__function__);
+}
+
+
 /*************************************************************************************************************
 * Save image method. <> parameters are mandatory, while [] are optional.
 * <img_path>                : absolute path of image to be saved. It DOES NOT include its extension, which is

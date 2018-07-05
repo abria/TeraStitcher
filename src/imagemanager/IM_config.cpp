@@ -22,6 +22,12 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2018-07-05. Giulio.     @ADDED stings describing remapping and conversion algorithms to 8 bits values
+*/
+
 
 #include "IM_config.h"
 
@@ -38,6 +44,21 @@ namespace IconImageManager
     std::string DEBUG_FILE_PATH = "/home/alex/Scrivania/iim_debug.log";   //filepath where to save debug information
     bool ADD_NOISE_TO_TIME_SERIES = false;	// whether to mark individual frames of a time series with increasing gaussian noise
     int CHANNEL_SELECTION = ALL;			// channel to be loaded (default is ALL)
+    /*-------------------------------------------------------------------------------------------------------------------------*/
+
+    /**************************
+    * TRNSFORM ALGORITHMS IDs *
+    ***************************
+    ---------------------------------------------------------------------------------------------------------------------------*/
+	const char *conversion_algorithms_strings[] = {
+		"linear conversion (16 to 8 bits)",
+		"local maximum-based conversion (16 to 8 bits)",
+		"conversion using bits 4-11 (16 to 8 bits)"
+	};
+	const char *remap_algorithms_strings[] = {
+		"null remap (no remapping is performed)"
+		"remapping from bits 0-5 to 0-7"
+	};
     /*-------------------------------------------------------------------------------------------------------------------------*/
 }
 
