@@ -155,6 +155,7 @@ namespace IconImageManager
 	
 	const int N_REMAP_ALGORITHMS    = 2;	
 	extern const char *remap_algorithms_strings[];
+	extern const int remap_algorithms_IDs[];
 	
 	const int REMAP_8_BITS_DEFAULT   = REMAP_NULL;                   // set this constant to define the default remap algorithm
 
@@ -167,6 +168,7 @@ namespace IconImageManager
 	
 	const int N_CONVERSION_ALGORITHMS    = 3;	
 	extern const char *conversion_algorithms_strings[];
+	extern const int conversion_algorithms_IDs[];
 	
 	const int DEPTH_CONVERSION_DEFAULT   = DEPTH_CONVERSION_LOCAL_MAX; // set this constant to define the default conversion algorithm
 

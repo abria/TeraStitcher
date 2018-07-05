@@ -50,14 +50,26 @@ namespace IconImageManager
     * TRNSFORM ALGORITHMS IDs *
     ***************************
     ---------------------------------------------------------------------------------------------------------------------------*/
+	const char *remap_algorithms_strings[] = {
+		"null remap (no remapping is performed)"
+		"remapping from bits 0-5 to 0-7"
+	};
+
+	const int remap_algorithms_IDs[] = {
+		REMAP_NULL,
+		REMAP_6_TO_8_BITS 
+	};
+	
 	const char *conversion_algorithms_strings[] = {
 		"linear conversion (16 to 8 bits)",
 		"local maximum-based conversion (16 to 8 bits)",
 		"conversion using bits 4-11 (16 to 8 bits)"
 	};
-	const char *remap_algorithms_strings[] = {
-		"null remap (no remapping is performed)"
-		"remapping from bits 0-5 to 0-7"
+
+	const int conversion_algorithms_IDs[] = {
+		DEPTH_CONVERSION_LINEAR,
+		DEPTH_CONVERSION_LOCAL_MAX,
+		DEPTH_CONVERSION_4_11
 	};
     /*-------------------------------------------------------------------------------------------------------------------------*/
 }
