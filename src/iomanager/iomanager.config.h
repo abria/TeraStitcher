@@ -134,7 +134,7 @@ namespace iomanager
             else
                 size *= 2;
         }
-        return str;
+        //return str;
     }
 
 	// tokenizer

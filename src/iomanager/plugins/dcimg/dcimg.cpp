@@ -105,37 +105,39 @@ throw (iom::exception)
 	//iim::uint32 byte_per_img;
 	//iim::uint32 header_size2;
 	//iim::uint64 session_data_size;
+	
+	size_t dummyfr;
 
 	FILE *fin;
 
 	if ( (fin = fopen(img_path.c_str(),"rb")) == NULL ) 
 		throw iom::exception(iom::strprintf("cannot open file %s",img_path.c_str()), __iom__current__function__);
 
-	fread(file_format,sizeof(char),8,fin);
+	dummyfr = fread(file_format,sizeof(char),8,fin);
 	file_format[8] = '\0';
 	if ( strcmp(file_format,"DCIMG") != 0 )
 		throw iom::exception(iom::strprintf("invalid DCIMG file (%s)",file_format), __iom__current__function__);
 
-	fread(&format_version,sizeof(iim::uint32),1,fin);
-	fread(dummy,sizeof(iim::uint32),5,fin);
-	fread(&nsess,sizeof(iim::uint32),1,fin);
-	fread(&nfrms,sizeof(iim::uint32),1,fin);
-	fread(&header_size,sizeof(iim::uint32),1,fin);
-	//fread(dummy,sizeof(iim::uint32),1,fin);
-	//fread(&file_size,sizeof(iim::uint64),1,fin);
-	//fread(dummy,sizeof(iim::uint32),2,fin);
-	//fread(&file_size2,sizeof(iim::uint64),1,fin);
+	dummyfr = fread(&format_version,sizeof(iim::uint32),1,fin);
+	dummyfr = fread(dummy,sizeof(iim::uint32),5,fin);
+	dummyfr = fread(&nsess,sizeof(iim::uint32),1,fin);
+	dummyfr = fread(&nfrms,sizeof(iim::uint32),1,fin);
+	dummyfr = fread(&header_size,sizeof(iim::uint32),1,fin);
+	//dummyfr = fread(dummy,sizeof(iim::uint32),1,fin);
+	//dummyfr = fread(&file_size,sizeof(iim::uint64),1,fin);
+	//dummyfr = fread(dummy,sizeof(iim::uint32),2,fin);
+	//dummyfr = fread(&file_size2,sizeof(iim::uint64),1,fin);
 
 	fseek(fin,header_size,SEEK_SET);
 
-	fread(&session_size,sizeof(iim::uint64),1,fin);
-	fread(dummy,sizeof(iim::uint32),6,fin);
-	fread(&nfrms2,sizeof(iim::uint32),1,fin);
-	fread(&byte_depth,sizeof(iim::uint32),1,fin);
-	fread(dummy,sizeof(iim::uint32),1,fin);
-	fread(&xsize,sizeof(iim::uint32),1,fin);
-	fread(&byte_per_row,sizeof(iim::uint32),1,fin);
-	fread(&ysize,sizeof(iim::uint32),1,fin);
+	dummyfr = fread(&session_size,sizeof(iim::uint64),1,fin);
+	dummyfr = fread(dummy,sizeof(iim::uint32),6,fin);
+	dummyfr = fread(&nfrms2,sizeof(iim::uint32),1,fin);
+	dummyfr = fread(&byte_depth,sizeof(iim::uint32),1,fin);
+	dummyfr = fread(dummy,sizeof(iim::uint32),1,fin);
+	dummyfr = fread(&xsize,sizeof(iim::uint32),1,fin);
+	dummyfr = fread(&byte_per_row,sizeof(iim::uint32),1,fin);
+	dummyfr = fread(&ysize,sizeof(iim::uint32),1,fin);
 	//fread(&byte_per_img,sizeof(iim::uint32),1,fin);
 	//fread(dummy,sizeof(iim::uint32),2,fin);
 	//fread(&header_size2,sizeof(iim::uint32),1,fin);
@@ -185,6 +187,8 @@ throw (iom::exception)
 	int _bytes_x_chan;
 
 	FILE *fin;
+	
+	size_t dummyfr;
 
 	if ( (fin = fopen(img_path.c_str(),"rb")) == NULL ) 
 		throw iom::exception(iom::strprintf("cannot open file %s",img_path.c_str()), __iom__current__function__);
@@ -196,16 +200,16 @@ throw (iom::exception)
 
 		fseek(fin,36,SEEK_SET); // jump to nfrms field of the header
 
-		fread(&_depth,sizeof(iim::uint32),1,fin);
-		fread(&header_size,sizeof(iim::uint32),1,fin);
+		dummyfr = fread(&_depth,sizeof(iim::uint32),1,fin);
+		dummyfr = fread(&header_size,sizeof(iim::uint32),1,fin);
 
 		fseek(fin,header_size,SEEK_SET);
 
-		fread(&_bytes_x_chan,sizeof(iim::uint32),1,fin);
-		fread(&dummy,sizeof(iim::uint32),1,fin);
-		fread(&_width,sizeof(iim::uint32),1,fin);
-		fread(&dummy,sizeof(iim::uint32),1,fin);
-		fread(&_height,sizeof(iim::uint32),1,fin);
+		dummyfr = fread(&_bytes_x_chan,sizeof(iim::uint32),1,fin);
+		dummyfr = fread(&dummy,sizeof(iim::uint32),1,fin);
+		dummyfr = fread(&_width,sizeof(iim::uint32),1,fin);
+		dummyfr = fread(&dummy,sizeof(iim::uint32),1,fin);
+		dummyfr = fread(&_height,sizeof(iim::uint32),1,fin);
 
 		data = new unsigned char[((sint64)_width) * ((sint64)_height) * ((sint64)_depth) * _bytes_x_chan];
 		memset(data,0,sizeof(unsigned char) * ((sint64)_width) * ((sint64)_height) * ((sint64)_depth) * _bytes_x_chan);
@@ -244,7 +248,7 @@ throw (iom::exception)
 		fseeko(fin,file_offset*sizeof(unsigned char),SEEK_SET);
 #endif
 
-		fread(data,sizeof(unsigned char),size,fin);
+		dummyfr = fread(data,sizeof(unsigned char),size,fin);
 		
 		// set the first four voxels of first row to the values of the first four voxels of the second row
 		memcpy(data,data+(rowStride),4*img_bytes_x_chan*sizeof(unsigned char));
@@ -267,7 +271,7 @@ throw (iom::exception)
 				fseeko(fin,rowOffs*sizeof(unsigned char),SEEK_SET);
 #endif
 //printf("--> pRow - data = %ld, rowSize = %lld\n",pRow-data,rowStride);
-				fread(pRow,sizeof(unsigned char),rowSize,fin);
+				dummyfr = fread(pRow,sizeof(unsigned char),rowSize,fin);
 			}
 		}
 		

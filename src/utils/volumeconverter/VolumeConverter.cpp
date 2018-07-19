@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-04-06. Giulio.     @FIXED in case isotropic is set halving must be done when D voxel size is equal to max(V,H) voxel size
 * 2017-09-11. Giulio.     @CHANGED interfaces of vcDriver and convetTo to enable passing parameters controlloing the compression algorithm to be used with HDf5 files
 * 2017-09-11. Giulio.     @ADDED parameters controlloing the compression algorithm to be used with HDf5 files
 * 2017-09-09. Giulio.     @ADDED code to manage compression algorithms to be used in Imaris IMS files generation
@@ -696,7 +697,7 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 		halve_pow2[0] = 0;
 		for ( int i=1; i<resolutions_size; i++ ) {
 			halve_pow2[i] = halve_pow2[i-1];
-			if ( vxlsz_D < std::max<float>(vxlsz_Vx2,vxlsz_Hx2) ) {
+			if ( vxlsz_D <= std::max<float>(vxlsz_Vx2,vxlsz_Hx2) ) {
 				halve_pow2[i]++;
 				vxlsz_D   *= 2;
 			}
@@ -1285,7 +1286,7 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 		halve_pow2[0] = 0;
 		for ( int i=1; i<resolutions_size; i++ ) {
 			halve_pow2[i] = halve_pow2[i-1];
-			if ( vxlsz_D < std::max<float>(vxlsz_Vx2,vxlsz_Hx2) ) {
+			if ( vxlsz_D <= std::max<float>(vxlsz_Vx2,vxlsz_Hx2) ) {
 				halve_pow2[i]++;
 				vxlsz_D   *= 2;
 			}
@@ -1890,7 +1891,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 		halve_pow2[0] = 0;
 		for ( int i=1; i<resolutions_size; i++ ) {
 			halve_pow2[i] = halve_pow2[i-1];
-			if ( vxlsz_D < std::max<float>(vxlsz_Vx2,vxlsz_Hx2) ) {
+			if ( vxlsz_D <= std::max<float>(vxlsz_Vx2,vxlsz_Hx2) ) {
 				halve_pow2[i]++;
 				vxlsz_D   *= 2;
 			}
@@ -2001,7 +2002,7 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 	sint64 z;
 	sint64 z_parts;
 
-	// WARNING: uses saved_img_format to check that the operation has been resumed withe the sae parameters
+	// WARNING: uses saved_img_format to check that the operation has been resumed withe the same parameters
 	if ( par_mode ) {
 		output_path_par << output_path << "/" << "V_" << this->V0 << "-" << this->V1<< "_H_" << this->H0 << "-" << this->H1<< "_D_" << this->D0 << "-" << this->D1;
 		if(!check_and_make_dir(output_path_par.str().c_str())) {  // the directory does nor exist or cannot be created
@@ -3402,7 +3403,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 		halve_pow2[0] = 0;
 		for ( int i=1; i<resolutions_size; i++ ) {
 			halve_pow2[i] = halve_pow2[i-1];
-			if ( vxlsz_D < std::max<float>(vxlsz_Vx2,vxlsz_Hx2) ) {
+			if ( vxlsz_D <= std::max<float>(vxlsz_Vx2,vxlsz_Hx2) ) {
 				halve_pow2[i]++;
 				vxlsz_D   *= 2;
 			}
@@ -4449,7 +4450,7 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 		halve_pow2[0] = 0;
 		for ( int i=1; i<resolutions_size; i++ ) {
 			halve_pow2[i] = halve_pow2[i-1];
-			if ( vxlsz_D < std::max<float>(vxlsz_Vx2,vxlsz_Hx2) ) {
+			if ( vxlsz_D <= std::max<float>(vxlsz_Vx2,vxlsz_Hx2) ) {
 				halve_pow2[i]++;
 				vxlsz_D   *= 2;
 			}
@@ -4954,7 +4955,7 @@ void VolumeConverter::createDirectoryHierarchy(std::string output_path, std::str
 		halve_pow2[0] = 0;
 		for ( int i=1; i<resolutions_size; i++ ) {
 			halve_pow2[i] = halve_pow2[i-1];
-			if ( vxlsz_D < std::max<float>(vxlsz_Vx2,vxlsz_Hx2) ) {
+			if ( vxlsz_D <= std::max<float>(vxlsz_Vx2,vxlsz_Hx2) ) {
 				halve_pow2[i]++;
 				vxlsz_D   *= 2;
 			}
@@ -5201,7 +5202,7 @@ void VolumeConverter::createDirectoryHierarchySimple(std::string output_path, bo
 		halve_pow2[0] = 0;
 		for ( int i=1; i<resolutions_size; i++ ) {
 			halve_pow2[i] = halve_pow2[i-1];
-			if ( vxlsz_D < std::max<float>(vxlsz_Vx2,vxlsz_Hx2) ) {
+			if ( vxlsz_D <= std::max<float>(vxlsz_Vx2,vxlsz_Hx2) ) {
 				halve_pow2[i]++;
 				vxlsz_D   *= 2;
 			}
@@ -5367,7 +5368,7 @@ void VolumeConverter::mdataGenerator(std::string output_path, std::string ch_dir
 		halve_pow2[0] = 0;
 		for ( int i=1; i<resolutions_size; i++ ) {
 			halve_pow2[i] = halve_pow2[i-1];
-			if ( vxlsz_D < std::max<float>(vxlsz_Vx2,vxlsz_Hx2) ) {
+			if ( vxlsz_D <=std::max<float>(vxlsz_Vx2,vxlsz_Hx2) ) {
 				halve_pow2[i]++;
 				vxlsz_D   *= 2;
 			}

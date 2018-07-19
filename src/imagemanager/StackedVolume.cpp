@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-07-19. Giulio.     @ADDED remapping of 8 bits images for better visualization
 * 2018-06-30. Giulio.     @ADDED parameter for specifying the conversion algorithm to be used to convert from arbitrary depth to 8 bits
 * 2017-10-21. Giulio.     @ADDED compact active channels if not all channels are active in 'loadSubvolume_to_UINT8'
 * 2016-09-02. Giulio.     @FIXED assignment of a 2D plugin when the object is created
@@ -1198,6 +1199,14 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
 		if ( (err_rawfmt = convert2depth8bits(red_factor,(sbv_height*sbv_width*sbv_depth),sbv_channels,subvol,(iim::uint8 *)0,depth_conv_algo)) != 0 ) {
             char err_msg[STATIC_STRINGS_SIZE];
 			sprintf(err_msg,"in StackedVolume::loadSubvolume_to_UINT8: %s", err_rawfmt);
+            throw IOException(err_msg);
+		}
+	}
+	else if ( (BYTESxCHAN == 1) && (depth_conv_algo & MASK_REMAP_ALGORITHM) ) { // a remap algorithm must be used
+		char *err_rawfmt;
+		if ( (err_rawfmt = remap2depth8bits((sbv_height*sbv_width*sbv_depth),sbv_channels,subvol,depth_conv_algo)) != 0  ) {
+            char err_msg[STATIC_STRINGS_SIZE];
+			sprintf(err_msg,"StackedVolume::loadSubvolume_to_UINT8: %s", err_rawfmt);
             throw IOException(err_msg);
 		}
 	}

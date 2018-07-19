@@ -53,11 +53,13 @@ namespace IconImageManager
 	const char *remap_algorithms_strings[] = {
 		"null remap (no remapping is performed)"
 		"remapping from bits 0-5 to 0-7"
+		"local maximum-based remapping (8 to 8 bits)",
 	};
 
 	const int remap_algorithms_IDs[] = {
 		REMAP_NULL,
-		REMAP_6_TO_8_BITS 
+		REMAP_6_TO_8_BITS,
+		REMAP_LOCAL_MAX 
 	};
 	
 	const char *conversion_algorithms_strings[] = {
@@ -71,6 +73,13 @@ namespace IconImageManager
 		DEPTH_CONVERSION_LOCAL_MAX,
 		DEPTH_CONVERSION_4_11
 	};
+	
+	const char *mixed_algorithms_strings[] = {
+		"local maximum-based remap/conversion"
+	};
+
+	const int mixed_algorithms_IDs[] = {
+		REMAP_DEPTH_COVERSION_LOCAL_MAX	};
     /*-------------------------------------------------------------------------------------------------------------------------*/
 }
 

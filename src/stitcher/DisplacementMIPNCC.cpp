@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-04-14. Giulio.     @ADDED methods 'getDefaultDisplacement' and 'getDelays'
 * 2018-02-03. Giulio.     @ADDED complete mirroring of displacements when direction = 'dir_all'
 */
 
@@ -179,6 +180,36 @@ int	DisplacementMIPNCC::getDisplacement(direction _direction) throw (iom::except
 		throw iom::exception("in DisplacementMIPNCC::getDisplacement(...): displacement not computed yet");
 
 	return VHD_coords[_direction];
+}
+
+//returns the default displacement along the given direction
+int	DisplacementMIPNCC::getDefaultDisplacement(direction _direction) throw (iom::exception)
+{
+	#if S_VERBOSE>4
+	printf("\t\t\t\t\tin DisplacementMIPNCC::getDefaultDisplacement(direction _direction = %d)\n", _direction);
+	#endif
+
+	if( _direction != 0 && _direction != 1 && _direction != 2)
+		throw iom::exception("in DisplacementMIPNCC::getDisplacement(...): wrong direction value");
+	else if(VHD_coords[_direction] == std::numeric_limits<int>::max())
+		throw iom::exception("in DisplacementMIPNCC::getDisplacement(...): displacement not computed yet");
+
+	return VHD_def_coords[_direction];
+}
+
+//returns the half range of NCC search around initial offset along the given direction
+int	DisplacementMIPNCC::getDelays(direction _direction) throw (iom::exception)
+{
+	#if S_VERBOSE>4
+	printf("\t\t\t\t\tin DisplacementMIPNCC::getDelays(direction _direction = %d)\n", _direction);
+	#endif
+
+	if( _direction != 0 && _direction != 1 && _direction != 2)
+		throw iom::exception("in DisplacementMIPNCC::getDisplacement(...): wrong direction value");
+	else if(VHD_coords[_direction] == std::numeric_limits<int>::max())
+		throw iom::exception("in DisplacementMIPNCC::getDisplacement(...): displacement not computed yet");
+
+	return delays[_direction];
 }
 
 //sets to default values the displacements with a reliability factor above the given threshold

@@ -1575,6 +1575,8 @@ char *convert2depth8bits ( int red_factor, sint64 totalBlockSize, sint64 sbv_cha
 	else {
 		return ((char *) "unknown machine endianess"); 
 	}
+	
+	algorithm &= MASK_CONVERSION_ALGORITHM; // extract conversion algorithm ID (added for mixed remap/conversion algorithms)
 
 	// the converted value has to be stored in the MSB of the input value
 	
@@ -1588,7 +1590,7 @@ char *convert2depth8bits ( int red_factor, sint64 totalBlockSize, sint64 sbv_cha
 			return ((char *) "conversion from more than 16 bits to 8 bits not yet implemented");
 			 
 		// look for maximum values in each channel and rescale each channel separately
-		unsigned short maxVal;
+		unsigned int maxVal;
 		unsigned short *temp = (unsigned short *) subvol; // WARNING: assumes depth = 16 bits
 		sint64 count;
 		for ( c=0; c<sbv_channels; c++, temp+=totalBlockSize ) {
@@ -1637,8 +1639,10 @@ char *convert2depth8bits ( int red_factor, sint64 totalBlockSize, sint64 sbv_cha
 
 char *remap2depth8bits ( iim::sint64 totalBlockSize, iim::sint64 sbv_channels, iim::uint8 *subvol, int algorithm ) {
 
-	int i;
+	int c, i, p;
 	
+	algorithm &= MASK_REMAP_ALGORITHM; // extract remap algorithm ID (added for mixed remap/conversion algorithms)
+
 	if ( algorithm == REMAP_NULL ) { 
 		; // no remap is requested, the buffer is returned unchanged
 	}
@@ -1647,6 +1651,29 @@ char *remap2depth8bits ( iim::sint64 totalBlockSize, iim::sint64 sbv_channels, i
 			if ( subvol[i] & 0xd0 )
 				subvol[i] = 0x3f;
 			subvol[i] <<= 2;
+		}
+	}
+	else if ( algorithm == REMAP_LOCAL_MAX ) {
+		
+		// look for maximum values in each channel and rescale each channel separately
+		unsigned int maxVal;
+		unsigned char *temp = (unsigned char *) subvol; 
+		sint64 count;
+		for ( c=0; c<sbv_channels; c++, temp+=totalBlockSize ) {
+			// find the maximum
+			for ( i=0, maxVal=0; i<totalBlockSize; i++ )
+				if ( temp[i] > maxVal )
+					maxVal = temp[i];
+			// starting from 1, double until maxVal is reached: the number of steps represents how many bits have to be left-shifted 
+			for ( i=1, p=8; i<maxVal; i<<=1, p-- )
+				;
+			// p represents the number of bits of the left-shift
+			for ( i=0, count=0; i<totalBlockSize; i++ ) {
+				if ( temp[i] > (0.5*maxVal) )
+					count++;
+				temp[i] <<= p;
+			}
+			//printf("\t\t\t\tin RawFmtMngr - convert2depth8bits: c=%d, maxVal=%d, p=%d, count=%lld\n\n",c,maxVal,p,count);
 		}
 	}
 	else 

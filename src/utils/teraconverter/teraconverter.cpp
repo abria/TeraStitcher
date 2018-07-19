@@ -25,7 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2017-09-11.  Giulio.     @ADDED parameter controlloing the compression algorithm to be used with HDf5 files
+* 2018-07-19.  Giulio.     @ADDED additional information generation for supporting isotropic conversion in parallel executions
+* 2017-09-11.  Giulio.     @ADDED parameter controlling the compression algorithm to be used with HDf5 files
 * 2017-05-25.  Giulio.     @ADDED a lossy compression based on rescalinghas been introduced
 * 2017-04-23.  Giulio.     @CHANGED the call to conversion routines has been moved to VolumeConverter.cpp (vcDriver auxiliary function)
 * 2017-04-07.  Giulio.     @ADDED the opssibility to specify a subset of channels to be converted
@@ -193,6 +194,9 @@ int main ( int argc, char *argv[] ) {
 			fprintf(fout,"DEPTH=%d\n",vc.getD1() - vc.getD0());
 			fprintf(fout,"BYTESxCHAN=%d\n",vc.getVolume()->getBYTESxCHAN());
 			fprintf(fout,"DIM_C=%d\n",vc.getVolume()->getDIM_C());
+			fprintf(fout,"VXL_V=%f\n",vc.getVolume()->getVXL_V());
+			fprintf(fout,"VXL_H=%f\n",vc.getVolume()->getVXL_H());
+			fprintf(fout,"VXL_D=%f\n",vc.getVolume()->getVXL_D());
 
 			fclose(fout);
 			return EXIT_SUCCESS;

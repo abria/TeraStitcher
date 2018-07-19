@@ -25,6 +25,13 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2018-04-14. Giulio.     @ADDED methods 'getDefaultDisplacement' and 'getDelays'
+*/
+
+
 #ifndef DISPLACEMENT_MIP_NCC_H
 #define DISPLACEMENT_MIP_NCC_H
 
@@ -57,7 +64,7 @@ class DisplacementMIPNCC : Displacement
 		DisplacementMIPNCC(void);
 		DisplacementMIPNCC(const DisplacementMIPNCC &ex_instance);
 		DisplacementMIPNCC(NCC_descr_t &mip_ncc_descr);
-                DisplacementMIPNCC(int Vnominal, int Hnominal, int Dnominal);
+        DisplacementMIPNCC(int Vnominal, int Hnominal, int Dnominal);
 		DisplacementMIPNCC(TiXmlElement *displ_node);
         ~DisplacementMIPNCC(void){}
 
@@ -71,6 +78,12 @@ class DisplacementMIPNCC : Displacement
 
 		//returns the displacement along the given direction
 		int				 getDisplacement(direction _direction)			throw (iom::exception);
+
+		//returns the default displacement along the given direction
+		int				 getDefaultDisplacement(direction _direction)	throw (iom::exception);
+
+		//returns the half range of NCC search around initial offset along the given direction
+		int				 getDelays(direction _direction)				throw (iom::exception);
 
 		//sets to default values the displacements with a reliability factor above the given threshold
 		void			 threshold(float rel_threshold)					throw (iom::exception);

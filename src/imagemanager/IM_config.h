@@ -150,16 +150,17 @@ namespace IconImageManager
     ****************************
     ---------------------------------------------------------------------------------------------------------------------------*/
 	/* ID of remap algorithms from 8 bits to 8 bits */
-	const int REMAP_NULL                 = 0x0000;                   // null map (it also not reconized as an actually requested map
+	const int REMAP_NULL                 = 0x0000;                   // null map (it ia also not reconized as an actually requested map)
 	const int REMAP_6_TO_8_BITS          = 0x0001;                   // multply by 4 the voxel value and set to 255 all voxels with value >= 64
+	const int REMAP_LOCAL_MAX            = 0x0002;                   // look for maximum values in each channel and rescale each channel separately
 	
-	const int N_REMAP_ALGORITHMS    = 2;	
+	const int N_REMAP_ALGORITHMS    = 3;	
 	extern const char *remap_algorithms_strings[];
 	extern const int remap_algorithms_IDs[];
 	
 	const int REMAP_8_BITS_DEFAULT   = REMAP_NULL;                   // set this constant to define the default remap algorithm
 
-	const int MASK_REMAP_ALGORITHM       = 0x00ff;                   // remap algorithms have only bits 0-7 not zero
+	const int MASK_REMAP_ALGORITHM       = 0x00ff;                   // remap algorithms have bits 0-7 not zero
 	
 	/* ID of conversion algorithms from 16 to 8 bits */
 	const int DEPTH_CONVERSION_LINEAR    = 0x0100;                   // convert linearly from [0,2^bitdepth-1] to [0,2^8-1]
@@ -172,7 +173,16 @@ namespace IconImageManager
 	
 	const int DEPTH_CONVERSION_DEFAULT   = DEPTH_CONVERSION_LOCAL_MAX; // set this constant to define the default conversion algorithm
 
-	const int MASK_CONVERSION_ALGORITHM  = 0xff00;                   // conversion algorithms have only bits 8-15 not zero
+	const int MASK_CONVERSION_ALGORITHM  = 0xff00;                     // conversion algorithms have only bits 8-15 not zero
+	                                                                   // this mask can be used to extract the conversion algorithm ID 
+	                                                                   // from a mixed remap/conversion algorithm
+	                                                                   
+	/* ID of mixed remap/conversion algorithms (can be applied to both conversion form 18 to 8 bits and rempa from 8 to 8 bits */
+	const int REMAP_DEPTH_COVERSION_LOCAL_MAX = DEPTH_CONVERSION_LOCAL_MAX | REMAP_LOCAL_MAX;
+	
+	const int N_MIXED_ALGORITHMS    = 1;	
+	extern const char *mixed_algorithms_strings[];
+	extern const int mixed_algorithms_IDs[];
     /*-------------------------------------------------------------------------------------------------------------------------*/
 
 

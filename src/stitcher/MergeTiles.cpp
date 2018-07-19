@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-04-06. Giulio.     @FIXED in case isotropic is set halving must be done when D voxel size is equal to max(V,H) voxel size
 * 2017-04-12. Giulio.     @ADDED release of allocated buffers if an exception is raised in 'getStripe' (prevent further exceptions in the GUI version)
 * 2016-04-13  Giulio.     @CHANGED minor changed while parallelizing teraconverter
 * 2016-03-28  Giulio.     @FIXED wrong assignment in exchanging axes of reference system
@@ -251,7 +252,7 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 		halve_pow2[0] = 0;
 		for ( int i=1; i<resolutions_size; i++ ) {
 			halve_pow2[i] = halve_pow2[i-1];
-			if ( vxlsz_D < ISR_MAX(vxlsz_Vx2,vxlsz_Hx2) ) {
+			if ( vxlsz_D <= ISR_MAX(vxlsz_Vx2,vxlsz_Hx2) ) {
 				halve_pow2[i]++;
 				vxlsz_D   *= 2;
 			}
@@ -1006,7 +1007,7 @@ void StackStitcher::createDirectoryHierarchy(std::string output_path, int block_
 		halve_pow2[0] = 0;
 		for ( int i=1; i<resolutions_size; i++ ) {
 			halve_pow2[i] = halve_pow2[i-1];
-			if ( vxlsz_D < ISR_MAX(vxlsz_Vx2,vxlsz_Hx2) ) {
+			if ( vxlsz_D <= ISR_MAX(vxlsz_Vx2,vxlsz_Hx2) ) {
 				halve_pow2[i]++;
 				vxlsz_D   *= 2;
 			}
@@ -1177,7 +1178,7 @@ void StackStitcher::mdataGenerator (std::string output_path, int block_height, i
 		halve_pow2[0] = 0;
 		for ( int i=1; i<resolutions_size; i++ ) {
 			halve_pow2[i] = halve_pow2[i-1];
-			if ( vxlsz_D < ISR_MAX(vxlsz_Vx2,vxlsz_Hx2) ) {
+			if ( vxlsz_D <= ISR_MAX(vxlsz_Vx2,vxlsz_Hx2) ) {
 				halve_pow2[i]++;
 				vxlsz_D   *= 2;
 			}

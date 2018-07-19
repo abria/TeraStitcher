@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-04-14. Giulio.     @ADDED virtual method 'getDefaultDisplacement' 
 * 2018-02-03. Giulio.     @ADDED constant 'dir_all' to enum type 'direction'
 */
 
@@ -66,6 +67,9 @@ class Displacement
 
 		//returns the displacement along the given direction
 		virtual int				 getDisplacement(direction _direction)			throw (iom::exception) = 0;
+
+		//returns the default displacement along the given direction
+		virtual int				 getDefaultDisplacement(direction _direction)	throw (iom::exception) = 0;
 
 		//sets to default values the displacements with a reliability factor above the given threshold
 		virtual void			 threshold(float rel_threshold)					throw (iom::exception) = 0;

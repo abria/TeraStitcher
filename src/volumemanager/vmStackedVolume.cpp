@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-04-02. Giulio.     @FIXED bug that prevented from saving the reference system in the xml import file
 * 2018-03-02. Giulio.     @ADDED the possibility to set a path and a name for the mdata.bin file
 * 2018-02-03. Giulio.     @ADDED call to 'adjustDisplacements' in method reading the xml file to force all displacements of adjacent tile symmetric
 * 2017-04-27. Giulio.     @ADDED code to get and initialize the input plugin from the xml if specified
@@ -753,6 +754,7 @@ void StackedVolume::saveXML(const char *xml_filename, const char *xml_filepath) 
 	pelem->SetAttribute("ref1", reference_system.first);
 	pelem->SetAttribute("ref2", reference_system.second);
 	pelem->SetAttribute("ref3", reference_system.third);
+	root->LinkEndChild(pelem);
 	pelem = new TiXmlElement("voxel_dims");
 	pelem->SetDoubleAttribute("V", VXL_V);
 	pelem->SetDoubleAttribute("H", VXL_H);

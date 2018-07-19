@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2018-07-19. Giulio. @ADDED remapping of 8 bits images for better visualization
 * 2018-06-30. Giulio. @ADDED parameter for specifying the conversion algorithm to be used to convert from arbitrary depth to 8 bits
 * 2018-01-07. Giulio. @FIXED the resolution index was in a wrong position in method 'getN_SLICES'
 * 2017-09-09. Giulio. @ADDED code to manage compression algorithms to be used in Imaris IMS files generation
@@ -2369,6 +2370,14 @@ void IMS_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0,
 
 	if ( int_volume_descr->vxl_nbytes == 1 ) {
 		status = H5Dread(int_volume_descr->datasets_id[chan],int_volume_descr->vxl_type,bufspace_id,filespace_id,H5P_DEFAULT,buf);
+			
+		// check if remap should be applied
+		if ( depth_conv_algo & iim::MASK_REMAP_ALGORITHM ) { // a remap algorithm must be used
+			iim::sint64 sbv_ch_dim = dims_buf[0] * dims_buf[1] * dims_buf[2];
+			char *err_rawfmt;
+			if ( (err_rawfmt = remap2depth8bits(sbv_ch_dim,1,buf,depth_conv_algo)) != 0  )
+				throw iim::IOException(iim::strprintf("cannot remap buffer from 8 bits to 8 bits (%s)",err_rawfmt).c_str(),__iim__current__function__);
+		}
 	}
 	else if ( int_volume_descr->vxl_nbytes == 2 ) {
 		
