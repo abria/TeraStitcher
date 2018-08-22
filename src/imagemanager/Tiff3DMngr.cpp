@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2018-08-22. Giulio.     @CHANGED in 'readTiff3DFile2Buffer' if TIFFTAG_ROWSPERSTRIP is missing it is assumed that all rows are packed into only one strip
 * 2017-10-05. Giulio.     @FIXED a problem with slices having very large width in 'initTiff3DFile' and 'appendSlice2Tiff3DFile'
 * 2017-05-03. Giulio.     @ADDED ruotine resetLibTIFFcfg to reconfigure an already configured library
 * 2017-04-02. Giulio.     @ADDED support for creation of BigTiff files
@@ -747,11 +748,15 @@ char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int i
 		return (char *) 0;
 	}
 
-	check=TIFFGetField(input, TIFFTAG_ROWSPERSTRIP, &rps);
-	if (!check)
-	{
-		return ((char *) "Undefined rows per strip.");
-	}	
+	// 2018-08-22. Giulio. @CHANGED if TIFFTAG_ROWSPERSTRIP is missing it is assumed that all rows are packed into only one strip
+	if ( !TIFFGetField(input, TIFFTAG_ROWSPERSTRIP, &rps) )
+		rps = 1;	
+// 	check=TIFFGetField(input, TIFFTAG_ROWSPERSTRIP, &rps);
+// 	if (!check)
+// 	{
+// 		return ((char *) "Undefined rows per strip.");
+// 	}
+
     
 	//check=TIFFGetField(input, TIFFTAG_ORIENTATION, &orientation); 
 	//if (!check)

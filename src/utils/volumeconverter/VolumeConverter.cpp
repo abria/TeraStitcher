@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-08-17. Giulio.     @FIXED calculus of the percentage of processed slices used to update the progress bar was wrong
 * 2018-04-06. Giulio.     @FIXED in case isotropic is set halving must be done when D voxel size is equal to max(V,H) voxel size
 * 2017-09-11. Giulio.     @CHANGED interfaces of vcDriver and convetTo to enable passing parameters controlloing the compression algorithm to be used with HDf5 files
 * 2017-09-11. Giulio.     @ADDED parameters controlloing the compression algorithm to be used with HDf5 files
@@ -863,8 +864,8 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 		//updating the progress bar
 		if(show_progress_bar)
 		{	
-            sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res-1)),(iim::uint32)depth);
-                        ts::ProgressBar::getInstance()->setProgressValue(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
+            sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res)),(iim::uint32)depth);
+                        ts::ProgressBar::getInstance()->setProgressValue(((float)(z-D0+z_max_res)*100/(float)depth), progressBarMsg);
                         ts::ProgressBar::getInstance()->display();
 		}
 
@@ -1451,8 +1452,8 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 		//updating the progress bar
 		if(show_progress_bar)
 		{	
-            sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res-1)),(iim::uint32)depth);
-                        ts::ProgressBar::getInstance()->setProgressValue(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
+            sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res)),(iim::uint32)depth);
+                        ts::ProgressBar::getInstance()->setProgressValue(((float)(z-D0+z_max_res)*100/(float)depth), progressBarMsg);
                         ts::ProgressBar::getInstance()->display();
 		}
 
@@ -2104,8 +2105,8 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 		//updating the progress bar
 		if(show_progress_bar)
 		{	
-            sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res-1)),(iim::uint32)depth);
-                        ts::ProgressBar::getInstance()->setProgressValue(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
+            sprintf(progressBarMsg, "Generating slices from %d to %d og %d",(iim::uint32)(z-D0),(iim::uint32)std::min(z-D0+z_max_res,depth),(iim::uint32)depth);
+                        ts::ProgressBar::getInstance()->setProgressValue(((float)std::min(z-D0+z_max_res,depth)*100/(float)depth), progressBarMsg);
                         ts::ProgressBar::getInstance()->display();
 		}
 
@@ -2877,8 +2878,8 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 		//updating the progress bar
 		if(show_progress_bar)
 		{	
-            sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res-1)),(iim::uint32)depth);
-                        ts::ProgressBar::getInstance()->setProgressValue(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
+            sprintf(progressBarMsg, "Generating slices from %d to %d og %d",(iim::uint32)(z-D0),(iim::uint32)std::min(z-D0+z_max_res,depth),(iim::uint32)depth);
+                        ts::ProgressBar::getInstance()->setProgressValue(((float)std::min(z-D0+z_max_res,depth)*100/(float)depth), progressBarMsg);
                         ts::ProgressBar::getInstance()->display();
 		}
 
@@ -3641,8 +3642,8 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 		//updating the progress bar
 		if(show_progress_bar)
 		{	
-            sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res-1)),(iim::uint32)depth);
-                        ts::ProgressBar::getInstance()->setProgressValue(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
+            sprintf(progressBarMsg, "Generating slices from %d to %d og %d",(iim::uint32)(z-D0),(iim::uint32)std::min(z-D0+z_max_res,depth),(iim::uint32)depth);
+                        ts::ProgressBar::getInstance()->setProgressValue(((float)std::min(z-D0+z_max_res,depth)*100/(float)depth), progressBarMsg);
                         ts::ProgressBar::getInstance()->display();
 		}
 
@@ -4221,8 +4222,8 @@ void VolumeConverter::generateTilesBDV_HDF5 ( std::string output_path, bool* res
 		//updating the progress bar
 		if(show_progress_bar)
 		{	
-            sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res-1)),(iim::uint32)depth);
-                        ts::ProgressBar::getInstance()->setProgressValue(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
+            sprintf(progressBarMsg, "Generating slices from %d to %d og %d",(iim::uint32)(z-D0),(iim::uint32)std::min(z-D0+z_max_res,depth),(iim::uint32)depth);
+                        ts::ProgressBar::getInstance()->setProgressValue(((float)std::min(z-D0+z_max_res,depth)*100/(float)depth), progressBarMsg);
                         ts::ProgressBar::getInstance()->display();
 		}
 
@@ -4602,8 +4603,8 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 		//updating the progress bar
 		if(show_progress_bar)
 		{	
-            sprintf(progressBarMsg, "Generating slices from %d to %d og %d",((iim::uint32)(z-D0)),((iim::uint32)(z-D0+z_max_res-1)),(iim::uint32)depth);
-                        ts::ProgressBar::getInstance()->setProgressValue(((float)(z-D0+z_max_res-1)*100/(float)depth), progressBarMsg);
+            sprintf(progressBarMsg, "Generating slices from %d to %d og %d",(iim::uint32)(z-D0),(iim::uint32)std::min(z-D0+z_max_res,depth),(iim::uint32)depth);
+                        ts::ProgressBar::getInstance()->setProgressValue(((float)std::min(z-D0+z_max_res,depth)*100/(float)depth), progressBarMsg);
                         ts::ProgressBar::getInstance()->display();
 		}
 

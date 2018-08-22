@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-08-14. Giulio.     @FIXED bug in 'getStripe' and 'getStripe2' if rr_stk does not overlap with r_stk then j should stop just before (r_stk_left_displ+stack_width) 
 * 2018-02-19. Giulio.     @ADDED check to avoid loading the tile at bottom right when both last row and last column should not be aligned
 * 2017-07-06. Giulio.     @CHANGED call to 'loadImageStack2' in 'getStripe2' to enable selective read of data
 * 2017-07-06. Giulio.     @ADDED method 'getStripe2' to enable selective reads of data
@@ -738,7 +739,8 @@ iom::real_t* StackStitcher::getStripe(int row_index, int d_index, int restore_di
                 angle = 0;
 
 		//for every pair of adjacent slices, writing 2 different zones
-		for(j=(l_stk ? r_stk_left_displ : 0); j<(rr_stk? rr_stk_left_displ : width); j++)
+		for(j=(l_stk ? r_stk_left_displ : 0); j<(rr_stk? std::min(rr_stk_left_displ,r_stk_left_displ+stack_width) : width); j++)
+		// 2018-08-14. Giulio. @FIXED if rr_stk does not overlap with r_stk then j should stop just before (r_stk_left_displ+stack_width) 
 		{
 			//FIRST ZONE: overlapping zone (iff l_stk exists)
 			if(l_stk && j < l_stk_right_displ)
@@ -1923,10 +1925,10 @@ iom::real_t* StackStitcher::getStripe2(int row_index, int d_index, int _V0, int 
 	// 2017-07-16. Giulio. @ADDED take into account the values of _V0, _V1, _H0, _H1 to reduce the amount of copy operations
 	// nothing must change if 'delta' variables are all 0
 //printf("--> row_index = %d, _V0 = %d, stripe_V_top = %d, _V1 = %d, stripe_V_bottom = %d\n",row_index,_V0,stripe_V_top,_V1,stripe_V_bottom);
-	int stripe_V_top_delta    = (_V0 <= stripe_V_top)    ? 0 : _V0 - stripe_V_top;			//top    V(ertical)   offset of actual stripe
-	int stripe_V_bottom_delta = (_V1 >= stripe_V_bottom) ? 0 : stripe_V_bottom -_V1;		//bottom V(ertical)   offset of actual stripe
-	//int stripe_H_left_delta   = (_H0 <= stripe_H_left)   ? 0 : _H0 - stripe_H_left;		//right  H(orizontal) offset of actual stripe
-	//int stripe_H_right_delta  = (_H1 >= stripe_H_right)  ? 0 : stripe_H_right - _H1;		//left   H(orizontal) offset of actual stripe
+	int stripe_V_top_delta    = (_V0 <= stripe_V_top)    ? 0 : _V0 - stripe_V_top;			//top    V(ertical)   offset of actual stripe to be loaded
+	int stripe_V_bottom_delta = (_V1 >= stripe_V_bottom) ? 0 : stripe_V_bottom -_V1;		//bottom V(ertical)   offset of actual stripe to be loaded
+	//int stripe_H_left_delta   = (_H0 <= stripe_H_left)   ? 0 : _H0 - stripe_H_left;		//right  H(orizontal) offset of actual stripe to be loaded
+	//int stripe_H_right_delta  = (_H1 >= stripe_H_right)  ? 0 : stripe_H_right - _H1;		//left   H(orizontal) offset of actual stripe to be loaded
 
 //printf("--> height = %d, width = %d\n",height,width);
 	//ALLOCATING once for all the MEMORY SPACE for current stripe
@@ -1941,6 +1943,85 @@ iom::real_t* StackStitcher::getStripe2(int row_index, int d_index, int _V0, int 
 	stripe_ptr = stripe;
 	for(int column_index=COL_START; column_index<=COL_END; column_index++, angle=0)
 	{
+
+	/**********************************************************************************************************************************************************************************************************
+
+	This comment assumes that:
+	- coordinates are integer indices (starting from 0) over the whole (stitched) image
+	- displacements are integer indices (starting from 0) over the stripe buffer that has size height x width
+
+	row_index               //index of the row of tiles that compose the current stripe
+	_V0						//initial V(ertical) coordinate of the region of interest
+	_V1						//final V(ertical) coordinate of the region of interest (plus 1)
+	_H0						//initial H(orizontal) coordinate of the region of interest
+	_H1						//final H(orizontal) coordinate of the region of interest (plus 1)
+
+	width					//width of stripe
+	height					//height of stripe
+	
+	stripe_V_top			//top    V(ertical)   coordinate of current stripe
+	stripe_V_bottom			//bottom V(ertical)   coordinate of current stripe
+	stripe_H_right			//right  H(orizontal) coordinate of current stripe
+	stripe_H_left			//left   H(orizontal) coordinate of current stripe
+	r_stk_top_displ			//displacement of right stack from <stripe_V_top>
+	l_stk_top_displ 		//displacement of left stack from <stripe_V_top>
+	rr_stk_left_displ		//displacement of right-right stack from <stripe_H_left>
+	l_stk_right_displ		//displacement of left stack from <stripe_H_right>
+	r_stk_left_displ		//displacement of right stack from <stripe_H_left>
+	l_stk_left_displ 		//displacement of left stack from <stripe_H_left> 
+	
+	stack_width				//stacks H dimension
+	stack_height			//stacks V dimension
+
+	stripe_V_top_delta		//top    V(ertical)   offset of actual stripe to be loaded
+	stripe_V_bottom_delta	//bottom V(ertical)   offset of actual stripe to be loaded
+
+	column_index		    //column index of the current tile that is processed
+	
+	
+	                                                                column_index
+	           stripe_H_left                                             |
+	                ------------------------------------------------>j   |
+	                |                                                    v
+	                .                                                
+	             ^  |-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-|-.-.  stripe_V_top
+	             |  .         ^                       ^                   ^                                         .   |
+	             |  |         |                       |                   |                                         |   |
+	             |  .         |                       |            r_stk_top_displ                                  .   |
+	             |  |         |               l_stk_top_displ             |                                         |   |
+	             |  .   stripe_V_top_delta            |                   |                                         .   |
+	             |  |         |                       |                   |        <----- stach_width ----->        |   |
+	             |  .                                 |                   v        -------------------------  ^ s   .   |
+	             h  |         |                     s  v       ---------------------+---                    |  | t   |   |
+	             e  .         v            -------------------+****-###############|  |                    |  | a   .   |
+	    V0_ /    i  |......................|..................|****|...............|..|....................|..|.c...|   |   
+	        |    g  .                      |                  |****|###############|  |                    |  | k   .   |   
+	        |    h  |                      |                  |****|###############|  |                    |  |     |   V
+	        |    t  .<--l_stk_right_displ------------------------->|###############|  |                    |  | h   .   i
+	        |    |  |                      |                  |****|###############|  |                    |  | e   |   
+	        |    |  .<--l_stk_left_displ-->|       l_stk      |****|#### r_stk ####|  |       rr_stk       |  | i   .   
+	actual  |    |  |                      |                  |****|###############|  |                    |  | g   |   
+	stripe /     |  .<--rr_stk_left_displ--+-------------------------------------->|  |                    |  | h   .   
+	to be  \     |  |                      |                  |****|###############|  |                    |  | t   |   
+	loaded  |    |  .<--r_stk_left_displ---+----------------->|****|###############---+---------------------  v     .   
+	        |    |  |                      |                  -----+-------------------                             |   
+	        |    v  .-.-.-.-.-.-.-.-.-.-.-.-------------------------.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-. stripe_V_bottom  
+	        |       |                                                                                               | (V1_ > stripe_V_bottom -> stripe_V_bottom_delta = 0) 
+	        |       .<-------------------------------------------- width ------------------------------------------>.   
+	        |       |                                                                                               |   
+	    V1_ \       .................................................................................................   
+	        
+	                                                          \_ _/
+	for each column index:                                      V
+	                                                 FIRST (overlapping) ZONE
+	**** region copied in the FIRST ZONE 
+	                                                               \_______ _______/
+	#### region copied in the SECOND ZONE                                  V   
+	                                                          SECOND (non overlapping) ZONE
+
+	**********************************************************************************************************************************************************************************************************/
+
+
 		// INV: column_index !=COL_START -> is allocated only data of stack (row_index,column_index-1)
 
 		l_stk  =  column_index !=COL_START ? volume->getSTACKS()[row_index][column_index-1] : NULL;
@@ -1984,7 +2065,8 @@ iom::real_t* StackStitcher::getStripe2(int row_index, int d_index, int _V0, int 
 //printf("--> l_stk_top_displ = %d, r_stk_top_displ = %d, stack_height 0 %d\n",l_stk_top_displ,r_stk_top_displ,stack_height);
 //printf("--> first = %d, last 0 %d\n",stripe_V_top_delta,height-stripe_V_bottom_delta);
 		//for every pair of adjacent slices, writing 2 different zones
-		for(j=(l_stk ? r_stk_left_displ : 0); j<(rr_stk? rr_stk_left_displ : width); j++)
+		for(j=(l_stk ? r_stk_left_displ : 0); j<(rr_stk? std::min(rr_stk_left_displ,r_stk_left_displ+stack_width) : width); j++)
+		// 2018-08-14. Giulio. @FIXED if rr_stk does not overlap with r_stk then j should stop just before (r_stk_left_displ+stack_width) 
 		{
 			//FIRST ZONE: overlapping zone (iff l_stk exists)
 			if(l_stk && j < l_stk_right_displ)

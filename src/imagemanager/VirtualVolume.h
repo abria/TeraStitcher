@@ -79,10 +79,10 @@ protected:
 	// this method compacts the active channels starting from a buffer in which are stored all channels
 	// assume n_active < DIM_C, i.e. that not all channels are active, which imply that in list 'active' some valid channel index is missing
 	void compact_active_chans ( sint64 totalChanSize, uint8 *subvol ) {
-		int c;  // active channels index 
-		int cc; // all channels index
-		uint8 *src; // pointer to source buffer
-		uint8 *dst; // pointer to destination buffer
+		int c;          // active channels index 
+		iim::uint32 cc; // all channels index
+		uint8 *src;     // pointer to source buffer
+		uint8 *dst;     // pointer to destination buffer
 
 		for ( c=0, cc=0; c<n_active && active[c]==cc; c++, cc++ );
 		src = dst = subvol + c * totalChanSize;
