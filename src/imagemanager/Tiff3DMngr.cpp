@@ -750,7 +750,7 @@ char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int i
 
 	// 2018-08-22. Giulio. @CHANGED if TIFFTAG_ROWSPERSTRIP is missing it is assumed that all rows are packed into only one strip
 	if ( !TIFFGetField(input, TIFFTAG_ROWSPERSTRIP, &rps) )
-		rps = 1;	
+		rps = img_height;	
 // 	check=TIFFGetField(input, TIFFTAG_ROWSPERSTRIP, &rps);
 // 	if (!check)
 // 	{
