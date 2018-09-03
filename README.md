@@ -22,22 +22,25 @@ Contributors
   Full Professor at University Campus Bio-Medico of Rome (italy).
   Supervisor and co-developer.
 
-- Leonardo Onofri (email: leonardonofri@gmail.com).
-  Post-doctoral Fellow at University Campus Bio-Medico of Rome (Italy).
+- Roberto Valenti (email: r.valenti@unicampus.it).
+  Software Developer at University Campus Bio-Medico of Rome (Italy).
   Co-developer.
   
 ===========================================================
 Main features
 
-- designed for very large images (TeraByte-sized or more)
+- designed for images exceeding the TeraByte size
 - fast and reliable 3D stitching based on a multi-MIP approach
-- typical memory requirement <8 GigaBytes
-- 2D stitching also supported (experimental)
-- support for image files bigger than 2 GB
+- typical memory requirement below 4 GB (8 at most)
+- 2D stitching (single slice images) supported
 - regular expression based matching for image file names
 - data subset selection
-- sparse data support 
+- sparse data support
 - i/o plugin-based architecture
-- stop and resume the last step of stitching (merge)
+- stitching of multi-channel images
+- support for big tiff files (> 4 GB)
+- HDF5-based formats
+- parallelization on multi-core platform 
+- fast alignment computation on NVIDIA GPUs
 
 ===========================================================
