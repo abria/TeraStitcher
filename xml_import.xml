@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE TeraStitcher SYSTEM "TeraStitcher.DTD">
+<TeraStitcher volume_format="TiledXY|2Dseries" input_plugin="tiff2D">
+    <stacks_dir value="/mytest/tostitch" />
+    <ref_sys ref1="1" ref2="2" ref3="3" />
+    <voxel_dims V="0.35" H="0.35" D="5" />
+    <origin V="0" H="0" D="0" />
+    <mechanical_displacements V="507.5" H="525" />
+    <dimensions stack_rows="6" stack_columns="9" stack_slices="10" />
+    <STACKS>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="0" COL="0" ABS_V="0" ABS_H="0" ABS_D="0" STITCHABLE="no" DIR_NAME="0000_0000" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="0" COL="1" ABS_V="0" ABS_H="1500" ABS_D="0" STITCHABLE="no" DIR_NAME="0000_0001" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="0" COL="2" ABS_V="0" ABS_H="3000" ABS_D="0" STITCHABLE="no" DIR_NAME="0000_0002" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="0" COL="3" ABS_V="0" ABS_H="4500" ABS_D="0" STITCHABLE="no" DIR_NAME="0000_0003" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="0" COL="4" ABS_V="0" ABS_H="6000" ABS_D="0" STITCHABLE="no" DIR_NAME="0000_0004" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="0" COL="5" ABS_V="0" ABS_H="7500" ABS_D="0" STITCHABLE="no" DIR_NAME="0000_0005" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="0" COL="6" ABS_V="0" ABS_H="9000" ABS_D="0" STITCHABLE="no" DIR_NAME="0000_0006" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="0" COL="7" ABS_V="0" ABS_H="10500" ABS_D="0" STITCHABLE="no" DIR_NAME="0000_0007" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="0" COL="8" ABS_V="0" ABS_H="12000" ABS_D="0" STITCHABLE="no" DIR_NAME="0000_0008" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="1" COL="0" ABS_V="1450" ABS_H="0" ABS_D="0" STITCHABLE="no" DIR_NAME="0001_0000" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="1" COL="1" ABS_V="1450" ABS_H="1500" ABS_D="0" STITCHABLE="no" DIR_NAME="0001_0001" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="1" COL="2" ABS_V="1450" ABS_H="3000" ABS_D="0" STITCHABLE="no" DIR_NAME="0001_0002" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="1" COL="3" ABS_V="1450" ABS_H="4500" ABS_D="0" STITCHABLE="no" DIR_NAME="0001_0003" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="1" COL="4" ABS_V="1450" ABS_H="6000" ABS_D="0" STITCHABLE="no" DIR_NAME="0001_0004" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="1" COL="5" ABS_V="1450" ABS_H="7500" ABS_D="0" STITCHABLE="no" DIR_NAME="0001_0005" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="1" COL="6" ABS_V="1450" ABS_H="9000" ABS_D="0" STITCHABLE="no" DIR_NAME="0001_0006" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="1" COL="7" ABS_V="1450" ABS_H="10500" ABS_D="0" STITCHABLE="no" DIR_NAME="0001_0007" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="1" COL="8" ABS_V="1450" ABS_H="12000" ABS_D="0" STITCHABLE="no" DIR_NAME="0001_0008" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="2" COL="0" ABS_V="2900" ABS_H="0" ABS_D="0" STITCHABLE="no" DIR_NAME="0002_0000" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="2" COL="1" ABS_V="2900" ABS_H="1500" ABS_D="0" STITCHABLE="no" DIR_NAME="0002_0001" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="2" COL="2" ABS_V="2900" ABS_H="3000" ABS_D="0" STITCHABLE="no" DIR_NAME="0002_0002" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="2" COL="3" ABS_V="2900" ABS_H="4500" ABS_D="0" STITCHABLE="no" DIR_NAME="0002_0003" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="2" COL="4" ABS_V="2900" ABS_H="6000" ABS_D="0" STITCHABLE="no" DIR_NAME="0002_0004" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="2" COL="5" ABS_V="2900" ABS_H="7500" ABS_D="0" STITCHABLE="no" DIR_NAME="0002_0005" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="2" COL="6" ABS_V="2900" ABS_H="9000" ABS_D="0" STITCHABLE="no" DIR_NAME="0002_0006" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="2" COL="7" ABS_V="2900" ABS_H="10500" ABS_D="0" STITCHABLE="no" DIR_NAME="0002_0007" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="2" COL="8" ABS_V="2900" ABS_H="12000" ABS_D="0" STITCHABLE="no" DIR_NAME="0002_0008" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="3" COL="0" ABS_V="4350" ABS_H="0" ABS_D="0" STITCHABLE="no" DIR_NAME="0003_0000" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="3" COL="1" ABS_V="4350" ABS_H="1500" ABS_D="0" STITCHABLE="no" DIR_NAME="0003_0001" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="3" COL="2" ABS_V="4350" ABS_H="3000" ABS_D="0" STITCHABLE="no" DIR_NAME="0003_0002" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="3" COL="3" ABS_V="4350" ABS_H="4500" ABS_D="0" STITCHABLE="no" DIR_NAME="0003_0003" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="3" COL="4" ABS_V="4350" ABS_H="6000" ABS_D="0" STITCHABLE="no" DIR_NAME="0003_0004" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="3" COL="5" ABS_V="4350" ABS_H="7500" ABS_D="0" STITCHABLE="no" DIR_NAME="0003_0005" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="3" COL="6" ABS_V="4350" ABS_H="9000" ABS_D="0" STITCHABLE="no" DIR_NAME="0003_0006" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="3" COL="7" ABS_V="4350" ABS_H="10500" ABS_D="0" STITCHABLE="no" DIR_NAME="0003_0007" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="3" COL="8" ABS_V="4350" ABS_H="12000" ABS_D="0" STITCHABLE="no" DIR_NAME="0003_0008" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="4" COL="0" ABS_V="5800" ABS_H="0" ABS_D="0" STITCHABLE="no" DIR_NAME="0004_0000" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="4" COL="1" ABS_V="5800" ABS_H="1500" ABS_D="0" STITCHABLE="no" DIR_NAME="0004_0001" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="4" COL="2" ABS_V="5800" ABS_H="3000" ABS_D="0" STITCHABLE="no" DIR_NAME="0004_0002" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="4" COL="3" ABS_V="5800" ABS_H="4500" ABS_D="0" STITCHABLE="no" DIR_NAME="0004_0003" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="4" COL="4" ABS_V="5800" ABS_H="6000" ABS_D="0" STITCHABLE="no" DIR_NAME="0004_0004" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="4" COL="5" ABS_V="5800" ABS_H="7500" ABS_D="0" STITCHABLE="no" DIR_NAME="0004_0005" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="4" COL="6" ABS_V="5800" ABS_H="9000" ABS_D="0" STITCHABLE="no" DIR_NAME="0004_0006" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="4" COL="7" ABS_V="5800" ABS_H="10500" ABS_D="0" STITCHABLE="no" DIR_NAME="0004_0007" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="4" COL="8" ABS_V="5800" ABS_H="12000" ABS_D="0" STITCHABLE="no" DIR_NAME="0004_0008" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="5" COL="0" ABS_V="7250" ABS_H="0" ABS_D="0" STITCHABLE="no" DIR_NAME="0005_0000" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="5" COL="1" ABS_V="7250" ABS_H="1500" ABS_D="0" STITCHABLE="no" DIR_NAME="0005_0001" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="5" COL="2" ABS_V="7250" ABS_H="3000" ABS_D="0" STITCHABLE="no" DIR_NAME="0005_0002" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="5" COL="3" ABS_V="7250" ABS_H="4500" ABS_D="0" STITCHABLE="no" DIR_NAME="0005_0003" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="5" COL="4" ABS_V="7250" ABS_H="6000" ABS_D="0" STITCHABLE="no" DIR_NAME="0005_0004" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="5" COL="5" ABS_V="7250" ABS_H="7500" ABS_D="0" STITCHABLE="no" DIR_NAME="0005_0005" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="5" COL="6" ABS_V="7250" ABS_H="9000" ABS_D="0" STITCHABLE="no" DIR_NAME="0005_0006" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="5" COL="7" ABS_V="7250" ABS_H="10500" ABS_D="0" STITCHABLE="no" DIR_NAME="0005_0007" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+        <Stack N_CHANS="1" N_BYTESxCHAN="2" ROW="5" COL="8" ABS_V="7250" ABS_H="12000" ABS_D="0" STITCHABLE="no" DIR_NAME="0005_0008" Z_RANGES="[0,10)" IMG_REGEX="08132015[0-9\-]+_03.tif">
+            <NORTH_displacements />
+            <EAST_displacements />
+            <SOUTH_displacements />
+            <WEST_displacements />
+        </Stack>
+    </STACKS>
+</TeraStitcher>
