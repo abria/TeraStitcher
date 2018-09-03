@@ -1,16 +1,12 @@
 TeraStitcher
 ===========================================================
-
 A tool for fast automatic 3D-stitching of teravoxel-sized 
 microscopy images (BMC Bioinformatics 2012, 13:316)
-
 ===========================================================
-
 Before using this software, you MUST accept the LICENSE.txt
 
 Documentation,  help and  other info  are available on  our 
 Github wiki at http://abria.github.io/TeraStitcher/.
-
 ===========================================================
 Contributors
 
@@ -25,7 +21,6 @@ Contributors
 - Roberto Valenti (email: r.valenti@unicampus.it).
   Software Developer at University Campus Bio-Medico of Rome (Italy).
   Co-developer.
-  
 ===========================================================
 Main features
 
@@ -42,5 +37,4 @@ Main features
 - HDF5-based formats
 - parallelization on multi-core platform 
 - fast alignment computation on NVIDIA GPUs
-
 ===========================================================
