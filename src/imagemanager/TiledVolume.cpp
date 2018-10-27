@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-10-23. Yang.       @ADDED support partial data, YY 10/23/2018
 * 2018-07-05. Giulio.     @ADDED remapping of 8 bits images for better visualization
 * 2018-06-30. Giulio.     @ADDED parameter for specifying the conversion algorithm to be used to convert from arbitrary depth to 8 bits
 * 2017-10-21. Giulio.     @ADDED compact active channels if not all channels are active in 'loadSubvolume_to_UINT8'
@@ -36,7 +37,7 @@
 * 2015-03-03. Giulio.     @ADDED check that ioplugin interleaves channels in loadSubvolume_to_UINT8.
 * 2015-03-03. Giulio.     @ADDED selection of IO plugin in the constructors if not provided.
 * 2015-02-27. Alessandro. @ADDED automated selection of IO plugin if not provided.
-* 2014-11-22 Giulio.      @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
+* 2014-11-22  Giulio.     @CHANGED code using OpenCV has been commente. It can be found searching comments containing 'Giulio_CV'
 */
 
 #include <iostream>
@@ -400,7 +401,6 @@ void TiledVolume::load(char* metadata_filepath) throw (IOException)
         fclose(file);
         throw IOException("in Block::unBinarizeFrom(...): error while reading binary metadata file");
     }
-
 
 	BLOCKS = new Block **[N_ROWS];
 	for(i = 0; i < N_ROWS; i++)
@@ -1033,6 +1033,7 @@ iim::uint8* TiledVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, i
     subvol_area.V1 = V1;
 
     char slice_fullpath[STATIC_STRINGS_SIZE];
+
     bool first_time = true;
 
 	Segm_t *intersect_segm = BLOCKS[0][0]->Intersects(D0,D1);
@@ -1072,7 +1073,9 @@ iim::uint8* TiledVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, i
 
 							try
 					        {
-								subvol = new iim::uint8[sbv_height * sbv_width * sbv_depth * sbv_channels * sbv_bytes_chan];
+                                iim::sint64 sizesubvol = sbv_height * sbv_width * sbv_depth * sbv_channels * sbv_bytes_chan;
+                                subvol = new iim::uint8[sizesubvol];
+                                memset(subvol, 0, sizesubvol); // 2018-10-23. Yang. @ADDED init by zeros, YY 10/23/2018
 					            //if ( !subvol )
 								//	throw iim::IOException("in TiledVolume::loadSubvolume_to_UINT8: unable to allocate memory");
 					        }
@@ -1131,22 +1134,30 @@ iim::uint8* TiledVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, i
 						int bD0 = (D0>BLOCKS[row][col]->getBLOCK_ABS_D()[k]) ? 0 : (BLOCKS[row][col]->getBLOCK_ABS_D()[k] - D0);
 						//int bD1 = (D1<(int)(BLOCKS[row][col]->getBLOCK_ABS_D()[k]+BLOCKS[row][col]->getBLOCK_SIZE()[k])) ? (int)sbv_depth : (BLOCKS[row][col]->getBLOCK_ABS_D()[k]+BLOCKS[row][col]->getBLOCK_SIZE()[k] - D0); // unused
 
-						if ( (err_rawfmt = fmtMngr->copyFileBlock2Buffer(
-								slice_fullpath,
-								sV0,sV1,sH0,sH1,sD0,sD1,
-								(unsigned char *)subvol,
-								(int)sbv_bytes_chan, // this is native rtype, it has substituted sizeof(iim::uint8)
-								bH0+bV0*sbv_width+bD0*sbv_width*sbv_height,
-								sbv_width,
-								sbv_width*sbv_height,
-								sbv_width*sbv_height*sbv_depth) ) != 0 ) 
-						{
-                            char err_msg[STATIC_STRINGS_SIZE];
-							sprintf(err_msg,
-								"TiledVolume::loadSubvolume_to_UINT8: error in extracting a block from file %s (%s)", 
-								BLOCKS[row][col]->getFILENAMES()[k], err_rawfmt);
-                            throw IOException(err_msg);
-						}
+                        // 2018-10-23. Yang. @ADDED support partial data, YY 10/23/2018
+                        if(string(slice_fullpath).find("NULL.tif") != string::npos)
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            if ( (err_rawfmt = fmtMngr->copyFileBlock2Buffer(
+                                    slice_fullpath,
+                                    sV0,sV1,sH0,sH1,sD0,sD1,
+                                    (unsigned char *)subvol,
+                                    (int)sbv_bytes_chan, // this is native rtype, it has substituted sizeof(iim::uint8)
+                                    bH0+bV0*sbv_width+bD0*sbv_width*sbv_height,
+                                    sbv_width,
+                                    sbv_width*sbv_height,
+                                    sbv_width*sbv_height*sbv_depth) ) != 0 )
+                            {
+                                char err_msg[STATIC_STRINGS_SIZE];
+                                sprintf(err_msg,
+                                    "TiledVolume::loadSubvolume_to_UINT8: error in extracting a block from file %s (%s)",
+                                    BLOCKS[row][col]->getFILENAMES()[k], err_rawfmt);
+                                throw IOException(err_msg);
+                            }
+                        }
 					}
 					delete intersect_area;
 				}
