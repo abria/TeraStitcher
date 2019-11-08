@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-11-07. Giulio.     @ADDED parameter 'fixed_tiling' 'generateTiles' methods
 * 2017-09-11. Giulio.     @CHANGED interfaces of 'vcDriver' and 'convetTo' to enable passing parameters controlloing the compression algorithm to be used with HDf5 files
 * 2017-09-11. Giulio.     @ADDED parameters controlloing the compression algorithm to be used with HDf5 files
 * 2017-06-26. Giulio.     @ADDED parameter 'isotropic' and 'mdata_file' to method 'convertTo'
@@ -126,6 +127,7 @@ void vcDriver (
     bool        makeDirs = false,                   //creates the directory hiererchy
     bool        metaData = false,                   //creates the mdata.bin file of the output volume
     bool        parallel = false,                   //parallel mode: does not perform side-effect operations during merge
+    bool        fixed_tiling = false,               //use a fixed tiling with a (possible) small remainder
 	std::string outFmt = "RGB",                     //additional information about the output format (default: "")
 	int         nbits  = 0
 ) throw (iim::IOException, iom::exception);
@@ -243,7 +245,7 @@ class VolumeConverter
 		void generateTiles(std::string output_path, bool* resolutions = NULL, 
 			int slice_height = -1, int slice_width = -1, int method = HALVE_BY_MEAN, bool isotropic = false, 
             bool show_progress_bar = true, const char* saved_img_format = iim::DEF_IMG_FORMAT.c_str(), 
-            int saved_img_depth = iim::NUL_IMG_DEPTH, std::string frame_dir = "", bool par_mode = false)	throw (iim::IOException, iom::exception);
+            int saved_img_depth = iim::NUL_IMG_DEPTH, std::string frame_dir = "", bool par_mode = false, bool fixed_tiling = false )	throw (iim::IOException, iom::exception);
 		
 
 		/*************************************************************************************************************
@@ -289,7 +291,7 @@ class VolumeConverter
 		void generateTilesVaa3DRaw(std::string output_path, bool* resolutions = NULL, 
 			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool isotropic=false, 
             bool show_progress_bar = true, const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,
-            std::string frame_dir = "", bool par_mode=false) throw (iim::IOException, iom::exception);
+            std::string frame_dir = "", bool par_mode=false, bool fixed_tiling = false) throw (iim::IOException, iom::exception);
 		
 
         /*************************************************************************************************************
@@ -343,7 +345,7 @@ class VolumeConverter
 		void generateTilesVaa3DRawMC ( std::string output_path, std::string ch_dir = "", bool* resolutions = NULL, 
 			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool isotropic=false, 
 			bool show_progress_bar = true, const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,
- 			std::string frame_dir = "", bool par_mode=false)	throw (iim::IOException, iom::exception);
+ 			std::string frame_dir = "", bool par_mode=false, bool fixed_tiling = false)	throw (iim::IOException, iom::exception);
 
       /*************************************************************************************************************
         * NEW FORMAT SUPPORTING BDV HDF5 custom format

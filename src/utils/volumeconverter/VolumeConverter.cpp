@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-11-07. Giulio.     @ADDED parameter 'fixed_tiling' 'generateTiles' methods
 * 2018-08-17. Giulio.     @FIXED calculus of the percentage of processed slices used to update the progress bar was wrong
 * 2018-04-06. Giulio.     @FIXED in case isotropic is set halving must be done when D voxel size is equal to max(V,H) voxel size
 * 2017-09-11. Giulio.     @CHANGED interfaces of vcDriver and convetTo to enable passing parameters controlloing the compression algorithm to be used with HDf5 files
@@ -148,6 +149,7 @@ void vcDriver (
     bool        makeDirs,                   //creates the directory hiererchy
     bool        metaData,                   //creates the mdata.bin file of the output volume
     bool        parallel,                   //parallel mode: does not perform side-effect operations during merge
+    bool        fixed_tiling,               //use a fixed tiling with a (possible) small remainder
 	std::string outFmt,                     //additional information about the output format (default: "")
 	int         nbits ) throw (iim::IOException, iom::exception) {
 		// do what you have to do
@@ -230,7 +232,7 @@ void vcDriver (
 			else {
 				vc.generateTiles(dst_root_dir.c_str(),resolutions,
 					slice_height,slice_width,halving_method,isotropic,
-					show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+					show_progress_bar,"raw",8*vc.getVolume()->getBYTESxCHAN(),"",parallel,fixed_tiling);
 			}
 		else if ( dst_format == iim::STACKED_FORMAT )
 			if ( timeseries ) {
@@ -250,7 +252,7 @@ void vcDriver (
 			else {
 				vc.generateTiles(dst_root_dir.c_str(),resolutions,
 					slice_height,slice_width,halving_method,isotropic,
-					show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+					show_progress_bar,"tif",8*vc.getVolume()->getBYTESxCHAN(),"",parallel,fixed_tiling);
 			}
 		else if ( dst_format == iim::TILED_FORMAT ) {
 			if ( timeseries ) {
@@ -270,7 +272,7 @@ void vcDriver (
 			else {
 				vc.generateTilesVaa3DRaw(dst_root_dir.c_str(),resolutions,
 					slice_height,slice_width,slice_depth,halving_method,isotropic,
-					show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+					show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",parallel,fixed_tiling);
 			}
 		}
 		else if ( dst_format == iim::TILED_TIF3D_FORMAT || dst_format == iim::TIF3D_FORMAT) {
@@ -291,7 +293,7 @@ void vcDriver (
 			else {
 				vc.generateTilesVaa3DRaw(dst_root_dir.c_str(),resolutions,
 					slice_height,slice_width,slice_depth,halving_method,isotropic,
-					show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+					show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN(),"",parallel,fixed_tiling);
 			}
 		}
 		else if ( dst_format == iim::TILED_MC_FORMAT )
@@ -312,7 +314,7 @@ void vcDriver (
 			else {
 				vc.generateTilesVaa3DRawMC(dst_root_dir.c_str(),ch_dir,resolutions,
 					slice_height,slice_width,slice_depth,halving_method,isotropic,
-					show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",false);
+					show_progress_bar,"Vaa3DRaw",8*vc.getVolume()->getBYTESxCHAN(),"",false,fixed_tiling);
 			}
 		else if ( dst_format == iim::TILED_MC_TIF3D_FORMAT )
 			if ( timeseries ) {
@@ -332,7 +334,7 @@ void vcDriver (
 			else {
 				vc.generateTilesVaa3DRawMC(dst_root_dir.c_str(),ch_dir,resolutions,
 					slice_height,slice_width,slice_depth,halving_method,isotropic,
-					show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN(),"",parallel);
+					show_progress_bar,"Tiff3D",8*vc.getVolume()->getBYTESxCHAN(),"",parallel,fixed_tiling);
 			}
 		else if ( dst_format == iim::BDV_HDF5_FORMAT )
 			vc.generateTilesBDV_HDF5(dst_root_dir.c_str(),resolutions,
@@ -421,7 +423,7 @@ void VolumeConverter::setSrcVolume(const char* _root_dir, const char* _fmt, cons
 			else
 				throw iim::IOException(iim::strprintf("in VolumeConverter::setSrcVolume(): the channel list contains a non-digit character (%c)", chanlist.at(i)));
 		}
-		volume->setActiveChannels(active_chans,channels);
+		volume->setActiveChannels(active_chans,channels); // ownership of array 'active_chans' passes to 'volume'
 	}
 
 	if ( strcmp(_out_fmt,REAL_REPRESENTATION) == 0 ) {
@@ -489,7 +491,7 @@ void VolumeConverter::setSrcVolume(iim::VirtualVolume * _imported_volume,
 			 else
 				 throw iim::IOException(iim::strprintf("in VolumeConverter::setSrcVolume(): the channel list contains a non-digit character (%c)", chanlist.at(i)));
 		 }
-		 volume->setActiveChannels(active_chans,channels);
+		 volume->setActiveChannels(active_chans,channels); // ownership of array 'active_chans' passes to 'volume'
 	 }
 
 	 if ( strcmp(_out_fmt,REAL_REPRESENTATION) == 0 ) {
@@ -565,7 +567,7 @@ void VolumeConverter::setCompressionAlgorithm(int _nbits ) throw (iim::IOExcepti
 **************************************************************************************************************/
 void VolumeConverter::generateTiles(std::string output_path, bool* resolutions, 
 				int slice_height, int slice_width, int method, bool isotropic, bool show_progress_bar, 
-                const char* saved_img_format, int saved_img_depth, std::string frame_dir, bool par_mode)	throw (IOException, iom::exception)
+                const char* saved_img_format, int saved_img_depth, std::string frame_dir, bool par_mode, bool fixed_tiling )	throw (IOException, iom::exception)
 {
     printf("in VolumeConverter::generateTiles(path = \"%s\", resolutions = ", output_path.c_str());
     for(int i=0; i< TMITREE_MAX_HEIGHT; i++)
@@ -715,52 +717,58 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
     //computing tiles dimensions at each resolution and initializing volume directories
     for(int res_i=0; res_i< resolutions_size; res_i++)
 	{
-            n_stacks_V[res_i] = (int) ceil ( (height/powInt(2,res_i)) / (float) slice_height );
-            n_stacks_H[res_i] = (int) ceil ( (width/powInt(2,res_i))  / (float) slice_width  );
-            stacks_height[res_i] = new int *[n_stacks_V[res_i]];
-            stacks_width[res_i]  = new int *[n_stacks_V[res_i]];
-            for(int stack_row = 0; stack_row < n_stacks_V[res_i]; stack_row++)
-            {
-                stacks_height[res_i][stack_row] = new int[n_stacks_H[res_i]];
-                stacks_width [res_i][stack_row] = new int[n_stacks_H[res_i]];
-                for(int stack_col = 0; stack_col < n_stacks_H[res_i]; stack_col++)
-                {
-                    stacks_height[res_i][stack_row][stack_col] = ((int)(height/powInt(2,res_i))) / n_stacks_V[res_i] + (stack_row < ((int)(height/powInt(2,res_i))) % n_stacks_V[res_i] ? 1:0);
-                    stacks_width [res_i][stack_row][stack_col] = ((int)(width/powInt(2,res_i)))  / n_stacks_H[res_i] + (stack_col < ((int)(width/powInt(2,res_i)))  % n_stacks_H[res_i] ? 1:0);
-                }
-            }
-            //creating volume directory iff current resolution is selected and test mode is disabled
-            if(resolutions[res_i] == true)
-            {
-  				if ( par_mode ) { // 2016-04-13. Giulio. uses the depth of the whole volume to generate the directory name
-					//creating directory that will contain image data at current resolution
-					file_path[res_i]<<output_path<<"/RES("<<whole_height/powInt(2,res_i)<<"x"<<whole_width/powInt(2,res_i)<<"x"<<whole_depth/powInt(2,halve_pow2[res_i])<<")";
+		n_stacks_V[res_i] = (int) ceil ( (height/powInt(2,res_i)) / (float) slice_height );
+		n_stacks_H[res_i] = (int) ceil ( (width/powInt(2,res_i))  / (float) slice_width  );
+		stacks_height[res_i] = new int *[n_stacks_V[res_i]];
+		stacks_width[res_i]  = new int *[n_stacks_V[res_i]];
+		for(int stack_row = 0; stack_row < n_stacks_V[res_i]; stack_row++)
+		{
+			stacks_height[res_i][stack_row] = new int[n_stacks_H[res_i]];
+			stacks_width [res_i][stack_row] = new int[n_stacks_H[res_i]];
+			for(int stack_col = 0; stack_col < n_stacks_H[res_i]; stack_col++)
+			{
+				if ( fixed_tiling ) {
+					stacks_height[res_i][stack_row][stack_col] = (stack_row < (n_stacks_V[res_i]-1)) ? slice_height : (( (((int)(height/powInt(2,res_i))) % slice_height) == 0) ? slice_height : ((int)(height/powInt(2,res_i))) % slice_height);
+					stacks_width [res_i][stack_row][stack_col] = (stack_col < (n_stacks_H[res_i]-1)) ? slice_width  : (( (((int)(width/powInt(2,res_i)))  % slice_width)  == 0) ? slice_width  : ((int)(width/powInt(2,res_i)))  % slice_width);
 				}
 				else {
-				   //creating directory that will contain image data at current resolution
-					file_path[res_i]<<output_path<<"/RES("<<height/powInt(2,res_i)<<"x"<<width/powInt(2,res_i)<<"x"<<depth/powInt(2,halve_pow2[res_i])<<")";
-					//if(make_dir(file_path[res_i].str().c_str())!=0)
-					if(!check_and_make_dir(file_path[res_i].str().c_str())) // HP 130914
-					{
-						char err_msg[STATIC_STRINGS_SIZE];
-						sprintf(err_msg, "in generateTiles(...): unable to create DIR = \"%s\"\n", file_path[res_i].str().c_str());
-						throw IOException(err_msg);
-					}
+					stacks_height[res_i][stack_row][stack_col] = ((int)(height/powInt(2,res_i))) / n_stacks_V[res_i] + (stack_row < ((int)(height/powInt(2,res_i))) % n_stacks_V[res_i] ? 1:0);
+					stacks_width [res_i][stack_row][stack_col] = ((int)(width/powInt(2,res_i)))  / n_stacks_H[res_i] + (stack_col < ((int)(width/powInt(2,res_i)))  % n_stacks_H[res_i] ? 1:0);
+				}
+			}
+		}
+		//creating volume directory iff current resolution is selected and test mode is disabled
+		if(resolutions[res_i] == true)
+		{
+			if ( par_mode ) { // 2016-04-13. Giulio. uses the depth of the whole volume to generate the directory name
+				//creating directory that will contain image data at current resolution
+				file_path[res_i]<<output_path<<"/RES("<<whole_height/powInt(2,res_i)<<"x"<<whole_width/powInt(2,res_i)<<"x"<<whole_depth/powInt(2,halve_pow2[res_i])<<")";
+			}
+			else {
+			   //creating directory that will contain image data at current resolution
+				file_path[res_i]<<output_path<<"/RES("<<height/powInt(2,res_i)<<"x"<<width/powInt(2,res_i)<<"x"<<depth/powInt(2,halve_pow2[res_i])<<")";
+				//if(make_dir(file_path[res_i].str().c_str())!=0)
+				if(!check_and_make_dir(file_path[res_i].str().c_str())) // HP 130914
+				{
+					char err_msg[STATIC_STRINGS_SIZE];
+					sprintf(err_msg, "in generateTiles(...): unable to create DIR = \"%s\"\n", file_path[res_i].str().c_str());
+					throw IOException(err_msg);
+				}
 
-					//if frame_dir not empty must create frame directory (@FIXED by Alessandro on 2014-02-25)
-					if ( frame_dir != "" ) {
-						file_path[res_i] << "/" << frame_dir << "/";
- 						if ( !par_mode ) { // 2016-04-13. Giulio. the directory should be created only in non-parallel mode
-							if(!check_and_make_dir(file_path[res_i].str().c_str()))
-							{
-								char err_msg[STATIC_STRINGS_SIZE];
-								sprintf(err_msg, "in generateTiles(...): unable to create DIR = \"%s\"\n", file_path[res_i].str().c_str());
-								throw IOException(err_msg);
-							}
+				//if frame_dir not empty must create frame directory (@FIXED by Alessandro on 2014-02-25)
+				if ( frame_dir != "" ) {
+					file_path[res_i] << "/" << frame_dir << "/";
+					if ( !par_mode ) { // 2016-04-13. Giulio. the directory should be created only in non-parallel mode
+						if(!check_and_make_dir(file_path[res_i].str().c_str()))
+						{
+							char err_msg[STATIC_STRINGS_SIZE];
+							sprintf(err_msg, "in generateTiles(...): unable to create DIR = \"%s\"\n", file_path[res_i].str().c_str());
+							throw IOException(err_msg);
 						}
 					}
 				}
-            }
+			}
+		}
 	}
 
 	//ALLOCATING  the MEMORY SPACE for image buffer
@@ -1731,7 +1739,7 @@ void VolumeConverter::generateTilesSimple(std::string output_path, bool* resolut
 void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resolutions, 
 				int block_height, int block_width, int block_depth, int method, bool isotropic, 
 				bool show_progress_bar, const char* saved_img_format, 
-                int saved_img_depth, std::string frame_dir, bool par_mode)	throw (IOException, iom::exception)
+                int saved_img_depth, std::string frame_dir, bool par_mode, bool fixed_tiling)	throw (IOException, iom::exception)
 {
     printf("in VolumeConverter::generateTilesVaa3DRaw(path = \"%s\", resolutions = ", output_path.c_str());
     for(int i=0; i< TMITREE_MAX_HEIGHT; i++)
@@ -1927,12 +1935,22 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 				stacks_depth [res_i][stack_row][stack_col] = new int[n_stacks_D[res_i]];
 				for(int stack_sli = 0; stack_sli < n_stacks_D[res_i]; stack_sli++)
 				{
-					stacks_height[res_i][stack_row][stack_col][stack_sli] = 
-                        ((int)(height/powInt(2,res_i))) / n_stacks_V[res_i] + (stack_row < ((int)(height/powInt(2,res_i))) % n_stacks_V[res_i] ? 1:0);
-					stacks_width[res_i][stack_row][stack_col][stack_sli] = 
-                        ((int)(width/powInt(2,res_i)))  / n_stacks_H[res_i] + (stack_col < ((int)(width/powInt(2,res_i)))  % n_stacks_H[res_i] ? 1:0);
-					stacks_depth[res_i][stack_row][stack_col][stack_sli] = 
-                        ((int)(depth/powInt(2,halve_pow2[res_i])))  / n_stacks_D[res_i] + (stack_sli < ((int)(depth/powInt(2,halve_pow2[res_i])))  % n_stacks_D[res_i] ? 1:0);
+					if ( fixed_tiling ) {
+						stacks_height[res_i][stack_row][stack_col][stack_sli] = 
+							(stack_row < (n_stacks_V[res_i]-1)) ? block_height : (( (((int)(height/powInt(2,res_i))) % block_height) == 0) ? block_height : ((int)(height/powInt(2,res_i))) % block_height);
+						stacks_width [res_i][stack_row][stack_col][stack_sli] = 
+							(stack_col < (n_stacks_H[res_i]-1)) ? block_width  : (( (((int)(width/powInt(2,res_i)))  % block_width)  == 0) ? block_width  : ((int)(width/powInt(2,res_i)))  % block_width);
+						stacks_depth[res_i][stack_row][stack_col][stack_sli] = 
+							(stack_sli < (n_stacks_D[res_i]-1)) ? block_depth  : (( (((int)(depth/powInt(2,res_i)))  % block_depth)  == 0) ? block_depth  : ((int)(depth/powInt(2,res_i)))  % block_depth);
+					}
+					else {
+						stacks_height[res_i][stack_row][stack_col][stack_sli] = 
+							((int)(height/powInt(2,res_i))) / n_stacks_V[res_i] + (stack_row < ((int)(height/powInt(2,res_i))) % n_stacks_V[res_i] ? 1:0);
+						stacks_width[res_i][stack_row][stack_col][stack_sli] = 
+							((int)(width/powInt(2,res_i)))  / n_stacks_H[res_i] + (stack_col < ((int)(width/powInt(2,res_i)))  % n_stacks_H[res_i] ? 1:0);
+						stacks_depth[res_i][stack_row][stack_col][stack_sli] = 
+							((int)(depth/powInt(2,halve_pow2[res_i])))  / n_stacks_D[res_i] + (stack_sli < ((int)(depth/powInt(2,halve_pow2[res_i])))  % n_stacks_D[res_i] ? 1:0);
+                    }
 				}
             }
         }
@@ -2593,7 +2611,7 @@ int VolumeConverter::getMultiresABS_D(int res)
 void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::string ch_dir, bool* resolutions, 
 				int block_height, int block_width, int block_depth, int method, 
 				bool show_progress_bar, const char* saved_img_format, 
-				int saved_img_depth, std::string frame_dir )	throw (IOExcpetion, iom::exception)
+				int saved_img_depth, std::string frame_dir, bool par_mode, bool fixed_tiling )	throw (IOExcpetion, iom::exception)
 {
     printf("in VolumeConverter::generateTilesVaa3DRawMC(path = \"%s\", resolutions = ", output_path.c_str());
     for(int i=0; i< S_MAX_MULTIRES; i++)
@@ -2739,12 +2757,22 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 				stacks_depth [res_i][stack_row][stack_col] = new int[n_stacks_D[res_i]];
 				for(int stack_sli = 0; stack_sli < n_stacks_D[res_i]; stack_sli++)
 				{
-					stacks_height[res_i][stack_row][stack_col][stack_sli] = 
-						((int)(height/powInt(2,res_i))) / n_stacks_V[res_i] + (stack_row < ((int)(height/POW_INT(2,res_i))) % n_stacks_V[res_i] ? 1:0);
-					stacks_width[res_i][stack_row][stack_col][stack_sli] = 
-						((int)(width/powInt(2,res_i)))  / n_stacks_H[res_i] + (stack_col < ((int)(width/POW_INT(2,res_i)))  % n_stacks_H[res_i] ? 1:0);
-					stacks_depth[res_i][stack_row][stack_col][stack_sli] = 
-						((int)(depth/powInt(2,res_i)))  / n_stacks_D[res_i] + (stack_sli < ((int)(depth/POW_INT(2,res_i)))  % n_stacks_D[res_i] ? 1:0);
+					if ( fixed_tiling ) {
+						stacks_height[res_i][stack_row][stack_col][stack_sli] = 
+							(stack_row < (n_stacks_V[res_i]-1)) ? block_height : (( (((int)(height/powInt(2,res_i))) % block_height) == 0) ? block_height : ((int)(height/powInt(2,res_i))) % block_height);
+						stacks_width [res_i][stack_row][stack_col][stack_sli] = 
+							(stack_col < (n_stacks_H[res_i]-1)) ? block_width  : (( (((int)(width/powInt(2,res_i)))  % block_width)  == 0) ? block_width  : ((int)(width/powInt(2,res_i)))  % block_width);
+						stacks_depth[res_i][stack_row][stack_col][stack_sli] = 
+							(stack_sli < (n_stacks_D[res_i]-1)) ? block_depth  : (( (((int)(depth/powInt(2,res_i)))  % block_depth)  == 0) ? block_depth  : ((int)(depth/powInt(2,res_i)))  % block_depth);
+					}
+					else {
+						stacks_height[res_i][stack_row][stack_col][stack_sli] = 
+							((int)(height/powInt(2,res_i))) / n_stacks_V[res_i] + (stack_row < ((int)(height/POW_INT(2,res_i))) % n_stacks_V[res_i] ? 1:0);
+						stacks_width[res_i][stack_row][stack_col][stack_sli] = 
+							((int)(width/powInt(2,res_i)))  / n_stacks_H[res_i] + (stack_col < ((int)(width/POW_INT(2,res_i)))  % n_stacks_H[res_i] ? 1:0);
+						stacks_depth[res_i][stack_row][stack_col][stack_sli] = 
+							((int)(depth/powInt(2,halve_pow2[res_i])))  / n_stacks_D[res_i] + (stack_sli < ((int)(depth/powInt(2,halve_pow2[res_i])))  % n_stacks_D[res_i] ? 1:0);
+					}
 				}
 			}
 		}
@@ -3248,7 +3276,7 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::string ch_dir, bool* resolutions, 
 				int block_height, int block_width, int block_depth, int method, bool isotropic, 
 				bool show_progress_bar, const char* saved_img_format, 
-                int saved_img_depth, std::string frame_dir, bool par_mode )	throw (IOException, iom::exception)
+                int saved_img_depth, std::string frame_dir, bool par_mode, bool fixed_tiling )	throw (IOException, iom::exception)
 {
     printf("in VolumeConverter::generateTilesVaa3DRawMC(path = \"%s\", resolutions = ", output_path.c_str());
     for(int i=0; i< TMITREE_MAX_HEIGHT; i++)
@@ -3439,12 +3467,23 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 				stacks_depth [res_i][stack_row][stack_col] = new int[n_stacks_D[res_i]];
 				for(int stack_sli = 0; stack_sli < n_stacks_D[res_i]; stack_sli++)
 				{
-					stacks_height[res_i][stack_row][stack_col][stack_sli] = 
-                        ((int)(height/powInt(2,res_i))) / n_stacks_V[res_i] + (stack_row < ((int)(height/powInt(2,res_i))) % n_stacks_V[res_i] ? 1:0);
-					stacks_width[res_i][stack_row][stack_col][stack_sli] = 
-                        ((int)(width/powInt(2,res_i)))  / n_stacks_H[res_i] + (stack_col < ((int)(width/powInt(2,res_i)))  % n_stacks_H[res_i] ? 1:0);
-					stacks_depth[res_i][stack_row][stack_col][stack_sli] = 
-                        ((int)(depth/powInt(2,halve_pow2[res_i])))  / n_stacks_D[res_i] + (stack_sli < ((int)(depth/powInt(2,halve_pow2[res_i])))  % n_stacks_D[res_i] ? 1:0);
+					if ( fixed_tiling ) {
+						stacks_height[res_i][stack_row][stack_col][stack_sli] = 
+							(stack_row < (n_stacks_V[res_i]-1)) ? block_height : (( (((int)(height/powInt(2,res_i))) % block_height) == 0) ? block_height : ((int)(height/powInt(2,res_i))) % block_height);
+						stacks_width [res_i][stack_row][stack_col][stack_sli] = 
+							(stack_col < (n_stacks_H[res_i]-1)) ? block_width  : (( (((int)(width/powInt(2,res_i)))  % block_width)  == 0) ? block_width  : ((int)(width/powInt(2,res_i)))  % block_width);
+						stacks_depth[res_i][stack_row][stack_col][stack_sli] = 
+							(stack_sli < (n_stacks_D[res_i]-1)) ? block_depth  : (( (((int)(depth/powInt(2,res_i)))  % block_depth)  == 0) ? block_depth  : ((int)(depth/powInt(2,res_i)))  % block_depth);
+					}
+					else {
+						stacks_height[res_i][stack_row][stack_col][stack_sli] = 
+							((int)(height/powInt(2,res_i))) / n_stacks_V[res_i] + (stack_row < ((int)(height/powInt(2,res_i))) % n_stacks_V[res_i] ? 1:0);
+						stacks_width[res_i][stack_row][stack_col][stack_sli] = 
+							((int)(width/powInt(2,res_i)))  / n_stacks_H[res_i] + (stack_col < ((int)(width/powInt(2,res_i)))  % n_stacks_H[res_i] ? 1:0);
+						stacks_depth[res_i][stack_row][stack_col][stack_sli] = 
+							((int)(depth/powInt(2,halve_pow2[res_i])))  / n_stacks_D[res_i] + (stack_sli < ((int)(depth/powInt(2,halve_pow2[res_i])))  % n_stacks_D[res_i] ? 1:0);
+
+                	}
 				}
 			}
 		}
@@ -4331,8 +4370,8 @@ void VolumeConverter::generateTilesBDV_HDF5 ( std::string output_path, bool* res
 
 	//delete[] chans_dir;
 
-	delete hyperslab_descr;
-	delete buf_dims;
+	delete[] hyperslab_descr;
+	delete[] buf_dims;
 
 	BDV_HDF5close(file_descr);
 
@@ -4736,8 +4775,8 @@ void VolumeConverter::generateTilesIMS_HDF5 ( std::string output_path, std::stri
 
 	//delete[] chans_dir;
 
-	delete hyperslab_descr;
-	delete buf_dims;
+	delete[] hyperslab_descr;
+	delete[] buf_dims;
 
 	for (int i=0; i<TMITREE_MAX_HEIGHT; i++) {
 		if(resolutions[i]) {

@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-11-07.  Giulio.     @ADDED command line option 'fixed_tiling' controlling the strategy used to partition the volume into tiles
 * 2018-07-19.  Giulio.     @ADDED additional information generation for supporting isotropic conversion in parallel executions
 * 2017-09-11.  Giulio.     @ADDED parameter controlling the compression algorithm to be used with HDf5 files
 * 2017-05-25.  Giulio.     @ADDED a lossy compression based on rescalinghas been introduced
@@ -234,6 +235,7 @@ int main ( int argc, char *argv[] ) {
 			cli.makeDirs, 
 			cli.metaData, 
 			cli.parallel,
+			cli.fixed_tiling,
 			cli.compress_params,
 			cli.rescale_nbits);
 

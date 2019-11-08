@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-11-07. Giulio.     @ADDED command line option 'fixed_tiling' controlling the strategy used to partition the volume into tiles
 * 2017-09-11. Giulio.     @ADDED parameter controlloing the compression algorithm to be used with HDf5 files
 * 2017-05-25. Giulio.     @ADDED parameters for lossy compression based on rescaling
 * 2017-04-07  Giulio.     @ADDED the opssibility to specify a subset of channels to be converted
@@ -49,11 +50,12 @@ class TemplateCLI
 	public:
 
 		// switch parameters
-		//bool highest_resolution;						// generate highest resolution (default: false)
-        bool makeDirs;                          //creates the directory hiererchy
-        bool metaData;                          //creates the mdata.bin file of the output volume
-        bool parallel;                          //parallel mode: does not perform side-effect operations during merge
-        bool isotropic;                         //generate lowest resolutions with voxels as much isotropic as possible
+		//bool highest_resolution;				// generate highest resolution (default: false)
+        bool makeDirs;                          // creates the directory hiererchy
+        bool metaData;                          // creates the mdata.bin file of the output volume
+        bool parallel;                          // parallel mode: does not perform side-effect operations during merge
+        bool isotropic;                         // generate lowest resolutions with voxels as much isotropic as possible
+        bool fixed_tiling;                     // if true perform tiling using a given tile size with a (possible) remainder, otherwise use a tile size as uniform as possible
 
 		bool pluginsinfo;						//display plugins information
 

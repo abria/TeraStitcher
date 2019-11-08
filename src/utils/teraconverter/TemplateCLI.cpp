@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-11-07. Giulio.     @ADDED command line option 'fixed_tiling' controlling the strategy used to partition the volume into tiles
 * 2018-02-04. Giulio.     @ADDED support for converting (stitching) unstitched sparse volumes
 * 2017-09-11. Giulio.     @ADDED parameter controlloing the compression algorithm to be used with HDf5 files
 * 2017-05-25. Giulio.     @ADDED parameters for lossy compression based on rescaling
@@ -176,6 +177,8 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	TCLAP::ValueArg<std::string> p_compress_params("","compress_params","ID and list of parameters of HDF5 registerd compression algorithms given in the form: \"ID:param1:param2:...\" where ID is an integer identfying the compression algorithm (see https://support.hdfgroup.org/services/filters.html for IDs of registered compression algorithms)", false, "","string");
 
+	TCLAP::SwitchArg p_fixed_tiling("","fixed_tiling","Perform tiling using a given tile size with a (possible) small remainder (default: perform tiling with tile sizes as uniform as possible).", false);
+
 	//argument objects must be inserted using LIFO policy (last inserted, first shown)
 	cmd.add(p_rescale_nbits);
 
@@ -201,6 +204,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
     cmd.add(p_makedirs);
 	cmd.add(p_parallel);
 	cmd.add(p_isotropic);
+	cmd.add(p_fixed_tiling);
 
 	cmd.add(p_D1);
 	cmd.add(p_D0);
@@ -365,6 +369,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
     this->makeDirs      = p_makedirs.getValue();
 	this->parallel      = p_parallel.getValue();
 	this->isotropic     = p_isotropic.getValue();
+	this->fixed_tiling  = p_fixed_tiling.getValue();
 	this->timeseries    = p_timeseries.getValue();
 	this->infofile_path = p_infofile_path.getValue();
 
