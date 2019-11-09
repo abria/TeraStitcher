@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-11-07. Giulio.     @ADDED command line option 'fixed_tiling' controlling the strategy used to partition the volume into tiles
 * 2018-03-02. Giulio.     @ADDED the possibility to set a path and a name for the mdata.bin file generated when volumes are created from data
 * 2018-01-23. Giulio.     @ADDED check to set always the input format of a MultiVolume dataset as a non-interleaved input format
 * 2017-12-01. Giulio      @ADDED conditional code to activate the new merge step 
@@ -361,6 +362,7 @@ int main(int argc, char** argv)
 				cli.makeDirs, 
 				cli.metaData, 
 				cli.parallel,
+				cli.fixed_tiling,
 				"", // not used
 				0); // no bit compression allowed
 				

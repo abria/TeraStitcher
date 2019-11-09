@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-11-07. Giulio.     @ADDED command line option 'fixed_tiling' controlling the strategy used to partition the volume into tiles
 * 2018-03-02. Giulio.     @ADDED an option to set a path and a name for the mdata.bin file generated when volumes are created from data
 * 2018-01-23. Giulio.     @ADDED include of MCVolume.h
 * 2017-06-30. Giulio.     @ADDED control over displacement computation of last row and last column of tiles
@@ -65,6 +66,7 @@ class TeraStitcherCLI
         bool metaData;                          //creates the mdata.bin file of the output volume
         bool parallel;                          //parallel mode: does not perform side-effect operations during merge
         bool isotropic;                         //generate lowest resolutiona with voxels as much isotropic as possible
+        bool fixed_tiling;                      // if true perform tiling using a given tile size with a (possible) remainder, otherwise use a tile size as uniform as possible
 
 		//STITCHING pipeline parameters
 		string mdata_fname;						//path  & file mane of mdata.bin file

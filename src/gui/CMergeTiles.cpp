@@ -156,6 +156,7 @@ void CMergeTiles::run()
 			false,
 			false,
 			false,
+			false,
 			external_compressor_options
 			// the other parameters are for command line version only, the default values are passed
 		);

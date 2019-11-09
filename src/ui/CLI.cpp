@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-11-07. Giulio.     @ADDED command line option 'fixed_tiling' controlling the strategy used to partition the volume into tiles
 * 2018-03-02. Giulio.     @ADDED an option to set a path and a name for the mdata.bin file generated when volumes are created from data
 * 2018-01-30. Giulio.     @FIXED flags disabling last row and colum were not initialized in non-parallel executions
 * 2018-01-28. Giulio.     @CHANGED the checks about the image input channel
@@ -153,6 +154,8 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::SwitchArg p_disable_last_row("","disable_last_row","disable displacement computation of last row (default: last row enabled, active only in parallel mode).", false);
 	TCLAP::SwitchArg p_disable_last_col("","disable_last_col","disable displacement computation of last column (default: last column enabled, active only in parallel mode).", false);
 
+	TCLAP::SwitchArg p_fixed_tiling("","fixed_tiling","Perform tiling using a given tile size with a (possible) small remainder (default: perform tiling with tile sizes as uniform as possible).", false);
+
 	// argument objects must be inserted using FIFO policy (first inserted, first shown)
 	cmd.add(p_disable_last_col);
 	cmd.add(p_disable_last_row);
@@ -160,6 +163,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_libtiff_rowsperstrip);
 	cmd.add(p_libtiff_bigtiff);
 	cmd.add(p_libtiff_uncompressed);
+	cmd.add(p_fixed_tiling);
 
 	cmd.add(p_im_out_plugin_params);
 	cmd.add(p_im_out_plugin);
@@ -515,6 +519,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	this->dumpMData = p_dump.getValue();
 	this->parallel = p_parallel.getValue();
 	this->isotropic = p_isotropic.getValue();
+	this->fixed_tiling  = p_fixed_tiling.getValue();
 	this->test = p_test.getValue();
 	this->stitch = p_stitch.getValue();
 	this->import = p_import.getValue();

@@ -55,7 +55,7 @@ class TemplateCLI
         bool metaData;                          // creates the mdata.bin file of the output volume
         bool parallel;                          // parallel mode: does not perform side-effect operations during merge
         bool isotropic;                         // generate lowest resolutions with voxels as much isotropic as possible
-        bool fixed_tiling;                     // if true perform tiling using a given tile size with a (possible) remainder, otherwise use a tile size as uniform as possible
+        bool fixed_tiling;                      // if true perform tiling using a given tile size with a (possible) remainder, otherwise use a tile size as uniform as possible
 
 		bool pluginsinfo;						//display plugins information
 
