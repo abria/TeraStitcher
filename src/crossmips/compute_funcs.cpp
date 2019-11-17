@@ -1,5 +1,6 @@
 //------------------------------------------------------------------------------------------------
 // Copyright (c) 2012  Alessandro Bria and Giulio Iannello (University Campus Bio-Medico of Rome).  
+// Copyright (c) 2017  Massimo Bernaschi (IAC-CNR Roma).  
 // All rights reserved.
 //------------------------------------------------------------------------------------------------
 
@@ -28,6 +29,9 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-08-29. Giulio.     @CHECKED checked the code implementing the optimization
+* 2018.08-27. Giulio.     @FIXED it could happen that auxiliary matrices ps1 and ps2 were not allocated because images are too small and 'seq_cpu_compute_partial_sums' raises an error 
+* 2018-08-26. Giulio.     @ADDED code and comments concerning the optimization in computing multiple NCCs on the same images with different overlap
 * 2018-02-17. Giulio.     @FIXED a bug in 'compute_Neighborhood' when NCCs to be reused are moved internally to the NCC map
 * 2017-04-01. Giulio.     @CHSNGED the algorithm that computes the peak width
 * 2015-04-06. Giulio.     @CHANGED corrected compute_NCC_alignment to deal with the case widthX = 1 which likely to be an anomaly
@@ -281,7 +285,7 @@ void compute_NCC_alignment ( NCC_parms_t *NCC_params, NCC_descr_t *result, int i
 
 /*********** THREADS PAREMETERS AND CODE ************/
 
-# ifdef _PAR_VERSION
+# ifdef _PAR_VERSION // WARNING: the code enabled by symbol _PAR_VERSION is obsolete and not fully checked
 
 # include <windows.h>
 
@@ -404,11 +408,41 @@ DWORD WINAPI compute_NCC_map_worker ( LPVOID lpParam ) {
 
 /************ OPERATIONS IMPLEMENTATION *************/
 
+void seq_cpu_compute_partial_sums(iom::real_t *image1, iom::real_t *image2, int height, int width, 
+								  iom::real_t *ps1, iom::real_t *ps2){
+	
+	// 2018. Giulio. @ADDED if auxiliary matrices have not been allocated do nothing
+	if ( !ps1 || !ps2 )
+		return;
+		
+	// assumes that ps1 and ps2 are allocated and have size floor(height/TILE_SIDE) x floor(width/TILE_SIDE)
+    int nh = height - (height % TILE_SIDE);
+    int nw = width  - (width % TILE_SIDE);
+
+    int ph = nh / TILE_SIDE;
+    int pw = nw / TILE_SIDE;
+
+    for(int i = 0; i < nh; i += TILE_SIDE){
+        for(int j = 0; j < nw; j+= TILE_SIDE){
+            ps1[(i / TILE_SIDE)*pw + (j/TILE_SIDE)] = 0;
+            ps2[(i / TILE_SIDE)*pw + (j/TILE_SIDE)] = 0;
+            for(int l = 0; l < TILE_SIDE; l++){
+                for (int k = 0; k < TILE_SIDE; k++){                    
+                    ps1[(i / TILE_SIDE)*pw + (j/TILE_SIDE)] += image1[(i + l) * width + (j + k)];
+                    ps2[(i / TILE_SIDE)*pw + (j/TILE_SIDE)] += image2[(i + l) * width + (j + k)];
+                }
+            }
+        }
+    }
+}
+
+
 void compute_3_MIPs ( iom::real_t *A, iom::real_t *B,
 					  iom::real_t *MIP_xy1, iom::real_t *MIP_xz1, iom::real_t *MIP_yz1, 
 					  iom::real_t *MIP_xy2, iom::real_t *MIP_xz2, iom::real_t *MIP_yz2, 
 					  int dimi_v, int dimj_v, int dimk_v, int stridei, int stridek ) {
-# ifndef _PAR_VERSION
+					  
+# ifndef _PAR_VERSION 
 
 	iom::real_t *vol1, *vol2;
 	int i, j, k;
@@ -425,7 +459,7 @@ void compute_3_MIPs ( iom::real_t *A, iom::real_t *B,
 				MIP_yz2[j*dimk_v+k] = MAX(MIP_yz2[j*dimk_v+k],*vol2);
 			}
 
-# else
+# else // WARNING: the code enabled by symbol _PAR_VERSION is obsolete and not fully checked
 
 	HANDLE *workerHandles = new HANDLE[par_degree];
 	compute_3_MIPs_params_t *compute_3_MIPs_params = new compute_3_MIPs_params_t[par_degree];
@@ -524,22 +558,41 @@ void compute_3_MIPs ( iom::real_t *A, iom::real_t *B,
 
 void compute_NCC_map ( iom::real_t *NCC_map, iom::real_t *MIP_1, iom::real_t *MIP_2, 
 					       int dimu, int dimv, int delayu, int delayv ) {
-# ifndef _PAR_VERSION
+					       
+# ifndef _PAR_VERSION 
 
-	iom::real_t *im1, *im2;
 	int u, v;
+	int ph = dimu / TILE_SIDE;
+    int pw = dimv / TILE_SIDE;
+	int psmatrix_size =  ph * pw; // total size of the matrix containing the partial sums (i.e. sums of each tile)
+	iom::real_t *ps1 = (iom::real_t *) 0;
+	iom::real_t *ps2 = (iom::real_t *) 0;
+
+	if(psmatrix_size > 0){
+		ps1 = (iom::real_t *) malloc(sizeof(iom::real_t) * psmatrix_size);
+		ps2 = (iom::real_t *) malloc(sizeof(iom::real_t) * psmatrix_size);
+		if(!ps1 || !ps2){
+			// TODO: handle malloc failures according to policy
+		}
+	}
+	
+	// 2018. Giulio. @FIXED ps1 and ps2 could have not been allocated, added check in 'seq_cpu_compute_partial_sums'
+	seq_cpu_compute_partial_sums(MIP_1, MIP_2, dimu, dimv, ps1, ps2);
 
 	// nel seguito u=0 rappresenta il massimo scostamento negativo del secondo MIP rispetto al primo
 	// con riferimento alla prima coordinata; v=0 ha il medesimo significato con riferimento alla seconda
 	// coordinata
 	for ( u=-delayu; u<=delayu; u++ )
 		for ( v=-delayv; v<=delayv; v++ ) {
-			im1 = MIP_1 + START_IND(u*dimv) + START_IND(v);
-			im2 = MIP_2 + START_IND(-u*dimv) + START_IND(-v);
-			NCC_map[(u+delayu)*(2*delayv+1)+(v+delayv)] = compute_NCC(im1,im2,dimu-abs(u),dimv-abs(v),abs(v));
+			NCC_map[(u+delayu)*(2*delayv+1)+(v+delayv)] = compute_NCC(MIP_1,MIP_2,dimu,dimv, u, v, ps1, ps2);
 		}
-
-# else
+	
+	if(ps1) 
+		delete ps1;
+	if(ps2) 
+		delete ps2;
+	
+# else // WARNING: the code enabled by symbol _PAR_VERSION is obsolete and not fully checked
 
 	int npu, npv, nu1, nu2, nv1, nv2;
 	int pu, u, pv, v, t, du, dv;
@@ -603,20 +656,115 @@ void compute_NCC_map ( iom::real_t *NCC_map, iom::real_t *MIP_1, iom::real_t *MI
 }
 
 
-iom::real_t compute_NCC ( iom::real_t *im1, iom::real_t *im2, int dimi, int dimj, int stride ) {
-// parallelization of compute_NCC_map makes parallelization of this operation pointless
+iom::real_t compute_NCC ( iom::real_t *MIP_1, iom::real_t *MIP_2, int dimu, int dimv, int u, int v, iom::real_t *ps1, iom::real_t *ps2) {
+	// parallelization of compute_NCC_map makes parallelization of this operation pointless
 	// 2014-10-31 Giulio. @CHANGED       iom::real_t f_mean, t_mean, f_prime, t_prime, numerator, factor1, factor2;
 	double f_mean, t_mean, f_prime, t_prime, numerator, factor1, factor2;
 	iom::real_t *pxl1, *pxl2;
 	int i, j;
+	int dimi = dimu - abs(u); // number of rows of the overlapping region
+	int dimj = dimv - abs(v); // number of columns of the overlapping region
+	int stride = abs(v);
+
+	// these variables are needed by the code that is executed when optimization is not applied
+	iom::real_t* im1 = MIP_1 + START_IND(u*dimv) + START_IND(v);
+	iom::real_t* im2 = MIP_2 + START_IND(-u*dimv) + START_IND(-v);
 
 	// computes means
 	f_mean = t_mean = 0;
-	for ( i=0, pxl1=im1, pxl2=im2; i<dimi; i++, pxl1+=stride, pxl2+=stride )
-		for ( j=0; j<dimj; j++, pxl1++, pxl2++ ) {
-			f_mean += *pxl1;
-			t_mean += *pxl2;
+
+	// if auxiliary matrices have not been allocated do nothing
+	if ( ps1 && ps2 && TILE_SIDE <= dimu && TILE_SIDE <= dimv ){ 
+		// 2018.08-27. Giulio. FIXED ps1 and ps2 must be allocated AND both dimu and dimv must be larger than TILE_SIDE
+		// ps1 and ps2 have been allocated and at least the sums of some tiles have already been computed and stored in ps1 and ps2
+
+		// START_IND(i) = (((i)>0) ? (i) : 0)
+		int pw = (dimv / TILE_SIDE); // width of matrix of precomputed sums
+		int a_u = START_IND(u);  // u index over MIP_1 of overlapping region
+		int a_v = START_IND(v);  // v index over MIP_1 of overlapping region
+		int b_u = START_IND(-u); // u index over MIP_2 of overlapping region
+		int b_v = START_IND(-v); // v index over MIP_2 of overlapping region
+
+
+		// Indexes defining the tiled region inside the overlapping region of MIP_1
+		int start_tiled_block_a_u = a_u - (a_u % TILE_SIDE); // u index of first tile intersecting the overlapping region
+		int start_tiled_block_a_v = a_v - (a_v % TILE_SIDE); // v index of first tile intersecting the overlapping region
+		// if indices are outside the overlapping region they are advanced by TILE_SIDE
+		start_tiled_block_a_u = start_tiled_block_a_u == a_u ? start_tiled_block_a_u : start_tiled_block_a_u + TILE_SIDE;
+		start_tiled_block_a_v = start_tiled_block_a_v == a_v ? start_tiled_block_a_v : start_tiled_block_a_v + TILE_SIDE;
+		int end_tiled_block_a_u = a_u + dimi - ((a_u + dimi) % TILE_SIDE); // u index following the last one of a tile internal to the overlapping region
+		int end_tiled_block_a_v = a_v + dimj - ((a_v + dimj) % TILE_SIDE); // v index following the last one of a tile internal to the overlapping region
+
+		// Indexes defining the tiled region inside the overlapping region of MIP_2
+		// the same comments of MIP_1 hold
+		int start_tiled_block_b_u = b_u - (b_u % TILE_SIDE);
+		int start_tiled_block_b_v = b_v - (b_v % TILE_SIDE);
+		start_tiled_block_b_u = start_tiled_block_b_u == b_u ? start_tiled_block_b_u : start_tiled_block_b_u + TILE_SIDE;
+		start_tiled_block_b_v = start_tiled_block_b_v == b_v ? start_tiled_block_b_v : start_tiled_block_b_v + TILE_SIDE;
+		int end_tiled_block_b_u = b_u + dimi - ((b_u + dimi) % TILE_SIDE);
+		int end_tiled_block_b_v = b_v + dimj - ((b_v + dimj) % TILE_SIDE);
+
+		// First, sum all the values in the tiled region. We will move the threads only on special pixels of 
+		// the overlapping region, that is, the ones with indexes that are multiples of TILE_SIDE and are inside the
+		// tiled region of the overlapping region. (In a local coordinates of a tile, they are at position (0, 0))
+		
+		// first for image MIP_1
+		// i, j move to the first vertex of tiles internal to the overlapping region
+		for(i = start_tiled_block_a_u; i  < end_tiled_block_a_u; i+= TILE_SIDE){
+			int row = (i/TILE_SIDE)*pw;
+			for(j = start_tiled_block_a_v; j < end_tiled_block_a_v; j+= TILE_SIDE){
+				f_mean += ps1[ row + (j/TILE_SIDE)];
+			}
 		}
+		// then for image MIP_2
+		// i, j move to the first vertex of tiles internal to the overlapping region
+		for(i = start_tiled_block_b_u; i < end_tiled_block_b_u; i+= TILE_SIDE){
+			int row = (i/TILE_SIDE)*pw;
+			for(j = start_tiled_block_b_v; j < end_tiled_block_b_v; j+= TILE_SIDE){
+				t_mean += ps2[ row + (j/TILE_SIDE)];
+			}
+		}
+
+		// first for MIP_!
+		// now sum the pixels at the border, that is, all the ones that are not inside the tiled region
+		// each pixel of the overlapping region is processed at most once (it is not processed if it is in the tiled region
+		for(i = a_u; i < dimi + a_u; i+= 1){
+			j = a_v;
+			while(j < dimj + a_v){
+				if(j < start_tiled_block_a_v || j >= end_tiled_block_a_v || i < start_tiled_block_a_u || i >= end_tiled_block_a_u){
+					f_mean += MIP_1[i*dimv + j];
+					j+= 1;
+				}else{ // index j is just entered in the tiled region: skip the tiled region
+					int pixels_to_jump = end_tiled_block_a_v - j;
+					j += pixels_to_jump;
+				}
+			}
+		}
+		
+		// then for MIP_2
+		// the same comments of MIP_1 hold
+		for(i = b_u; i < dimi + b_u; i+= 1){
+			j = b_v;
+			while(j < dimj + b_v) {
+				if(j < start_tiled_block_b_v || j >= end_tiled_block_b_v || i < start_tiled_block_b_u || i >= end_tiled_block_b_u){
+					t_mean += MIP_2[i*dimv + j];
+					j+= 1;
+				}else{
+					int pixels_to_jump = end_tiled_block_b_v - j;
+					j += pixels_to_jump;
+				}
+			}
+		}
+	}else{
+		// code without optimization
+		for ( i=0, pxl1=im1, pxl2=im2; i<dimi; i++, pxl1+=stride, pxl2+=stride ) {
+			for ( j=0; j<dimj; j++, pxl1++, pxl2++ ) {
+				f_mean += *pxl1;
+				t_mean += *pxl2;
+			}
+		}
+	}
+	
 	f_mean /= (dimi*dimj);
 	t_mean /= (dimi*dimj);
 
@@ -651,8 +799,43 @@ int compute_MAX_ind ( iom::real_t *vect, int len ) {
 }
 
 
+/* Returns an NCC map of of size (2*newu+1) x (2*newv+1) centered around the NCC maximum or returns filed = true
+ * if this map cannot be found (it is: newu = newv = NCC_params->wRangeThr)
+ *
+ * Parameters:
+ *   NCC_params     : INPUT        : parameters of the MIP-NCC algorithm
+ *   NCC            : INPUT        : initial NCC map of size (2*delayu+1) x (2*delayv+1), centered around the initial alignment
+ *   delayu, delayv : INPUT        : vertical and horizontal half extensions of the initial NCC map 
+ *   newu, newv     : INPUT        : vertical and horizontal half extensions of the output NCC map (NCC_new)
+ *   ind_max        : INPUT        : linear index of maximum in NCC
+ *   MIP_1, MIP_2   : INPUT        : MIPs of size dimu x dimv
+ *   dimu, dimv     : INPUT        : vertical and horizontal extensions of MIP_1 and MIP_2
+ *   NCCnew         : INPUT/OUTPUT : output (initially empty) NCC map of size (2*newu+1) x (2*newv+1); it extends NCC
+ *   du, dv         : OUTPUT       : vertical and horizontal relative positions of the maximum of NCCnew with respect to the initial alignment
+ *                                   (they are undefined if 'failed' is true)
+ *   failed         : INPUT/OUTPUT : initialized to false, it is changed to true if the maximum is not centered in NCCnew
+ */
 void compute_Neighborhood ( NCC_parms_t *NCC_params, iom::real_t *NCC, int delayu, int delayv, int newu, int newv, int ind_max, 
 						   iom::real_t *MIP_1, iom::real_t *MIP_2, int dimu, int dimv, iom::real_t *NCCnew, int &du, int &dv, bool &failed) throw (iom::exception){
+
+	// --- CRISTIAN MOD START --- (to optimize NCC computation)
+	int ph = dimu / TILE_SIDE;
+    int pw = dimv / TILE_SIDE;
+	int psmatrix_size = ph*pw;
+
+	iom::real_t *ps1 = (iom::real_t *) 0;
+	iom::real_t *ps2 = (iom::real_t *) 0;
+
+	if(psmatrix_size > 0){
+		ps1 = (iom::real_t *) malloc(sizeof(iom::real_t) * ph * pw);
+		ps2 = (iom::real_t *) malloc(sizeof(iom::real_t) * ph * pw);
+		if(!ps1 || !ps2){
+			// TODO: handle malloc failures according to policy
+		}
+	}
+	
+	seq_cpu_compute_partial_sums(MIP_1, MIP_2, dimu, dimv, ps1, ps2);
+	// --- CRISTIAN MOD END ---	
 
 	// suffixes u and v denote the vertical and the horizontal dimensions, respectively
 	// suffix i denotes linear indices
@@ -711,7 +894,7 @@ void compute_Neighborhood ( NCC_parms_t *NCC_params, iom::real_t *NCC, int delay
 
 	// UPDATE NEIGHBORHOOD AND SEARCH MAXIMUM 
 
-	int c=0;
+	int c=0; // NCC_params->maxIter iterations are allowed
 	while ( c < NCC_params->maxIter && ind_max != ind_ref ) {
 		// update NCCnew 
 		srcStartu = MAX(0,ind_max/(2*newv+1) - newu);
@@ -802,7 +985,7 @@ void compute_Neighborhood ( NCC_parms_t *NCC_params, iom::real_t *NCC, int delay
 			v = missv[i] - newv + dv;
 			im1 = MIP_1 + START_IND(u*dimv) + START_IND(v);
 			im2 = MIP_2 + START_IND(-u*dimv) + START_IND(-v);
-			NCCnew[missu[i]*(2*newv+1)+missv[i]] = compute_NCC(im1,im2,dimu-abs(u),dimv-abs(v),abs(v));
+			NCCnew[missu[i]*(2*newv+1)+missv[i]] = compute_NCC(MIP_1, MIP_2,dimu,dimv, u, v, ps1, ps2);
 		}
 
 		// find maximum 
@@ -822,6 +1005,13 @@ void compute_Neighborhood ( NCC_parms_t *NCC_params, iom::real_t *NCC, int delay
 
 		failed=true;
 	}
+	
+	// --- CRISTIAN MOD START ---
+	if(ps1) 
+		delete ps1;
+	if(ps2) 
+		delete ps2;
+	// --- CRISTIAN MOD END ---
 
 	delete missu;
 	delete missv;
