@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-12-28. Giulio.     @FIXED in 'loadSubvolume_to_UINT8' in call to 'compact_active_chans' the channel size depends also on sbv_depth 
 * 2018-07-19. Giulio.     @ADDED remapping of 8 bits images for better visualization
 * 2018-06-30. Giulio.     @ADDED parameter for specifying the conversion algorithm to be used to convert from arbitrary depth to 8 bits
 * 2017-10-21. Giulio.     @ADDED compact active channels if not all channels are active in 'loadSubvolume_to_UINT8'
@@ -547,7 +548,7 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
 	}
 
 	if ( n_active < DIM_C ) { // not all channels are active
-		compact_active_chans((sbv_height * sbv_width * bytes_x_chan),subvol);
+		compact_active_chans((sbv_height * sbv_width * sbv_depth * bytes_x_chan),subvol);
 		sbv_channels = n_active;
 	}
 

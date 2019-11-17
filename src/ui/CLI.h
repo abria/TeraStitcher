@@ -28,7 +28,9 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-11-17. Giulio.     @ADDED parameter to store the complete path of the executable
 * 2019-11-07. Giulio.     @ADDED command line option 'fixed_tiling' controlling the strategy used to partition the volume into tiles
+* 2019-04-25. Giulio.     @ADDED parameters to control the launching of Python script for parallel execution
 * 2018-03-02. Giulio.     @ADDED an option to set a path and a name for the mdata.bin file generated when volumes are created from data
 * 2018-01-23. Giulio.     @ADDED include of MCVolume.h
 * 2017-06-30. Giulio.     @ADDED control over displacement computation of last row and last column of tiles
@@ -113,6 +115,13 @@ class TeraStitcherCLI
 		// parameters for disabling some displacement computations
 		bool disable_last_row;
 		bool disable_last_col;
+		
+		// parameters for parallel execution via Python scripts
+		bool launch_pyscript;
+		int  num_procs;
+		
+		// complete path of executable
+		string arg0;
 
 		//constructor - deconstructor
 		TeraStitcherCLI(void);					//set default params

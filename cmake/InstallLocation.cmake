@@ -58,3 +58,10 @@ install(
     ${CMAKE_CURRENT_SOURCE_DIR}/../LICENSE.txt
     ${CMAKE_CURRENT_SOURCE_DIR}/../DESCRIPTION.txt
   DESTINATION "${CMAKE_INSTALL_DOCDIR}")
+
+# install python scripts
+install(
+  FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/pyscripts/README.txt
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/pyscripts/Parastitcher.py
+  DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/python")

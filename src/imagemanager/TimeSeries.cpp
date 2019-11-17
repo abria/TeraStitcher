@@ -165,6 +165,7 @@ void TimeSeries::initChannels ( ) throw (iim::IOException)
 }
 
 // set active channels (@OVERRIDES VirtualVolume.h by Alessandro on 2014-02-23)
+// WARNING: caller loses ownership of array '_active' 
 void TimeSeries::setActiveChannels ( iim::uint32 *_active, int _n_active )
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);

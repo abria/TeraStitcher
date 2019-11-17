@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-08-24. Giulio.     @ADDED method 'isInputOnly'
 * 2018-02-11. Giulio.     @FIXED added code to correct the first 4 voxels of each slice if V0=0 and H0<4
 * 2018-02-04. Giulio.     @ADDED initalization of newly allocated buffer in 'readData'
 * 2017-07-11. Giulio.     @CREATED
@@ -51,12 +52,21 @@ std::string iomanager::dcimg::desc()
 			"******************************************************\n"
 			"*                                                    *\n"
 			"* 3D image-based I/O plugin that implements          *\n"
-			"* the format used by Hamamtsu cameras                *\n"
+			"* operations for reading the format used by Hamamtsu *\n"
+			"* cameras.                                           *\n"
+			"* Implemented methods:                               *\n"
+			"* - readMetadata                                     *\n"
+			"* - readData                                         *\n"
 			"*                                                    *\n"
 			"* Accepted configuration parameters:                 *\n"
-			"*  - resolution=R                                    *\n"
-			"*  - timepoint=T                                     *\n"
-			"*  - channel=C                                       *\n"
+			"*  - none                                            *\n"
+			"*                                                    *\n"
+			"* Methods accept the following parameters :          *\n"
+			"*  - readData accepts                                *\n"
+			"*    - V0=N                                          *\n"
+			"*    - V1=N                                          *\n"
+			"*    - H0=N                                          *\n"
+			"*    - H1=N                                          *\n"
 			"*                                                    *\n"
 			"******************************************************\n";
 }
@@ -67,6 +77,14 @@ bool
 	iomanager::dcimg::isChansInterleaved( ) 
 {
 	return false;
+}
+
+
+// Return if it is an input plugin only
+bool 
+	iomanager::dcimg::isInputOnly( ) 
+{
+	return true;
 }
 
 

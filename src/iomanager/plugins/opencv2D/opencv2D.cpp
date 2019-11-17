@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-08-24. Giulio.     @ADDED method 'isInputOnly'
 * 2018-02-04. Giulio.     @ADDED initalization of newly allocated buffer in 'readData'
 * 2016-04-29. Giulio.     @FIXED many bugs in the implementation of readData and writeData using uint8 buffers
 * 2015-01-02. Giulio.     @IMPLEMENTED new plugins interface
@@ -48,8 +49,8 @@ std::string iomanager::opencv2D::desc()
 			"* opencv2D v.1.1                                     *\n"
 			"******************************************************\n"
 			"*                                                    *\n"
-			"* 2D image-based I/O plugin that uses the OpenCV li- *\n"
-			"* brary to read/write 2D image files.                *\n"
+			"* 2D image-based I/O plugin that uses the OpenCV     *\n"
+			"* library to read/write 2D image files.              *\n"
 			"*                                                    *\n"
 			"* Supported image format extentions:                 *\n"
 			"*  - BMP                                             *\n"
@@ -78,6 +79,14 @@ bool
 	iomanager::opencv2D::isChansInterleaved( ) 
 {
 	return true;
+}
+
+
+// Return if it is an input plugin only
+bool 
+	iomanager::opencv2D::isInputOnly( ) 
+{
+	return false;
 }
 
 

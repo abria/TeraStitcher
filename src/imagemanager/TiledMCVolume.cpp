@@ -885,6 +885,7 @@ uint8* TiledMCVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
 }
 
 // moved to VirtualVolume.cpp by Alessandro on 2014-02-20
+// WARNING: caller loses ownership of array '_active' 
 //void TiledMCVolume::setActiveChannels ( uint32 *_active, int _n_active )
 //{
 //    /**/iim::debug(iim::LEV3, 0, __iim__current__function__);

@@ -458,7 +458,7 @@ char *loadRaw2Metadata ( char * filename, V3DLONG * &sz, int &datatype, int &b_s
 			mysz[i] = (BIT32_UNIT)sz_2bytes[i];
 		}
 	}
-	delete sz_2bytes;
+	delete[] sz_2bytes;
 
 	if ( is_4_byte_file ) {
 		// reads four more 2 byte elements 
@@ -1055,7 +1055,7 @@ char *initRawFile(char *filename, const V3DLONG *sz, int datatype) {
 	FILE * fid = fopen(completeFilename, "wb");
 	if (!fid)
 	{
-		if ( completeFilename ) { delete completeFilename; completeFilename = 0; }
+		if ( completeFilename ) { delete[] completeFilename; completeFilename = 0; }
 		return ((char *)"Fail to open file for writing.\n");
 	}
 
@@ -1066,21 +1066,21 @@ char *initRawFile(char *filename, const V3DLONG *sz, int datatype) {
 	V3DLONG nwrite = fwrite(formatkey, 1, lenkey, fid);
 	if (nwrite!=lenkey)
 	{
-		if ( completeFilename ) { delete completeFilename; completeFilename = 0; }
+		if ( completeFilename ) { delete[] completeFilename; completeFilename = 0; }
 		return ((char *)"File write error.\n");
 	}
 
 	char endianCodeMachine = checkMachineEndian();
 	if (endianCodeMachine!='B' && endianCodeMachine!='L')
 	{
-		if ( completeFilename ) { delete completeFilename; completeFilename = 0; }
+		if ( completeFilename ) { delete[] completeFilename; completeFilename = 0; }
 		return ((char *)"This program only supports big- or little- endian but not other format. Cannot save data on this machine.\n");
 	}
 
 	nwrite = fwrite(&endianCodeMachine, 1, 1, fid);
 	if (nwrite!=1)
 	{
-		if ( completeFilename ) { delete completeFilename; completeFilename = 0; }
+		if ( completeFilename ) { delete[] completeFilename; completeFilename = 0; }
 		return ((char *)"Error happened in file writing.\n");
 	}
 
@@ -1090,7 +1090,7 @@ char *initRawFile(char *filename, const V3DLONG *sz, int datatype) {
 	short int dcode = (short int)datatype;
 	if (dcode!=1 && dcode!=2 && dcode!=4)
 	{
-		if ( completeFilename ) { delete completeFilename; completeFilename = 0; }
+		if ( completeFilename ) { delete[] completeFilename; completeFilename = 0; }
 		return ((char *)"Unrecognized data type code.\n");
 	}
 
@@ -1098,7 +1098,7 @@ char *initRawFile(char *filename, const V3DLONG *sz, int datatype) {
 	nwrite = fwrite(&dcode, 2, 1, fid); /* because I have already checked the file size to be bigger than the header, no need to check the number of actual bytes read. */
 	if (nwrite!=1)
 	{
-		if ( completeFilename ) { delete completeFilename; completeFilename = 0; }
+		if ( completeFilename ) { delete[] completeFilename; completeFilename = 0; }
 		return ((char *)"Writing file error.\n");
 	}
 
@@ -1130,7 +1130,7 @@ char *initRawFile(char *filename, const V3DLONG *sz, int datatype) {
 
 	closeRawFile(fid);
 
-	if ( completeFilename ) { delete completeFilename; completeFilename = 0; }
+	if ( completeFilename ) { delete[] completeFilename; completeFilename = 0; }
 
 	return 0;
 }

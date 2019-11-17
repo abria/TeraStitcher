@@ -53,6 +53,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-08-24. Giulio.     @ADDED method to get the list of names of output plugins only
+* 2018-08-24. Giulio.     @ADDED virtual method 'isInputOnly' to the plugin interface
 * 2015-01-02. Giulio.     @ADDED new plugins interface
 */
 
@@ -149,6 +151,11 @@ class iomanager::IOPlugin2D : public iomanager::IOPlugin
 		*************************************************************************************************/
 		virtual bool isChansInterleaved() = 0;
 
+		/************************************************************************************************
+		* Return if plugin is input only
+		*************************************************************************************************/
+		virtual bool isInputOnly() = 0;
+		
 
 		/************************************************************************************************
 		* Methods deprecated
@@ -314,6 +321,11 @@ class iomanager::IOPlugin3D : public iomanager::IOPlugin
 		*************************************************************************************************/
 		virtual bool isChansInterleaved() = 0;
 
+		/************************************************************************************************
+		* Return if plugin is input only
+		*************************************************************************************************/
+		virtual bool isInputOnly() = 0;
+		
 
 		/************************************************************************************************
 		* Methods deprecated
@@ -404,6 +416,17 @@ class iomanager::IOPluginFactory
 				plugins += "\"" + it->first + "\", ";
 			for(std::map<std::string, IOPlugin3D* (*)(void)>::iterator it = instance()->registry3D.begin(); it != instance()->registry3D.end(); it++)
 				plugins += "\"" + it->first + "\", ";
+			plugins = plugins.substr(0, plugins.find_last_of(","));
+			return plugins;
+		}
+		static std::string registeredOutputPlugins(){
+			std::string plugins;
+			for(std::map<std::string, IOPlugin2D* (*)(void)>::iterator it = instance()->registry2D.begin(); it != instance()->registry2D.end(); it++)
+				if ( !(it->second()->isInputOnly()) ) 
+					plugins += "\"" + it->first + "\", ";
+			for(std::map<std::string, IOPlugin3D* (*)(void)>::iterator it = instance()->registry3D.begin(); it != instance()->registry3D.end(); it++)
+				if ( !(it->second()->isInputOnly()) ) 
+					plugins += "\"" + it->first + "\", ";
 			plugins = plugins.substr(0, plugins.find_last_of(","));
 			return plugins;
 		}
@@ -502,6 +525,8 @@ namespace iomanager														\
 			virtual std::string desc();									\
 																		\
 			virtual bool isChansInterleaved();                          \
+																		\
+			virtual bool isInputOnly();                                 \
 																		\
 			virtual iom::real_t*										\
 				readData(												\
@@ -627,6 +652,8 @@ namespace iomanager														\
 			virtual std::string desc();									\
 																		\
 			virtual bool isChansInterleaved();                          \
+																		\
+			virtual bool isInputOnly();                                 \
 																		\
 			virtual void												\
 				readData(												\

@@ -117,8 +117,9 @@ class iim::TiledMCVolume : public iim::VirtualVolume
                                                    int *channels=0, int ret_type=iim::DEF_IMG_DEPTH) throw (iim::IOException, iom::exception);
 
         // moved to VirtualVolume.h by Alessandro on 2014-02-20
-//		//sets active channels
-//        void setActiveChannels ( iim::uint32 *_active, int _n_active );
+		//sets active channels
+		// WARNING: caller loses ownership of array '_active' 
+        //void setActiveChannels ( iim::uint32 *_active, int _n_active );
 
 
 		// OPERATIONS FOR STREAMED SUBVOLUME LOAD 

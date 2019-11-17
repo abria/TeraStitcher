@@ -28,6 +28,9 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-11-02. Giulio.     @ADDED 'mdata_fname' parameter to constructor from xml
+* 2019-09-20. Giulio.     @ADDED the new tag 'mdata_bin' to the xml file
+* 2019-09-20. Giulio.     @ADDED initialization of data member 'mdata_filepath' and modified coherently the destructor
 * 2018-04-02. Giulio.     @FIXED bug that prevented from saving the reference system in the xml import file
 * 2018-03-02. Giulio.     @ADDED the possibility to set a path and a name for the mdata.bin file
 * 2018-02-03. Giulio.     @ADDED call to 'adjustDisplacements' in method reading the xml file to force all displacements of adjacent tile symmetric
@@ -102,11 +105,12 @@ StackedVolume::StackedVolume(const char* _stacks_dir, vm::ref_sys _reference_sys
 	#endif
 
 	//trying to unserialize an already existing metadata file, if it doesn't exist the full initialization procedure is performed and metadata is saved
-	char mdata_filepath[VM_STATIC_STRINGS_SIZE];
 	if ( mdata_fname == "" ) { // no metadata file name present in xml file, use default folder and name
+		mdata_filepath = new char[strlen(_stacks_dir)+1+strlen(vm::BINARY_METADATA_FILENAME.c_str())+1];
 		sprintf(mdata_filepath, "%s/%s", stacks_dir, vm::BINARY_METADATA_FILENAME.c_str());
 	}
 	else {
+		mdata_filepath = new char[strlen(mdata_fname.c_str())+1];
 		strcpy(mdata_filepath,mdata_fname.c_str());
 	}
     if(fileExists(mdata_filepath) && !overwrite_mdata)
@@ -143,7 +147,7 @@ StackedVolume::StackedVolume(const char* _stacks_dir, vm::ref_sys _reference_sys
 	cb = new CacheBuffer(this);
 }
 
-StackedVolume::StackedVolume(const char *xml_filepath, bool overwrite_mdata) throw (iom::exception)
+StackedVolume::StackedVolume(const char *xml_filepath, bool overwrite_mdata, std::string mdata_fname) throw (iom::exception)
 	: VirtualVolume(xml_filepath)
 {
     #if VM_VERBOSE > 3
@@ -164,13 +168,20 @@ StackedVolume::StackedVolume(const char *xml_filepath, bool overwrite_mdata) thr
     strcpy(this->stacks_dir, pelem->Attribute("value"));
 
  	//trying to unserialize an already existing metadata file, if it doesn't exist the full initialization procedure is performed and metadata is saved
-	char mdata_filepath[VM_STATIC_STRINGS_SIZE];
 	pelem = hRoot.FirstChildElement("mdata_bin").Element();
 
 	if ( pelem == ((TiXmlElement *)0) ) { // no metadata file name present in xml file, use default folder and name
-		sprintf(mdata_filepath, "%s/%s", stacks_dir, vm::BINARY_METADATA_FILENAME.c_str());
+		if ( mdata_fname == "" ) { // no metadata file name passed as a parameter, use default folder and name
+			mdata_filepath = new char[strlen(this->stacks_dir)+1+strlen(vm::BINARY_METADATA_FILENAME.c_str())+1];
+			sprintf(mdata_filepath, "%s/%s", stacks_dir, vm::BINARY_METADATA_FILENAME.c_str());
+		}
+		else {
+			mdata_filepath = new char[strlen(mdata_fname.c_str())+1];
+			strcpy(mdata_filepath,mdata_fname.c_str());
+		}
 	}
 	else {
+		mdata_filepath = new char[strlen(pelem->Attribute("value"))+1];
 		strcpy(mdata_filepath, pelem->Attribute("value"));
 	}
 
@@ -219,6 +230,9 @@ StackedVolume::~StackedVolume()
 
 	if(stacks_dir)
 		delete[] stacks_dir;
+
+	if(mdata_filepath)
+		delete[] mdata_filepath;
 
 	if(STACKS)
 	{
@@ -748,6 +762,10 @@ void StackedVolume::saveXML(const char *xml_filename, const char *xml_filepath) 
 	xml.LinkEndChild( root );  
 	pelem = new TiXmlElement("stacks_dir");
 	pelem->SetAttribute("value", stacks_dir);
+	root->LinkEndChild(pelem);
+	// 2019-09-20. Giulio. @ADDED saved path ad name of metadata file
+	pelem = new TiXmlElement("mdata_bin");
+	pelem->SetAttribute("value", mdata_filepath);
 	root->LinkEndChild(pelem);
 	// 2014-11-06. Giulio. @ADDED saved reference system into XML file
 	pelem = new TiXmlElement("ref_sys");

@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-08-24. Giulio.     @ADDED method 'isInputOnly'
 * 2018-02-04. Giulio.     @ADDED initalization of newly allocated buffer in 'readData'
 * 2016-10-07. Giulio.     @CHANGED in 'readMetadata' img_chans set to 1 if SAMPLESPERPIXEL is not defined
 * 2015-01-02. Giulio.     @IMPLEMENTED new plugins interface
@@ -68,6 +69,14 @@ bool
 	iomanager::tiff3D::isChansInterleaved( ) 
 {
 	return true;
+}
+
+
+// Return if it is an input plugin only
+bool 
+	iomanager::tiff3D::isInputOnly( ) 
+{
+	return false;
 }
 
 

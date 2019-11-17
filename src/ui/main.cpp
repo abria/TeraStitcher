@@ -28,7 +28,11 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-11-17. Giulio.     @ADDED code to launch parastitcher using the script in the share/python directory of the distribution
 * 2019-11-07. Giulio.     @ADDED command line option 'fixed_tiling' controlling the strategy used to partition the volume into tiles
+* 2019-09-26. Giulio.     @CHANGED the construction of the parastitcher command to make it compatible with compilers that do not support C++11 extensions
+* 2019-08-25. Giulio.     @ADDED possibility to launch Parastitcher
+* 2018-08-22. Giulio.     @ADDED display of total execution time
 * 2018-03-02. Giulio.     @ADDED the possibility to set a path and a name for the mdata.bin file generated when volumes are created from data
 * 2018-01-23. Giulio.     @ADDED check to set always the input format of a MultiVolume dataset as a non-interleaved input format
 * 2017-12-01. Giulio      @ADDED conditional code to activate the new merge step 
@@ -165,6 +169,54 @@ int main(int argc, char** argv)
 		cli.readParams(argc, argv);
 		cli.checkParams();
 		string defaultOutputFileName = "null";
+		
+		// 2019-04-25. Giulio. check first id Parastitcher has to be launced
+		if ( cli.launch_pyscript ) {
+
+			std::string python_path;
+			char *temp;
+			if ( (temp = getenv("__PYSCRIPTS_PATH__")) ) {
+				python_path = temp;
+			}
+			else {
+				python_path = getAbsolutePath(cli.arg0);
+				if ( python_path.find('\\') != std::string::npos )
+					python_path += "..\\share\\python";
+				else 
+					python_path += "../share/python";
+				if ( !vm::isDirectory(python_path) )
+					throw iom::exception(vm::strprintf("Path of Parastitcher not available: check environment variable __PYSCRIPTS_PATH__").c_str());
+				//else
+				//	throw iom::exception(vm::strprintf("Path of Parastitcher is: %s",python_path.c_str()).c_str());
+			}
+			
+			if ( python_path[python_path.size()-1] != '/' && python_path[python_path.size()-1] != '\\' ) {
+				if ( python_path.find('\\') != std::string::npos )
+					python_path += "\\";
+				else 
+					python_path += "/";
+			}
+
+			std::string python_cmd;
+			// 2019-09-26. Giulio. @CHANGED to make it compatible with compilers that do not support C++11 extensions
+			char numprocs[5];
+			sprintf(numprocs,"%d",cli.num_procs);
+			std::string np = (const char *)numprocs;
+			//python_cmd = "mpirun -np " + std::to_string(cli.num_procs) + " python " + python_path + "Parastitcher.py";
+			python_cmd = "mpirun -np " + np + " python " + python_path + "Parastitcher.py";
+			for ( int opt=1; opt<argc; opt++ ) {
+				if ( strstr(argv[opt],"--parastitcher") == 0 )
+					python_cmd += std::string(" ") + argv[opt];
+			}
+			//printf("---> %s\n",python_cmd.c_str());
+			if ( system(python_cmd.c_str()) != 0 ) 
+				throw iom::exception(iom::strprintf("in main(): cannot execute python command \"%s\"", python_cmd.c_str()));
+			
+			return EXIT_SUCCESS;
+		}
+
+		// start timer
+		double proctime = -TIME(0);
 
 		setLibTIFFcfg(!cli.libtiff_uncompressed,cli.libtiff_bigtiff,cli.libtiff_rowsPerStrip);
 
@@ -390,7 +442,6 @@ int main(int argc, char** argv)
 									 false, false, S_SHOW_STACK_MARGIN, cli.halving_method, true, false, cli.img_format.c_str(), cli.img_depth);
 			defaultOutputFileName = "xml_import";
 		}
-		total_time += TIME(0);
 
 		// save project file and computation times
 		if(volume)
@@ -403,6 +454,9 @@ int main(int argc, char** argv)
 			delete stitcher;
 		if(volume)
 			delete volume;
+
+		// display elapsed time
+		printf("\nTime elapsed: %.1f seconds\n\n", proctime + TIME(0));
 	}
 	catch( iom::exception& exception){
 		cout<<"ERROR: "<<exception.what()<<endl<<endl;

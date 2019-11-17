@@ -28,7 +28,10 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-11-17. Giulio.     @ADDED parameter to store the complete path of the executable
 * 2019-11-07. Giulio.     @ADDED command line option 'fixed_tiling' controlling the strategy used to partition the volume into tiles
+* 2019-04-25. Giulio.     @ADDED parameters to control the launching of Python script for parallel execution
+* 2018-04-14. Giulio.     @ADDED code for setting the global optimization algorithm based on Linear Quadtratic Programming + heuristics (S_FATPM_LQP_HE)
 * 2018-03-02. Giulio.     @ADDED an option to set a path and a name for the mdata.bin file generated when volumes are created from data
 * 2018-01-30. Giulio.     @FIXED flags disabling last row and colum were not initialized in non-parallel executions
 * 2018-01-28. Giulio.     @CHANGED the checks about the image input channel
@@ -138,7 +141,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	// output image parameters
 	TCLAP::ValueArg<std::string> p_im_out_format("",		"imout_format","Output image format extension (\"tif\" is default, others: see --pluginsinfo). ",false,"tif","string");
 	TCLAP::ValueArg<int> im_out_depth("",					"imout_depth","Output image colordepth/bits per pixel (\"8\" is default). ",false,8,"integer");
-	TCLAP::ValueArg<std::string> p_im_out_plugin("",		"imout_plugin",vm::strprintf("Plugin that manages the output image format. Available plugins are: {%s}. Default is \"auto\".", iom::IOPluginFactory::registeredPlugins().c_str()), false, "auto","string");
+	TCLAP::ValueArg<std::string> p_im_out_plugin("",		"imout_plugin",vm::strprintf("Plugin that manages the output image format. Available plugins are: {%s}. Default is \"auto\".", iom::IOPluginFactory::registeredOutputPlugins().c_str()), false, "auto","string");
 	TCLAP::ValueArg<std::string> p_im_out_plugin_params("",	"imout_plugin_params","A series of parameters \"param1=val,param2=val,...\" to configure the output image plugin (see --pluginsinfo for the list of accepted parameters)", false, "","string");
 
 	TCLAP::SwitchArg p_sparse_data("","sparse_data","If enabled, this option allows to import sparse data organizations, i.e. with empty or incomplete tiles",false);
@@ -154,9 +157,12 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	TCLAP::SwitchArg p_disable_last_row("","disable_last_row","disable displacement computation of last row (default: last row enabled, active only in parallel mode).", false);
 	TCLAP::SwitchArg p_disable_last_col("","disable_last_col","disable displacement computation of last column (default: last column enabled, active only in parallel mode).", false);
 
+	TCLAP::ValueArg<int> p_num_procs("","parastitcher","starts execution in parallel using Parastitcher (default: do not use Parastitcher).",false,0,"integer");
 	TCLAP::SwitchArg p_fixed_tiling("","fixed_tiling","Perform tiling using a given tile size with a (possible) small remainder (default: perform tiling with tile sizes as uniform as possible).", false);
 
 	// argument objects must be inserted using FIFO policy (first inserted, first shown)
+	cmd.add(p_num_procs);
+
 	cmd.add(p_disable_last_col);
 	cmd.add(p_disable_last_row);
 
@@ -230,6 +236,9 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	cmd.add(p_test);
 	cmd.add(p_parallel);
 	cmd.add(p_isotropic);
+	
+	// save directory of the executable
+	this->arg0 = argv[0];
 
 	// Parse the argv array and catch <TCLAP> exceptions, which are translated into <iom::iim::IOException> exceptions
 	char errMsg[S_STATIC_STRINGS_SIZE];
@@ -241,6 +250,35 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 	}
 
 	/* Checking mandatory parameters for each step */
+	
+	//EXECUTION THROUGH PARASTITCHER
+	if ( p_num_procs.getValue() != 0 ) { // execution through Parastitcher requested
+		if ( p_test.isSet() || p_stitch.isSet() || p_import.isSet() || p_projdisplacements.isSet() || p_thresholdisplacements.isSet() || p_placetiles.isSet() || 
+		     (p_computedisplacements.isSet() && p_merge.isSet()) )
+		{
+			sprintf(errMsg, "Only one between --displcompute and --merge allowed with --%s!\n",
+					p_num_procs.getName().c_str());
+			throw iom::exception(errMsg);
+		}
+		if ( p_start_stack_row.getValue() != -1 || p_end_stack_row.getValue() != -1 || p_start_stack_col.getValue() != -1 || p_end_stack_col.getValue() != -1 || p_D0.getValue() != -1 || p_D1.getValue() != -1 )
+		{
+			sprintf(errMsg, "Option --R0, --R1, --C0, --C1, --D0, --D1 not allowed with --%s!\n",
+					p_num_procs.getName().c_str());
+			throw iom::exception(errMsg);
+		}
+		// 2019-11-17. Giulio. @DELETED the check has been moved to main
+		//if ( getenv("__PYSCRIPTS_PATH__") == (char *)0 )
+		//{
+		//	sprintf(errMsg, "Set the envronment variable __PYSCRIPTS_PATH__ to the path where are stored the Python scripts before using --%s!\n",
+		//			p_num_procs.getName().c_str());
+		//	throw iom::exception(errMsg);
+		//}
+    	this->num_procs = p_num_procs.getValue() + 1; // add dispatcher processor
+    	this->launch_pyscript = true;
+	}
+	else {
+    	this->launch_pyscript = false;
+	}
 
 	//TEST
 	if( p_test.isSet() && 
@@ -508,7 +546,7 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 			iom::IMOUT_PLUGIN = "tiff3D";
 	}
 	else
-		iom::IMOUT_PLUGIN = p_im_in_plugin.getValue();
+		iom::IMOUT_PLUGIN = p_im_out_plugin.getValue();
 	iom::IMOUT_PLUGIN_PARAMS = p_im_out_plugin_params.getValue();
 
 	vm::SPARSE_DATA = p_sparse_data.getValue();

@@ -630,7 +630,7 @@ void VirtualVolume::saveImage_from_UINT8_to_Vaa3DRaw (int slice, std::string img
         throw IOException(err_msg);
 	}
 
-	delete imageData;
+	delete[] imageData;
 }
 
 /*************************************************************************************************************
@@ -743,7 +743,7 @@ void VirtualVolume::saveImage_from_UINT8_to_Tiff3D (int slice, std::string img_p
         throw IOException(err_msg);
 	};
 
-	delete imageData;
+	delete[] imageData;
 }
 
 
@@ -1433,6 +1433,7 @@ VirtualVolume* VirtualVolume::instance(const char* path, std::string format,
 }
 
 // (@MOVED from TiledMCVolume.cpp by Alessandro on 2014-02-20)
+// WARNING: caller loses ownership of array '_active' 
 void VirtualVolume::setActiveChannels ( uint32 *_active, int _n_active )
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);

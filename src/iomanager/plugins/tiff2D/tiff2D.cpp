@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-08-24. Giulio.     @ADDED method 'isInputOnly'
 * 2018-02-04. Giulio.     @ADDED initalization of newly allocated buffer in 'readData'
 * 2016-10-07. Giulio.     @CHANGED in 'readMetadata' img_chans set to 1 if SAMPLESPERPIXEL is not defined
 * 2015-01-02. Giulio.     @IMPLEMENTED new plugins interface
@@ -50,11 +51,11 @@ TERASTITCHER_REGISTER_IO_PLUGIN_2D(tiff2D)
 std::string iomanager::tiff2D::desc()
 {
 	return	"******************************************************\n"
-			"* tiff2D v.1.0                                     *\n"
+			"* tiff2D v.1.0                                       *\n"
 			"******************************************************\n"
 			"*                                                    *\n"
-			"* 2D image-based I/O plugin that uses the libtiff li- *\n"
-			"* brary to read/write 2D image files.                *\n"
+			"* 2D image-based I/O plugin that uses the libtiff    *\n"
+			"* library to read/write 2D image files.              *\n"
 			"*                                                    *\n"
 			"* Supported image format extentions:                 *\n"
 			"*  - TIFF                                            *\n"
@@ -72,6 +73,14 @@ bool
 	iomanager::tiff2D::isChansInterleaved( ) 
 {
 	return true;
+}
+
+
+// Return if it is an input plugin only
+bool 
+	iomanager::tiff2D::isInputOnly( ) 
+{
+	return false;
 }
 
 

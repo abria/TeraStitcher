@@ -65,6 +65,14 @@ bool
 }
 
 
+// Return if it is an input plugin only
+bool 
+	iomanager::exampleplugin2D::isInputOnly( ) 
+{
+	return false;
+}
+
+
 // read image metadata from a 2D image file
 void 
 	iomanager::exampleplugin2D::readMetadata(

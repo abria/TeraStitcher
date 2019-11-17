@@ -223,7 +223,7 @@ void Stack::init() throw (iom::exception)
         else
         {
             if(img_regex.empty())
-                throw iom::exception(vm::strprintf("in Stack[%s]::init(): stack is empty. If that was your intent, please use the 'sparse data' option", DIR_NAME).c_str());
+                throw iom::exception(vm::strprintf("in Stack[%s]::init(): stack is empty. If that was your intent, please use the '--sparse_data' option", DIR_NAME).c_str());
             else
                 throw iom::exception(vm::strprintf("in Stack[%s]::init(): no files found that match regular expression \"%s\"", DIR_NAME, img_regex.c_str()).c_str());
         }
@@ -682,7 +682,7 @@ iom::real_t* Stack::loadImageStack(int first_file, int last_file) throw (iom::ex
 
 	// 2016-08-29. Giulio. @ADDED check of coherence
 	if ( (img_width != WIDTH) ||  (img_height != HEIGHT) || (img_bytes_x_chan != N_BYTESxCHAN) || (img_chans != N_CHANS) )
-		throw iom::exception(iom::strprintf("incosistent metadata in file %s",image_path.c_str()).c_str(), __iom__current__function__);
+		throw iom::exception(iom::strprintf("inconsistent metadata in file %s",image_path.c_str()).c_str(), __iom__current__function__);
 
 	// 2016-04-29. Giulio. patch to test opencv2D when using jpeg
 	//img_chans = 1;
@@ -970,7 +970,7 @@ iom::real_t* Stack::loadImageStack2(int first_file, int last_file, int V0, int V
 
 	// 2016-08-29. Giulio. @ADDED check of coherence
 	if ( (img_width != WIDTH) ||  (img_height != HEIGHT) || (img_bytes_x_chan != N_BYTESxCHAN) || (img_chans != N_CHANS) )
-		throw iom::exception(iom::strprintf("incosistent metadata in file %s",image_path.c_str()).c_str(), __iom__current__function__);
+		throw iom::exception(iom::strprintf("inconsistent metadata in file %s",image_path.c_str()).c_str(), __iom__current__function__);
 
 	// 2016-04-29. Giulio. patch to test opencv2D when using jpeg
 	//img_chans = 1;

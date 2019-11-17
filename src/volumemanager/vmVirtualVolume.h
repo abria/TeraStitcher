@@ -25,6 +25,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-09-20. Giulio.     @ADDED initialization of pointer to null pointer to prevent destructor from releasing a non-null pointer
+* 2019-09-20. Giulio.     @ADDED data member 'mdata_filepath' with its getter
 * 2018-03-02. Giulio.     @ADDED the possibility to set a path and a name for the mdata.bin file generated when volumes are created from data
 * 2018-02-03. Giulio.     @ADDED internal method to correct non symmetric displacements between tiles
 * 2018-01-20. Giulio.     @CHANGED some methods to virtual and the type of a few data members
@@ -63,6 +65,7 @@ class volumemanager::VirtualVolume
 
 		//******OBJECT ATTRIBUTES******
 		char* stacks_dir;					//C-string that contains the directory path of stacks matrix
+		char* mdata_filepath;				//C-string that contains the complete path and name of the metadata binary file
 		float  VXL_V, VXL_H, VXL_D;			//[microns]: voxel dimensions (in microns) along V(Vertical), H(horizontal) and D(Depth) axes
 		float  ORG_V, ORG_H, ORG_D;			//[millimeters]: origin spatial coordinates (in millimeters) along VHD axes
 		float  MEC_V, MEC_H;				//[microns]: mechanical displacements of the microscope between two adjacent stacks
@@ -113,6 +116,8 @@ class volumemanager::VirtualVolume
 
 			stacks_dir = new char[strlen(_stacks_dir)+1];
 			strcpy(stacks_dir, _stacks_dir);
+			
+			mdata_filepath = (char *) 0; // added to prevent destructor from releasing a non-null pointer
 
 			reference_system = _reference_system;
 
@@ -124,6 +129,8 @@ class volumemanager::VirtualVolume
 		}
 
 		VirtualVolume(const char* xml_path) throw (iom::exception){
+			stacks_dir = (char *) 0;     // added to prevent destructor from releasing a non-null pointer
+			mdata_filepath = (char *) 0; // added to prevent destructor from releasing a non-null pointer
 			init();
 			cb = (CacheBuffer *) 0;
 		}
@@ -151,6 +158,7 @@ class volumemanager::VirtualVolume
 		int		 getBYTESxCHAN();
 		virtual VirtualStack*** getSTACKS() = 0;
 		char*    getSTACKS_DIR(){return this->stacks_dir;}
+		char*    getMDATA_FILEPATH(){return this->mdata_filepath;}
 		virtual int	getOVERLAP_V();
 		virtual int getOVERLAP_H();
 		virtual int	getDEFAULT_DISPLACEMENT_V();

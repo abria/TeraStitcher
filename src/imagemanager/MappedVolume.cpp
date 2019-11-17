@@ -335,7 +335,7 @@ iim::uint8* MappedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, 
 	iim::uint32 *set_active = new iim::uint32[n_active]; 
 	for ( int c=0; c<n_active; c++ )
 		set_active[c] = c;
-	volume->setActiveChannels(set_active,n_active); // property of set_active is passed to volume
+	volume->setActiveChannels(set_active,n_active); // ownership of set_active is passed to volume
 
 	// conversion from indices to real spatial coordinates of the target volume vertices
 	COORDSTYPE x0, y0, z0, x1, y1, z1;
@@ -377,7 +377,7 @@ iim::uint8* MappedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, 
 	set_active = new iim::uint32[DIM_C];
 	for ( int c=0; c<DIM_C; c++ )
 		set_active[c] = c;
-	volume->setActiveChannels(set_active,DIM_C); // property of set_active is passed to volume
+	volume->setActiveChannels(set_active,DIM_C); // ownership of set_active is passed to volume
 
 	// map all active channels of subvolume 
 	subvol = map->mapbuffer(tempbuf, (V1-V0), (H1-H0), (D1-D0), n_active, BYTESxCHAN);  // buffer containing target volume

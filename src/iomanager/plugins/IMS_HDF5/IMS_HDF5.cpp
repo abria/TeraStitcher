@@ -28,6 +28,8 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-08-24. Giulio.     @ADDED method 'isInputOnly'
+* 2018-04-22. Giulio.     @ADDED code for loading only requested data when a subregion is specified
 * 2017-04-20. Giulio      @CHANGED calls to 'IMS_HDF5init' 
 * 2017-04-20. Giulio      @FIXED a missing parameter in the call to 'IMS_HDF5init' in 'appendSlice'
 * 2017-04-17. Giulio.     @ADDED the generation of IMS files with default metadata
@@ -56,9 +58,20 @@ std::string iomanager::IMS_HDF5::desc()
 			"* library to implement the format used by Imaris     *\n"
 			"*                                                    *\n"
 			"* Accepted configuration parameters:                 *\n"
-			"*  - resolution=R                                    *\n"
-			"*  - timepoint=T                                     *\n"
-			"*  - channel=C                                       *\n"
+			"*  - none                                            *\n"
+			"*                                                    *\n"
+			"* Methods accept the following parameters :          *\n"
+			"*  - readMetadata accepts                            *\n"
+			"*    - resolution=R                                  *\n"
+			"*    - timepoint=T                                   *\n"
+			"*  - readData accepts                                *\n"
+			"*    - resolution=R                                  *\n"
+			"*    - timepoint=T                                   *\n"
+			"*    - channel=C                                     *\n"
+			"*    - V0=N                                          *\n"
+			"*    - V1=N                                          *\n"
+			"*    - H0=N                                          *\n"
+			"*    - H1=N                                          *\n"
 			"*                                                    *\n"
 			"******************************************************\n";
 }
@@ -67,6 +80,14 @@ std::string iomanager::IMS_HDF5::desc()
 // Return if channels are interleaved (in case the image has just one channel return value is indefinite)
 bool 
 	iomanager::IMS_HDF5::isChansInterleaved( ) 
+{
+	return false;
+}
+
+
+// Return if it is an input plugin only
+bool 
+	iomanager::IMS_HDF5::isInputOnly( ) 
 {
 	return false;
 }
@@ -182,19 +203,63 @@ throw (iom::exception)
 	if ( getParamValue(params,"channel",str_value) )
 		chID = atoi(str_value.c_str());
 
+	iim::uint64 V0 = 0;
+	iim::uint64 V1 = img_height;
+	iim::uint64 H0 = 0;
+	iim::uint64 H1 = img_width;
+
+	if ( getParamValue(params,"V0",str_value) )
+		V0 = (iim::uint64) atoi(str_value.c_str());
+	if ( getParamValue(params,"V1",str_value) )
+		V1 = (iim::uint64) atoi(str_value.c_str());
+	if ( getParamValue(params,"H0",str_value) )
+		H0 = (iim::uint64) atoi(str_value.c_str());
+	if ( getParamValue(params,"H1",str_value) )
+		H1 = (iim::uint64) atoi(str_value.c_str());
+
 	IMS_HDF5init(img_path,file_descr);
 	IMS_HDF5getVolumeInfo(file_descr,tp,res,volume_descr,vxl1,vxl2,vxl3,org1,org2,org3,height,width,depth,img_chans,img_bytes_x_chan,n_timepoints,t0,t1);
-	if ( chID == -1 ) {
-		chan_size = ((iim::sint64)height) * ((iim::sint64)width) * (z1-z0) * img_bytes_x_chan;
-		for ( c=0, ptr=data; c<img_chans; c++, ptr+=chan_size ) {
-			IMS_HDF5getSubVolume(volume_descr,0,height,0,width,z0,z1,c,ptr);
-			//printf("---> [multiple] c=%d z=%d\n",c,z0);
+
+	if ( !data ) // recover the metadata, allocate the buffer and set parameters
+		throw iom::exception(iom::strprintf("the buffer has not been provided: this function is currently not supported"), __iom__current__function__);
+
+	if ( V0 == 0 && V1 == img_height && H0 == 0 && H1 == img_width ) { // load the whole substack
+		if ( chID == -1 ) {
+			chan_size = ((iim::sint64)height) * ((iim::sint64)width) * ((iim::sint64)(z1-z0)) * img_bytes_x_chan;
+			for ( c=0, ptr=data; c<img_chans; c++, ptr+=chan_size ) {
+				IMS_HDF5getSubVolume(volume_descr,0,height,0,width,z0,z1,c,ptr);
+				//printf("---> [multiple] c=%d z=%d\n",c,z0);
+			}
+		}
+		else {
+			IMS_HDF5getSubVolume(volume_descr,0,height,0,width,z0,z1,chID,data);
+			//printf("---> [single] c=%d z=%d\n",chID,z0);
 		}
 	}
-	else {
-		IMS_HDF5getSubVolume(volume_descr,0,height,0,width,z0,z1,chID,data);
-		//printf("---> [single] c=%d z=%d\n",chID,z0);
+	else { // load only selected data in a temporary buffer and then copy it to the final one
+		iim::uint8 *data_temp = new iim::uint8[((sint64)(V1-V0)) * ((sint64)(H1-H0)) * ((sint64)(z1-z0)) * img_bytes_x_chan]; // load one channel at the time
+		iim::uint64 rowStride = (iim::uint64)img_width * (iim::uint64)img_bytes_x_chan;
+		if ( chID == -1 ) {
+			iim::uint64 sliceStride = (iim::uint64)img_height * rowStride;
+			for ( c=0; c<img_chans; c++ ) {
+				IMS_HDF5getSubVolume(volume_descr,(int)V0,(int)V1,(int)H0,(int)H1,z0,z1,c,data_temp);
+				// copy to final buffer
+				ptr=(data + c*sliceStride + V0*rowStride + H0*img_bytes_x_chan);
+				for ( int r=0; r<(V1-V0); r++, ptr+=rowStride ) {
+					memcpy(ptr, (data_temp + r*(H1-H0)*img_bytes_x_chan), ((H1-H0)*img_bytes_x_chan));
+				}
+			}
+		}
+		else {
+			IMS_HDF5getSubVolume(volume_descr,(int)V0,(int)V1,(int)H0,(int)H1,z0,z1,chID,data_temp);
+			// copy to final buffer
+			ptr=(data + V0*rowStride + H0*img_bytes_x_chan);
+			for ( int r=0; r<(V1-V0); r++, ptr+=rowStride ) {
+				memcpy(ptr, (data_temp + r*(H1-H0)*img_bytes_x_chan), ((H1-H0)*img_bytes_x_chan));
+			}
+		}
 	}
+
 	IMS_HDF5closeVolume(volume_descr);
 	IMS_HDF5close(file_descr);
 

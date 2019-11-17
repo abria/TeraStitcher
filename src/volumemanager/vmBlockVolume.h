@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-11-02. Giulio.     @ADDED 'mdata_fname' parameter to constructor from xml
 * 2018-03-02. Giulio.     @ADDED the possibility to set a path and a name for the mdata.bin file
 * 2017-06-26. Giulio.     @ADDED methods to set active resolution and active timepoint
 * 2017-04-12. Giulio.     @ADDED method to release all buffers allocated in VirtualStack
@@ -98,7 +99,7 @@ class vm::BlockVolume : public vm::VirtualVolume
 		//CONSTRUCTORS-DECONSTRUCTOR
 		BlockVolume() : vm::VirtualVolume(){}
         BlockVolume(const char* _stacks_dir, vm::ref_sys reference_system, float VXL_1=0, float VXL_2=0, float VXL_3=0, bool overwrite_mdata=false, std::string mdata_fname="") throw (iom::exception);
-        BlockVolume(const char *xml_filepath, bool overwrite_mdata=false) throw (iom::exception);
+        BlockVolume(const char *xml_filepath, bool overwrite_mdata=false, std::string mdata_fname="") throw (iom::exception);
 		~BlockVolume();
 
 		// ******GET METHODS******

@@ -202,7 +202,7 @@ public:
     // @ADDED by Alessandro on 2014-02-18: returns a unique ID that identifies the volume format
     virtual std::string getPrintableFormat() = 0;
 
-    // @ADDED by Alessandro on 2014-02-18: additional info on the reference system (where available)
+// @ADDED by Alessandro on 2014-02-18: additional info on the reference system (where available)
     virtual float getVXL_1() = 0;
     virtual float getVXL_2() = 0;
     virtual float getVXL_3() = 0;
@@ -211,6 +211,7 @@ public:
     virtual iim::axis getAXS_3() = 0;
 
     // set active channels for 4D data (@MOVED from TileMCVolume.h by Alessandro on 2014-02-20)
+	// WARNING: caller loses ownership of array '_active' 
     virtual void setActiveChannels ( iim::uint32 *_active, int _n_active );
     
     // set the remap or conversion algorithm used for visualization of subregions
