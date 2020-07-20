@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-This program uses a master slave approach to consume a queue 
+This program uses a main subordinate approach to consume a queue 
 of elaborations using teraconverter
 Copyright (c) 2016:
 Massimiliano Guarrasi (1), Giulio Iannello (2), Alessandro Bria (2)
@@ -20,7 +20,7 @@ For align step:
 mpirun -np XX python ParastitcherX.Y.Z.py -2 --projin=xml_import_file --projout=xml_displcomp_file [--sV=VV] [--sH=HH] [--sD=DD] [--imin_channel=C] [ ... ] 
 
 where:
-- XX is the desided level of parallelism plus 1 (for the master process)
+- XX is the desided level of parallelism plus 1 (for the main process)
 - VV, HH, DD are the half size of the NCC map along V, H, and D directions, respectively
 - C is the input channel to be used for align computation
 
@@ -39,7 +39,7 @@ See teraconverter documentation for more details
 *        Change Log           *
 *******************************
 
-2019-08-01. Giulio. @FIXED a bug in the distributed termination algorithm in 'master_step2'
+2019-08-01. Giulio. @FIXED a bug in the distributed termination algorithm in 'main_step2'
 2018-09-20. Giulio  @CHANGED adapted to run also on Python 3 interpreters: changed <> to !=, use parentheses in print commands, converted 'keys' and 'values' of dictionaries to lists
 2018-09-05. Giulio. @CHSNGED on non-Windows platforms 'prefix' is automatically switched to './' if executables are not in the system path
 2018-08-16. Giulio. @CHANGED command line interface: parameters for step 6 are the same than the sequential implementation
@@ -297,9 +297,9 @@ def worker(input_file):
    return input_file
 
 
-def slave():
+def subordinate():
    """
-   Slave process.
+   Subordinate process.
    """
    myrank = comm.Get_rank()
    WORKTAG = 1   # constants to use as tags in communications
@@ -414,7 +414,7 @@ def add_chars(params):
 	return params
 	
 
-def master_step2(queue):
+def main_step2(queue):
     """
     dispatch the work among processors
 
@@ -431,7 +431,7 @@ def master_step2(queue):
 
     nprocs = comm.Get_size()
     # queue = deque(queue) # deque to enable popping from the left 
-    # seed the slaves by sending work to each proc
+    # seed the subordinates by sending work to each proc
     for rank in range(1, min(len(queue)+1,nprocs)):
         # get the next input to work on 
         input_file = pop_left(queue)
@@ -443,14 +443,14 @@ def master_step2(queue):
     # Loop until there's no more work to do. If queue is empty skips the loop.
     while (queue):
         input_file = pop_left(queue)
-        # receive result from slave
+        # receive result from subordinate
         status = MPI.Status()
         flag = comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
         # @ADDED by Giulio Iannello 2019-08-01 to fix distributed termination algorithm
         if status.tag != 0 :
             raise ValueError("Wrong tag: a message signalling a finished task expected")
         done += 1 
-        # send to the same slave new work
+        # send to the same subordinate new work
         comm.send(input_file, dest=status.source, tag=WORKTAG) 
 
    	print('MASTER: second loop terminated')
@@ -465,10 +465,10 @@ def master_step2(queue):
         
    	print('MASTER: third loop terminated')
    	
-    # there's no more work to do, so receive all the results from the slaves
+    # there's no more work to do, so receive all the results from the subordinates
     status = MPI.Status()
 
-    # tell all the slaves to exit by sending an empty message with the DIETAG
+    # tell all the subordinates to exit by sending an empty message with the DIETAG
     for rank in range(1, nprocs):
         comm.send(0, dest=rank, tag=DIETAG)
 	
@@ -571,7 +571,7 @@ def sort_work(params,priority):
    return sorted_dict
 
 
-def master_step6(queue,rs_fname):  # 2017-02-06. Giulio. @ADDED rs_fname
+def main_step6(queue,rs_fname):  # 2017-02-06. Giulio. @ADDED rs_fname
    """
    Dispatch the work among processors.
    Input:
@@ -594,7 +594,7 @@ def master_step6(queue,rs_fname):  # 2017-02-06. Giulio. @ADDED rs_fname
    DIETAG = 2
    nprocs = comm.Get_size()
    #queue = deque(queue) # deque to enable popping from the left 
-   # seed the slaves by sending work to each proc
+   # seed the subordinates by sending work to each proc
    for rank in range(1, min(len(queue)+1,nprocs)):
       # get the next input to work on 
       input_file = pop_left(queue)
@@ -616,7 +616,7 @@ def master_step6(queue,rs_fname):  # 2017-02-06. Giulio. @ADDED rs_fname
       if input_file == None :
          # the queue is empty, no more work to do
          break
-      # receive result from slave
+      # receive result from subordinate
       status = MPI.Status()
       flag = comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
       if status.tag != 0 :
@@ -627,13 +627,13 @@ def master_step6(queue,rs_fname):  # 2017-02-06. Giulio. @ADDED rs_fname
          rs_file = open(rs_fname, 'wb')
          pickle.dump(done,rs_file)
          rs_file.close()
-      # send to the same slave new work
+      # send to the same subordinate new work
       comm.send(input_file, dest=status.source, tag=WORKTAG)
       
    print('MASTER: second loop terminated')
       
    while len(done) < n_tasks :
-      # receive result from slave
+      # receive result from subordinate
       status = MPI.Status()
       flag = comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
       if status.tag != 0 :
@@ -647,10 +647,10 @@ def master_step6(queue,rs_fname):  # 2017-02-06. Giulio. @ADDED rs_fname
          
    print('MASTER: third loop terminated')
       
-   # there's no more work to do, so receive all the results from the slaves
+   # there's no more work to do, so receive all the results from the subordinates
    status = MPI.Status()
    #flag = comm.recv(source=MPI.ANY_SOURCE, tag=0, status=status)
-   # tell all the slaves to exit by sending an empty message with the DIETAG
+   # tell all the subordinates to exit by sending an empty message with the DIETAG
    for rank in range(1, nprocs):
       comm.send(0, dest=rank, tag=DIETAG)
     # Whait all task in order to exit
@@ -1473,7 +1473,7 @@ if __name__ == '__main__':
 #         nprocs = 6
 #         nrows = 11
 #         ncols = 12
-         (p_r,p_c) = do_additional_partition(float(nprocs-1),float(nrows),float(ncols),float(n_ss)) # master should not be counted
+         (p_r,p_c) = do_additional_partition(float(nprocs-1),float(nrows),float(ncols),float(n_ss)) # main should not be counted
          # compute start, end of rows partitions
          s_r = int(floor(nrows / p_r))
          r_r = nrows % p_r
@@ -1611,7 +1611,7 @@ if __name__ == '__main__':
          work_list = cmd_string
 
          # Call the routine to distribute the work between cpus
-         master_step2(work_list)
+         main_step2(work_list)
 
          if len(r_start) == 1 and len(c_start) == 1 : # no groups
 
@@ -1695,7 +1695,7 @@ if __name__ == '__main__':
             elaborations = sort_elaborations(scores)
             work_list = sort_work(cmd_string,elaborations)
             # Call the routine to dinstibute the work between cpus
-            master_step6(work_list,rs_fname) # 2017-02-06. Giulio. @ADDED parameter
+            main_step6(work_list,rs_fname) # 2017-02-06. Giulio. @ADDED parameter
             # Execute the command to merge the metadata
             if debug_level > 0 :
                execution_string = prefix+final_string + " > " + "output_final.out"
@@ -1708,16 +1708,16 @@ if __name__ == '__main__':
          
    else:
       if step2 :
-         # Start slave sub.
+         # Start subordinate sub.
          prefix = prefix + 'terastitcher '
-         slave()
+         subordinate()
       elif step6 :
          if info :
             # do nothing
             dummy = 0
          else :
-            # Start slave sub.
-            slave()
+            # Start subordinate sub.
+            subordinate()
 
    # End program
    comm.Barrier()
