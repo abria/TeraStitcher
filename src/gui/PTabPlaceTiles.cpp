@@ -69,7 +69,8 @@ PTabPlaceTiles::PTabPlaceTiles(QMyTabWidget* _container, int _tab_index) : QWidg
     browse_button = new QPushButton("...");
     algo_label = new QLabel("Algorithm:");
     algo_cbox = new QComboBox();
-    algo_cbox->insertItem(0, "Minimum Spanning Tree");
+    algo_cbox->insertItem(S_FATPM_SP_TREE, "Minimum Spanning Tree");
+    algo_cbox->insertItem(S_FATPM_LQP_HE, "Linear Quadratic Programming + heuristics");
     per_stack_displ_number_label = new QLabel("Per-pair displacements:");
     per_stack_displ_number_field = new QLineEdit();
     per_stack_displ_number_field->setReadOnly(true);

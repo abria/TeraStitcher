@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2018-04-14. Giulio.     @ADDED symbols for the global optimization algorithm based on Linear Quadtratic Programming + heuristics (S_FATPM_LQP_HE)
 * 2017-01-27. Giulio.     @ADDED constant to specify that the top of any layer must completely overwrite the overlapping bottom of the preceding one
 * 2017-01-27. Giulio.     @CHANGED parameter S_OVERLAP_MIN set to 0
 */
@@ -65,11 +66,20 @@ namespace stitcher
 //*** FINDING ABSOLUTE TILE POSITIONS PHASE***
 #define S_FATPM_SP_TREE 0				//spanning tree modality for finding absolute tile positions
 #define S_FATPM_SP_TREE_NAME "MST"
-#define S_FATPM_SCAN_V 1				//vertical scanning modality for finding absolute tile positions
+
+#define S_FATPM_LQP_HE 1				//spanning tree modality for finding absolute tile positions
+#define S_FATPM_LQP_HE_NAME "LQP"
+#define S_FATPM_LQP_HE_FILE_TEMP_NAME "opt_probl.txt"
+#define S_FATPM_LQP_HE_FILE_SOL_NAME  "opt_sol.txt"
+
+#define S_FATPM_SCAN_V 2				//vertical scanning modality for finding absolute tile positions
 #define S_FATPM_SCAN_V_NAME "SCANV"
-#define S_FATPM_SCAN_H 2				//horizontal scanning modality for finding absolute tile positions
+
+#define S_FATPM_SCAN_H 3				//horizontal scanning modality for finding absolute tile positions
 #define S_FATPM_SCAN_H_NAME "SCANH"
-#define S_FATPM S_FATPM_SP_TREE			//selected modality for finding absolute tile positions (FATPM)
+
+#define S_FATPM S_FATPM_SP_TREE			//default modality for finding absolute tile positions (FATPM)
+
 #define S_NCC_PEAK_MIN 0				//minimum value of NCC peak
 #define S_NCC_PEAK_MAX 1				//maximum value of NCC peak
 #define S_NCC_WIDTH_MIN 0				//minimum value of NCC width

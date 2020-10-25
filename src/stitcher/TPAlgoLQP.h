@@ -28,39 +28,37 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2018-04-14. Giulio.     @ADDED code for instancing the global optimization algorithm based on Linear Quadtratic Programming + heuristics (S_FATPM_LQP_HE)
+* 2018-04-14. Giulio.     @CREATED global optimization algorithm based on Linear Quadtratic Programming + heuristics (S_FATPM_LQP_HE)
 */
 
 
-#include <cstdio>
+#ifndef _TILE_PLACEMENT_ALGORITHM_LINEAR_QUADRATIC_PROGRAMMING_H
+#define _TILE_PLACEMENT_ALGORITHM_LINEAR_QUADRATIC_PROGRAMMING_H
+
 #include "TPAlgo.h"
-#include "TPAlgoMST.h"
-#include "TPAlgoLQP.h"
-#include "S_config.h"
 
-using namespace volumemanager;
-
-TPAlgo::TPAlgo(int _TYPE, VirtualVolume * _volume)
+class TPAlgoLQP : public TPAlgo
 {
-	TYPE = _TYPE;
-	volume = _volume;
-}
+	private:
 
-//static method which is responsible to instance and return the algorithm of the given type
-TPAlgo* TPAlgo::instanceAlgorithm(int _type, VirtualVolume * _volume)
-{
-	#if S_VERBOSE>4
-	printf("........in TPAlgo::instanceAlgorithm(int _type, VirtualVolume * _volume)\n",_type);
-	#endif
+		TPAlgoLQP(void){};			//default constructor is inhibited
 
-	if     (_type == S_FATPM_SP_TREE)
-		return (TPAlgo*)(new TPAlgoMST(_volume));
-	else if     (_type == S_FATPM_LQP_HE)
-		return (TPAlgo*)(new TPAlgoLQP(_volume));
-	else
-	{
-                char err_msg[S_STATIC_STRINGS_SIZE];
-		sprintf(err_msg, "in TPAlgo::instanceAlgorithm(....): unsupported algorithm type (\"%d\")", _type);
-		throw iom::exception(err_msg);
-	}
-}
+	protected:
+
+		//int TYPE;					//INHERITED from TPAlgo
+		//StackedVolume* volume;	//INHERITED from TPAlgo
+
+	public:
+
+		TPAlgoLQP(volumemanager::VirtualVolume * _volume);
+		~TPAlgoLQP(void){};
+
+		/*************************************************************************************************************
+		* Finds the optimal tile placement on the <volume> object member via Linear Quadratic Programming + heuristics.
+		* PROs: 
+		* CONs: 
+		**************************************************************************************************************/
+		void execute() throw (iom::exception);
+};
+
+#endif /* _TILE_PLACEMENT_ALGORITHM_LINEAR_QUADRATIC_PROGRAMMING_H */
