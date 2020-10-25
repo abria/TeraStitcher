@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2020-01-28.  Giulio.     @ADDED parameter for multi-cycle processing
 * 2018-02-04.  Giulio.     @ADDED option for BigTIFF
 * 2017-02-10.  Giulio.     @ADDED options to specify the blending algorithm to be used for layers 
 * 2016-09-04.  Giulio.     @ADDED the options for setting the configuration of the LibTIFF library 
@@ -61,6 +62,7 @@ class TeraStitcher2CLI
 		bool mergetiles;						//tiles merging step
 		//bool dumpMData;							//dump mdata.bin
 		bool ignoreUnequalStacksDepth;			//ignore unequal stacks depth (i.e., number of slices).
+		bool no_overlap;			            //enable the management of non overlapping layers.
 
 		//STITCHING pipeline parameters
 		string volume_load_path;				//directory path where the volume is stored used during the volume import step
@@ -70,12 +72,12 @@ class TeraStitcher2CLI
 		//iim::ref_sys reference_system;				//reference system used by the acquired volume  
 		//float VXL_1, VXL_2, VXL_3;				//voxel dimensions (in microns) along first, second and third axes
 		int pd_algo;							//pairwise displacements computation algorithm identifier
-		//int start_stack_row;					//first row of stacks matrix to be processed
-		//int end_stack_row;						//last row of stacks matrix be processed
-		//int start_stack_col;					//first column of stacks matrix to be processed
-		//int end_stack_col;						//last column of stacks matrix to be processed
-		int start_layer;					    //first layer of thevolume to be processed
-		int end_layer;						    //last layer of the volume to be processed
+		int start_tile_row;					//first row of stacks matrix to be processed
+		int end_tile_row;						//last row of stacks matrix be processed
+		int start_tile_col;					//first column of stacks matrix to be processed
+		int end_tile_col;						//last column of stacks matrix to be processed
+		int start_interlayer;					    //first layer of thevolume to be processed
+		int end_interlayer;						    //last layer of the volume to be processed
 		//int overlap_V, overlap_H;				//expected overlaps between adjacent stacks along V and H directions
 		int search_radius_V;					//identifies the region of interest along V used to search for pairwise displacements
 		int search_radius_H;					//identifies the region of interest along H used to search for pairwise displacements
@@ -107,6 +109,9 @@ class TeraStitcher2CLI
 		bool libtiff_uncompressed;
 		bool libtiff_bigtiff;
 		int libtiff_rowsPerStrip;
+
+		// parameters for multi cycle volumes
+		bool multi_cycle; // flag to switch to multi-cycle processing
 
 		//constructor - deconstructor
 		TeraStitcher2CLI(void);					//set default params

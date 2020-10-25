@@ -28,84 +28,81 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2019-12-08.  Giulio.     @ADDED getters for 'iBest' and 'jBest'
-* 2019-09-23.  Giulio.     @ADDED new data member 'iBest' and 'jBest' to store the indices of the best aligned tile between two adjacent layers
-* 2017-04-01.  Giulio.     @ADDED code for completing multi-layer management
-* 2017-02-10.  Giulio.     @CREATED
+* 2019-10-22.  Giulio.     @CREATED
 */
 
 
-#ifndef _MULTILAYERS_MANAGER_H
-#define _MULTILAYERS_MANAGER_H
+#ifndef _MULTICYCLE_VOLUME_H
+#define _MULTICYCLE_VOLUME_H
 
 //#include "MyException.h"
 
+#include "ComposedVolume.h" 
 #include "../utils/terastitcher2/GUI_config.h"
 #include "IM_config.h"
 #include "tinyxml.h"
-#include "Displacement.h"
+#include "../stitcher/Displacement.h"
 #include "../volumemanager/vmVirtualStack.h"
 
 #include <string>
 #include <vector>
 
-class MultiLayersVolume {
+class MultiCycleVolume : public iim::ComposedVolume {
 
-protected:
+private:
 
 	typedef int VHD_coords[3];
 
-	char* layers_dir;			 //C-string that contains the directory path of multi-layers volume
 	float normal_factor_D;
 
-	float  VXL_V, VXL_H, VXL_D;		 // [microns]: voxel dimensions (in microns) along V(Vertical), H(horizontal) and D(Depth) axes
-    float  ORG_V, ORG_H, ORG_D;		 // [millimeters]: origin spatial coordinates (in millimeters) along VHD axes
-    iim::uint32 DIM_V, DIM_H, DIM_D; // nominal volume dimensions (in voxels) along VHD axes
-    int    DIM_C;					 // number of channels        (@ADDED by Iannello   on ..........)
-    int    BYTESxCHAN;               // number of bytes per channel
-	iim::ref_sys reference_system;
+	//float  VXL_V, VXL_H, VXL_D;		 // [microns]: voxel dimensions (in microns) along V(Vertical), H(horizontal) and D(Depth) axes
+ //   float  ORG_V, ORG_H, ORG_D;		 // [millimeters]: origin spatial coordinates (in millimeters) along VHD axes
+    //iim::uint32 DIM_V, DIM_H, DIM_D; // nominal volume dimensions (in voxels) along VHD axes
+    //int    DIM_C;					 // number of cycles        (@ADDED by Iannello   on ..........)
+    //int    BYTESxCHAN;               // number of bytes per channel
+	//iim::ref_sys reference_system;
 
-	int N_LAYERS;
-	iim::VirtualVolume **LAYERS;
-	VHD_coords *layers_coords;      // elements are triplets (V,H,D)
-	int *nominal_D_overlap;
-	float cut_depth;				// depth in um affected by both fluorescence decay (in the top layer) and the cut between layers (in the bottom layer)
+	int N_CYCLES;
+	iim::VirtualVolume **CYCLES;  // volume components
+	std::string *cycle_formats;   // format of volume components
+	// list of xml files associated to cycles to be used for saving the xml file describing the multicycler volume (not active if null)
+	std::string *cycles_new_xml_fnames;
 
- 	// disps[i] is the displacements of layer i+1 with respect to layer i
-	std::vector< std::vector<Displacement *> > **disps;
+	VHD_coords *cycles_coords;      // elements are triplets (V,H,D)
+	//int *nominal_D_overlap;
+	//float cut_depth;				// depth in um affected by both fluorescence decay (in the top layer) and the cut between layers (in the bottom layer)
+
+ 	// disps[i] is the displacements of cycle i with respect to all other cycles 
+	std::vector<Displacement *> **disps;
 	
 	// for each pair of layers i, i+1, arrays iBest, jBest contain the indices in the 2D tile matrix along dimensions X-Y 
 	// of the homologous tiles belonging to the two layers with the best alignment 
-	int *iBest;
-	int *jBest;
-
-	// list of xml files associated to layers to be used for saving the xml file describing the multilayer volume (not active if null)
-	std::string *layers_new_xml_fnames;
+	//int *iBest;
+	//int *jBest;
 
 	// the default constructor should not be used
-	MultiLayersVolume ( ) { }
+	MultiCycleVolume ( ) { }
 
 	void init ( );
 
-	iim::VirtualVolume *getLAYER ( int i ) { return LAYERS[i]; }
+    void initChannels ( ) throw (iim::IOException);
+
+	iim::VirtualVolume *getCYCLE ( int i ) { return CYCLES[i]; }
 
 public:
-	MultiLayersVolume ( std::string _layers_dir, float _cut_depth = CLI_DEF_CUT_DEPTH, float _norm_factor_D = CLI_DEF_NORM3 );
+	MultiCycleVolume ( std::string _cycles_dir, float _norm_factor_D = CLI_DEF_NORM3 ) throw (iim::IOException, iom::exception);
 
-	MultiLayersVolume ( const char *_layers_dir );
+	MultiCycleVolume ( const char *_cycles_dir ) throw (iim::IOException, iom::exception);
 
-	~MultiLayersVolume ( ); 
+	~MultiCycleVolume ( ) throw (iim::IOException); 
 
+	int			getN_CYCLES() {return N_CYCLES;}
+	//int			getOVERLAP_D(int i) {return nominal_D_overlap[i];}
+	//float		getCUT_DEPTH() {return cut_depth;}
+	//int			getCUT_DEPTH_PXL() {return (int)floor(cut_depth / VXL_D + 0.5);}
 
-	const char* getLAYERS_DIR(){return this->layers_dir;}
-	int			getN_LAYERS() {return N_LAYERS;}
-	int			getOVERLAP_D(int i) {return nominal_D_overlap[i];}
-	float		getCUT_DEPTH() {return cut_depth;}
-	int			getCUT_DEPTH_PXL() {return (int)floor(cut_depth / VXL_D + 0.5);}
-
-	int			getLAYER_DIM(int i, int j);
-	iim::real32* getSUBVOL(int i, int V0 = -1, int V1 = -1, int H0 = -1, int H1 = -1, int D0 = -1, int D1 = -1);
-	int			getLAYER_COORDS(int i, int j) {return layers_coords[i][j];}
+	int			getCYCLE_DIM(int i, int j);
+	int			getCYCLE_COORDS(int i, int j) {return cycles_coords[i][j];}
 
 	float		getVXL_V() {return VXL_V;}
 	float		getVXL_H() {return VXL_H;}
@@ -123,10 +120,7 @@ public:
 	float		getABS_H(int ABS_PIXEL_H) {return ORG_H * 1000 + ABS_PIXEL_H*VXL_H;}
 	float		getABS_D(int ABS_PIXEL_D) {return (ORG_D * 1000 + ABS_PIXEL_D*VXL_D) * normal_factor_D;}
 
-	int         getiBest(int i) {return iBest[i];}
-	int         getjBest(int i) {return jBest[i];}
-
-	std::vector< std::vector< Displacement *> >  *getDISPS(int i) {return disps[i];}
+	std::vector< Displacement *>  *getDISPS(int i) {return disps[i];}
 
 	void		setORG_V(float _ORG_V) {ORG_V = _ORG_V;}
 	void		setORG_H(float _ORG_H) {ORG_H = _ORG_H;}
@@ -134,20 +128,22 @@ public:
 
 	void		initDISPS(int i, int _DIM_V, int _DIM_H);
 
-	void		addVHD_COORDS(int i, int j, int c) {layers_coords[i][j] += c;}
+	void		addVHD_COORDS(int i, int j, int c) {cycles_coords[i][j] += c;}
 
 	void		setDIMS(int _DIM_V, int _DIM_H, int _DIM_D) {
 		DIM_V = _DIM_V; DIM_H = _DIM_H; DIM_D = _DIM_D;
 	}
-	void		setDISPS(int i, std::vector< std::vector<Displacement *> > *disp) {
+
+	void		setDISPS(int i, std::vector<Displacement *> *disp) {
 		if ( disps[i] )
 			delete disps[i];
 		disps[i] = disp;
-	};
-	void        setiBest(int val, int i) {iBest[i] = val;}     
-	void        setjBest(int val, int i) {jBest[i] = val;}     
+	}
 
-	void updateLayerCoords ( ) ;
+	// returns a unique ID that identifies the volume format
+	std::string getPrintableFormat(){return iim::MULTICYCLE_FORMAT;}
+
+	//void updateLayerCoords ( ) ;
 
 	//int			getDEFAULT_DISPLACEMENT_V(int i) {return 0;}
 	//int			getDEFAULT_DISPLACEMENT_H(int i) {return 0;}
@@ -168,15 +164,22 @@ public:
 	//XML methods
 	void			initFromXML(const char *xml_filename) throw (iim::IOException);
 	void			saveXML(const char *xml_filename=0, const char *xml_filepath=0) throw (iim::IOException);
-	void            saveLayersXML(const char *xml_filename=0, const char *xml_filepath=0) throw (iim::IOException);
+	//void            saveCyclesXML(const char *xml_filename=0, const char *xml_filepath=0) throw (iim::IOException);
 
-	void insertDisplacement(int i, int j, int k, Displacement *displacement) throw (iim::IOException);
+	void insertDisplacement(int i, int k, Displacement *displacement) throw (iim::IOException);
+
+	//loads given subvolume in a 1-D array of iim::uint8 and copy it into 'buffer' starting from  offsets 
+	virtual iim::uint8 *loadSubvolume(
+			int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1, int *n_chans=0, int ret_type=iim::DEF_IMG_DEPTH,
+			iim::uint8 *buffer=0, int bufSize_V=0, int bufSize_H=0, int bufSize_D=0, int bufSize_C=0,
+			int bufOffs_V=0, int bufOffs_H=0, int bufOffs_D=0, int bufOffs_C=0
+	) throw (iim::IOException, iom::exception);
 
 	// needed to extract layer volumes
 	friend class TPAlgo2MST; 
 	friend class StackStitcher2;
 };
 
-#endif /* _MULTILAYERS_MANAGER_H */
+#endif /* _MULTICYCLE_VOLUME_H */
 
 

@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2020-01-27. Giulio.     @FIXED bug: closed mdata_bin tag when xml is saved
 * 2019-11-02. Giulio.     @ADDED 'mdata_fname' parameter to constructor from xml
 * 2019-09-20. Giulio.     @ADDED the new tag 'mdata_bin' to the xml file
 * 2019-09-20. Giulio.     @ADDED initialization of data member 'mdata_filepath' and modified coherently the destructor
@@ -1230,6 +1231,7 @@ void BlockVolume::saveXML(const char *xml_filename, const char *xml_filepath) th
 	// 2019-09-20. Giulio. @ADDED saved path ad name of metadata file
 	pelem = new TiXmlElement("mdata_bin");
 	pelem->SetAttribute("value", mdata_filepath);
+	root->LinkEndChild(pelem);
 	// 2014-11-06. Giulio. @ADDED saved reference system into XML file
 	pelem = new TiXmlElement("ref_sys");
 	pelem->SetAttribute("ref1", reference_system.first);

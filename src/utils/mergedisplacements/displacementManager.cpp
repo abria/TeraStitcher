@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2020-01-27. Giulio.     @ADDED mdata_bin tag when merged xml is saved
 * 2018-02-16. Giulio.     @DELETED iom::debug message in 'init' to enable CMake configuration under Linux
 * 2018-02-04. Giulio.     @FIXED bug in constructor
 * 2017-05-10. Giulio.     @ADDED 'input_plugin' attribute to <TeraStitcher> XML node
@@ -33,6 +34,7 @@
 
 #include "displacementManager.h"
 #include "iomanager.config.h"
+#include "../../volumemanager/volumemanager.config.h" // 2020-01-27. Giulio. needed to use the default name of metadata file
 
 #include <string.h>
 #include <list>
@@ -172,10 +174,28 @@ void XMLDisplacementBag::merge ( const char *xml_out_file ) {
 
 	// IN: reading fields and checking coherence with metadata previously read from VM_BIN_METADATA_FILE_NAME
 	TiXmlElement *pelem = hRoot.FirstChildElement("stacks_dir").Element();
+	const char *stacks_dir = pelem->Attribute("value");
 
 	// OUT: 
 	out_pelem = new TiXmlElement("stacks_dir");
-	out_pelem->SetAttribute("value", pelem->Attribute("value"));
+	out_pelem->SetAttribute("value", stacks_dir);
+	out_root->LinkEndChild(out_pelem);
+
+	// IN:
+	// 2020-01-27. Giulio. set the name of the meta data file
+	char *mdata_filepath;
+	if ( (pelem = hRoot.FirstChildElement("mdata_bin").Element()) == 0 ) { // skip if not present (for compatibility with previous versions)
+		mdata_filepath = new char[strlen(stacks_dir)+1+strlen(vm::BINARY_METADATA_FILENAME.c_str())+1];
+		sprintf(mdata_filepath, "%s/%s", stacks_dir, vm::BINARY_METADATA_FILENAME.c_str());
+	}
+	else {
+		mdata_filepath = new char[strlen(pelem->Attribute("value"))+1];
+		strcpy(mdata_filepath, pelem->Attribute("value"));
+	}
+
+	// OUT:
+	out_pelem = new TiXmlElement("mdata_bin");
+	out_pelem->SetAttribute("value", mdata_filepath);
 	out_root->LinkEndChild(out_pelem);
 
 	// IN:
@@ -455,10 +475,28 @@ void XMLDisplacementBag::mergeTileGroups ( const char *xml_out_file ) {
 
 	// IN: reading fields and checking coherence with metadata previously read from VM_BIN_METADATA_FILE_NAME
 	TiXmlElement *pelem = hRoot.FirstChildElement("stacks_dir").Element();
+	const char *stacks_dir = pelem->Attribute("value");
 
 	// OUT: 
 	out_pelem = new TiXmlElement("stacks_dir");
-	out_pelem->SetAttribute("value", pelem->Attribute("value"));
+	out_pelem->SetAttribute("value", stacks_dir);
+	out_root->LinkEndChild(out_pelem);
+
+	// IN:
+	// 2020-01-27. Giulio. set the name of the meta data file
+	char *mdata_filepath;
+	if ( (pelem = hRoot.FirstChildElement("mdata_bin").Element()) == 0 ) { // skip if not present (for compatibility with previous versions)
+		mdata_filepath = new char[strlen(stacks_dir)+1+strlen(vm::BINARY_METADATA_FILENAME.c_str())+1];
+		sprintf(mdata_filepath, "%s/%s", stacks_dir, vm::BINARY_METADATA_FILENAME.c_str());
+	}
+	else {
+		mdata_filepath = new char[strlen(pelem->Attribute("value"))+1];
+		strcpy(mdata_filepath, pelem->Attribute("value"));
+	}
+
+	// OUT:
+	out_pelem = new TiXmlElement("mdata_bin");
+	out_pelem->SetAttribute("value", mdata_filepath);
 	out_root->LinkEndChild(out_pelem);
 
 	// IN:

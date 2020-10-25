@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-09-23. Giulio.     @ADDED method 'isBetter'
 * 2018-04-14. Giulio.     @ADDED methods 'getDefaultDisplacement' and 'getDelays'
 * 2018-02-03. Giulio.     @ADDED complete mirroring of displacements when direction = 'dir_all'
 */
@@ -342,6 +343,25 @@ void DisplacementMIPNCC::combine(Displacement& displ) throw (iom::exception)
 		}
 	}
 }
+
+
+bool DisplacementMIPNCC::isBetter(Displacement *displ) throw (iom::exception)
+{
+	DisplacementMIPNCC *displ_MIPNCC = (DisplacementMIPNCC*) displ;
+	
+	// computes the sum of reliabilities (which equivalent to the mean in this contest
+	float cur_rel_sum = 0.0;
+	float rel_sum     = 0.0;
+	for(int k=0; k<3; k++) {
+		evalReliability(direction(k));
+		cur_rel_sum += rel_factors[k];
+		displ->evalReliability(direction(k));
+		rel_sum += displ_MIPNCC->rel_factors[k];
+	}
+	
+	return rel_sum >= cur_rel_sum; // returns true also if equal to minimize the updates of the best displacement
+}
+
 
 //XML methods: convert/load displacement object into/from XML schema
 TiXmlElement* DisplacementMIPNCC::getXML() throw (iom::exception)

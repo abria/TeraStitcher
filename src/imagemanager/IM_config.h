@@ -25,6 +25,9 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-10-24. Giulio.     @ADDED 'ComposedVolume' to the list of volume classes 
+* 2019-10-22. Giulio      @ADDED VirtualVolume ID: MULTICHANNEL_FORMAT
+* 2019-10-16. Giulio      @ADDED VirtualVolume ID: MULTISLICE_FORMAT
 * 2018-07-05. Giulio.     @ADDED IDs for remapping algorithms from 8 bits values to rescaled 8 bits values
 * 2018-06-30. Giulio.     @ADDED IDs for conversion algorithms from arbitrary depth to 8 bits
 * 2017-04-01. Giulio.     @ADDED ID for 'volatile' format (not implemented yet)
@@ -81,6 +84,7 @@ namespace IconImageManager
 	class Stack;
 	class Block;
 	class VirtualVolume;
+	class ComposedVolume;
 	class StackedVolume;
 	class TiledVolume;
 	class TiledMCVolume;
@@ -137,6 +141,8 @@ namespace IconImageManager
     const std::string BDV_HDF5_FORMAT       = "HDF5 (BigDataViewer)";       // unique ID for BDV HDF5
     const std::string IMS_HDF5_FORMAT       = "HDF5 (Imaris IMS)";          // unique ID for IMS HDF5
     const std::string MAPPED_FORMAT         = "Mapped Volume";              // unique ID for mapped volumes
+    const std::string MULTISLICE_FORMAT     = "MultiSlice Volume";          // unique ID for multi-slice volumes
+    const std::string MULTICYCLE_FORMAT     = "MultiCycle Volume";			// unique ID for multi-cycle volumes
     const std::string VOLATILE_FORMAT       = "Volatile Volume";            // unique ID for volatile volumes
     const std::string TIME_SERIES           = "Time series";                // unique ID for the TimeSeries class
 

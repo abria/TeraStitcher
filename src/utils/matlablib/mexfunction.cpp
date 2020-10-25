@@ -25,7 +25,7 @@
 #include "MexOperations.h"
 
 //#ifndef __APPLE__
-typedef unsigned short char16_t;
+//typedef unsigned short char16_t;
 //#endif
 
 #include "mex.h"
@@ -415,7 +415,7 @@ void mexFunction(int nlhs,
 		
 		// build a 3D matrix
 		//mwSize dims[] = { info.DIM_V, info.DIM_H, info.DIM_D, info.n_active };
-		mwSize dims[] = { V1-V0, H1-H0, D1-D0, info.n_active };
+		mwSize dims[] = { (mwSize) (V1-V0), (mwSize) (H1-H0), (mwSize) (D1-D0), (mwSize) info.n_active };
 		mwSize ndim   = 4;
 		plhs[0] = mxCreateNumericArray(ndim, dims, (info.BYTESxCHAN == 1) ? mxUINT8_CLASS : mxUINT16_CLASS, mxREAL);
     		

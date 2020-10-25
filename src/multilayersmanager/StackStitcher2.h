@@ -28,6 +28,9 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-12-08.  Giulio.     @ADDED method 'adjustBestDisplacements'
+* 2019-09-23.  Giulio.     @ADDED method 'findBestDisplacements'
+* 2019-09-20.  Giulio.     @ADDED parameter 'no_overlap' to 'computeTileDisplacements' for managing non overlapping layers
 * 2017-04-01.  Giulio.     @ADDED code for completing the management of multi-layer stitching
 * 2017-02-10.  Giulio.     @ADDED in merge methods added a parameter to specify the blending algorithm to be used for layers 
 */
@@ -185,19 +188,49 @@ public:
 	*						  If not given, value S_DISPL_MAX_VHD is assigned.
 	* [tile_idx_V ...]	    : indices of tiles to be aligned
 	* [show_progress_bar]	: enables/disables progress bar with estimated time remaining.
+	* [no_overlap]          : if true carries out the alignment even if there is no overlap between layers
+	*                         using the last slice of upper layer and the first slice of the bottom layer
+	*                         (default: true)
 	*
 	* WARNING: this method should be used when layers are still unstitched matrices of tiles.
 	**************************************************************************************************************/
-	void computeTileDisplacements(int algorithm_type, int start_layer, int end_layer, 
-												  int displ_max_V, int displ_max_H, int displ_max_D, bool show_progress_bar) throw (iim::IOException);
+	void computeTileDisplacements(
+		int algorithm_type, 
+		int start_interlayer = -1,                  // first inter layer to be processed
+		int end_interlayer   = -1,                  // last inter layer to be processed
+		int row0 = -1,								// subdata selection along X: [row0, row1] rows will be processed only
+		int col0 = -1,								// subdata selection along Y: [col0, col1] cols will be processed only
+		int row1 = -1,								// subdata selection along X: [row0, row1] rows will be processed only
+		int col1 = -1,								// subdata selection along Y: [col0, col1] cols will be processed only
+		int displ_max_V=S_DISPL_SEARCH_RADIUS_DEF,  // maximum displacements along VHD between two  homologous tiles ... 
+		int displ_max_H=S_DISPL_SEARCH_RADIUS_DEF,  // ... If not given, value S_DISPL_SEARCH_RADIUS_DEF is assigned.
+		int displ_max_D=S_DISPL_SEARCH_RADIUS_DEF, 
+		bool no_overlap=true,                       // if true enable the management of non overlapping layers aligning 
+		                                            // the last and the first slice of upper and bottom layers, respectively
+		bool show_progress_bar=true
+	) 
+	throw (iim::IOException);
+
 
 
 	/*************************************************************************************************************
-	* For each pair of layers projects the best interlayer displacement and leaves one displacements that  has  to 
-	* be applied to the layer as a whole. 
+	* For each pair of layers projects finds the best interlayer displacement for each  dimension  separately  and 
+	* leaves one displacements that has to be applied to the layer as a whole. 
 	* WARNING: this mathod it has to be used if layers are already stitched 3D images.
 	**************************************************************************************************************/
 	void projectDisplacements()																  throw (iim::IOException);
+
+	/*************************************************************************************************************
+	* For each pair of layers projects finds the best interlayer displacement evaluating  all dimensions  together 
+	* and returns the position in the tile matrix of the corresponding pair of tiles.
+	**************************************************************************************************************/
+	void findBestDisplacements()															  throw (iim::IOException);
+
+	/*************************************************************************************************************
+	* For each pair of layers compute  the  displacement  of  tile  (0,0)  coherent  with  the  best  displacement  
+	* and set to 1.0 the reliability of displacement of tile (0,0).
+	**************************************************************************************************************/
+	void adjustBestDisplacements()															  throw (iim::IOException);
 
 	/*************************************************************************************************************
 	* Compute the tiles placement with a global optimization algorithm taking into account the alignment of the 

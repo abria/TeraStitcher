@@ -28,6 +28,9 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-09-25.  Giulio.     @ADDED call to 'findBestDisplacements' in place of 'projectDisplacements'
+* 2019-09-25.  Giulio.     @CHANGED call to 'computeTileDisplacements'
+* 2019-09-25.  Giulio.     @ADDED measurement of the execution time
 * 2018-02-04.  Giulio.     @ADDED support for BigTIFF
 * 2017-02-14.  Giulio.     @CHANGED step 3 (place tiles) is executed after step 4 (threshold displacement)
 * 2017-02-13.  Giulio.     @CHANGED step 3 it is now place tiles (3D optimization) and no more project displacements
@@ -43,6 +46,8 @@
 #include "MultiLayers.h"
 #include "StackStitcher2.h"
 #include "TeraStitcher2CLI.h"
+
+#include "MultiCycleVolume.h"
 
 #include "Tiff3DMngr.h"
 
@@ -169,97 +174,139 @@ int main(int argc, char** argv)
 
 		setLibTIFFcfg(!cli.libtiff_uncompressed,cli.libtiff_bigtiff,cli.libtiff_rowsPerStrip);
 
-		// set a IOManager parameter replicated in ImageManager
-		//iim::CHANNEL_SELECTION = iom::CHANNEL_SELECTION;
+		// start timer
+		double proctime = -TIME(0);
 
-		//importing volume from directory or XML file
-		MultiLayersVolume* volume = 0;
-		if(cli.projfile_load_path.compare("null")!=0)
-			volume = new MultiLayersVolume(cli.projfile_load_path.c_str());
-		else if(cli.import || (cli.computedisplacements && cli.projfile_load_path.compare("null")==0) || cli.stitch)
-			//if (cli.image_format=="Tiff3D" || cli.image_format=="Vaa3DRaw")
-			//	volume = new TiledVolume(cli.volume_load_path.c_str(), cli.reference_system, cli.VXL_1, cli.VXL_2, cli.VXL_3);
-			//else // cli.image_format=="2D")
-			//	volume = new StackedVolume(cli.volume_load_path.c_str(), cli.reference_system, cli.VXL_1, cli.VXL_2, cli.VXL_3);
-			volume = new MultiLayersVolume(cli.volume_load_path.c_str(),cli.cut_depth,cli.norm_fact_D);
-		else if( (cli.computedisplacements && cli.volume_load_path.compare("null")==0) || /*cli.projdisplacements*/ cli.placetiles || cli.thresholddisplacements || cli.placelayers || cli.mergetiles) {
-			//if (cli.image_format=="Tiff3D" || cli.image_format=="Vaa3DRaw")
-			//	volume = new TiledVolume(cli.projfile_load_path.c_str());
-			//else // (cli.image_format=="2D")
-			//	volume = new StackedVolume(cli.projfile_load_path.c_str());
-			volume = new MultiLayersVolume(cli.volume_load_path.c_str(),cli.cut_depth,cli.norm_fact_D);
+		if ( !cli.multi_cycle ) {
+
+			// set a IOManager parameter replicated in ImageManager
+			//iim::CHANNEL_SELECTION = iom::CHANNEL_SELECTION;
+
+			//importing volume from directory or XML file
+			MultiLayersVolume* volume = 0;
+			if(cli.projfile_load_path.compare("null")!=0)
+				volume = new MultiLayersVolume(cli.projfile_load_path.c_str());
+			else if(cli.import || (cli.computedisplacements && cli.projfile_load_path.compare("null")==0) || cli.stitch)
+				//if (cli.image_format=="Tiff3D" || cli.image_format=="Vaa3DRaw")
+				//	volume = new TiledVolume(cli.volume_load_path.c_str(), cli.reference_system, cli.VXL_1, cli.VXL_2, cli.VXL_3);
+				//else // cli.image_format=="2D")
+				//	volume = new StackedVolume(cli.volume_load_path.c_str(), cli.reference_system, cli.VXL_1, cli.VXL_2, cli.VXL_3);
+				volume = new MultiLayersVolume(cli.volume_load_path.c_str(),cli.cut_depth,cli.norm_fact_D);
+			else if( (cli.computedisplacements && cli.volume_load_path.compare("null")==0) || /*cli.projdisplacements*/ cli.placetiles || cli.thresholddisplacements || cli.placelayers || cli.mergetiles) {
+				//if (cli.image_format=="Tiff3D" || cli.image_format=="Vaa3DRaw")
+				//	volume = new TiledVolume(cli.projfile_load_path.c_str());
+				//else // (cli.image_format=="2D")
+				//	volume = new StackedVolume(cli.projfile_load_path.c_str());
+				volume = new MultiLayersVolume(cli.volume_load_path.c_str(),cli.cut_depth,cli.norm_fact_D);
+			}
+
+			//processing volume		
+			double total_time = -TIME(0);
+			StackStitcher2* stitcher = new StackStitcher2(volume);
+			if(cli.import)
+				defaultOutputFileName = "xml_import";
+			if(cli.computedisplacements || cli.stitch)
+			{
+				// 2017-02-11. Giulio. the case of layers that are already stitched images is disabled
+				//stitcher->computeDisplacements(cli.pd_algo, cli.start_interlayer, cli.end_interlayer, cli.search_radius_V, cli.search_radius_H, 
+				//							   cli.search_radius_D, cli.substk_dim_V, cli.substk_dim_H, cli.show_progress_bar);
+				stitcher->computeTileDisplacements(cli.pd_algo, cli.start_interlayer, cli.end_interlayer, cli.start_tile_row, cli.start_tile_col, 
+														cli.end_tile_row, cli.end_tile_col, cli.search_radius_V, cli.search_radius_H, cli.search_radius_D, cli.no_overlap, cli.show_progress_bar);
+				defaultOutputFileName = "xml_displcomp";
+			}
+			if(cli.thresholddisplacements || cli.stitch)
+			{
+				stitcher->thresholdDisplacements(cli.reliability_threshold);
+				defaultOutputFileName = "xml_displthres";
+			}
+			// 2017-02-27. Giulio. There are two strategies
+			// - layers' tiles are assumed already placed and the best interlayer alignement used for layer placement
+			// - a global 3D optimization is performed and the resulting interlayer alignment used for layer placement
+			if(cli.projdisplacements || cli.stitch) { // command line option -7 or --displproj
+				//stitcher->projectDisplacements();
+				//defaultOutputFileName = "xml_displproj";
+				stitcher->findBestDisplacements();			
+				stitcher->adjustBestDisplacements();			
+				stitcher->projectDisplacements();             // maintain only displacement of tile (0,0) of each layer
+				defaultOutputFileName = "xml_displbest";
+			}
+			else if(cli.placetiles || cli.stitch) // command line option -4 or --placetiles
+			{
+				stitcher->computeTilesPlacement(cli.tp_algo); // compute optimal placement and set to 1.0 the reliability of displacement of tile (0,0) of each layer
+				volume->saveLayersXML(0, fillPath(cli.projfile_save_path, volume->getLAYERS_DIR(), defaultOutputFileName, "xml").c_str()); // save the global optimum tile placement for all layers
+				stitcher->projectDisplacements();             // maintain only displacement of tile (0,0) of each layer
+				defaultOutputFileName = "xml_placetiles";
+			}
+			if(cli.placelayers || cli.stitch) // command line option -5 or --placelayers
+			{
+				stitcher->computeLayersPlacement();
+				defaultOutputFileName = "xml_placelayers";
+			}
+			if(cli.mergetiles || cli.stitch)
+			{
+				if ( cli.img_format == "Tiff3D" || cli.img_format == "Vaa3DRaw" )
+					stitcher->mergeTilesVaa3DRaw(cli.volume_save_path, cli.slice_height, cli.slice_width, cli.slice_depth, cli.resolutions, //cli.exclude_nonstitchables, 
+										 -1, -1, -1, -1, cli.D0, cli.D1, cli.lm_blending, cli.tm_blending, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
+				else // cli.img_format == "2D"
+					stitcher->mergeTiles(cli.volume_save_path, cli.slice_height, cli.slice_width, cli.resolutions, //cli.exclude_nonstitchables, 
+										 -1, -1, -1, -1, cli.D0, cli.D1, cli.lm_blending, cli.tm_blending, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
+			}
+			//if(cli.test)
+			//{
+			//	stitcher->mergeTiles(cli.volume_save_path, -1, -1, NULL, false, -1, -1, -1, -1, volume->getN_SLICES()/2, volume->getN_SLICES()/2 +1, 
+			//	                     false, false, S_NO_BLENDING, true, false, cli.img_format.c_str(), cli.img_depth);
+			//	defaultOutputFileName = "xml_test";
+			//}
+			//if(cli.dumpMData && cli.image_format=="2D")
+			//{
+			//	StackedVolume::dumpMData(cli.volume_load_path.c_str());
+			//}
+			total_time += TIME(0);
+
+			//saving project file and computation times
+			if(volume)
+				volume->saveXML(0, fillPath(cli.projfile_save_path, volume->getLAYERS_DIR(), defaultOutputFileName, "xml").c_str());
+			if(stitcher && cli.save_execution_times)
+				stitcher->saveComputationTimes(cli.execution_times_filename.c_str(), *volume, total_time);
+
+			//releasing objects
+			if(stitcher)
+				delete stitcher;
+			if(volume)
+				delete volume;
+		}
+		else { // multi-cycle processing
+
+			MultiCycleVolume* volume = 0;
+			if(cli.projfile_load_path.compare("null")!=0)
+				volume = new MultiCycleVolume(cli.projfile_load_path.c_str(),1.0);
+			else if(cli.import || (cli.computedisplacements && cli.projfile_load_path.compare("null")==0) || cli.stitch)
+				volume = new MultiCycleVolume(cli.volume_load_path.c_str(),1.0);
+			else if( (cli.computedisplacements && cli.volume_load_path.compare("null")==0) || /*cli.projdisplacements*/ cli.placetiles || cli.thresholddisplacements || cli.placelayers || cli.mergetiles) {
+				volume = new MultiCycleVolume(cli.volume_load_path.c_str(),1.0);
+			}
+
+			//processing volume		
+			double total_time = -TIME(0);
+
+			if(cli.import)
+				defaultOutputFileName = "xml_import_MCyc";
+			if(cli.computedisplacements || cli.stitch)
+			{
+				defaultOutputFileName = "xml_displcomp_MCyc";
+			}
+
+			total_time += TIME(0);
+
+			//saving project file and computation times
+			if(volume)
+				volume->saveXML(0, fillPath(cli.projfile_save_path, volume->getROOT_DIR(), defaultOutputFileName, "xml").c_str());
+
 		}
 
-		//processing volume		
-		double total_time = -TIME(0);
-		StackStitcher2* stitcher = new StackStitcher2(volume);
-		if(cli.import)
-			defaultOutputFileName = "xml_import";
-		if(cli.computedisplacements || cli.stitch)
-		{
-			// 2017-02-11. Giulio. the case of layers that are already stitched images is disabled
-			//stitcher->computeDisplacements(cli.pd_algo, cli.start_layer, cli.end_layer, cli.search_radius_V, cli.search_radius_H, 
-			//							   cli.search_radius_D, cli.substk_dim_V, cli.substk_dim_H, cli.show_progress_bar);
-			stitcher->computeTileDisplacements(cli.pd_algo, cli.start_layer, cli.end_layer, cli.search_radius_V, cli.search_radius_H, 
-										   cli.search_radius_D, cli.show_progress_bar);
-			defaultOutputFileName = "xml_displcomp";
-		}
-		if(cli.thresholddisplacements || cli.stitch)
-		{
-			stitcher->thresholdDisplacements(cli.reliability_threshold);
-			defaultOutputFileName = "xml_displthres";
-		}
-		// 2017-02-27. Giulio. There are two strategies
-		// - layers' tiles are assumed already placed and the best interlayer alignement used for layer placement
-		// - a global 3D optimization is performed and the resulting interlayer alignment used for layer placement
-		if(cli.projdisplacements || cli.stitch) {
-			stitcher->projectDisplacements();
-			defaultOutputFileName = "xml_displproj";
-		}
-		else if(cli.placetiles || cli.stitch)
-		{
-			stitcher->computeTilesPlacement(cli.tp_algo); // compute optimal placement and set to 1.0 the reliability of displacement of tile (0,0) of each layer
-			volume->saveLayersXML(0, fillPath(cli.projfile_save_path, volume->getLAYERS_DIR(), defaultOutputFileName, "xml").c_str()); // save the global optimum tile placement for all layers
-			stitcher->projectDisplacements();             // maintain only displacement of tile (0,0) of each layer
-			defaultOutputFileName = "xml_placetiles";
-		}
-		if(cli.placelayers || cli.stitch)
-		{
-			stitcher->computeLayersPlacement();
-			defaultOutputFileName = "xml_placelayers";
-		}
-		if(cli.mergetiles || cli.stitch)
-		{
-			if ( cli.img_format == "Tiff3D" || cli.img_format == "Vaa3DRaw" )
-				stitcher->mergeTilesVaa3DRaw(cli.volume_save_path, cli.slice_height, cli.slice_width, cli.slice_depth, cli.resolutions, //cli.exclude_nonstitchables, 
-									 -1, -1, -1, -1, cli.D0, cli.D1, cli.lm_blending, cli.tm_blending, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
-			else // cli.img_format == "2D"
-				stitcher->mergeTiles(cli.volume_save_path, cli.slice_height, cli.slice_width, cli.resolutions, //cli.exclude_nonstitchables, 
-									 -1, -1, -1, -1, cli.D0, cli.D1, cli.lm_blending, cli.tm_blending, false, cli.show_progress_bar, cli.img_format.c_str(), cli.img_depth);
-		}
-		//if(cli.test)
-		//{
-		//	stitcher->mergeTiles(cli.volume_save_path, -1, -1, NULL, false, -1, -1, -1, -1, volume->getN_SLICES()/2, volume->getN_SLICES()/2 +1, 
-		//	                     false, false, S_NO_BLENDING, true, false, cli.img_format.c_str(), cli.img_depth);
-		//	defaultOutputFileName = "xml_test";
-		//}
-		//if(cli.dumpMData && cli.image_format=="2D")
-		//{
-		//	StackedVolume::dumpMData(cli.volume_load_path.c_str());
-		//}
-		total_time += TIME(0);
 
-		//saving project file and computation times
-		if(volume)
-			volume->saveXML(0, fillPath(cli.projfile_save_path, volume->getLAYERS_DIR(), defaultOutputFileName, "xml").c_str());
-		if(stitcher && cli.save_execution_times)
-			stitcher->saveComputationTimes(cli.execution_times_filename.c_str(), *volume, total_time);
-
-		//releasing objects
-		if(stitcher)
-			delete stitcher;
-		if(volume)
-			delete volume;
+		// display elapsed time
+		printf("\nTime elapsed: %.1f seconds\n\n", proctime + TIME(0));
 	}
 	catch( IOException& exception){
 		cout<<"ERROR: "<<exception.what()<<endl<<endl;

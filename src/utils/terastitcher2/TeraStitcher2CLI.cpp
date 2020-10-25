@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2020-01-28.  Giulio.     @ADDED parameter for multi-cycle processing
 * 2018-02-04.  Giulio.     @ADDED option for BigTIFF
 * 2017-02-10.  Giulio.     @CHANGED the name and the order of some options 
 * 2017-02-10.  Giulio.     @ADDED options to specify the blending algorithm to be used for layers 
@@ -85,12 +86,12 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 	//TCLAP::ValueArg<float> p_vxl_2("","vxl2","Voxel dimension along second axis (in microns).",false,CLI_DEF_VXL2,"real");
 	//TCLAP::ValueArg<float> p_vxl_3("","vxl3","Voxel dimension along third axis (in microns).",false,CLI_DEF_VXL3,"real");
 	TCLAP::MultiArg<std::string> p_algo("","algorithm","Forces the use of the given algorithm.",false,"string");
-	//TCLAP::ValueArg<int> p_start_stack_row("","R0","First stacks row to be processed.",false,-1,"integer");
-	//TCLAP::ValueArg<int> p_end_stack_row("","R1","Last stacks row to be processed.",false,-1,"integer");
-	//TCLAP::ValueArg<int> p_start_stack_col("","C0","First stacks column to be processed.",false,-1,"integer");
-	//TCLAP::ValueArg<int> p_end_stack_col("","C1","Last stacks column to be processed.",false,-1,"integer");
-	TCLAP::ValueArg<int> p_start_layer("","L0","First layer to be processed.",false,-1,"integer");
-	TCLAP::ValueArg<int> p_end_layer("","L1","Last layer to be processed.",false,-1,"integer");
+	TCLAP::ValueArg<int> p_start_tile_row("","R0","First row of tiles to be processed.",false,-1,"integer");
+	TCLAP::ValueArg<int> p_end_tile_row("","R1","Last row of tiles to be processed.",false,-1,"integer");
+	TCLAP::ValueArg<int> p_start_tile_col("","C0","First column of tiles to be processed.",false,-1,"integer");
+	TCLAP::ValueArg<int> p_end_tile_col("","C1","Last column of tiles to be processed.",false,-1,"integer");
+	TCLAP::ValueArg<int> p_start_interlayer("","L0","First inter layer to be processed.",false,-1,"integer");
+	TCLAP::ValueArg<int> p_end_interlayer("","L1","Last inter layer to be processed.",false,-1,"integer");
 	TCLAP::ValueArg<int> p_D0("","D0","First slice to be processed (index along D).",false,-1,"integer");
 	TCLAP::ValueArg<int> p_D1("","D1","Last slice to be processed (index along D).",false,-1,"integer");
 	//TCLAP::ValueArg<int> p_overlap_V("","oV","Overlap (in pixels) between two adjacent tiles along V.",false,-1,"integer");
@@ -112,7 +113,7 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 	TCLAP::ValueArg<std::string> p_execution_times_file("","exectimesfile","Name of file where to write execution times. ",false,"null","string");
 	TCLAP::SwitchArg p_hide_progress_bar("","noprogressbar","Disables progress bar and estimated time remaining", false);
 	TCLAP::ValueArg<std::string> p_saved_img_format("","imformat","Format of saved images (\"tif\" is default, other: Tiff3D / Vaa3DRaw). ",false,"tif","string");
-	TCLAP::ValueArg<int> p_saved_img_depth("","imdepth","Bitdepth of saved images (\"8\" is default). ",false,8,"integer");
+	TCLAP::ValueArg<int> p_saved_img_depth("","imout_depth","Bitdepth of saved images (\"8\" is default). ",false,8,"integer");
 	//TCLAP::SwitchArg p_ignoreUnequalStacksDepth("","ignore_unequal_stacks_depth","If enabled, differences among stacks in terms of number of slices are ignored. The number of slices of the smallest stack will be assumed as the dimension along D for all the stacks",false);
 	TCLAP::ValueArg<std::string> p_img_regex("","imregex","A regular expression to be used to match image filenames when the volume is imported (by default, all the images with supported file extension are found)",false,"","string");
 	TCLAP::ValueArg<std::string> p_img_channel_select("","imchannel","The channel(s) to be selected when the images are loaded. Allowed values are {\"all\",\"R\",\"G\",\"B\"}. Default is \"all\" (color images will be converted to grayscale).",false,"all","string");
@@ -123,7 +124,11 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 	TCLAP::SwitchArg p_libtiff_bigtiff("","libtiff_bigtiff","Foces the creation of BigTiff files (default: BigTiff disabled).", false);
 	TCLAP::ValueArg<int> p_libtiff_rowsperstrip("","libtiff_rowsperstrip","Configure libtiff library to pack n rows per strip when compression is enabled (default: 1 row per strip).",false,1,"integer");
 
+	TCLAP::SwitchArg p_no_overlap("","no_overlap","Enable the management of non overlapping layers (default: enabled).", true);
+
 	//argument objects must be inserted using LIFO policy (last inserted, first shown)
+	cmd.add(p_no_overlap);
+
 	cmd.add(p_libtiff_rowsperstrip);
 	cmd.add(p_libtiff_bigtiff);
 	cmd.add(p_libtiff_uncompressed);
@@ -155,12 +160,12 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 	//cmd.add(p_overlap_V);
 	cmd.add(p_D1);
 	cmd.add(p_D0);
-	cmd.add(p_end_layer);
-	cmd.add(p_start_layer);
-	//cmd.add(p_end_stack_col);
-	//cmd.add(p_start_stack_col);
-	//cmd.add(p_end_stack_row);
-	//cmd.add(p_start_stack_row);
+	cmd.add(p_end_interlayer);
+	cmd.add(p_start_interlayer);
+	cmd.add(p_end_tile_col);
+	cmd.add(p_start_tile_col);
+	cmd.add(p_end_tile_row);
+	cmd.add(p_start_tile_row);
 	cmd.add(p_algo);
 	//cmd.add(p_vxl_3);
 	//cmd.add(p_vxl_2);
@@ -183,6 +188,13 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 	//cmd.add(p_image_format);
 	cmd.add(p_import);
 	//cmd.add(p_test);
+
+	// -------------------------------- multi-cycle processing --------------------------------------------------------------------------------------------------
+	TCLAP::SwitchArg p_multi_cycle("","multi_cycle","Switch to multi-cycle processing (default: multi layer processing, i.e. multi cycle disabled).", false);
+
+	//argument objects must be inserted using LIFO policy (last inserted, first shown)
+	cmd.add(p_multi_cycle);
+	// ----------------------------------------------------------------------------------------------------------------------------------------------------------
 
 	// Parse the argv array and catch <TCLAP> exceptions, which are translated into <IOException> exceptions
 	char errMsg[S_STATIC_STRINGS_SIZE];
@@ -242,7 +254,7 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 		|| 	
 		(p_project_load_path.isSet() && p_project_save_path.isSet())))
 	{
-		sprintf(errMsg, "One or more required arguments missing for --%s!\n\nUSAGE 1 is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s> \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>]", 
+		sprintf(errMsg, "One or more required arguments missing for --%s!\n\nUSAGE 1 is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s> \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>]\n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>]", 
 			p_computedisplacements.getName().c_str(), p_computedisplacements.getName().c_str(),
 			p_volume_load_path.getName().c_str(), cmd.getDelimiter(), "string",
 			//p_refsys_1.getName().c_str(), cmd.getDelimiter(), "integer",
@@ -253,12 +265,12 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 			//p_vxl_3.getName().c_str(), cmd.getDelimiter(), "real",
 			p_project_save_path.getName().c_str(), cmd.getDelimiter(), "string",
 			p_algo.getName().c_str(), cmd.getDelimiter(), "string",
-			//p_start_stack_row.getName().c_str(), cmd.getDelimiter(), "integer",
-			//p_end_stack_row.getName().c_str(), cmd.getDelimiter(), "integer",
-			//p_start_stack_col.getName().c_str(), cmd.getDelimiter(), "integer",
-			//p_end_stack_col.getName().c_str(), cmd.getDelimiter(), "integer",
-			p_start_layer.getName().c_str(), cmd.getDelimiter(), "integer",
-			p_end_layer.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_start_tile_row.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_end_tile_row.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_start_tile_col.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_end_tile_col.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_start_interlayer.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_end_interlayer.getName().c_str(), cmd.getDelimiter(), "integer",
 			//p_overlap_V.getName().c_str(), cmd.getDelimiter(), "integer",
 			//p_overlap_H.getName().c_str(), cmd.getDelimiter(), "integer",
 			p_search_radius_V.getName().c_str(), cmd.getDelimiter(), "integer",
@@ -269,18 +281,18 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 			//p_enable_restore.getName().c_str(),
 			//p_restoring_direction.getName().c_str(), cmd.getDelimiter(), "integer"
 			);
-			sprintf(errMsg, "%s\n\nUSAGE 2 is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s> \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>]", 
+			sprintf(errMsg, "%s\n\nUSAGE 2 is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s> \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>]", 
 			errMsg,
 			p_computedisplacements.getName().c_str(),
 			p_project_load_path.getName().c_str(), cmd.getDelimiter(), "string",
 			p_project_save_path.getName().c_str(), cmd.getDelimiter(), "string",
 			p_algo.getName().c_str(), cmd.getDelimiter(), "string",
-			//p_start_stack_row.getName().c_str(), cmd.getDelimiter(), "integer",
-			//p_end_stack_row.getName().c_str(), cmd.getDelimiter(), "integer",
-			//p_start_stack_col.getName().c_str(), cmd.getDelimiter(), "integer",
-			//p_end_stack_col.getName().c_str(), cmd.getDelimiter(), "integer",
-			p_start_layer.getName().c_str(), cmd.getDelimiter(), "integer",
-			p_end_layer.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_start_tile_row.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_end_tile_row.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_start_tile_col.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_end_tile_col.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_start_interlayer.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_end_interlayer.getName().c_str(), cmd.getDelimiter(), "integer",
 			//p_overlap_V.getName().c_str(), cmd.getDelimiter(), "integer",
 			//p_overlap_H.getName().c_str(), cmd.getDelimiter(), "integer",
 			p_search_radius_V.getName().c_str(), cmd.getDelimiter(), "integer",
@@ -330,7 +342,7 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 	//STEP 6
 	if(p_merge.isSet() &&!(p_project_load_path.isSet() && p_volume_save_path.isSet()))
 	{
-		sprintf(errMsg, "One or more required arguments missing for --%s!\n\nUSAGE is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s> \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>]\n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>]",
+		sprintf(errMsg, "One or more required arguments missing for --%s!\n\nUSAGE is:\n--%s\n\t--%s%c<%s> \n\t--%s%c<%s> \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t--%s%c<%s> \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>]",
 			p_merge.getName().c_str(), p_merge.getName().c_str(),
 			p_project_load_path.getName().c_str(), cmd.getDelimiter(), "string",
 			p_volume_save_path.getName().c_str(), cmd.getDelimiter(), "string",
@@ -338,12 +350,12 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 			p_slice_width.getName().c_str(), cmd.getDelimiter(), "integer",
 			p_resolutions.getName().c_str(), cmd.getDelimiter(), "string",
 			//p_exclude_nonstitchables.getName().c_str(),
-			//p_start_stack_row.getName().c_str(), cmd.getDelimiter(), "integer",
-			//p_end_stack_row.getName().c_str(), cmd.getDelimiter(), "integer",
-			//p_start_stack_col.getName().c_str(), cmd.getDelimiter(), "integer",
-			//p_end_stack_col.getName().c_str(), cmd.getDelimiter(), "integer",
-			p_start_layer.getName().c_str(), cmd.getDelimiter(), "integer",
-			p_end_layer.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_start_tile_row.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_end_tile_row.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_start_tile_col.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_end_tile_col.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_start_interlayer.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_end_interlayer.getName().c_str(), cmd.getDelimiter(), "integer",
 			p_D0.getName().c_str(), cmd.getDelimiter(), "integer",
 			p_D1.getName().c_str(), cmd.getDelimiter(), "integer",
 			//p_enable_restore.getName().c_str(),
@@ -361,7 +373,7 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 		//p_reliability_threshold.isSet() && 
 		p_volume_save_path.isSet()))
 	{
-		sprintf(errMsg, "One or more required arguments missing for --%s!\nUSAGE is:\n--%s \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t[--%s%c<%s>]... (accepted multiple times) \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>]\n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>]", 
+		sprintf(errMsg, "One or more required arguments missing for --%s!\nUSAGE is:\n--%s \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t--%s%c<%s> \n\t[--%s%c<%s>]... (accepted multiple times) \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>]\n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>] \n\t[--%s%c<%s>]", 
 			p_stitch.getName().c_str(), p_stitch.getName().c_str(),
 			p_volume_load_path.getName().c_str(), cmd.getDelimiter(), "string",
 			//p_refsys_1.getName().c_str(), cmd.getDelimiter(), "integer",
@@ -374,12 +386,12 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 			p_project_save_path.getName().c_str(), cmd.getDelimiter(), "string",
 			p_reliability_threshold.getName().c_str(), cmd.getDelimiter(), "real",
 			p_algo.getName().c_str(), cmd.getDelimiter(), "string",
-			//p_start_stack_row.getName().c_str(), cmd.getDelimiter(), "integer",
-			//p_end_stack_row.getName().c_str(), cmd.getDelimiter(), "integer",
-			//p_start_stack_col.getName().c_str(), cmd.getDelimiter(), "integer",
-			//p_end_stack_col.getName().c_str(), cmd.getDelimiter(), "integer",
-			p_start_layer.getName().c_str(), cmd.getDelimiter(), "integer",
-			p_end_layer.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_start_tile_row.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_end_tile_row.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_start_tile_col.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_end_tile_col.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_start_interlayer.getName().c_str(), cmd.getDelimiter(), "integer",
+			p_end_interlayer.getName().c_str(), cmd.getDelimiter(), "integer",
 			//p_overlap_V.getName().c_str(), cmd.getDelimiter(), "integer",
 			//p_overlap_H.getName().c_str(), cmd.getDelimiter(), "integer",
 			p_search_radius_V.getName().c_str(), cmd.getDelimiter(), "integer",
@@ -455,12 +467,12 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 	//this->VXL_1 = p_vxl_1.getValue();
 	//this->VXL_2 = p_vxl_2.getValue();
 	//this->VXL_3 = p_vxl_3.getValue();
-	//this->start_stack_row = p_start_stack_row.getValue();
-	//this->end_stack_row = p_end_stack_row.getValue();
-	//this->start_stack_col = p_start_stack_col.getValue();
-	//this->end_stack_col = p_end_stack_col.getValue();
-	this->start_layer = p_start_layer.getValue();
-	this->end_layer = p_end_layer.getValue();
+	this->start_tile_row = p_start_tile_row.getValue();
+	this->end_tile_row = p_end_tile_row.getValue();
+	this->start_tile_col = p_start_tile_col.getValue();
+	this->end_tile_col = p_end_tile_col.getValue();
+	this->start_interlayer = p_start_interlayer.getValue();
+	this->end_interlayer = p_end_interlayer.getValue();
 	//this->overlap_V = p_overlap_V.getValue();
 	//this->overlap_H = p_overlap_H.getValue();
 	this->search_radius_V = p_search_radius_V.getValue();
@@ -554,6 +566,12 @@ void TeraStitcher2CLI::readParams(int argc, char** argv) throw (IOException)
 	this->libtiff_uncompressed = p_libtiff_uncompressed.getValue();
 	this->libtiff_bigtiff = p_libtiff_bigtiff.getValue();
 	this->libtiff_rowsPerStrip = p_libtiff_rowsperstrip.getValue();
+
+	this->no_overlap = p_no_overlap.getValue();
+
+	// -------------------------------- multi-cycle processing --------------------------------------------------------------------------------------------------
+	this->multi_cycle = p_multi_cycle.getValue();
+
 }
 
 //checks parameters correctness
@@ -604,12 +622,12 @@ void TeraStitcher2CLI::print()
 	//printf("reference_system = \t{%d,%d,%d}\n", reference_system.first, reference_system.second, reference_system.third);
 	//printf("VXL = \t\t\t%.1f x %.1f x %.1f\n", VXL_1, VXL_2, VXL_3);
 	printf("pd_algo = \t\t%d\n", pd_algo);
-	//printf("start_stack_row = \t%d\n", start_stack_row);
-	//printf("end_stack_row = \t%d\n", end_stack_row);
-	//printf("start_stack_col = \t%d\n", start_stack_col);
-	//printf("end_stack_col = \t%d\n", end_stack_col);
-	printf("start_layer = \t%d\n", start_layer);
-	printf("end_layer = \t%d\n", end_layer);
+	printf("start_tile_row = \t%d\n", start_tile_row);
+	printf("end_tile_row = \t%d\n", end_tile_row);
+	printf("start_tile_col = \t%d\n", start_tile_col);
+	printf("end_tile_col = \t%d\n", end_tile_col);
+	printf("start_interlayer = \t%d\n", start_interlayer);
+	printf("end_interlayer = \t%d\n", end_interlayer);
 	//printf("overlap_V = \t\t%d\n", overlap_V);
 	//printf("overlap_H = \t\t%d\n", overlap_H);
 	printf("search radius = \t%d(V) x %d(H) x %d(D)\n", search_radius_V, search_radius_H, search_radius_D);

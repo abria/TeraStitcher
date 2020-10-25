@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2020-01-28. Giulio.     @ADDED supporto for multi-slice and multi-cycle formats
 * 2019-11-07. Giulio.     @ADDED command line option 'fixed_tiling' controlling the strategy used to partition the volume into tiles
 * 2018-02-04. Giulio.     @ADDED support for converting (stitching) unstitched sparse volumes
 * 2017-09-11. Giulio.     @ADDED parameter controlloing the compression algorithm to be used with HDf5 files
@@ -123,7 +124,9 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		iim::UNST_TIF3D_FORMAT  + "\"/\"" +
 		iim::BDV_HDF5_FORMAT  + "\"/\"" +
 		iim::IMS_HDF5_FORMAT  + "\"/\"" +
-		iim::MAPPED_FORMAT  + "\")";
+		iim::MAPPED_FORMAT  + "\"/\"" +
+		iim::MULTISLICE_FORMAT  + "\"/\"" +
+		iim::MULTICYCLE_FORMAT  + "\")";
 	TCLAP::ValueArg<string> p_src_format("","sfmt",temp.c_str(),true,"","string");
 
 	string tempd = "Destination format (\"" + 
@@ -267,7 +270,9 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 		 p_src_format.getValue() != iim::UNST_TIF3D_FORMAT  && 
 		 p_src_format.getValue() != iim::BDV_HDF5_FORMAT  && 
 		 p_src_format.getValue() != iim::IMS_HDF5_FORMAT  && 
-		 p_src_format.getValue() != iim::MAPPED_FORMAT ) {
+		 p_src_format.getValue() != iim::MAPPED_FORMAT  && 
+		 p_src_format.getValue() != iim::MULTISLICE_FORMAT  && 
+		 p_src_format.getValue() != iim::MULTICYCLE_FORMAT ) {
 		temp = "Unknown source format!\nAllowed formats are:\n\t\"" + 
 			iim::RAW_FORMAT + "\"/\"" + 
 			iim::SIMPLE_RAW_FORMAT + "\"/\"" + 
@@ -282,7 +287,9 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 			iim::UNST_TIF3D_FORMAT  + "\"/\"" +
 			iim::BDV_HDF5_FORMAT  + "\"/\"" +
 			iim::IMS_HDF5_FORMAT  + "\"/\"" +
-			iim::MAPPED_FORMAT  + "\"";
+			iim::MAPPED_FORMAT  + "\"/\"" +
+			iim::MULTISLICE_FORMAT  + "\"/\"" +
+			iim::MULTICYCLE_FORMAT  + "\"";
 		//sprintf(errMsg, "Unknown source format!\nAllowed formats are:\n\tStacked / Simple / SimpeRaw / Raw / Tiled / TiledMC");
 		sprintf(errMsg, "%s", temp.c_str());
 		throw iom::exception(errMsg);

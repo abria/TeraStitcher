@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-09-23. Giulio.     @ADDED method 'isBetter'
 * 2018-04-14. Giulio.     @ADDED methods 'getDefaultDisplacement' and 'getDelays'
 */
 
@@ -98,6 +99,9 @@ class DisplacementMIPNCC : Displacement
 		//combines the parameters of the current and the given displacement so that after this operation
 		//the two displacements are more reliable (and are EQUAL).
 		void			 combine(Displacement& displ)					throw (iom::exception);
+
+		// returns true if 'displ' is a better displacement than the current one
+		bool             isBetter(Displacement *displ)					throw (iom::exception);
 
 		friend class PDAlgoMIPNCC;
 };
