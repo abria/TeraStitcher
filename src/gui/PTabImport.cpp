@@ -1011,7 +1011,7 @@ void PTabImport::iopluginChanged(QString str)
 	if(str == "MultiVolume") {
 		vm::VOLUME_INPUT_FORMAT_PLUGIN = vm::MCVolume::id;
 	}
-	else if(str == "tiff2D" || str == "opencv2D") {
+	else if(str == "tiff2D" || str == "opencv2D" || "bioformats2D" ) {
 		vm::VOLUME_INPUT_FORMAT_PLUGIN = vm::StackedVolume::id;
 	}
 	else {
