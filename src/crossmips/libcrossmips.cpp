@@ -28,7 +28,8 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2017-04-20. Giulio.     @FIXED a very old bug: in the third call to 'compute_Neighborhood' eas used 'NCC_params->wRangeThr_i' instead of 'NCC_params->wRangeThr_j' 
+* 2019-04-25. Giulio.     @ADDED   using subsampling to compute the first NCC map
+* 2017-04-20. Giulio.     @FIXED   a very old bug: in the third call to 'compute_Neighborhood' eas used 'NCC_params->wRangeThr_i' instead of 'NCC_params->wRangeThr_j' 
 * 2016-01-27. Giulio.     @ADDED   checks to not consider NCC maps when they have a dimension that it is too small
 * 2016-01-27. Giulio.     @CHANGED the way initial checks are managed; the search can now be as much lurge as allowed by NCC parameter minDim_NCCsrc
 * 2016-01-27. Giulio.     @CHANGED the way initial checks are managed; the search are is now dynamically resized if overlap is too small
@@ -75,9 +76,12 @@
  */
 
 //#define _WRITE_IMGS
+//#define _WRITE_NCC_ONLY
 
-#ifdef _WRITE_IMGS
+#if defined(_WRITE_IMGS) || defined(_WRITE_NCC_ONLY)
 # include <string.h>
+//# include "../imagemanager/IM_config.h"
+//# include "../imagemanager/Tiff3DMngr.h"
 
 # define _MAX_FNAME_LEN   1000
 # define _PREFIX_LEN   8   // digits used to generate unique file names
@@ -87,6 +91,9 @@
 static int _counter = 0; 
 # endif
 
+
+void fill_NCC_map (iom::real_t *MIP_1, iom::real_t  *MIP_2,  int dimu,  int dimv, 
+					int delayu, int delayv, int wRangeThr_u, int wRangeThr_v, int ind_uv, iom::real_t *NCC_uv );
 
 bool write_3D_stack ( char *fname, iom::real_t *stck, int dimi, int dimj, int dimk );
 
@@ -99,7 +106,7 @@ NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B,
 		A[0], A[(dimk-1)*dimj*dimi + (dimi-1)*dimj + dimj -1], B[0], B[(dimk-1)*dimj*dimi + (dimi-1)*dimj + dimj -1], dimk, dimi, dimj, nk, ni, nj, delayk, delayi, delayj, side );
 #endif
 
-#ifdef _WRITE_IMGS
+#if defined(_WRITE_IMGS) || defined(_WRITE_NCC_ONLY)
 	char _fname[_MAX_FNAME_LEN]; // used ti assemble file manes
 	if ( _counter < _MAX_COUNTER )
 		sprintf(_fname,"%08d",_counter); // WARNING: check the format string; the number of digits must be _PREFIX_LEN
@@ -248,7 +255,7 @@ NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B,
 	//}
 	//else
 	//	throw iom::exception("CrossMIPs: undefined side for tile alignment.");
-
+	
 	// 2017-02-26. Giulio. Check if search areas are too big with respect to overlap
 	delayi = MIN(delayi,MAX(0,dimi - ni - NCC_params->minDim_NCCsrc));
 	delayj = MIN(delayj,MAX(0,dimj - nj - NCC_params->minDim_NCCsrc));
@@ -391,7 +398,7 @@ NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B,
 	}
 #endif
 
-#ifdef _WRITE_IMGS
+#if defined(_WRITE_IMGS) || defined(_WRITE_NCC_ONLY)
 	write_3D_stack(strcpy(_fname+_PREFIX_LEN,"_NCC_xy.dat")-_PREFIX_LEN,NCC_xy,(2*delayi+1),(2*delayj+1),1);
 	write_3D_stack(strcpy(_fname+_PREFIX_LEN,"_NCC_xz.dat")-_PREFIX_LEN,NCC_xz,(2*delayi+1),(2*delayk+1),1);
 	write_3D_stack(strcpy(_fname+_PREFIX_LEN,"_NCC_yz.dat")-_PREFIX_LEN,NCC_yz,(2*delayj+1),(2*delayk+1),1);
@@ -402,9 +409,23 @@ NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B,
 	ind_xz = compute_MAX_ind(NCC_xz,((2*delayi+1)*(2*delayk+1)));
 	ind_yz = compute_MAX_ind(NCC_yz,((2*delayj+1)*(2*delayk+1)));
 
+// #if defined(USECUDA)
+// 	if ( !(getenv("USECUDA_X_NCC")?1:0) )
+// #endif
+// 	{ // 2019-04-25. Giulio. This code must be executed only if NCC map has not be computed by the GPU
+// 		// compute the missing points of the NCC map		
+// 		fill_NCC_map(MIP_xy1,MIP_xy2,dimi_v,dimj_v,delayi,delayj,NCC_params->wRangeThr_i,NCC_params->wRangeThr_j,ind_xy,NCC_xy);		
+// 		fill_NCC_map(MIP_xz1,MIP_xz2,dimi_v,dimk_v,delayi,delayk,NCC_params->wRangeThr_i,NCC_params->wRangeThr_k,ind_xz,NCC_xz);		
+// 		fill_NCC_map(MIP_yz1,MIP_yz2,dimj_v,dimk_v,delayj,delayk,NCC_params->wRangeThr_j,NCC_params->wRangeThr_k,ind_yz,NCC_yz);
+// 		// recompute the position of the maximum		
+// 		ind_xy = compute_MAX_ind(NCC_xy,((2*delayi+1)*(2*delayj+1)));
+// 		ind_xz = compute_MAX_ind(NCC_xz,((2*delayi+1)*(2*delayk+1)));
+// 		ind_yz = compute_MAX_ind(NCC_yz,((2*delayj+1)*(2*delayk+1)));
+// 	} 
+
 	//if ( NCC_xy_valid ) {
 		// NCC_xy: check neighborhood of maxima and search for better maxima if any
-		temp = new iom::real_t[(2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_j+1)];;
+		temp = new iom::real_t[(2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_j+1)];
 		for ( i=0; i<((2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_j+1)); i++ )
 			temp[i] = 0;
 		compute_Neighborhood(NCC_params,NCC_xy,delayi,delayj,NCC_params->wRangeThr_i,NCC_params->wRangeThr_j,ind_xy,MIP_xy1,MIP_xy2,dimi_v,dimj_v,temp,dx1,dy1, failed_xy);
@@ -419,7 +440,7 @@ NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B,
 
 	//if ( NCC_xz_valid ) {
 		// NCC_xz: check neighborhood of maxima and search for better maxima if any
-		temp = new iom::real_t[(2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_k+1)];;
+		temp = new iom::real_t[(2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_k+1)];
 		for ( i=0; i<((2*NCC_params->wRangeThr_i+1)*(2*NCC_params->wRangeThr_k+1)); i++ )
 			temp[i] = 0;
 		compute_Neighborhood(NCC_params,NCC_xz,delayi,delayk,NCC_params->wRangeThr_i,NCC_params->wRangeThr_k,ind_xz,MIP_xz1,MIP_xz2,dimi_v,dimk_v,temp,dx2,dz1, failed_xz);
@@ -435,7 +456,7 @@ NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B,
 
 	//if ( NCC_yz_valid ) {
 		// NCC_yz: check neighborhood of maxima and search for better maxima if any
-		temp = new iom::real_t[(2*NCC_params->wRangeThr_j+1)*(2*NCC_params->wRangeThr_k+1)];;
+		temp = new iom::real_t[(2*NCC_params->wRangeThr_j+1)*(2*NCC_params->wRangeThr_k+1)];
 		for ( i=0; i<((2*NCC_params->wRangeThr_j+1)*(2*NCC_params->wRangeThr_k+1)); i++ )
 			temp[i] = 0;
 		compute_Neighborhood(NCC_params,NCC_yz,delayj,delayk,NCC_params->wRangeThr_j,NCC_params->wRangeThr_k,ind_yz,MIP_yz1,MIP_yz2,dimj_v,dimk_v,temp,dy2,dz2, failed_yz);
@@ -448,6 +469,11 @@ NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B,
 	//	dy2 = dz2 = 0;
 	//}
 
+#if defined(_WRITE_IMGS) || defined(_WRITE_NCC_ONLY)
+	write_3D_stack(strcpy(_fname+_PREFIX_LEN,"_newNCC_xy.dat")-_PREFIX_LEN,NCC_xy,(2*NCC_params->wRangeThr_i+1),(2*NCC_params->wRangeThr_j+1),1);
+	write_3D_stack(strcpy(_fname+_PREFIX_LEN,"_newNCC_xz.dat")-_PREFIX_LEN,NCC_xz,(2*NCC_params->wRangeThr_i+1),(2*NCC_params->wRangeThr_k+1),1);
+	write_3D_stack(strcpy(_fname+_PREFIX_LEN,"_newNCC_yz.dat")-_PREFIX_LEN,NCC_yz,(2*NCC_params->wRangeThr_j+1),(2*NCC_params->wRangeThr_k+1),1);
+#endif
 
 	//compute_Alignment(NCC_params,NCC_xy,NCC_xz,NCC_yz,delayi,delayj,delayk,ind_xy,ind_xz,ind_yz,result);
 	
@@ -489,6 +515,59 @@ NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B,
 }
 
 
+void fill_NCC_map (iom::real_t *MIP_1, iom::real_t  *MIP_2,  int dimu,  int dimv, 
+					int delayu, int delayv, int wRangeThr_u, int wRangeThr_v, int ind_uv, iom::real_t *NCC_uv ) {
+
+	int r, c; // indices of max
+	int rf1, rf2, rl1, rl2, cf1, cf2, cl1, cl2; // bound: '1' variables are for the first loop, '2' variables are for the second loop
+	int ir, ic; // loop indices
+//	iom::real_t temp;
+	
+	// xy
+	r = ind_uv/(2*delayv+1); // row of max
+	rf1 = rf2 = std::max<int>(0,r-wRangeThr_u); // first row of map
+	if ( (r - rf1)%2 == 0 ) // adjust one of the two bounds
+		rf1++;
+	else 
+		rf2++;
+	rl1 = rl2 = std::min<int>(2*delayu,r+wRangeThr_u); // last row of map
+	if ( (rl1 - r)%2 == 0 ) // adjust one of the two bounds
+		rl1--;
+	else
+		rl2--;
+	c = ind_uv%(2*delayv+1);  // column of max
+	cf1 = cf2 = std::max<int>(0,c-wRangeThr_v); // first column of map
+	if ( (c - cf2)%2 == 0 ) // adjust bound '2'
+		cf2++;
+	cl1 = cl2 = std::min<int>(2*delayv,c+wRangeThr_v); // last column of map
+	if ( (c - cl2)%2 == 0 ) // adjust bound '2'
+		cl2--;
+	// compute all points of empty lines
+// 	printf("%d %d %d %d %d %d \n", r, c, delayu, delayv, wRangeThr_u, wRangeThr_v);
+// 	printf("%d %d %d %d %d %d %d %d \n", rf1, rf2, rl1, rl2, cf1, cf2, cl1, cl2);
+	for ( ir=rf1; ir<=rl1; ir+=2 ) {
+		for ( ic=cf1; ic<=cl1; ic++ ) { 
+			NCC_uv[ir*(2*delayv+1)+ic] = compute_NCC(MIP_1,MIP_2,dimu,dimv,(ir-delayu),(ic-delayv),(iom::real_t *)0,(iom::real_t *)0);
+// 			temp = compute_NCC(MIP_1,MIP_2,dimu,dimv,(ir-delayu),(ic-delayv),(iom::real_t *)0,(iom::real_t *)0);
+// 			if ( NCC_uv[ir*(2*delayv+1)+ic] != temp )
+// 				printf("loop 1: %d %d %f %f\n", ir, ic, NCC_uv[ir*(2*delayv+1)+ic], temp);
+		}
+	}
+	// compute missing points in non empty lines
+	for ( ir=rf2; ir<=rl2; ir+=2 ) {
+		for ( ic=cf2; ic<=cl2; ic+=2 ) { 
+			NCC_uv[r*(2*delayv+1)+c] = compute_NCC(MIP_1,MIP_2,dimu,dimv,(ir-delayu),(ic-delayv),(iom::real_t *)0,(iom::real_t *)0);
+// 			temp = compute_NCC(MIP_1,MIP_2,dimu,dimv,(ir-delayu),(ic-delayv),(iom::real_t *)0,(iom::real_t *)0);
+// 			if ( NCC_uv[ir*(2*delayv+1)+ic] != temp )
+// 				printf("loop2: %d %d %f %f\n", ir, ic, NCC_uv[ir*(2*delayv+1)+ic], temp);
+		}
+	}
+}
+
+
+
+#if defined(_WRITE_IMGS) || defined(_WRITE_NCC_ONLY)
+
 bool write_3D_stack ( char *fname, iom::real_t *stck, int dimi, int dimj, int dimk ) {
 	FILE *fout;
 	int i, j, k;
@@ -506,6 +585,33 @@ bool write_3D_stack ( char *fname, iom::real_t *stck, int dimi, int dimj, int di
 
 	fclose(fout);
 
+	//char *err_tiff_fmt;
+	//int img_depth = 16;
+
+	//unsigned char *buffer = new unsigned char [dimi*dimj*dimk*(img_depth/8)];
+
+	//for ( k=0; k<dimk; k++ )
+	//	for ( j=0; j<dimj; j++ )
+	//		for ( i=0; i<dimi; i++ ) {
+	//			if ( img_depth == 8 )
+	//				*(buffer + j+i*dimj+k*dimj*dimi) = static_cast<iim::uint8>(*(stck+j+i*dimj+k*dimj*dimi) * 255.0f + 0.5f);
+	//			else // img_depth = 16
+	//				*(((iim::uint16 *)buffer) + j+i*dimj+k*dimj*dimi) = static_cast<iim::uint16>(*(stck+j+i*dimj+k*dimj*dimi) * 65535.0f + 0.5f);
+	//		}
+
+	//// creates the file (2D image: depth is 1)
+	//if ( (err_tiff_fmt = initTiff3DFile(fname,dimj,dimi,1,1,img_depth/8)) != 0 ) {
+	//	throw iom::exception(iom::strprintf("unable to create tiff file (%s)",err_tiff_fmt), __iom__current__function__);
+	//}
+
+	//if ( (err_tiff_fmt = appendSlice2Tiff3DFile(fname,0,buffer,dimj,dimi)) != 0 ) {
+	//	throw iom::exception(iom::strprintf("error in saving 2D image (%lld x %lld) in file %s (appendSlice2Tiff3DFile: %s)",dimj,dimi,fname,err_tiff_fmt), __iom__current__function__);
+	//}
+
+	//delete buffer;
+
 	return true;
 }
+
+#endif
 

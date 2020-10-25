@@ -84,7 +84,7 @@ void compute_3_MIPs ( iom::real_t *A, iom::real_t *B,
 					  int dimi_v, int dimj_v, int dimk_v, int stridei, int stridek );
 
 void compute_NCC_map ( iom::real_t *NCC_map, iom::real_t *MIP_1, iom::real_t *MIP_2, 
-		 			       int dimu, int dimv, int delayu, int delayv );
+					       int dimu, int dimv, int delayu, int delayv );
 /* Parameters:
  *    NCC_map:      externaly allocated buffer of size (2*delayu+1) rows x (2*delayv+1)
  *    MIP_1, MIP_2: matrices of size dimu x dimv
@@ -120,6 +120,7 @@ int compute_MAX_ind ( iom::real_t *vect, int len );
 
 void compute_Neighborhood ( NCC_parms_t *NCC_params, iom::real_t *NCC, int delayu, int delayv, int newu, int newv, int ind, 
 						    iom::real_t *MIP_1, iom::real_t *MIP_2, int dimu, int dimv, iom::real_t *NCCnew, int &du, int &dv, bool &failed)  throw (iom::exception);
+
 /* Returns an NCC map of of size (2*newu+1) x (2*newv+1) centered around the NCC maximum or returns filed = true
  * if this map cannot be found (it is: newu = newv = NCC_params->wRangeThr)
  *
