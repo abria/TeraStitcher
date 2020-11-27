@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019.10-16. Giulio.     @ADDED friend class 'MultiSliceVolume'
 * 2017-08-19. Giulio.     @ADDED getter for data member 'enabled'
 * 2017-04-18. Alessandro. @ADDED constructor that directly takes vm::VirtualVolume in input, and added 'volume_external' attribute
 * 2017-04-01. Giulio.     @ADDED support for multi-layer stitching
@@ -156,6 +157,8 @@ class UnstitchedVolume : public iim::VirtualVolume
         friend class iim::VirtualVolume; 
 
 		// needed to enable the extraction of the underlying unstitiched volume
+		friend class MultiSliceVolume; // 2019-10-16. Giulio. @ADDED
+		friend class MultiChannelVolume; // 2019-10-22. Giulio. @ADDED
 		friend class MultiLayersVolume; 
 		friend class StackStitcher2; 
 		friend class TPAlgo2MST; 

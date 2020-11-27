@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2020-09-24. Giulio.     @FIXED bug when volumes are stored as multi-page tiffs
 * 2018-04-23. Giulio.     @FIXED bug in special case of buffer loading: corrected the D indices
 * 2018-04-21. Giulio.     @FIXED bug in the constructors: voxel size was not divided by 1000 when the volume origin is initialized
 * 2018-03-03. Giulio.     @ADDED special cases of buffer loading has been optimized
@@ -171,10 +172,10 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir, bool cacheEnabled, int
     // @FIXED by Alessandro on 2016-12-15. Convert iom::exception to iim::IOException (the only ones this function can throw)
     try
     {
-        if ( (plugin_type.compare("3D image-based I/O plugin") == 0) ?
-              iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() :
-              iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved()  && 
-								vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(vm::MCVolume::id) != 0) { // 2018-01-23. Giulio. if is an MCVolume then channels are not interleaved
+        if ( ( (plugin_type.compare("3D image-based I/O plugin") == 0) ?
+              iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() : 
+              iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved() ) &&     // 2020-09-24. Giulio. @FIXED bug when volumes are stored as multi-page tiffs
+								vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(vm::MCVolume::id) != 0) { // 2018-01-23. Giulio. if is an MCVolume then channels are not interleaved, independently of the input plugin  
             if ( DIM_C > 3 || BYTESxCHAN > 2 )
                 throw iim::IOException(iom::strprintf("image not supported by UnstitchedVolume (DIM_C=%d, BYTESxCHAN=%d)", DIM_C, BYTESxCHAN), __iom__current__function__);
         }
@@ -278,10 +279,10 @@ UnstitchedVolume::UnstitchedVolume(vm::VirtualVolume * _imported_volume, bool ca
 	// @FIXED by Alessandro on 2016-12-15. Convert iom::exception to iim::IOException (the only ones this function can throw)
 	try
 	{
-		if ( (plugin_type.compare("3D image-based I/O plugin") == 0) ?
-			iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() :
-			iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved()  && 
-								vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(vm::MCVolume::id) != 0 ) { // 2018-01-23. Giulio. if is an MCVolume then channels are not interleaved
+        if ( ( (plugin_type.compare("3D image-based I/O plugin") == 0) ?
+              iom::IOPluginFactory::getPlugin3D(iom::IMIN_PLUGIN)->isChansInterleaved() : 
+              iom::IOPluginFactory::getPlugin2D(iom::IMIN_PLUGIN)->isChansInterleaved() ) &&     // 2020-09-24. Giulio. @FIXED bug when volumes are stored as multi-page tiffs
+								vm::VOLUME_INPUT_FORMAT_PLUGIN.compare(vm::MCVolume::id) != 0) { // 2018-01-23. Giulio. if is an MCVolume then channels are not interleaved, independently of the input plugin  
 				if ( DIM_C > 3 || BYTESxCHAN > 2 )
 					throw iim::IOException(iom::strprintf("image not supported by UnstitchedVolume (DIM_C=%d, BYTESxCHAN=%d)", DIM_C, BYTESxCHAN), __iom__current__function__);
 		}
@@ -432,7 +433,7 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 	int row_end;
 	int col_start;
 	int col_end;
-
+	
 	// change when subvolumes are enabled
 	//row_start = stitcher->ROW_START;
 	//row_end   = stitcher->ROW_END;;

@@ -29,7 +29,7 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2018-01-25. Giulio.     @ADDED supporto for MultiVolume format
+* 2018-01-25. Giulio.     @ADDED support for MultiVolume format
 * 2016-05-03. Giulio.     @CHANGED ComboBox for selecting the reference system: eliminated configurations that are not supported
 * 2017-04-30. Giulio.     @ADDED propagation to PTabDisplComp of all operation over the channel_selection combo box
 * 2017-04-27. Giulio.     @ADDED code to get and initialize the input plugin form the xml if specified
@@ -1011,7 +1011,7 @@ void PTabImport::iopluginChanged(QString str)
 	if(str == "MultiVolume") {
 		vm::VOLUME_INPUT_FORMAT_PLUGIN = vm::MCVolume::id;
 	}
-	else if(str == "tiff2D" || str == "opencv2D") {
+	else if(str == "tiff2D" || str == "opencv2D" || "bioformats2D" ) {
 		vm::VOLUME_INPUT_FORMAT_PLUGIN = vm::StackedVolume::id;
 	}
 	else {

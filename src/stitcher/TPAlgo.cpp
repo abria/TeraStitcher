@@ -25,9 +25,17 @@
 *       specific prior written permission.
 ********************************************************************************************************************************************************************************************/
 
+/******************
+*    CHANGELOG    *
+*******************
+* 2018-04-14. Giulio.     @ADDED code for instancing the global optimization algorithm based on Linear Quadtratic Programming + heuristics (S_FATPM_LQP_HE)
+*/
+
+
 #include <cstdio>
 #include "TPAlgo.h"
 #include "TPAlgoMST.h"
+#include "TPAlgoLQP.h"
 #include "S_config.h"
 
 using namespace volumemanager;
@@ -47,6 +55,8 @@ TPAlgo* TPAlgo::instanceAlgorithm(int _type, VirtualVolume * _volume)
 
 	if     (_type == S_FATPM_SP_TREE)
 		return (TPAlgo*)(new TPAlgoMST(_volume));
+	else if     (_type == S_FATPM_LQP_HE)
+		return (TPAlgo*)(new TPAlgoLQP(_volume));
 	else
 	{
                 char err_msg[S_STATIC_STRINGS_SIZE];

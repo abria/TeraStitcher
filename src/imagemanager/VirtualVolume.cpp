@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2020-01-28. Giulio.     @ADDED support for multi-slice and multi-cycle formats
 * 2018-06-30. Giulio.     @ADDED initialization of 'depth_conv_algo' (ID of algorithm to be used to convert from arbitrary depth to 8 bits)
 * 2017-08-30. Giulio.     @FIXED introduced sint64 variables to avoid overflow in indices on slices larger than 4 GBs
 * 2017-04-13. Giulio.     @ADDED the case 2D slices multi-channel 16 bit in 'saveImage_from_UINT8'
@@ -55,6 +56,8 @@
 #include "TiledMCVolume.h"
 #include "StackedVolume.h"
 #include "UnstitchedVolume.h"
+#include "MultiSliceVolume.h"
+#include "MultiCycleVolume.h"
 #include "BDVVolume.h"
 #include "RawFmtMngr.h"
 #include "Tiff3DMngr.h"
@@ -1208,6 +1211,10 @@ VirtualVolume* VirtualVolume::instance_format(const char* path, std::string form
             volume = new RawVolume(path);
 		else if(format.compare(UNST_TIF3D_FORMAT) == 0)
             volume = new UnstitchedVolume(path);
+		else if(format.compare(MULTISLICE_FORMAT) == 0)
+            volume = new MultiSliceVolume(path);
+		else if(format.compare(MULTICYCLE_FORMAT) == 0)
+            volume = new MultiCycleVolume(path);
 		else if(format.compare(BDV_HDF5_FORMAT) == 0)
             throw IOException(strprintf("in VirtualVolume::instance(): volumes in format \"%s\" should be created with another \"instance\" method", format.c_str(), path), __iim__current__function__);
         else

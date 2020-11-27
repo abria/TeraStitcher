@@ -28,6 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-09-25. Giulio.     @ADDED method 'isBetter'
 * 2018-04-14. Giulio.     @ADDED virtual method 'getDefaultDisplacement' 
 * 2018-02-03. Giulio.     @ADDED constant 'dir_all' to enum type 'direction'
 */
@@ -84,6 +85,9 @@ class Displacement
 		//XML methods: convert/load displacement object into/from XML schema
 		virtual TiXmlElement*	 getXML()										throw (iom::exception) = 0;
 		virtual void			 loadXML(TiXmlElement *displ_node)				throw (iom::exception) = 0;
+
+		// returns true if 'displ' is a better displacement than the current one
+		virtual bool             isBetter(Displacement *displ)							throw (iom::exception) = 0;
 
 		/*** PUBLIC METHODS that derived classes inherit and can override ***/
 		

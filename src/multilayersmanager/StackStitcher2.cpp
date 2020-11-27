@@ -28,6 +28,11 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2019-12-08.  Giulio.     @ADDED method 'adjustBestDisplacements'
+* 2019.09.26.  Giulio.     @FIXED in 'findBestDisplacements' and 'thresholdDisplacements'some displacements may be missing
+* 2019-09-25.  Giulio.     @ADDED in method 'getMultiresABS_D' changed factor 10 to 100: this way file names MUST code positions with a precision of hundreds of um instead of tens of um
+* 2019-09-23.  Giulio.     @ADDED method 'findBestDisplacements'
+* 2019-09-20.  Giulio.     @ADDED parameter 'no_overlap' to 'computeTileDisplacements' for managing non overlapping layers
 * 2017-04-01.  Giulio.     @ADDED code for completing the management of multi-layer stitching
 * 2017-02-10.  Giulio.     @ADDED in merge methods added a parameter to specify the blending algorithm to be used for layers 
 */
@@ -98,9 +103,22 @@ StackStitcher2::StackStitcher2(MultiLayersVolume* _volume)
 * [tile_idx_V ...]	    : indices of tiles to be aligned
 * [show_progress_bar]	: enables/disables progress bar with estimated time remaining.
 **************************************************************************************************************/
-void StackStitcher2::computeTileDisplacements(int algorithm_type, int start_layer, int end_layer, 
-											  int displ_max_V, int displ_max_H, int displ_max_D, bool show_progress_bar) throw (IOException) {
-
+void StackStitcher2::computeTileDisplacements(
+	int algorithm_type, 
+	int start_interlayer, 
+	int end_interlayer, 
+	int row0,
+	int col0,
+	int row1,
+	int col1,
+	int displ_max_V, 
+	int displ_max_H, 
+	int displ_max_D, 
+	bool no_overlap,
+	bool show_progress_bar
+) 
+throw (IOException) 
+{
 	#if S_VERBOSE>2
 	printf("\t\t\t....in StackStitcher2::computeDisplacements(..., start_layer = %d, end_layer = %d, tile_idx_V = %d, tile_idx_H = %d, displ_max_V = %d, displ_max_H = %d, displ_max_D = %d)\n",
 		start_layer, end_layer, tile_idx_V, tile_idx_H, displ_max_V, displ_max_H, displ_max_D);
@@ -111,32 +129,36 @@ void StackStitcher2::computeTileDisplacements(int algorithm_type, int start_laye
 	PDAlgo *algorithm;					//stores the reference to the algorithm to be used for pairwise displacement computation
 	int dim_V, dim_H;			// lowest extension between two adjacent layers
 	int n_substk_V, n_substk_H;
-	int displ_computations;						//stores the number of displacement computations (used for progress bar)
-	int displ_computations_idx;					//counter for displacements computations
+	int displ_computations = 0;						//stores the number of displacement computations (used for progress bar)
+	int displ_computations_idx = 0;					//counter for displacements computations
 	int i, j, k;
 	iim::real32 *sstk_A, *sstk_B;				//substacks to be aligned 
 	int D0_A, D1_A, D0_B, D1_B;
 
-	start_layer	 = start_layer	== -1 ? 0 : start_layer;
-	end_layer	 = end_layer	== -1 ? volume->getN_LAYERS() - 1 : end_layer;
+	start_interlayer = start_interlayer == -1 ? 0 : start_interlayer;
+	end_interlayer   = end_interlayer   == -1 ? volume->getN_LAYERS() - 2 : end_interlayer;
 
-	if(start_layer < 0 || start_layer > end_layer || end_layer >= volume->getN_LAYERS())
+	// computing the total number of substacks 
+	n_substk_V = ((UnstitchedVolume *) (volume->getLAYER(start_interlayer)))->volume->getN_ROWS();
+	n_substk_H = ((UnstitchedVolume *) (volume->getLAYER(start_interlayer)))->volume->getN_COLS();
+	row0 = row0	== -1 ? 0 : row0;
+	col0 = col0	== -1 ? 0 : col0;
+	row1 = row1	== -1 ? n_substk_V-1 : row1;
+	col1 = col1 == -1 ? n_substk_H-1 : col1;
+
+	if(start_interlayer < 0 || start_interlayer > end_interlayer || end_interlayer >= (volume->getN_LAYERS()-1))
 	{
 		sprintf(buffer, "in StackStitcher2::computeDisplacements(...): selected portion of volume layers LAYERS[%d,%d] must be in LAYERS[0,%d]",
-				start_layer, end_layer, volume->getN_LAYERS()-1);
+				start_interlayer, end_interlayer, volume->getN_LAYERS()-2);
 		throw IOException(buffer);
 	}
 
 	//Pairwise Displacement Algorithm initialization
 	algorithm = PDAlgo::instanceAlgorithm(algorithm_type);
 
-	// computing the number of substacks 
-	n_substk_V = ((UnstitchedVolume *) (volume->getLAYER(start_layer)))->volume->getN_ROWS();
-	n_substk_H = ((UnstitchedVolume *) (volume->getLAYER(start_layer)))->volume->getN_COLS();
-
 	// getting height and width of tiles
-	dim_V = ((UnstitchedVolume *) (volume->getLAYER(start_layer)))->volume->getStacksHeight();
-	dim_H = ((UnstitchedVolume *) (volume->getLAYER(start_layer)))->volume->getStacksWidth();
+	dim_V = ((UnstitchedVolume *) (volume->getLAYER(start_interlayer)))->volume->getStacksHeight();
+	dim_H = ((UnstitchedVolume *) (volume->getLAYER(start_interlayer)))->volume->getStacksWidth();
 
 	// all layers are assumend to have the same tile matrix
 
@@ -147,22 +169,32 @@ void StackStitcher2::computeTileDisplacements(int algorithm_type, int start_laye
 		ts::ProgressBar::instance()->start("Pairwise displacement computation");
 		ts::ProgressBar::instance()->setProgressValue(0,"Initializing...");
 		ts::ProgressBar::instance()->display();
-		displ_computations = n_substk_V * n_substk_H * (end_layer - start_layer);
+		displ_computations = (row1 - row0 + 1) * (col1 - col0 + 1) * (end_interlayer - start_interlayer + 1);
 		displ_computations_idx = 1;
 	}
 
-	for ( k=0; k<(volume->getN_LAYERS()-1); k++ ) {
+	// N.B. in the condition <= is right because 'end_interlayer' is the index of the last inter layer to be processed ens NOT the number of inter layers to be processed
+	for ( k=start_interlayer; k<=end_interlayer; k++ ) { 
 		D0_A = volume->getLAYER_DIM(k,2) - volume->getOVERLAP_D(k);
 		D1_A = D0_A + volume->getOVERLAP_D(k);
 		D0_B = 0;
 		D1_B = D0_B + volume->getOVERLAP_D(k);
 
+		// 2019-09-20. Giulio. if 'no_overlap' is enabled, adjust overlap indices if there is no overlap
+		if ( no_overlap ) {
+			if ( D0_A >= D1_A ) // there is no overlap
+				D0_A = D1_A - 1;
+			if ( D0_B >= D1_B ) // there is no overlap
+				D1_B = D0_B + 1;
+		}
+
 		volume->initDISPS(k,n_substk_V,n_substk_H);
 
-		for ( j=0; j<n_substk_H; j++ ) {
+		// N.B. in the condition <= is right for the same reason given above
+		for ( j=col0; j<=col1; j++ ) {
 			//H1 = H0 + (j<r_substk_H ? d_substk_H+1 : d_substk_H);
 
-			for ( i=0; i<n_substk_V; i++ ) {
+			for ( i=row0; i<=row1; i++ ) {
 				//V1 = V0 + (i<r_substk_V ? d_substk_V+1 : d_substk_V);
 
 				if(show_progress_bar)
@@ -1030,7 +1062,7 @@ void StackStitcher2::halveSample(iim::real32* img, int height, int width, int de
 /*************************************************************************************************************
 * For each pair of layers projects the best interlayer displacement and leaves one displacements that  has  to 
 * be applied to the layer as a whole. 
-* WARNING: this mathod it has to be used if layers are already stitched blocks (i.e. their internal diplacements 
+* WARNING: this mathod has to be used if layers are already stitched blocks (i.e. their internal diplacements 
 * are not affected by interlayer displacements.
 **************************************************************************************************************/
 void StackStitcher2::projectDisplacements() throw (IOException)
@@ -1046,6 +1078,73 @@ void StackStitcher2::projectDisplacements() throw (IOException)
 		Displacement::projectDisplacements(temp_V);     // projects along V
 		// substitutes the matrix with a singleton
 		volume->setDISPS(k,new vector< std::vector<Displacement *> >(1,vector<Displacement *>(1,temp_V.at(0))));
+		// 2019-12-08. Giulio. set iBest and jBest accordingly
+		volume->setiBest(0,k);
+		volume->setjBest(0,k);
+	}
+}
+
+/*************************************************************************************************************
+* For each pair of layers projects finds the best interlayer displacement evaluating  all dimensions  together 
+* and returns in homologous elements of ii and jj the position in the tile matrix of the corresponding pair of 
+* tiles.
+* ii and jj must be integer 1D arrays with N_LAYERS - 1 elements
+**************************************************************************************************************/
+void StackStitcher2::findBestDisplacements()  throw (iim::IOException) {
+	for ( int k=0; k<(volume->getN_LAYERS() - 1); k++ ) { // for each pair of layers i, i+1
+		// initially tiles (0,0) of layers k and k+1 are assumed to have the better displacement
+		volume->setiBest(0,k);
+		volume->setjBest(0,k);
+		Displacement *best_displ = volume->getDISPS(k)->at(0).at(0);
+		for ( int i=0; i<volume->getDISPS(k)->size(); i++ ) {
+			for ( int j=0; j<volume->getDISPS(k)->at(0).size(); j++ ) {
+				if ( volume->getDISPS(k)->at(i).at(j) ) { // 2019.09.26. Giulio. @FIXED some displacements may be missing
+					if ( best_displ->isBetter(volume->getDISPS(k)->at(i).at(j)) ) {
+						volume->setiBest(i,k);
+						volume->setjBest(j,k);
+						best_displ = volume->getDISPS(k)->at(i).at(j);
+					}
+				}
+			}
+		}	
+	}
+}
+
+/*************************************************************************************************************
+* For each pair of layers compute and set the displacement of tile (0,0) coherent with the  best  displacement  
+* and set to 1.0 the reliability of displacement of tile (0,0).
+**************************************************************************************************************/
+void StackStitcher2::adjustBestDisplacements() throw (iim::IOException)
+{
+	for ( int layer=1; layer<(volume->getN_LAYERS()); layer++ ) {
+		// build a temporary descriptor
+		NCC_descr_t descr;
+
+		int DB, up0, upB, down0, downB;
+		// D0 = DB + (upB - up0) - (downB - down0)
+		DB    = volume->getDISPS(layer-1)->at(volume->getiBest(layer-1)).at(volume->getjBest(layer-1))->getDisplacement(dir_vertical);
+		up0   = ((UnstitchedVolume *) volume->LAYERS[layer-1])->volume->getSTACKS()[0][0]->getABS_V();
+		upB   = ((UnstitchedVolume *) volume->LAYERS[layer-1])->volume->getSTACKS()[volume->getiBest(layer-1)][volume->getjBest(layer-1)]->getABS_V();
+		down0 = ((UnstitchedVolume *) volume->LAYERS[layer])->volume->getSTACKS()[0][0]->getABS_V();
+		downB = ((UnstitchedVolume *) volume->LAYERS[layer])->volume->getSTACKS()[volume->getiBest(layer-1)][volume->getjBest(layer-1)]->getABS_V();
+		descr.coord[0] = DB + (upB - up0) - (downB - down0); // V displacement
+		DB    = volume->getDISPS(layer-1)->at(volume->getiBest(layer-1)).at(volume->getjBest(layer-1))->getDisplacement(dir_horizontal);
+		up0   = ((UnstitchedVolume *) volume->LAYERS[layer-1])->volume->getSTACKS()[0][0]->getABS_H();
+		upB   = ((UnstitchedVolume *) volume->LAYERS[layer-1])->volume->getSTACKS()[volume->getiBest(layer-1)][volume->getjBest(layer-1)]->getABS_H();
+		down0 = ((UnstitchedVolume *) volume->LAYERS[layer])->volume->getSTACKS()[0][0]->getABS_H();
+		downB = ((UnstitchedVolume *) volume->LAYERS[layer])->volume->getSTACKS()[volume->getiBest(layer-1)][volume->getjBest(layer-1)]->getABS_H();
+		descr.coord[1] = DB + (upB - up0) - (downB - down0); // H displacement
+		DB    = volume->getDISPS(layer-1)->at(volume->getiBest(layer-1)).at(volume->getjBest(layer-1))->getDisplacement(dir_depth);
+		up0   = ((UnstitchedVolume *) volume->LAYERS[layer-1])->volume->getSTACKS()[0][0]->getABS_D();
+		upB   = ((UnstitchedVolume *) volume->LAYERS[layer-1])->volume->getSTACKS()[volume->getiBest(layer-1)][volume->getjBest(layer-1)]->getABS_D();
+		down0 = ((UnstitchedVolume *) volume->LAYERS[layer])->volume->getSTACKS()[0][0]->getABS_D();
+		downB = ((UnstitchedVolume *) volume->LAYERS[layer])->volume->getSTACKS()[volume->getiBest(layer-1)][volume->getjBest(layer-1)]->getABS_D();
+		descr.coord[2] = DB + (upB - up0) - (downB - down0); // D displacement
+		descr.NCC_maxs[0] = descr.NCC_maxs[1] = descr.NCC_maxs[2] = 1.0;
+		descr.NCC_widths[0] = descr.NCC_widths[1] = descr.NCC_widths[2] = 1;
+		DisplacementMIPNCC *temp_disp = new DisplacementMIPNCC(descr); // substitute the displacement descriptor
+		// update layer displacements
+		volume->insertDisplacement(0,0,layer-1,(Displacement *)temp_disp); // displacement of layer i is in interlayer descriptor i-1
 	}
 }
 
@@ -1056,7 +1155,7 @@ void StackStitcher2::projectDisplacements() throw (IOException)
 * Moreover, stacks which do not have any reliable single-direction displacements with all 4 neighbors are mar-
 * ked as NON STITCHABLE.
 **************************************************************************************************************/
-void StackStitcher2::thresholdDisplacements(float reliability_threshold)					   throw (IOException)
+void StackStitcher2::thresholdDisplacements(float reliability_threshold) throw (IOException)
 {
 	#if S_VERBOSE > 3
 	printf("......in StackStitcher2::thresholdDisplacements(reliability_threshold = %.4f)\n", reliability_threshold);
@@ -1077,7 +1176,8 @@ void StackStitcher2::thresholdDisplacements(float reliability_threshold)					   
 		disp = volume->getDISPS(i);
 		for ( int v=0; v<disp->size(); v++) {
 			for ( int h=0; h<disp->at(v).size(); h++) {
-				disp->at(v).at(h)->threshold(reliability_threshold);
+				if ( disp->at(v).at(h) ) // 2019.09.26. Giulio. @FIXED some displacements may be missing
+					disp->at(v).at(h)->threshold(reliability_threshold);
 			}
 		}
 	}
@@ -1224,9 +1324,9 @@ std::string StackStitcher2::getMultiresABS_H_string(int res, int REL_H)
 int StackStitcher2::getMultiresABS_D(int res, int REL_D)
 {
 	if(volume->getVXL_D() > 0)
-		return (int) ROUND(volume->getABS_D( D0 + REL_D*POW_INT(2,res) )*10);
+		return (int) ROUND(volume->getABS_D( D0 + REL_D*POW_INT(2,res) )*100); // warning: original factor was 10 to approximate to 0.1 um, using 100 we approximate to 0.01 um
 	else
-		return (int) ROUND(volume->getABS_D( D0 - 1 + REL_D*POW_INT(2,res) )*10 + volume->getVXL_D()*POW_INT(2,res)*10);
+		return (int) ROUND(volume->getABS_D( D0 - 1 + REL_D*POW_INT(2,res) )*100 + volume->getVXL_D()*POW_INT(2,res)*100); // warning: original factor was 10 to approximate to 0.1 um, using 100 we approximate to 0.01 um
 }
 std::string StackStitcher2::getMultiresABS_D_string(int res, int REL_D)	
 {

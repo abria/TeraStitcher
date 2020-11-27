@@ -666,6 +666,8 @@ void TeraStitcherCLI::readParams(int argc, char** argv) throw (iom::exception)
 			this->tp_algo = S_FATPM_SCAN_V;
 		else if(algorithms[i].compare(S_FATPM_SCAN_H_NAME) == 0)
 			this->tp_algo = S_FATPM_SCAN_H;
+		else if(algorithms[i].compare(S_FATPM_LQP_HE_NAME) == 0)
+			this->tp_algo = S_FATPM_LQP_HE;
 		else if(algorithms[i].compare(S_NO_BLENDING_NAME) == 0)
 			this->tm_blending = S_NO_BLENDING;
 		else if(algorithms[i].compare(S_SINUSOIDAL_BLENDING_NAME) == 0)
