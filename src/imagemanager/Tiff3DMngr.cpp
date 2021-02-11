@@ -26,6 +26,7 @@
 *    CHANGELOG    *
 *******************
 *******************
+* 2021-02-10. Giulio.     @ADDED when the file is compiled as a Vaa3D plugin the tag TIFFTAG_PAGENUMBER is not checked to avoid exceptions when the number of slices is inconsistent  
 * 2018-08-22. Giulio.     @CHANGED in 'readTiff3DFile2Buffer' if TIFFTAG_ROWSPERSTRIP is missing it is assumed that all rows are packed into only one strip
 * 2017-10-05. Giulio.     @FIXED a problem with slices having very large width in 'initTiff3DFile' and 'appendSlice2Tiff3DFile'
 * 2017-05-03. Giulio.     @ADDED ruotine resetLibTIFFcfg to reconfigure an already configured library
@@ -158,8 +159,13 @@ char *loadTiff3D2Metadata ( char * filename, unsigned int &sz0, unsigned int  &s
 		//return ((char *) "Undefined samples per pixel.");
 	}
 
+	// 2021-02-10. Giulio. when it is compiled as a Vaa3D plugin does not check the tag TIFFTAG_PAGENUMBER to avoid exceptions on inconsistent files  
+	#ifdef _VAA3D_TERAFLY_PLUGIN_MODE
+	check = 0;
+	#else
 	// Onofri
 	check=TIFFGetField(input, TIFFTAG_PAGENUMBER, &Cpage, &Npages);
+	#endif
 	if (!check || Npages==0) { // the tag has not been read correctly
 		// Add warning?
 		Npages = 0;
@@ -871,12 +877,13 @@ char *readTiff3DFile2Buffer ( void *fhandler, unsigned char *img, unsigned int i
 
 		}
 
-		// input file is assumedo ti be already open and it is provided as an handler; the file should be closed by caller
+		// input file is assumed to be already open and it is provided as an handler; the file should be closed by caller
 		//TIFFClose(input); 
 
-		if ( page < static_cast<int>(last-first+1) ){
-			return ((char *) "Cannot read all the pages.");
-		}
+		// 2021. Giulio. The following code seems useless since the condition should be always false
+// 		if ( page < static_cast<int>(last-first+1) ){
+// 			return ((char *) "Cannot read all the pages.");
+// 		}
 	}
 	else { // read with downsampling
 
