@@ -166,7 +166,7 @@ char *loadTiff3D2Metadata ( char * filename, unsigned int &sz0, unsigned int  &s
 	// Onofri
 	check=TIFFGetField(input, TIFFTAG_PAGENUMBER, &Cpage, &Npages);
 	#endif
-	if (!check || Npages==0) { // the tag has not been read correctly
+	if (check!=1 || Npages==0) { // the tag has not been read correctly
 		// Add warning?
 		Npages = 0;
 		do {
