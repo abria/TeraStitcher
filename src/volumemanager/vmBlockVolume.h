@@ -25,6 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
+* 2021-02-12. Giulio.     @FIXED empty constructor 'vm::BlockedVolume' must initialize 'BLOCKS'
 * 2019-11-02. Giulio.     @ADDED 'mdata_fname' parameter to constructor from xml
 * 2018-03-02. Giulio.     @ADDED the possibility to set a path and a name for the mdata.bin file
 * 2017-06-26. Giulio.     @ADDED methods to set active resolution and active timepoint
@@ -97,7 +98,7 @@ class vm::BlockVolume : public vm::VirtualVolume
 		static const std::string id;		
 
 		//CONSTRUCTORS-DECONSTRUCTOR
-		BlockVolume() : vm::VirtualVolume(){}
+		BlockVolume() : vm::VirtualVolume(){ BLOCKS = (vm::Block ***) 0; }
         BlockVolume(const char* _stacks_dir, vm::ref_sys reference_system, float VXL_1=0, float VXL_2=0, float VXL_3=0, bool overwrite_mdata=false, std::string mdata_fname="") throw (iom::exception);
         BlockVolume(const char *xml_filepath, bool overwrite_mdata=false, std::string mdata_fname="") throw (iom::exception);
 		~BlockVolume();
