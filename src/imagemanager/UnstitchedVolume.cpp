@@ -544,7 +544,7 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 	D0 = stitcher->D0;
 	D1 = stitcher->D1;
 
-	iom::real_t* buffer;								//buffer temporary image data are stored
+	iom::real_t* buffer = NULL; //buffer temporary image data are stored
 
 	if ( !cb->getSubvolume(current_channel,V0,V1,H0,H1,D0,D1,buffer) ) {
 
