@@ -147,8 +147,8 @@ class volumemanager::VirtualVolume
 		float	 getVXL_V();
 		float	 getVXL_H();
 		float	 getVXL_D();
-		float	 getMEC_V();
-		float	 getMEC_H();
+		virtual float getMEC_V();
+		virtual float getMEC_H();
 		virtual int getStacksHeight() = 0;
 		virtual int	getStacksWidth() = 0;
 		virtual int getN_ROWS();
