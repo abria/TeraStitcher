@@ -109,7 +109,9 @@ class vm::MCVolume : public vm::VirtualVolume
 		std::string getACTIVE_TP  ( ) { return active_tp; }
 		void        setACTIVE_TP  (int t) { active_tp = t; }
 
-		int         getN_ROWS() { return subvolumes[active_channel]->getN_ROWS(); }
+		float       getMEC_H() { return subvolumes[active_channel]->getMEC_H(); }
+  		float       getMEC_V() { return subvolumes[active_channel]->getMEC_V(); }
+  		int         getN_ROWS() { return subvolumes[active_channel]->getN_ROWS(); }
 		int	        getN_COLS() { return subvolumes[active_channel]->getN_COLS(); }
 		int         getN_SLICES() { return subvolumes[active_channel]->getN_SLICES(); }
 		int	        getOVERLAP_V() { return subvolumes[active_channel]->getOVERLAP_V(); }
