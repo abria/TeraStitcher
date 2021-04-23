@@ -71,10 +71,10 @@ int		VirtualVolume::getN_SLICES()				{return this->N_SLICES;}
 int		VirtualVolume::getDIM_C()					{return this->DIM_C;}
 int		VirtualVolume::getBYTESxCHAN()				{return this->BYTESxCHAN;}
 //char*   VirtualVolume::getSTACKS_DIR()				{return this->stacks_dir;}
-int		VirtualVolume::getOVERLAP_V()				{return (int)(getStacksHeight() - MEC_V/VXL_V);}
-int		VirtualVolume::getOVERLAP_H()				{return (int)(getStacksWidth() -  MEC_H/VXL_H);}
-int		VirtualVolume::getDEFAULT_DISPLACEMENT_V()	{return (int)(fabs(MEC_V/VXL_V));}
-int		VirtualVolume::getDEFAULT_DISPLACEMENT_H()	{return (int)(fabs(MEC_H/VXL_H));}
+int		VirtualVolume::getOVERLAP_V()				{return (int)(getStacksHeight() - getMEC_V()/getVXL_V());}
+int		VirtualVolume::getOVERLAP_H()				{return (int)(getStacksWidth() -  getMEC_H()/getVXL_H());}
+int		VirtualVolume::getDEFAULT_DISPLACEMENT_V()	{return (int)(fabs(getMEC_V()/getVXL_V()));}
+int		VirtualVolume::getDEFAULT_DISPLACEMENT_H()	{return (int)(fabs(getMEC_H()/getVXL_H()));}
 int		VirtualVolume::getDEFAULT_DISPLACEMENT_D()	{return 0;}
 
 VirtualVolume::~VirtualVolume() {
