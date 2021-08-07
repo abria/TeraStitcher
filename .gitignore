@@ -3,5 +3,3 @@ src/iomanager/ioplugins.h
 src/CMakeCache.txt
 
 src/CMakeFiles/cmake.check_cache
-
-src/iomanager/ioplugins.h
