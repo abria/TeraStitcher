@@ -25,7 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2021-02-12. Giulio.     @FIXED initialization of 'mdata_filepath' was missing in 'init'
+* 2021-02-13. Giulio.     @FIXED initialization of 'mdata_filepath' was missing in 'init'
 * 2018-02-03. Giulio.     @ADDED internal method to correct non symmetric displacements between tiles
 * 2017-04-27. Giulio.     @ADDED static method to get the input plugin from the xml if specified
 * 2017-03-27. Giulio.     @ADDED initialization of 'active_channel' with iom::CHANS_no in case more than three channels are possible (iom::CHANS = NONE)
@@ -85,7 +85,7 @@ VirtualVolume::~VirtualVolume() {
 void VirtualVolume::init() throw (iom::exception)
 {
 	stacks_dir = 0;
-	mdata_filepath = (char *) 0; // 2021-02-12. Giulio. @FIXED initialization was missing
+	mdata_filepath = (char *) 0; // 2021-02-13. Giulio. @FIXED initialization was missing
 	reference_system.first = reference_system.second = reference_system.third = axis_invalid;
 
 	VXL_V = 0;

@@ -25,7 +25,7 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2021-02-12. Giulio.     @FIXED empty constructor 'vm::BlockedVolume' must initialize 'BLOCKS'
+* 2021-02-12. Giulio.     @FIXED empty constructor of vm::BlockedVolume must initialize BLOCKS
 * 2019-11-02. Giulio.     @ADDED 'mdata_fname' parameter to constructor from xml
 * 2018-03-02. Giulio.     @ADDED the possibility to set a path and a name for the mdata.bin file
 * 2017-06-26. Giulio.     @ADDED methods to set active resolution and active timepoint

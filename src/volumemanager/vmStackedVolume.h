@@ -28,7 +28,7 @@
 /******************
 *    CHANGELOG    *
 *******************
-* 2021-02-12. Giulio.     @FIXED empty constructor 'vm::StackedVolume' must initialize 'STACKS'
+* 2021-02-12. Giulio.     @FIXED empty constructor of vm::StackedVolume must initialize STACKS
 * 2019-11-02. Giulio.     @ADDED 'mdata_fname' parameter to constructor from xml
 * 2018-03-02. Giulio.     @ADDED the possibility to set a path and a name for the mdata.bin file
 * 2017-04-12. Giulio.     @ADDED method to release all buffers allocated in VirtualStack
@@ -74,10 +74,6 @@ class vm::StackedVolume : public vm::VirtualVolume
         void initChannels() throw (iom::exception);
 		void applyReferenceSystem(vm::ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3) throw (iom::exception);
 
-		//binary metadata load/save methods
-		void saveBinaryMetadata(char *metadata_filepath) throw (iom::exception);
-		void loadBinaryMetadata(char *metadata_filepath) throw (iom::exception);
-
 		//rotates stacks matrix around D vm::axis (accepted values are theta=0,90,180,270)
 		void rotate(int theta);
 
@@ -87,13 +83,19 @@ class vm::StackedVolume : public vm::VirtualVolume
 		// 2014-09-05. Alessandro. @ADDED 'normalize_stacks_attributes()' method to normalize stacks attributes (width, height, etc.)
 		void normalize_stacks_attributes() throw (iom::exception);
 
+	protected:
+
+		//binary metadata load/save methods
+		void saveBinaryMetadata(char *metadata_filepath) throw (iom::exception);
+		void loadBinaryMetadata(char *metadata_filepath) throw (iom::exception);
+
 	public:
 
 		// 2014-09-10. Alessandro. @ADDED plugin creation/registration functions to make 'StackedVolume' a volume format plugin.
 		static const std::string id;	
 
 		//CONSTRUCTORS-DECONSTRUCTOR
-		StackedVolume() : vm::VirtualVolume(){ STACKS = (vm::Stack ***) 0; }
+		StackedVolume() : vm::VirtualVolume(){ STACKS = (vm::Stack ***) 0;}
         StackedVolume(const char* _stacks_dir, vm::ref_sys reference_system, float VXL_1=0, float VXL_2=0, float VXL_3=0, bool overwrite_mdata=false, std::string mdata_fname="") throw (iom::exception);
         StackedVolume(const char *xml_filepath, bool overwrite_mdata=false, std::string mdata_fname="") throw (iom::exception);
 		~StackedVolume();
