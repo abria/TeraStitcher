@@ -136,7 +136,7 @@ void StackStitcher::computeDisplacements(
 	bool skip_V/*=false*/,                          // skip displacement computation for pairs in the last row
 	bool skip_H/*=false*/                           // skip displacement computation for pairs in the last column
 )					
-throw (iom::exception)
+
 {
 	#if S_VERBOSE>2
 	printf("\t\t\t....in StackStitcher::computeDisplacements(..., overlap_V = %d, overlap_H = %d, displ_max_V = %d, displ_max_H = %d, displ_max_D = %d, start_row = %d, start_col = %d, end_row = %d, end_col = %d, subvol_DIM_D = %d, restoreSPIM=%s, restore_dir=%d)\n",
@@ -403,7 +403,7 @@ throw (iom::exception)
 * or columns with no stitchable stacks 
 **************************************************************************************************************/
 void StackStitcher::computeVolumeDims(bool exclude_nonstitchable_stacks, int _ROW_START, int _ROW_END, 
-									  int _COL_START, int _COL_END, int _D0, int _D1) throw (iom::exception)
+									  int _COL_START, int _COL_END, int _D0, int _D1) 
 {
     #if S_VERBOSE >2
 	printf("\t\t\t....in StackStitcher::computeVolumeDims(exclude_nonstitchable_stacks = %s, _ROW_START=%d, _ROW_END=%d, _COL_START=%d, _COL_END=%d, _D0=%d, _D1=%d)\n",
@@ -615,7 +615,7 @@ int StackStitcher::getStripeABS_V(int row_index, bool up)
 * stored before it is combined into the final stripe.
 **************************************************************************************************************/
 iom::real_t* StackStitcher::getStripe(int row_index, int d_index, int restore_direction, StackRestorer* stk_rst,
-								 int blending_algo)									        throw (iom::exception)
+								 int blending_algo)									        
 {
         #if S_VERBOSE >2
 	printf("........in StackStitcher::getStripe(short row_index=%d, short d_index=%d, restore_direction=%d, blending_algo=%d)\n",
@@ -827,7 +827,7 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 							   bool exclude_nonstitchable_stacks, int _ROW_START, int _ROW_END, int _COL_START,
 							   int _COL_END, int _D0, int _D1, bool restoreSPIM, int restore_direction,
 							   int blending_algo, int method, bool test_mode, bool show_progress_bar, 
-							   const char* saved_img_format, int saved_img_depth)			throw (iom::exception)
+							   const char* saved_img_format, int saved_img_depth)			
 {
         #if S_VERBOSE > 2
         printf("......in StackStitcher::mergeTiles(output_path=\"%s\", slice_height=%d, slice_width=%d, exclude_nonstitchable_stacks = %s, "
@@ -1556,7 +1556,7 @@ void StackStitcher::halveSample2D(iom::real_t* img, int height, int width, int d
 * ment. Where for a pair of adjacent stacks no displacement is available,  a displacement  is generated using
 * nominal stage coordinates.
 **************************************************************************************************************/
-void StackStitcher::projectDisplacements()												   throw (iom::exception)
+void StackStitcher::projectDisplacements()												   
 {
     #if S_VERBOSE > 3
     printf("......in StackStitcher::projectDisplacements()\n");
@@ -1619,7 +1619,7 @@ void StackStitcher::projectDisplacements()												   throw (iom::exception)
 * Moreover, stacks which do not have any reliable single-direction displacements with all 4 neighbors are mar-
 * ked as NON STITCHABLE.
 **************************************************************************************************************/
-void StackStitcher::thresholdDisplacements(float reliability_threshold)					   throw (iom::exception)
+void StackStitcher::thresholdDisplacements(float reliability_threshold)					   
 {
 	#if S_VERBOSE > 3
 	printf("......in StackStitcher::thresholdDisplacements(reliability_threshold = %.4f)\n", reliability_threshold);
@@ -1716,7 +1716,7 @@ void StackStitcher::thresholdDisplacements(float reliability_threshold)					   t
 /*************************************************************************************************************
 * Executes the compute tiles placement algorithm associated to the given ID <algorithm_type>
 **************************************************************************************************************/
-void StackStitcher::computeTilesPlacement(int algorithm_type)								throw (iom::exception)
+void StackStitcher::computeTilesPlacement(int algorithm_type)								
 {
 	#if S_VERBOSE > 3
 	printf("......in StackStitcher::computeTilesPlacement(algorithm_type = %d)\n", algorithm_type);
@@ -1848,7 +1848,7 @@ void StackStitcher::saveComputationTimes(const char *filename, volumemanager::Vi
 * stored before it is combined into the final stripe.
 **************************************************************************************************************/
 iom::real_t* StackStitcher::getStripe2(int row_index, int d_index, int _V0, int _V1, int _H0, int _H1, 
-									   int restore_direction, StackRestorer* stk_rst, int blending_algo) throw (iom::exception)
+									   int restore_direction, StackRestorer* stk_rst, int blending_algo) 
 {
         #if S_VERBOSE >2
 	printf("........in StackStitcher::getStripe(short row_index=%d, short d_index=%d, restore_direction=%d, blending_algo=%d)\n",

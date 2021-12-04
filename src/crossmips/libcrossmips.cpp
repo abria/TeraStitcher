@@ -100,7 +100,7 @@ bool write_3D_stack ( char *fname, iom::real_t *stck, int dimi, int dimj, int di
 
 NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B,
 						    int dimk, int dimi, int dimj, int nk, int ni, int nj,
-							int delayk, int delayi, int delayj, int side, NCC_parms_t *NCC_params ) throw (iom::exception){
+							int delayk, int delayi, int delayj, int side, NCC_parms_t *NCC_params ) {
 #if CM_VERBOSE > 1
 	printf("\nin libcrossmips::norm_cross_corr_mips(A[%.6f-%.6f], B[%.6f-%.6f], dimk[%d], dimi[%d], dimj[%d], nk[%d], ni[%d], nj[%d], delayk[%d], delayi[%d], delayj[%d], side[%d]\n",
 		A[0], A[(dimk-1)*dimj*dimi + (dimi-1)*dimj + dimj -1], B[0], B[(dimk-1)*dimj*dimi + (dimi-1)*dimj + dimj -1], dimk, dimi, dimj, nk, ni, nj, delayk, delayi, delayj, side );

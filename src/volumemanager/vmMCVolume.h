@@ -69,14 +69,14 @@ class vm::MCVolume : public vm::VirtualVolume
 		bool additionalIOPluginParams;  // to avoid passing unnecessary additional parameters to ioplugins
 
 		//Given the reference system, initializes all object's members using stack's directories hierarchy
-        void init() throw (iom::exception);
-        void initChannels() throw (iom::exception);
+        void init() ;
+        void initChannels() ;
 
-		void applyReferenceSystem(vm::ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3) throw (iom::exception);
+		void applyReferenceSystem(vm::ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3) ;
 
 		//binary metadata load/save methods
-		void saveBinaryMetadata(char *metadata_filepath) throw (iom::exception);
-		void loadBinaryMetadata(char *metadata_filepath) throw (iom::exception);
+		void saveBinaryMetadata(char *metadata_filepath) ;
+		void loadBinaryMetadata(char *metadata_filepath) ;
 
 		//rotate stacks matrix around D vm::axis (accepted values are theta=0,90,180,270)
 		void rotate(int theta);
@@ -85,7 +85,7 @@ class vm::MCVolume : public vm::VirtualVolume
 		void mirror(vm::axis mrr_axis);
 
 		// 2014-09-05. Alessandro. @ADDED 'normalize_stacks_attributes()' method to normalize stacks attributes (width, height, etc.)
-		//void normalize_stacks_attributes() throw (iom::exception);
+		//void normalize_stacks_attributes() ;
 
 	public:
 
@@ -94,8 +94,8 @@ class vm::MCVolume : public vm::VirtualVolume
 
 		//CONSTRUCTORS-DECONSTRUCTOR
 		MCVolume() : vm::VirtualVolume(){}
-        MCVolume(const char* _stacks_dir, vm::ref_sys reference_system = vm::ref_sys(vm::axis(0),vm::axis(0),vm::axis(0)), float VXL_1=0, float VXL_2=0, float VXL_3=0, bool overwrite_mdata=false) throw (iom::exception);
-        MCVolume(const char *xml_filepath, bool overwrite_mdata=false) throw (iom::exception);
+        MCVolume(const char* _stacks_dir, vm::ref_sys reference_system = vm::ref_sys(vm::axis(0),vm::axis(0),vm::axis(0)), float VXL_1=0, float VXL_2=0, float VXL_3=0, bool overwrite_mdata=false) ;
+        MCVolume(const char *xml_filepath, bool overwrite_mdata=false) ;
 		~MCVolume();
 
 		// ******GET METHODS******
@@ -129,9 +129,9 @@ class vm::MCVolume : public vm::VirtualVolume
 		void setENABLEDSV ( int sv ) { enabledSV = sv; }
 
 		//loads/saves metadata from/in the given xml filename
-		void loadXML(const char *xml_filename) throw (iom::exception);
-		void initFromXML(const char *xml_filename) throw (iom::exception);
-        void saveXML(const char *xml_filename=0, const char *xml_filepath=0) throw (iom::exception);
+		void loadXML(const char *xml_filename) ;
+		void initFromXML(const char *xml_filename) ;
+        void saveXML(const char *xml_filename=0, const char *xml_filepath=0) ;
 
 		void releaseBuffers();
 
@@ -143,7 +143,7 @@ class vm::MCVolume : public vm::VirtualVolume
 
         //check if volume is complete and coherent; return true if the volume is ok, false otherwise
 		//if a file name is passed and the volume is not ok an error log file is generated
-		bool check(const char *errlogFileName = 0) throw (iom::exception);
+		bool check(const char *errlogFileName = 0) ;
 
         //counts the total number of displacements and the number of displacements per pair of adjacent stacks
         void countDisplacements(int& total, float& per_stack_pair);

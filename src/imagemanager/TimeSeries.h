@@ -12,19 +12,19 @@ class TimeSeries : public iim::VirtualVolume
         std::vector<VirtualVolume*> frames;     // each time frame corresponds to a complete volumetric image
 
         // pure virtual method inherithed from abstract class <VirtualVolume>
-        void initChannels() throw (iim::IOException);
+        void initChannels() ;
 
     public:
 
         //CONSTRUCTORS-DESTRUCTOR
         TimeSeries(void){}
-        TimeSeries(const char* rootDir, std::string frames_format = "") throw (iim::IOException);
-        virtual ~TimeSeries(void) throw (iim::IOException);
+        TimeSeries(const char* rootDir, std::string frames_format = "") ;
+        virtual ~TimeSeries(void) ;
 
         // get methods
         std::vector<VirtualVolume*> getFrames() {return frames;}
-        std::vector<VirtualVolume*> getActiveFrames() throw (iim::IOException);
-        VirtualVolume* getFrameAt(int t) throw (iim::IOException);
+        std::vector<VirtualVolume*> getActiveFrames() ;
+        VirtualVolume* getFrameAt(int t) ;
         iim::uint32 getNFrames(){return static_cast<iim::uint32>(frames.size());}
 
         // returns a unique ID that identifies the volume format
@@ -54,9 +54,9 @@ class TimeSeries : public iim::VirtualVolume
 
 
         // pure virtual methods inherithed from abstract class <VirtualVolume>
-        iim::real32 *loadSubvolume_to_real32(int V0,int V1, int H0, int H1, int D0, int D1)  throw (iim::IOException);
+        iim::real32 *loadSubvolume_to_real32(int V0,int V1, int H0, int H1, int D0, int D1)  ;
         iim::uint8 *loadSubvolume_to_UINT8(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1,
-                                                   int *channels=0, int ret_type=iim::DEF_IMG_DEPTH) throw (iim::IOException);
+                                                   int *channels=0, int ret_type=iim::DEF_IMG_DEPTH) ;
 };
 
 #endif // TIMESERIES_H

@@ -58,7 +58,7 @@ class PDAlgo
 		virtual Displacement* execute(iom::real_t *stk_A, iom::uint32 A_dim_V, iom::uint32 A_dim_H, iom::uint32 A_dim_D,
 									  iom::real_t *stk_B, iom::uint32 B_dim_V, iom::uint32 B_dim_H, iom::uint32 B_dim_D,
 									  iom::uint32 displ_max_V, iom::uint32 displ_max_H, iom::uint32 displ_max_D,
-									  direction overlap_direction, iom::uint32 overlap) throw (iom::exception) = 0;
+									  direction overlap_direction, iom::uint32 overlap)  = 0;
 
 		//static method which is responsible to instance and return the algorithm of the given type
 		static PDAlgo* instanceAlgorithm(int _type);

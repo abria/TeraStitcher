@@ -58,7 +58,7 @@ class TPAlgoLQP : public TPAlgo
 		* PROs: 
 		* CONs: 
 		**************************************************************************************************************/
-		void execute() throw (iom::exception);
+        void execute() ;
 };
 
 #endif /* _TILE_PLACEMENT_ALGORITHM_LINEAR_QUADRATIC_PROGRAMMING_H */

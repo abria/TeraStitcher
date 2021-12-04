@@ -60,34 +60,34 @@ class Displacement
 
 		//evaluates displacement reliability possibly along the given direction. The result(s) should be stored
 		//in one or more object members, so that they have to be computed once and then accessed by GET methods
-		virtual float			 evalReliability(direction _direction=invalid)	throw (iom::exception) = 0;
+		virtual float			 evalReliability(direction _direction=invalid)	 = 0;
 
 		//returns the reliability possibly along the given direction. An exception is thrown if the reliability
 		//index(es) are not computed yet. Values are in [0,1] where 0 = totally unreliable, 1 = reliable
-		virtual	float			 getReliability(direction _direction=invalid)	throw (iom::exception) = 0;
+		virtual	float			 getReliability(direction _direction=invalid)	 = 0;
 
 		//returns the displacement along the given direction
-		virtual int				 getDisplacement(direction _direction)			throw (iom::exception) = 0;
+		virtual int				 getDisplacement(direction _direction)			 = 0;
 
 		//returns the default displacement along the given direction
-		virtual int				 getDefaultDisplacement(direction _direction)	throw (iom::exception) = 0;
+		virtual int				 getDefaultDisplacement(direction _direction)	 = 0;
 
 		//sets to default values the displacements with a reliability factor above the given threshold
-		virtual void			 threshold(float rel_threshold)					throw (iom::exception) = 0;
+		virtual void			 threshold(float rel_threshold)					 = 0;
 
 		//returns the displacement mirrored along the given direction.
-		virtual Displacement*	 getMirrored(direction _direction)				throw (iom::exception) = 0;
+		virtual Displacement*	 getMirrored(direction _direction)				 = 0;
 
 		//combines the parameters of the current and the given displacement so that after this operation
 		//the two displacements are more reliable (and are EQUAL).
-		virtual void			 combine(Displacement& displ)					throw (iom::exception) = 0;
+		virtual void			 combine(Displacement& displ)					 = 0;
 
 		//XML methods: convert/load displacement object into/from XML schema
-		virtual TiXmlElement*	 getXML()										throw (iom::exception) = 0;
-		virtual void			 loadXML(TiXmlElement *displ_node)				throw (iom::exception) = 0;
+		virtual TiXmlElement*	 getXML()										 = 0;
+		virtual void			 loadXML(TiXmlElement *displ_node)				 = 0;
 
 		// returns true if 'displ' is a better displacement than the current one
-		virtual bool             isBetter(Displacement *displ)							throw (iom::exception) = 0;
+		virtual bool             isBetter(Displacement *displ)							 = 0;
 
 		/*** PUBLIC METHODS that derived classes inherit and can override ***/
 		
@@ -103,16 +103,16 @@ class Displacement
 		//*** CLASS methods ***
 		
 		//instances the specified displacement object from an XML element
-		static  Displacement*	 getDisplacementFromXML(TiXmlElement *displ_node) throw (iom::exception);
+		static  Displacement*	 getDisplacementFromXML(TiXmlElement *displ_node) ;
 
 		//instances a displacement which is a deep copy of the given displacement
-		static  Displacement*	 instance(Displacement* displacement)  throw (iom::exception);
+		static  Displacement*	 instance(Displacement* displacement)  ;
 
 		/*************************************************************************************************************
 		* The given vector of redundant displacements along D is projected into the displacement which embeds the most
 		* reliable parameters. After this operation, the given vector will contain only the projected displacement.
 		**************************************************************************************************************/
-		static void projectDisplacements(std::vector<Displacement*> &displacements)				   throw (iom::exception);
+		static void projectDisplacements(std::vector<Displacement*> &displacements)				   ;
 
 };
 

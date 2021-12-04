@@ -802,7 +802,7 @@ void readSubvol ( int V0, int V1, int H0, int H1, int D0, int D1, int setup, uns
 * HDF5 Manager implementation
 ****************************************************************************/
 
-void BDV_HDF5init ( std::string fname, void *&descr, int vxl_nbytes ) throw (iim::IOException) {
+void BDV_HDF5init ( std::string fname, void *&descr, int vxl_nbytes )  {
 #ifdef ENABLE_BDV_HDF5
 	BDV_HDF5_fdescr_t *int_descr = new BDV_HDF5_fdescr_t(fname.c_str(),vxl_nbytes);
 	descr = int_descr;

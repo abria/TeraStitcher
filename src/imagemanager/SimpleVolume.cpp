@@ -65,7 +65,7 @@ SimpleVolume::SimpleVolume(void) : VirtualVolume()
     STACKS = 0;
 }
 
-SimpleVolume::SimpleVolume(const char* _root_dir)  throw (IOException)
+SimpleVolume::SimpleVolume(const char* _root_dir)  
 : VirtualVolume(_root_dir, 1.0f, 1.0f, 1.0f)
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir = \"%s\"", root_dir).c_str(), __iim__current__function__);
@@ -83,7 +83,7 @@ SimpleVolume::SimpleVolume(const char* _root_dir)  throw (IOException)
 }
 
 
-SimpleVolume::~SimpleVolume(void) throw (iim::IOException)
+SimpleVolume::~SimpleVolume(void) 
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
@@ -100,7 +100,7 @@ SimpleVolume::~SimpleVolume(void) throw (iim::IOException)
 }
 
 
-void SimpleVolume::init() throw (iim::IOException)
+void SimpleVolume::init() 
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
@@ -173,7 +173,7 @@ void SimpleVolume::init() throw (iim::IOException)
 		}
 }
 
-void SimpleVolume::initChannels ( ) throw (IOException)
+void SimpleVolume::initChannels ( ) 
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
@@ -244,7 +244,7 @@ void SimpleVolume::resetDOWNSAMPLINGFACTOR() {
 }
 
 
-real32 *SimpleVolume::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, int D0, int D1)  throw (IOException)
+real32 *SimpleVolume::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, int D0, int D1)  
 {
     /**/iim::debug(iim::LEV3, strprintf("V0 = %d, V1 = %d, H0 = %d, H1 = %d, D0 = %d, D1 = %d", V0, V1, H0, H1, D0, D1).c_str(), __iim__current__function__);
 
@@ -305,7 +305,7 @@ real32 *SimpleVolume::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, int
 }
 
 
-uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, int D1, int *channels, int ret_type) throw (IOException, iom::exception) {
+uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, int D1, int *channels, int ret_type)  {
 
     /**/iim::debug(iim::LEV3, strprintf("V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d, *channels=%d, ret_type=%d", V0, V1, H0, H1, D0, D1, channels ? *channels : -1, ret_type).c_str(), __iim__current__function__);
 

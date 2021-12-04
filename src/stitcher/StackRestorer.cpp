@@ -104,7 +104,7 @@ StackRestorer::~StackRestorer(void)
 	}
 }
 
-void StackRestorer::computeSubvolDescriptors(iom::real_t* data, VirtualStack* stk_p, int subvol_idx, int subvol_D_dim) throw (iom::exception)
+void StackRestorer::computeSubvolDescriptors(iom::real_t* data, VirtualStack* stk_p, int subvol_idx, int subvol_D_dim) 
 {
 	int i = stk_p->getROW_INDEX();
 	int j = stk_p->getCOL_INDEX();
@@ -112,7 +112,7 @@ void StackRestorer::computeSubvolDescriptors(iom::real_t* data, VirtualStack* st
 	SUBSTKS_DESCRIPTORS[i][j][subvol_idx].computeSubvolDescriptors(data);
 }
 
-void StackRestorer::computeStackDescriptors(VirtualStack* stk_p) throw (iom::exception)
+void StackRestorer::computeStackDescriptors(VirtualStack* stk_p) 
 {
 	int i = stk_p->getROW_INDEX();
 	int j = stk_p->getCOL_INDEX();	
@@ -160,7 +160,7 @@ void StackRestorer::printVolDescriptors(VirtualStack* stk_p)
 	STKS_DESCRIPTORS[i][j].print();
 }
 
-void StackRestorer::save(char* file_path)  throw (iom::exception)
+void StackRestorer::save(char* file_path)  
 {
 	if(STKS_DESCRIPTORS)
 	{
@@ -214,7 +214,7 @@ void StackRestorer::save(char* file_path)  throw (iom::exception)
 	}
 }
 
-void StackRestorer::load(char* file_path)  throw (iom::exception)
+void StackRestorer::load(char* file_path)  
 {
 	std::ifstream file (file_path, std::ios::in | std::ios::binary);
 	if(!file)
@@ -270,7 +270,7 @@ void StackRestorer::load(char* file_path)  throw (iom::exception)
 	file.close();
 }
 
-void StackRestorer::repairSlice(iom::real_t* data, int slice_idx, VirtualStack* stk_p, int direction)  throw (iom::exception)
+void StackRestorer::repairSlice(iom::real_t* data, int slice_idx, VirtualStack* stk_p, int direction)  
 {
 	//some checks
 	bool ready_to_repair = true;
@@ -350,7 +350,7 @@ void StackRestorer::repairSlice(iom::real_t* data, int slice_idx, VirtualStack* 
 	#endif
 }
 
-void StackRestorer::repairStack(iom::real_t* data, VirtualStack* stk_p, int direction)  throw (iom::exception)
+void StackRestorer::repairStack(iom::real_t* data, VirtualStack* stk_p, int direction)  
 {
 	//some checks
 	bool ready_to_repair = true;
@@ -488,7 +488,7 @@ StackRestorer::vol_descr_t::~vol_descr_t()
 		delete[] D_MIP;
 }
 
-void StackRestorer::vol_descr_t::computeSubvolDescriptors(iom::real_t *subvol)  throw (iom::exception)
+void StackRestorer::vol_descr_t::computeSubvolDescriptors(iom::real_t *subvol)  
 {
 	//initialization of MIPs and profiles
 	for(int i=0; i<V_dim; i++)
@@ -536,7 +536,7 @@ void StackRestorer::vol_descr_t::computeSubvolDescriptors(iom::real_t *subvol)  
 }
 
 
-void StackRestorer::vol_descr_t::computeStackDescriptors(vol_descr_t *subvol_desc, int D_subvols)  throw (iom::exception)
+void StackRestorer::vol_descr_t::computeStackDescriptors(vol_descr_t *subvol_desc, int D_subvols)  
 {
 	//initialization of MIPs and profiles (that are mean intensity projections)
 	for(int i=0; i<V_dim; i++)

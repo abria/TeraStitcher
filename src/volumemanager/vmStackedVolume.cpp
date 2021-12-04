@@ -96,7 +96,7 @@ const std::string StackedVolume::id = "TiledXY|2Dseries";
 const std::string StackedVolume::creator_id1 = volumemanager::VirtualVolumeFactory::registerPluginCreatorXML(&createFromXML, StackedVolume::id);
 const std::string StackedVolume::creator_id2 = volumemanager::VirtualVolumeFactory::registerPluginCreatorData(&createFromData, StackedVolume::id);
 
-StackedVolume::StackedVolume(const char* _stacks_dir, vm::ref_sys _reference_system, float VXL_1, float VXL_2, float VXL_3, bool overwrite_mdata, std::string mdata_fname) throw (iom::exception)
+StackedVolume::StackedVolume(const char* _stacks_dir, vm::ref_sys _reference_system, float VXL_1, float VXL_2, float VXL_3, bool overwrite_mdata, std::string mdata_fname) 
 	: VirtualVolume(_stacks_dir, _reference_system, VXL_1, VXL_2, VXL_3)
 {
 	#if VM_VERBOSE > 3
@@ -147,7 +147,7 @@ StackedVolume::StackedVolume(const char* _stacks_dir, vm::ref_sys _reference_sys
 	cb = new CacheBuffer(this);
 }
 
-StackedVolume::StackedVolume(const char *xml_filepath, bool overwrite_mdata, std::string mdata_fname) throw (iom::exception)
+StackedVolume::StackedVolume(const char *xml_filepath, bool overwrite_mdata, std::string mdata_fname) 
 	: VirtualVolume(xml_filepath)
 {
     #if VM_VERBOSE > 3
@@ -273,7 +273,7 @@ VirtualStack*** StackedVolume::getSTACKS()					{return (VirtualStack***)this->ST
 //int		StackedVolume::getDEFAULT_DISPLACEMENT_H()	{return (int)(fabs(MEC_H/VXL_H));}
 //int		StackedVolume::getDEFAULT_DISPLACEMENT_D()	{return 0;}
 
-void StackedVolume::init() throw (iom::exception)
+void StackedVolume::init() 
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin StackedVolume::init()\n");
@@ -389,13 +389,13 @@ void StackedVolume::init() throw (iom::exception)
 	normalize_stacks_attributes();
 }
 
-void StackedVolume::initChannels()  throw (iom::exception) 
+void StackedVolume::initChannels()   
 {
 	DIM_C = STACKS[0][0]->getN_CHANS();
 	BYTESxCHAN = STACKS[0][0]->getN_BYTESxCHAN();
 }
 
-void StackedVolume::applyReferenceSystem(vm::ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3) throw (iom::exception)
+void StackedVolume::applyReferenceSystem(vm::ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3) 
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin StackedVolume::applyReferenceSystem(reference_system = {%d,%d,%d}, VXL_1 = %.2f, VXL_2 = %.2f, VXL_3 = %.2f)\n", 
@@ -529,7 +529,7 @@ void StackedVolume::applyReferenceSystem(vm::ref_sys reference_system, float VXL
 		}
 }
 
-void StackedVolume::loadXML(const char *xml_filepath) throw (iom::exception)
+void StackedVolume::loadXML(const char *xml_filepath) 
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin StackedVolume::loadXML(char *xml_filepath = %s)\n", xml_filepath);
@@ -628,7 +628,7 @@ void StackedVolume::loadXML(const char *xml_filepath) throw (iom::exception)
 	adjustDisplacements();  // 2018-02-03. Giulio. @ADDED correction of displacements to force them to be symmetric
 }
 
-void StackedVolume::initFromXML(const char *xml_filepath) throw (iom::exception)
+void StackedVolume::initFromXML(const char *xml_filepath) 
 {
     #if VM_VERBOSE > 3
     printf("\t\t\t\tin StackedVolume::initFromXML(char *xml_filename = %s)\n", xml_filepath);
@@ -715,7 +715,7 @@ void StackedVolume::initFromXML(const char *xml_filepath) throw (iom::exception)
 	adjustDisplacements();  // 2018-02-03. Giulio. @ADDED correction of displacements to force them to be symmetric
 }
 
-void StackedVolume::saveXML(const char *xml_filename, const char *xml_filepath) throw (iom::exception)
+void StackedVolume::saveXML(const char *xml_filename, const char *xml_filepath) 
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin StackedVolume::saveXML(char *xml_filename = %s)\n", xml_filename);
@@ -803,13 +803,13 @@ void StackedVolume::saveXML(const char *xml_filename, const char *xml_filepath) 
 	xml.SaveFile();
 }
 
-void StackedVolume::releaseBuffers() throw (iom::exception) {
+void StackedVolume::releaseBuffers()  {
 	for ( int r=0; r<N_ROWS; r++ )
 		for ( int c=0; c<N_COLS; c++ )
 			STACKS[r][c]->releaseImageStack();
 }
 
-void StackedVolume::saveBinaryMetadata(char *metadata_filepath) throw (iom::exception)
+void StackedVolume::saveBinaryMetadata(char *metadata_filepath) 
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin StackedVolume::saveBinaryMetadata(char *metadata_filepath = %s)\n", metadata_filepath);
@@ -865,7 +865,7 @@ void StackedVolume::saveBinaryMetadata(char *metadata_filepath) throw (iom::exce
 	fclose(file);
 }
 
-void StackedVolume::loadBinaryMetadata(char *metadata_filepath) throw (iom::exception)
+void StackedVolume::loadBinaryMetadata(char *metadata_filepath) 
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin StackedVolume::loadBinaryMetadata(char *metadata_filepath = %s)\n", metadata_filepath);
@@ -1140,7 +1140,7 @@ void StackedVolume::rotate(int theta)
 }
 
 //mirror stacks matrix along mrr_axis (accepted values are mrr_axis=1,2,3)
-void StackedVolume::mirror(vm::axis mrr_axis) throw (iom::exception)
+void StackedVolume::mirror(vm::axis mrr_axis) 
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin StackedVolume::mirror(mrr_axis = %d)\n", mrr_axis);
@@ -1202,7 +1202,7 @@ void StackedVolume::mirror(vm::axis mrr_axis) throw (iom::exception)
 
 
 //check if volume is complete and coherent
-bool StackedVolume::check(const char *errlogFileName) throw (iom::exception)
+bool StackedVolume::check(const char *errlogFileName) 
 {
 	bool ok = true;
 	FILE *errlogf;
@@ -1315,7 +1315,7 @@ int StackedVolume::countStitchableStacks(float threshold)
 }
 
 // print mdata.bin content to stdout
-void StackedVolume::dumpMData(const char* volumePath) throw (iom::exception)
+void StackedVolume::dumpMData(const char* volumePath) 
 {
 	char mdata_filepath[VM_STATIC_STRINGS_SIZE];
 	sprintf(mdata_filepath, "%s/%s", volumePath, vm::BINARY_METADATA_FILENAME.c_str());
@@ -1647,7 +1647,7 @@ void StackedVolume::dumpMData(const char* volumePath) throw (iom::exception)
 }
 
 // 2014-09-05. Alessandro. @ADDED 'check_stacks_same_dims()' method to check that stacks have same width and height
-void StackedVolume::normalize_stacks_attributes() throw (iom::exception)
+void StackedVolume::normalize_stacks_attributes() 
 {
 	std::set<int> heights, widths;
 	for(int i=0; i<N_ROWS; i++)

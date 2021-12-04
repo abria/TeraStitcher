@@ -50,16 +50,16 @@ class SimpleVolume : public iim::VirtualVolume
 
 		 SimpleVolume(void);
 
-        void init ( ) throw (iim::IOException);
+        void init ( ) ;
 
         // iannello returns the number of channels of images composing the volume
-        void initChannels ( ) throw (iim::IOException);
+        void initChannels ( ) ;
 
     public:
 
-        SimpleVolume(const char* _root_dir)  throw (iim::IOException);
+        SimpleVolume(const char* _root_dir)  ;
 
-        virtual ~SimpleVolume(void) throw (iim::IOException);
+        virtual ~SimpleVolume(void) ;
 
         // returns a unique ID that identifies the volume format
         std::string getPrintableFormat(){return iim::SIMPLE_FORMAT;}
@@ -82,10 +82,10 @@ class SimpleVolume : public iim::VirtualVolume
 		void setDOWNSAMPLINGFACTOR( int f );
 		void resetDOWNSAMPLINGFACTOR(); 
 
-        iim::real32 *loadSubvolume_to_real32(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1)  throw (iim::IOException);
+        iim::real32 *loadSubvolume_to_real32(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1)  ;
 
         iim::uint8 *loadSubvolume_to_UINT8(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1,
-                                                   int *channels=0, int ret_type=iim::DEF_IMG_DEPTH) throw (iim::IOException, iom::exception);
+                                                   int *channels=0, int ret_type=iim::DEF_IMG_DEPTH) ;
     
     	// needed to enable the detection by the factory of volume format through use of the default constructor
         friend class iim::VirtualVolume; 

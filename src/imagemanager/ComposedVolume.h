@@ -45,7 +45,7 @@ class iim::ComposedVolume : public iim::VirtualVolume
 		//***OBJECT PRIVATE METHODS****
 
 		//Given the reference system, initializes all object's members using stack's directories hierarchy
-        void init() throw (iim::IOException);
+        void init() ;
 
 		//rotate stacks matrix around D axis (accepted values are theta=0,90,180,270)
 		void rotate(int theta);
@@ -68,7 +68,7 @@ class iim::ComposedVolume : public iim::VirtualVolume
         // objects passed to constructors will not be deallocated by the destructor
 		ComposedVolume(void);
 
-		virtual ~ComposedVolume(void) throw (iim::IOException);
+        virtual ~ComposedVolume(void) ;
 
 		//GET methods
         float  getVXL_1(){return VXL_1;}
@@ -80,13 +80,13 @@ class iim::ComposedVolume : public iim::VirtualVolume
 		iim::ref_sys getREF_SYS(){return reference_system;}
 
 		// return 'volume_format' attribute of <TeraStitcher> node from the given xml. 
-		static std::string getVolumeFormat(const std::string& xml_path) throw (iom::exception);
+        static std::string getVolumeFormat(const std::string& xml_path) ;
 
-		iim::real32 *loadSubvolume_to_real32(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1)  throw (iim::IOException);
+        iim::real32 *loadSubvolume_to_real32(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1)  ;
 
 		//loads given subvolume in a 1-D array of iim::uint8 while releasing stacks slices memory when they are no longer needed
 		iim::uint8 *loadSubvolume_to_UINT8(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1,
-											   int *channels=0, int ret_type=iim::DEF_IMG_DEPTH) throw (iim::IOException, iom::exception);
+                                               int *channels=0, int ret_type=iim::DEF_IMG_DEPTH) ;
 
         //loads given subvolume in a 1-D array of iim::uint8 and copy it into 'buffer' starting from  offsets 
         virtual iim::uint8 *loadSubvolume(
@@ -94,7 +94,7 @@ class iim::ComposedVolume : public iim::VirtualVolume
         		iim::uint8 *buffer=0, int bufSize_V=0, int bufSize_H=0, int bufSize_D=0, int bufSize_C=0,
         		int bufOffs_V=0, int bufOffs_H=0, int bufOffs_D=0, int bufOffs_C=0 
                 /*ret_type=iim::DEF_IMG_DEPTH*/
-        ) throw (iim::IOException, iom::exception) = 0;
+        )  = 0;
         
         // return true if the given dimension is tiled
         virtual bool isTiled(iim::dimension d) {return false;}

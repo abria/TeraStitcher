@@ -2092,7 +2092,7 @@ herr_t IMS_HDF5_fdescr_t::addFinalInfo ( ) {
 * HDF5 Manager implementation
 ****************************************************************************/
 
-void IMS_HDF5init ( std::string fname, void *&descr, bool loadstruct, int vxl_nbytes, void *obj_info, void *root_attr_info ) throw (iim::IOException) {
+void IMS_HDF5init ( std::string fname, void *&descr, bool loadstruct, int vxl_nbytes, void *obj_info, void *root_attr_info )  {
 #ifdef ENABLE_IMS_HDF5
 	IMS_HDF5_fdescr_t *int_descr = new IMS_HDF5_fdescr_t(fname.c_str(),loadstruct,vxl_nbytes,(IMS_obj_list_t *)obj_info,(IMS_attr_list_t *)root_attr_info);
 	descr = int_descr;
@@ -2103,7 +2103,7 @@ void IMS_HDF5init ( std::string fname, void *&descr, bool loadstruct, int vxl_nb
 #endif
 }
 
-void *IMS_HDF5get_olist ( void *descr, std::string fname, int height, int width, int z_points, int n_chans, int n_timepoints, float abs_V, float abs_H ) throw (iim::IOException) {
+void *IMS_HDF5get_olist ( void *descr, std::string fname, int height, int width, int z_points, int n_chans, int n_timepoints, float abs_V, float abs_H )  {
 #ifdef ENABLE_IMS_HDF5
 	if ( descr )
 		return ((IMS_HDF5_fdescr_t *) descr)->extractOLIST();
@@ -2116,7 +2116,7 @@ void *IMS_HDF5get_olist ( void *descr, std::string fname, int height, int width,
 #endif
 }
 
-void *IMS_HDF5adjust_olist ( void *olist, std::string fname, int height, int width, int z_points, iim::uint32 *chans, int n_chans, float abs_V, float abs_H ) throw (iim::IOException) {
+void *IMS_HDF5adjust_olist ( void *olist, std::string fname, int height, int width, int z_points, iim::uint32 *chans, int n_chans, float abs_V, float abs_H )  {
 #ifdef ENABLE_IMS_HDF5
 		return ((void *) adjust_obj_list((IMS_obj_list_t *)olist,fname,height,width,z_points,chans,n_chans,abs_V,abs_H));
 #else
@@ -2126,7 +2126,7 @@ void *IMS_HDF5adjust_olist ( void *olist, std::string fname, int height, int wid
 #endif
 }
 
-void *IMS_HDF5get_rootalist ( void *descr ) throw (iim::IOException) {
+void *IMS_HDF5get_rootalist ( void *descr )  {
 #ifdef ENABLE_IMS_HDF5
 	if ( descr )
 		return ((IMS_HDF5_fdescr_t *) descr)->extractROOTALIST();
@@ -2139,7 +2139,7 @@ void *IMS_HDF5get_rootalist ( void *descr ) throw (iim::IOException) {
 #endif
 }
 
-int IMS_HDF5n_resolutions ( void *descr ) throw (iim::IOException) { 
+int IMS_HDF5n_resolutions ( void *descr )  { 
 #ifdef ENABLE_IMS_HDF5
 	return ((IMS_HDF5_fdescr_t *) descr)->getN_RES();
 #else
@@ -2150,7 +2150,7 @@ int IMS_HDF5n_resolutions ( void *descr ) throw (iim::IOException) {
 }
 
 
-void IMS_HDF5set_histogram ( void *descr, histogram_t *buf, int r, int ch, int tp ) throw (iim::IOException) {
+void IMS_HDF5set_histogram ( void *descr, histogram_t *buf, int r, int ch, int tp )  {
 #ifdef ENABLE_IMS_HDF5
 	((IMS_HDF5_fdescr_t *) descr)->setHistogram(buf,r,ch,tp);
 #else
@@ -2161,7 +2161,7 @@ void IMS_HDF5set_histogram ( void *descr, histogram_t *buf, int r, int ch, int t
 }
 
 
-void IMS_HDF5set_thumbnail ( void *descr, iim::uint8 *buf, iim::uint32 thumbnail_sz ) throw (iim::IOException) {
+void IMS_HDF5set_thumbnail ( void *descr, iim::uint8 *buf, iim::uint32 thumbnail_sz )  {
 #ifdef ENABLE_IMS_HDF5
 	((IMS_HDF5_fdescr_t *) descr)->setThumbnail(buf,thumbnail_sz);
 #else
@@ -2173,7 +2173,7 @@ void IMS_HDF5set_thumbnail ( void *descr, iim::uint8 *buf, iim::uint32 thumbnail
 
 
 
-void IMS_HDF5close ( void *descr ) throw (iim::IOException) {
+void IMS_HDF5close ( void *descr )  {
 #ifdef ENABLE_IMS_HDF5
 	((IMS_HDF5_fdescr_t *) descr)->addFinalInfo();
 	delete (IMS_HDF5_fdescr_t *) descr;
@@ -2185,7 +2185,7 @@ void IMS_HDF5close ( void *descr ) throw (iim::IOException) {
 }
 
 
-void IMS_HDF5setVxlSize ( void *descr, double szV, double szH, double szD ) throw (iim::IOException) {
+void IMS_HDF5setVxlSize ( void *descr, double szV, double szH, double szD )  {
 #ifdef ENABLE_IMS_HDF5
 	IMS_HDF5_fdescr_t *int_descr = (IMS_HDF5_fdescr_t *) descr;
 
@@ -2198,7 +2198,7 @@ void IMS_HDF5setVxlSize ( void *descr, double szV, double szH, double szD ) thro
 }
 
 
-void IMS_HDF5getVxlSize ( void *descr, double &szV, double &szH, double &szD ) throw (iim::IOException) {
+void IMS_HDF5getVxlSize ( void *descr, double &szV, double &szH, double &szD )  {
 #ifdef ENABLE_IMS_HDF5
 	IMS_HDF5_fdescr_t *int_descr = (IMS_HDF5_fdescr_t *) descr;
 
@@ -2213,7 +2213,7 @@ void IMS_HDF5getVxlSize ( void *descr, double &szV, double &szH, double &szD ) t
 }
 
 
-void IMS_HDF5addResolution ( void *file_descr, iim::sint64 height, iim::sint64 width, iim::sint64 depth, int nchans, int r, bool is_first ) throw (iim::IOException) {
+void IMS_HDF5addResolution ( void *file_descr, iim::sint64 height, iim::sint64 width, iim::sint64 depth, int nchans, int r, bool is_first )  {
 #ifdef ENABLE_IMS_HDF5
 	IMS_HDF5_fdescr_t *int_descr = (IMS_HDF5_fdescr_t *) file_descr;
 
@@ -2228,7 +2228,7 @@ void IMS_HDF5addResolution ( void *file_descr, iim::sint64 height, iim::sint64 w
 
 
 void IMS_HDF5addChans ( void *file_descr, iim::sint64 height, iim::sint64 width, iim::sint64 depth, 
-				 float vxlszV, float vxlszH, float vxlszD, bool *res, int res_size, int chans, int block_height, int block_width, int block_depth ) throw (iim::IOException) {
+				 float vxlszV, float vxlszH, float vxlszD, bool *res, int res_size, int chans, int block_height, int block_width, int block_depth )  {
 #ifdef ENABLE_IMS_HDF5
 
 	IMS_HDF5_fdescr_t *int_descr = (IMS_HDF5_fdescr_t *) file_descr;
@@ -2254,7 +2254,7 @@ void IMS_HDF5addChans ( void *file_descr, iim::sint64 height, iim::sint64 width,
 }
 
 
-void IMS_HDF5addTimepoint ( void *file_descr, int tp, std::string params ) throw (iim::IOException) {
+void IMS_HDF5addTimepoint ( void *file_descr, int tp, std::string params )  {
 #ifdef ENABLE_IMS_HDF5
 	IMS_HDF5_fdescr_t *int_descr = (IMS_HDF5_fdescr_t *) file_descr;
 
@@ -2268,7 +2268,7 @@ void IMS_HDF5addTimepoint ( void *file_descr, int tp, std::string params ) throw
 }
 
 
-void IMS_HDF5writeHyperslab ( void *file_descr, iim::uint8 *buf, iim::sint64 *dims_buf, iim::sint64 *hl, int r, int s, int tp ) throw (iim::IOException) {
+void IMS_HDF5writeHyperslab ( void *file_descr, iim::uint8 *buf, iim::sint64 *dims_buf, iim::sint64 *hl, int r, int s, int tp )  {
 #ifdef ENABLE_IMS_HDF5
 	IMS_HDF5_fdescr_t *int_descr = (IMS_HDF5_fdescr_t *) file_descr;
 
@@ -2288,7 +2288,7 @@ void IMS_HDF5getVolumeInfo ( void *descr, int tp, int res, void *&volume_descr,
 								float &VXL_1, float &VXL_2, float &VXL_3, 
 								float &ORG_V, float &ORG_H, float &ORG_D, 
 								iim::uint32 &DIM_V, iim::uint32 &DIM_H, iim::uint32 &DIM_D,
-							    int &DIM_C, int &BYTESxCHAN, int &DIM_T, int &t0, int &t1 ) throw (iim::IOException) {
+							    int &DIM_C, int &BYTESxCHAN, int &DIM_T, int &t0, int &t1 )  {
 #ifdef ENABLE_IMS_HDF5
 
 	
@@ -2335,7 +2335,7 @@ void IMS_HDF5getVolumeInfo ( void *descr, int tp, int res, void *&volume_descr,
 }
 
 
-void IMS_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0, int D1, int chan, iim::uint8 *buf, int red_factor, int depth_conv_algo ) throw (iim::IOException) {
+void IMS_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0, int D1, int chan, iim::uint8 *buf, int red_factor, int depth_conv_algo )  {
 #ifdef ENABLE_IMS_HDF5
 
 	IMS_volume_descr_t *int_volume_descr = (IMS_volume_descr_t *) descr;
@@ -2407,7 +2407,7 @@ void IMS_HDF5getSubVolume ( void *descr, int V0, int V1, int H0, int H1, int D0,
 #endif
 }
 
-void IMS_HDF5closeVolume ( void *descr ) throw (iim::IOException) {
+void IMS_HDF5closeVolume ( void *descr )  {
 #ifdef ENABLE_IMS_HDF5
 	IMS_volume_descr_t *int_volume_descr = (IMS_volume_descr_t *) descr;
 	if ( int_volume_descr->datasets_id )

@@ -63,7 +63,7 @@ TPAlgoMST::TPAlgoMST(VirtualVolume * _volume) : TPAlgo(S_FATPM_SP_TREE, _volume)
 *       ent is quite reliable, with a very little reliability gain.  This implies possible bad absolute  posi-
 *       tions estimations when the path is too long.
 **************************************************************************************************************/
-void TPAlgoMST::execute() throw (iom::exception)
+void TPAlgoMST::execute() 
 {
 	#if S_VERBOSE > 2
 	printf("....in TPAlgoMST::execute()");

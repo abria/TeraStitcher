@@ -82,7 +82,7 @@ void
 	int & img_bytes_x_chan,			// (OUTPUT) number of bytes per channel
 	int & img_chans,				// (OUTPUT) number of channels
 	const std::string & params)		// (INPUT)  additional parameters <param1=val, param2=val, ...> 
-throw (iom::exception)
+
 {
 	/**/iom::debug(iom::LEV3, iom::strprintf("img_path = \"%s\", params = \"%s\"",img_path.c_str(), params.c_str()).c_str(), __iom__current__function__);
 
@@ -123,7 +123,7 @@ unsigned char *						// (OUTPUT) a buffer storing the 2D image
 	int & img_chans,				// (INPUT/OUTPUT) number of channels to be read
 	unsigned char *data,			// (INPUT) image data
 	const std::string & params)		// (INPUT) additional parameters <param1=val, param2=val, ...> 
-throw (iom::exception) 
+ 
 {
 	throw iom::exception(iom::strprintf("not implemented yet"), __iom__current__function__);
 
@@ -145,7 +145,7 @@ void
 	int x0,							// (INPUT)	region of interest [x0,x1][y0,y1] to be set on the image
 	int x1,							// (INPUT)	region of interest [x0,x1][y0,y1] to be set on the image
 	const std::string & params)		// (INPUT) additional parameters <param1=val, param2=val, ...> 
-throw (iom::exception)
+
 {
 	throw iom::exception(iom::strprintf("not implemented yet"), __iom__current__function__);
 }
@@ -162,7 +162,7 @@ iom::real_t*						// (OUTPUT) a [0.0,1.0]-valued array storing the 3D image in c
 	bool is_sparse /*= false*/,		// (INPUT)	if true, 'files' is a sparse array and null entries should be treated as empty (black) images
 	iom::channel chan,				// (INPUT)	channel selection { ALL, R, G, B }. 
 	const std::string & params)		// (INPUT)	additional parameters <param1=val, param2=val, ...> 
-throw (iom::exception)
+
 {
 	throw iom::exception(iom::strprintf("not implemented yet (params = \"%s\")", params.c_str()), __iom__current__function__);
 
@@ -185,7 +185,7 @@ void
 	int x1,						// (INPUT)	region of interest [x0,x1][y0,y1] to be set on the image
 	int bpp,					// (INPUT)	color depth (bits per pixel)
 	const std::string & params)	// (INPUT)	additional parameters <param1=val, param2=val, ...> 
-	throw (iom::exception)
+	
 {
 	throw iom::exception(iom::strprintf("not implemented yet (params = \"%s\")", params.c_str()), __iom__current__function__);
 

@@ -64,7 +64,7 @@
 using namespace std;
 using namespace iim;
 
-StackRaw::StackRaw(VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, char* _DIR_NAME) throw (IOException)
+StackRaw::StackRaw(VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, char* _DIR_NAME) 
 {
     /**/iim::debug(iim::LEV3, strprintf("_ROW_INDEX=%d, _COL_INDEX=%d, _DIR_NAME=%s", _ROW_INDEX, _COL_INDEX, _DIR_NAME).c_str(), __iim__current__function__);
 
@@ -84,7 +84,7 @@ StackRaw::StackRaw(VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, ch
 	init();
 }
 
-StackRaw::StackRaw(VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) throw (IOException)
+StackRaw::StackRaw(VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) 
 {
     /**/iim::debug(iim::LEV3, strprintf("_ROW_INDEX=%d, _COL_INDEX=%d", _ROW_INDEX, _COL_INDEX).c_str(), __iim__current__function__);
 
@@ -151,7 +151,7 @@ void StackRaw::binarizeInto(FILE* file)
 	}
 }
 
-void StackRaw::unBinarizeFrom(FILE* file) throw (IOException)
+void StackRaw::unBinarizeFrom(FILE* file) 
 {
     /**/iim::debug(iim::LEV3, strprintf("ROW_INDEX=%d, COL_INDEX=%d", ROW_INDEX, COL_INDEX).c_str(), __iim__current__function__);
 

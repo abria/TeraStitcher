@@ -58,26 +58,26 @@ ComposedVolume::ComposedVolume(void) : VirtualVolume()
 }
 
 
-ComposedVolume::~ComposedVolume(void) throw (iim::IOException)
+ComposedVolume::~ComposedVolume(void) 
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 }
 
 
-void ComposedVolume::init() throw (IOException)
+void ComposedVolume::init()
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 }
 
 
-iim::real32 *ComposedVolume::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, int D0, int D1)  throw (iim::IOException) {
+iim::real32 *ComposedVolume::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, int D0, int D1)   {
 
 	throw iom::exception(iom::strprintf("not implemented yet"), __iom__current__function__);
 }
 
 
 iim::uint8 *ComposedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, int D1,
-										   int *channels, int ret_type) throw (iim::IOException, iom::exception) {
+										   int *channels, int ret_type)  {
 
     if ( (ret_type != iim::NATIVE_RTYPE) && (ret_type != iim::DEF_IMG_DEPTH) ) {
 		// return type should be converted, but not to 8 bits per channel
@@ -94,7 +94,7 @@ iim::uint8 *ComposedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1
 
 
 // return 'volume_format' attribute of <TeraStitcher> node from the given xml. 
-std::string ComposedVolume::getVolumeFormat(const std::string& xml_path) throw (iom::exception)
+std::string ComposedVolume::getVolumeFormat(const std::string& xml_path) 
 {
 	// open xml
 	TiXmlDocument xml;

@@ -87,7 +87,7 @@ using namespace vm;
 
 
 //CONSTRUCTOR WITH ARGUMENTS
-Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char* _DIR_NAME) throw (iom::exception)
+Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char* _DIR_NAME) 
 	: VirtualStack()
 {
 	#if VM_VERBOSE > 3
@@ -113,7 +113,7 @@ Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char
 }
 
 // 2015-01-17. Alessandro. @ADDED constructor for initialization from XML.
-Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlElement* stack_node, int &z_end) throw (iom::exception)
+Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlElement* stack_node, int &z_end) 
 	: VirtualStack()
 {
 	#if VM_VERBOSE > 3
@@ -163,7 +163,7 @@ Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlEleme
 	loadXML(stack_node, z_end);
 }
 
-Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) throw (iom::exception)
+Block::Block(BlockVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) 
 	: VirtualStack()
 {
 	#if VM_VERBOSE > 3
@@ -215,7 +215,7 @@ Block::~Block(void)
 		delete[] DIR_NAME;
 }
 
-void Block::init() throw (iom::exception)
+void Block::init() 
 {
 	#if VM_VERBOSE > 3
     printf("\t\t\t\tin Block[%d,%d]::init()\n",ROW_INDEX, COL_INDEX);
@@ -325,7 +325,7 @@ void Block::init() throw (iom::exception)
 
 
 //binarizing-unbinarizing methods
-void Block::binarizeInto(FILE* file) throw (iom::exception)
+void Block::binarizeInto(FILE* file) 
 {
 	#if VM_VERBOSE > 3
     printf("\t\t\t\tin Block[%d,%d]::binarizeInto(...)\n",ROW_INDEX, COL_INDEX);
@@ -361,7 +361,7 @@ void Block::binarizeInto(FILE* file) throw (iom::exception)
 	fwrite(&N_BYTESxCHAN, sizeof(int), 1, file);
 }
 
-void Block::unBinarizeFrom(FILE* file) throw (iom::exception)
+void Block::unBinarizeFrom(FILE* file) 
 {
 	#if VM_VERBOSE > 3
     printf("\t\t\t\tin Block[%d,%d]::unBinarizeFrom(...)\n",ROW_INDEX, COL_INDEX);
@@ -472,7 +472,7 @@ void Block::unBinarizeFrom(FILE* file) throw (iom::exception)
 
 
 //loads image stack from <first_file> to <last_file> extremes included, if not specified loads entire Stack
-iom::real_t* Block::loadImageStack(int first_file, int last_file) throw (iom::exception)
+iom::real_t* Block::loadImageStack(int first_file, int last_file) 
 {
 	#if VM_VERBOSE > 3
     printf("\t\t\t\tin Block[%d,%d]::loadImageStack(first_file = %d, last_file = %d)\n",ROW_INDEX, COL_INDEX, first_file, last_file);
@@ -761,7 +761,7 @@ void Block::loadXML(
 	TiXmlElement *stack_node,
 	int z_end)					// 2014-09-05. Alessandro. @ADDED 'z_end' parameter to support sparse data feature
 								//			   Here 'z_end' identifies the range [0, z_end) that slices can span
-throw (iom::exception)
+
 {
 	#if VM_VERBOSE > 3
     printf("\t\t\t\tin Block[%d,%d]::loadXML(TiXmlElement *stack_node)\n",ROW_INDEX, COL_INDEX);
@@ -994,7 +994,7 @@ Segm_t* Block::Intersects(int D0, int D1) {
 void 
 	Block::compute_z_ranges(
 	std::pair<int,int> const * z_coords /*= 0*/)	// pair of z-coordinates corresponding to the whole volume depth
-	throw (iom::exception)							// if null, 'z_ranges' will be compute based on 'FILENAMES' vector
+								// if null, 'z_ranges' will be compute based on 'FILENAMES' vector
 {
 	// if 'z_coords' has been provided, we use it to associate each file in 'FILENAMES' to the correspondent z-coordinate
 	if(z_coords)
@@ -1099,7 +1099,7 @@ void
 
 
 //loads image stack from <first_file> to <last_file> extremes included, if not specified loads entire Stack
-iom::real_t* Block::loadImageStack2(int first_file, int last_file, int V0, int V1, int H0, int H1) throw (iom::exception)
+iom::real_t* Block::loadImageStack2(int first_file, int last_file, int V0, int V1, int H0, int H1) 
 {
 	#if VM_VERBOSE > 3
     printf("\t\t\t\tin Block[%d,%d]::loadImageStack(first_file = %d, last_file = %d)\n",ROW_INDEX, COL_INDEX, first_file, last_file);

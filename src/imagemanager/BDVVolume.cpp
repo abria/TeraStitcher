@@ -68,7 +68,7 @@ BDVVolume::BDVVolume(void) : VirtualVolume()
 
 }
 
-BDVVolume::BDVVolume(const char* _root_dir, int res, int tp, void *_BDV_descr )  throw (IOException)
+BDVVolume::BDVVolume(const char* _root_dir, int res, int tp, void *_BDV_descr )  
 : VirtualVolume() // _root_dir can be NULL
 {
 	if ( _root_dir ) {
@@ -102,7 +102,7 @@ BDVVolume::BDVVolume(const char* _root_dir, int res, int tp, void *_BDV_descr ) 
 		active[c] = c; // all channels are assumed active
 }
 
-BDVVolume::~BDVVolume(void) throw (iim::IOException)
+BDVVolume::~BDVVolume(void) 
 {
 	if ( BDV_descr )
 		BDV_HDF5close(BDV_descr);
@@ -132,7 +132,7 @@ BDVVolume::~BDVVolume(void) throw (iim::IOException)
 
 
 //loads given subvolume in a 1-D array of float
-real32* BDVVolume::loadSubvolume(int V0,int V1, int H0, int H1, int D0, int D1, list<Block*> *involved_blocks, bool release_blocks) throw (IOException)
+real32* BDVVolume::loadSubvolume(int V0,int V1, int H0, int H1, int D0, int D1, list<Block*> *involved_blocks, bool release_blocks) 
 {
     /**/iim::debug(iim::LEV3, strprintf("V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d, %s", V0, V1, H0, H1, D0, D1, (involved_blocks? ", involved_stacks" : "")).c_str(), __iim__current__function__);
 
@@ -166,7 +166,7 @@ real32* BDVVolume::loadSubvolume(int V0,int V1, int H0, int H1, int D0, int D1, 
 
 //loads given subvolume in a 1-D array of uint8 while releasing stacks slices memory when they are no longer needed
 //---03 nov 2011: added color support
-uint8* BDVVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, int D1, int *channels, int ret_type) throw (IOException, iom::exception)
+uint8* BDVVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, int D1, int *channels, int ret_type) 
 {
     /**/iim::debug(iim::LEV3, strprintf("V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d, *channels=%d, ret_type=%d", V0, V1, H0, H1, D0, D1, channels ? *channels : -1, ret_type).c_str(), __iim__current__function__);
 

@@ -99,23 +99,23 @@ class UnstitchedVolume : public iim::VirtualVolume
         void extractCoordinates(iim::Block* stk, int z, int* crd_1, int* crd_2, int* crd_3);
 
 		// iannello returns the number of channels of images composing the volume
-        void initChannels ( ) throw (iim::IOException);
+        void initChannels ( ) ;
 
         //loads given subvolume in a 1-D array of iim::real32; since the loaded subvolume can have slightly different vertices, returns the actual 
 		//vertices of the subvolume in (VV0, VV1, HH0, HH1, DD0, DD1)
 		iim::real32 *internal_loadSubvolume_to_real32(int &VV0, int &VV1, int &HH0, int &HH1, int &DD0, int &DD1, 
-													  int V0=-1, int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1)  throw (iim::IOException);
+													  int V0=-1, int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1)  ;
 
 	public:
 
 		// constructor 1 (from source folder)
-        UnstitchedVolume(const char* _root_dir, bool cacheEnabled = true, int _blending_algo = S_SINUSOIDAL_BLENDING )  throw (iim::IOException);
+        UnstitchedVolume(const char* _root_dir, bool cacheEnabled = true, int _blending_algo = S_SINUSOIDAL_BLENDING )  ;
 		
 		// constructor 2 @ADDED by Alessandro on 2014-04-18: takes an external vm::VirtualVolume in input
-		UnstitchedVolume(vm::VirtualVolume * _imported_volume, bool cacheEnabled = true, int _blending_algo = S_SINUSOIDAL_BLENDING )  throw (iim::IOException);
+		UnstitchedVolume(vm::VirtualVolume * _imported_volume, bool cacheEnabled = true, int _blending_algo = S_SINUSOIDAL_BLENDING )  ;
 
 		// destructor
-		virtual ~UnstitchedVolume(void) throw (iim::IOException);
+		virtual ~UnstitchedVolume(void) ;
 
 		//GET methods
         float  getVXL_1(){return VXL_V;}
@@ -147,11 +147,11 @@ class UnstitchedVolume : public iim::VirtualVolume
 		void print();
 
         //loads given subvolume in a 1-D array of iim::real32
-        iim::real32 *loadSubvolume_to_real32(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1)  throw (iim::IOException);
+        iim::real32 *loadSubvolume_to_real32(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1)  ;
 
         //loads given subvolume in a 1-D array of iim::uint8 while releasing stacks slices memory when they are no longer needed
         iim::uint8 *loadSubvolume_to_UINT8(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1,
-                                                   int *channels=0, int ret_type=iim::DEF_IMG_DEPTH) throw (iim::IOException, iom::exception);
+                                                   int *channels=0, int ret_type=iim::DEF_IMG_DEPTH) ;
 
     	// needed to enable the detection by the factory of volume format through use of the default constructor
         friend class iim::VirtualVolume; 

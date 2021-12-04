@@ -77,8 +77,8 @@ class vm::VirtualStack
 		// 2015-01-17. Alessandro. @ADDED support for all-in-one-folder data (import from xml only).
 		// Each stack can be associated with a regular expression to filter image filenames. 
 		std::string img_regex;
-		virtual std::string readImgRegex(TiXmlElement *stack_node) throw (iom::exception);
-		virtual void        writeImgRegex(TiXmlElement *stack_node) throw (iom::exception);
+		virtual std::string readImgRegex(TiXmlElement *stack_node) ;
+		virtual void        writeImgRegex(TiXmlElement *stack_node) ;
 
     public:
 
@@ -99,7 +99,7 @@ class vm::VirtualStack
 		int getABS_V()				{return ABS_V;}
 		int getABS_H()				{return ABS_H;}
 		int getABS_D()				{return ABS_D;}
-		int getABS(int direction) throw (iom::exception)
+		int getABS(int direction) 
 		{
 			#if VM_VERBOSE > 4
 			printf("........in Stack[%d,%d]::getABS(direction = %d)\n",ROW_INDEX, COL_INDEX, direction);
@@ -129,7 +129,7 @@ class vm::VirtualStack
 		bool isEmpty(){return z_ranges.empty();}
 		bool isSparse(){return !isEmpty() && !isComplete(0, DEPTH-1);}
 
-		Displacement* getDisplacement(VirtualStack* neighbour) throw (iom::exception)
+		Displacement* getDisplacement(VirtualStack* neighbour) 
 		{
 			#if VM_VERBOSE > 4
 			printf("........in Stack[%d,%d]::getDisplacement(Stack* neighbour[%d,%d])\n",ROW_INDEX, COL_INDEX, neighbour->ROW_INDEX, neighbour->COL_INDEX);
@@ -159,7 +159,7 @@ class vm::VirtualStack
 		void setABS_V    (int _ABS_V)    {ABS_V     = _ABS_V;    }
 		void setABS_H    (int _ABS_H)    {ABS_H     = _ABS_H;    }
 		void setABS_D    (int _ABS_D)    {ABS_D     = _ABS_D;    }
-		void setABS		 (int _ABS, int direction)  throw (iom::exception)
+		void setABS		 (int _ABS, int direction)  
 		{
 			#if VM_VERBOSE > 4
 			printf("........in Stack[%d,%d]::setABS(_ABS = %d, direction = %d)\n",ROW_INDEX, COL_INDEX, _ABS, direction);
@@ -177,8 +177,8 @@ class vm::VirtualStack
 		void setStitchable(bool _stitchable){this->stitchable = _stitchable;}
 
 		//LOAD and RELEASE methods
-        virtual iom::real_t* loadImageStack(int first_file=-1, int last_file=-1) throw (iom::exception) = 0;
-        virtual iom::real_t* loadImageStack2(int first_file=-1, int last_file=-1, int V0=-1, int V1=-1, int H0=-1, int H1=-1) throw (iom::exception) = 0;
+        virtual iom::real_t* loadImageStack(int first_file=-1, int last_file=-1)  = 0;
+        virtual iom::real_t* loadImageStack2(int first_file=-1, int last_file=-1, int V0=-1, int V1=-1, int H0=-1, int H1=-1)  = 0;
 		virtual void releaseImageStack()= 0;
 		void releaseImageStackOwnership() { STACKED_IMAGE = 0; }
 
@@ -194,7 +194,7 @@ class vm::VirtualStack
 			TiXmlElement *stack_node,
 			int z_end)					// 2014-09-05. Alessandro. @ADDED 'z_end' parameter to support sparse data feature
 										//			   Here 'z_end' identifies the range [0, z_end) that slices can span
-		throw (iom::exception)= 0;
+		= 0;
 };
 
 #endif

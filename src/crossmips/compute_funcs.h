@@ -119,7 +119,7 @@ iom::real_t compute_NCC ( iom::real_t *MIP_1, iom::real_t *MIP_2, int dimu, int 
 int compute_MAX_ind ( iom::real_t *vect, int len );
 
 void compute_Neighborhood ( NCC_parms_t *NCC_params, iom::real_t *NCC, int delayu, int delayv, int newu, int newv, int ind, 
-						    iom::real_t *MIP_1, iom::real_t *MIP_2, int dimu, int dimv, iom::real_t *NCCnew, int &du, int &dv, bool &failed)  throw (iom::exception);
+						    iom::real_t *MIP_1, iom::real_t *MIP_2, int dimu, int dimv, iom::real_t *NCCnew, int &du, int &dv, bool &failed)  ;
 
 /* Returns an NCC map of of size (2*newu+1) x (2*newv+1) centered around the NCC maximum or returns filed = true
  * if this map cannot be found (it is: newu = newv = NCC_params->wRangeThr)

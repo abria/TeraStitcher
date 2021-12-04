@@ -55,7 +55,7 @@ using namespace iom;
 Displacement* PDAlgoMIPNCC::execute(iom::real_t *stk_A, uint32 A_dim_V, uint32 A_dim_H, uint32 A_dim_D,
 	iom::real_t *stk_B, uint32 B_dim_V, uint32 B_dim_H, uint32 B_dim_D,
 	uint32 displ_max_V, uint32 displ_max_H, uint32 displ_max_D,
-	direction overlap_direction, uint32 overlap) throw (iom::exception)
+	direction overlap_direction, uint32 overlap) 
 {
 	#if S_VERBOSE>3
 	printf("\t\t\t\tin PDAlgoMIPNCC::execute(..., A_dim_V = %d, A_dim_H = %d, A_dim_D = %d, B_dim_V = %d, B_dim_H = %d, B_dim_D = %d, displ_max_V = %d, displ_max_H = %d, displ_max_D = %d, overlap_direction = %d, overlap = %d)\n",

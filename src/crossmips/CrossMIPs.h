@@ -88,7 +88,7 @@ typedef struct {
 /***************************************** MAIN FUNCTION ***********************************************/
 NCC_descr_t *norm_cross_corr_mips ( iom::real_t *A, iom::real_t *B, 
 						    int dimk, int dimi, int dimj, int nk, int ni, int nj, 
-							int delayk, int delayi, int delayj, int side, NCC_parms_t *NCC_params = 0 ) throw (iom::exception); //Alessandro - 23/03/2013 - exceptions are thrown if preconditions do not hold
+							int delayk, int delayi, int delayj, int side, NCC_parms_t *NCC_params = 0 ) ; //Alessandro - 23/03/2013 - exceptions are thrown if preconditions do not hold
 /*
  * returns an alignment between volume A and B; the two volumes are assumed to have the same dimensions
  * INPUT PARAMETERS:

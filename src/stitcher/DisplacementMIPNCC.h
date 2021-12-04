@@ -71,37 +71,37 @@ class DisplacementMIPNCC : Displacement
 
 		//evaluates displacement reliability possibly along the given direction. The result(s) should be stored
 		//in one or more object members, so that they have to be computed once and then accessed by GET methods
-		float			 evalReliability(direction _direction=invalid)	throw (iom::exception);
+		float			 evalReliability(direction _direction=invalid)	;
 
 		//returns the reliability possibly along the given direction. An exception is thrown if the reliability
 		//index(es) are not computed yet.
-		float			 getReliability(direction _direction=invalid)	throw (iom::exception);
+		float			 getReliability(direction _direction=invalid)	;
 
 		//returns the displacement along the given direction
-		int				 getDisplacement(direction _direction)			throw (iom::exception);
+		int				 getDisplacement(direction _direction)			;
 
 		//returns the default displacement along the given direction
-		int				 getDefaultDisplacement(direction _direction)	throw (iom::exception);
+		int				 getDefaultDisplacement(direction _direction)	;
 
 		//returns the half range of NCC search around initial offset along the given direction
-		int				 getDelays(direction _direction)				throw (iom::exception);
+		int				 getDelays(direction _direction)				;
 
 		//sets to default values the displacements with a reliability factor above the given threshold
-		void			 threshold(float rel_threshold)					throw (iom::exception);
+		void			 threshold(float rel_threshold)					;
 
 		//returns the displacement mirrored along the given direction.
-		Displacement*	 getMirrored(direction _direction)				throw (iom::exception);
+		Displacement*	 getMirrored(direction _direction)				;
 
 		//XML methods: convert/load displacement object into/from XML schema
-		TiXmlElement*	 getXML() 								throw (iom::exception);
-		void			 loadXML(TiXmlElement *displ_node)				throw (iom::exception);
+		TiXmlElement*	 getXML() 								;
+		void			 loadXML(TiXmlElement *displ_node)				;
 
 		//combines the parameters of the current and the given displacement so that after this operation
 		//the two displacements are more reliable (and are EQUAL).
-		void			 combine(Displacement& displ)					throw (iom::exception);
+		void			 combine(Displacement& displ)					;
 
 		// returns true if 'displ' is a better displacement than the current one
-		bool             isBetter(Displacement *displ)					throw (iom::exception);
+		bool             isBetter(Displacement *displ)					;
 
 		friend class PDAlgoMIPNCC;
 };

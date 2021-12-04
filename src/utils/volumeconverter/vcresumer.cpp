@@ -66,7 +66,7 @@ using namespace iim;
 
 
 bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutions_size, bool* resolutions, 
-				   int slice_height, int slice_width, int method, const char* saved_img_format, int saved_img_depth, FILE *&fhandle ) throw (iim::IOException) {
+				   int slice_height, int slice_width, int method, const char* saved_img_format, int saved_img_depth, FILE *&fhandle )  {
 
 #ifdef SAVE_RESUMER_STATUS
 
@@ -180,7 +180,7 @@ bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutio
 }
 
 
-void readVCResumerState ( FILE *&fhandle, const char *output_path, iim::sint64 &z, iim::sint64 &z_parts ) throw (iim::IOException) {
+void readVCResumerState ( FILE *&fhandle, const char *output_path, iim::sint64 &z, iim::sint64 &z_parts )  {
 
 #ifdef SAVE_RESUMER_STATUS
 
@@ -201,7 +201,7 @@ void readVCResumerState ( FILE *&fhandle, const char *output_path, iim::sint64 &
 }
 
 
-void saveVCResumerState ( FILE *fhandle, iim::sint64 z, iim::sint64 z_parts ) throw (iim::IOException) {
+void saveVCResumerState ( FILE *fhandle, iim::sint64 z, iim::sint64 z_parts )  {
 
 #ifdef SAVE_RESUMER_STATUS
 
@@ -216,7 +216,7 @@ void saveVCResumerState ( FILE *fhandle, iim::sint64 z, iim::sint64 z_parts ) th
 
 bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutions_size, bool* resolutions, 
 				   int block_height, int block_width, int block_depth, int method, 
-                   const char* saved_img_format, int saved_img_depth, FILE *&fhandle ) throw (IOException)
+                   const char* saved_img_format, int saved_img_depth, FILE *&fhandle ) 
 {
 
 #ifdef SAVE_RESUMER_STATUS
@@ -334,7 +334,7 @@ bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutio
 }
 
 void readVCResumerState ( FILE *&fhandle, const char *output_path, int &resolutions_size, int *stack_block, int *slice_start, int *slice_end, 
-                 sint64 &z, sint64 &z_parts ) throw (IOException)
+                 sint64 &z, sint64 &z_parts ) 
 {
 
 #ifdef SAVE_RESUMER_STATUS
@@ -360,7 +360,7 @@ void readVCResumerState ( FILE *&fhandle, const char *output_path, int &resoluti
 }
 
 void saveVCResumerState ( FILE *fhandle, int resolutions_size, int *stack_block, int *slice_start, int *slice_end, 
-                 sint64 z, sint64 z_parts ) throw (IOException)
+                 sint64 z, sint64 z_parts ) 
 {
 
 #ifdef SAVE_RESUMER_STATUS
@@ -376,7 +376,7 @@ void saveVCResumerState ( FILE *fhandle, int resolutions_size, int *stack_block,
 #endif
 }
 
-void closeVCResumer ( FILE *fhandle, const char *output_path ) throw (IOException)
+void closeVCResumer ( FILE *fhandle, const char *output_path ) 
 {
 
 #ifdef SAVE_RESUMER_STATUS

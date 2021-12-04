@@ -98,7 +98,7 @@ protected:
 public:
 	//CONSTRUCTORS-DESTRUCTOR
     VirtualVolume();
-    VirtualVolume(const char* _root_dir, float VXL_1=0, float VXL_2=0, float VXL_3=0) throw (iim::IOException)
+    VirtualVolume(const char* _root_dir, float VXL_1=0, float VXL_2=0, float VXL_3=0)
     {
 
 		this->root_dir = new char[strlen(_root_dir)+1];
@@ -122,18 +122,18 @@ public:
     	depth_conv_algo = DEPTH_CONVERSION_DEFAULT;
     }
 
-	virtual ~VirtualVolume()  throw (iim::IOException){ 
+    virtual ~VirtualVolume()  {
 		if(root_dir)
 			delete[] root_dir;
 		if(active)
 			delete []active;
 	}    
 
-    virtual void initChannels ( ) throw (iim::IOException) = 0;
+    virtual void initChannels ( )  = 0;
 
 
     //loads given subvolume in a 1-D array of iim::real32 while releasing stacks slices memory when they are no longer needed
-    virtual iim::real32 *loadSubvolume_to_real32(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1)  throw (iim::IOException) = 0;
+    virtual iim::real32 *loadSubvolume_to_real32(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1)   = 0;
 
 
     /* @ADDED by Giulio on 2015-12-06:
@@ -153,7 +153,7 @@ public:
      *          number of channels that have been previously set to be returned by method 'setActiveChannels'
      */
     virtual iim::uint8 *loadSubvolume_to_UINT8(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1,
-                                               int *channels=0, int ret_type=iim::DEF_IMG_DEPTH) throw (iim::IOException, iom::exception) = 0;
+                                               int *channels=0, int ret_type=iim::DEF_IMG_DEPTH)  = 0;
 
     // ******GET METHODS******
     float   getORG_V() {return ORG_V;}
@@ -162,7 +162,7 @@ public:
     int     getDIM_V() {return DIM_V;}
     int     getDIM_H() {return DIM_H;}
     int     getDIM_D() {return DIM_D;}
-    int     getDIM(iim::axis dir) throw (iim::IOException)
+    int     getDIM(iim::axis dir)
     {
         if(dir == iim::vertical || dir == iim::inv_vertical)
             return DIM_V;
@@ -244,7 +244,7 @@ public:
     static void saveImage(std::string img_path,   iim::real32* raw_img,       int raw_img_height,   int   raw_img_width,
                               int start_height = 0,   int end_height = - 1,  int start_width = 0,  int end_width = - 1,
                               const char* img_format = iim::DEF_IMG_FORMAT.c_str(),    int img_depth = iim::DEF_IMG_DEPTH		 )
-                                                                                                   throw (iim::IOException, iom::exception);
+                                                                                                   ;
 
     /*************************************************************************************************************
     * Save image method from iim::uint8 raw data. <> parameters are mandatory, while [] are optional.
@@ -271,7 +271,7 @@ public:
                                       iim::uint8* raw_ch1, iim::uint8* raw_ch2, iim::uint8* raw_ch3,
 									  int raw_img_height, int raw_img_width,
                                       int start_height=0, int end_height =-1, int start_width=0, int end_width=-1,
-                                      const char* img_format = iim::DEF_IMG_FORMAT.c_str(), int img_depth = iim::DEF_IMG_DEPTH ) throw (iim::IOException, iom::exception);
+                                      const char* img_format = iim::DEF_IMG_FORMAT.c_str(), int img_depth = iim::DEF_IMG_DEPTH ) ;
 
 
  	/*************************************************************************************************************
@@ -288,7 +288,7 @@ public:
                               int start_height = 0, int end_height = - 1, int start_width = 0, int end_width = - 1,
                               const char* img_format = iim::DEF_IMG_FORMAT.c_str(), int img_depth = iim::DEF_IMG_DEPTH
 							  )
-                                                                                                   throw (iim::IOException, iom::exception);
+                                                                                                   ;
 
    /*************************************************************************************************************
     * Save image method from iim::uint8 raw data to Vaa3D raw format. <> parameters are mandatory, while [] are optional.
@@ -308,7 +308,7 @@ public:
                                       iim::uint8** raw_ch, int n_chans, iim::sint64 offset,
 									  int raw_img_height, int raw_img_width,
                                       int start_height=0, int end_height =-1, int start_width=0, int end_width=-1,
-                                      const char* img_format = iim::DEF_IMG_FORMAT.c_str(), int img_depth = iim::DEF_IMG_DEPTH ) throw (iim::IOException, iom::exception);
+                                      const char* img_format = iim::DEF_IMG_FORMAT.c_str(), int img_depth = iim::DEF_IMG_DEPTH ) ;
 
 
 
@@ -337,7 +337,7 @@ public:
 									  int raw_img_height, int raw_img_width,
                                       int start_height=0, int end_height =-1, int start_width=0, int end_width=-1,
                                       const char* img_format = iim::DEF_IMG_FORMAT.c_str(), int img_depth = iim::DEF_IMG_DEPTH, 
-									  void *fhandle = 0, int n_pages = -1, bool do_open = true ) throw (iim::IOException, iom::exception);
+                                      void *fhandle = 0, int n_pages = -1, bool do_open = true ) ;
 
 	/*************************************************************************************************************
 	* Performs downsampling at a halved frequency on the given 3D image.  The given image is overwritten in order
@@ -365,19 +365,19 @@ public:
 
     // tries to automatically detect the volume format and returns the imported volume if succeeds (otherwise returns 0)
     // WARNING: all metadata files (if needed by that format) are assumed to be present. Otherwise, that format will be skipped.
-    static VirtualVolume* instance(const char* path) throw (iim::IOException, iom::exception);
+    static VirtualVolume* instance(const char* path) ;
 
 	// should be used to instantiate BDV HDF5 volumes
-    static VirtualVolume* instance(const char* fname, int res, void *descr, int timepoint = 0) throw (iim::IOException);
+    static VirtualVolume* instance(const char* fname, int res, void *descr, int timepoint = 0) ;
 
     // returns the imported volume if succeeds (otherwise returns 0)
     // WARNING: no assumption is made on metadata files, which are possibly (re-)generated using the additional informations provided.
     static VirtualVolume* instance(const char* path, std::string format,
                                    iim::axis AXS_1 = iim::axis_invalid, iim::axis AXS_2 = iim::axis_invalid, iim::axis AXS_3 = iim::axis_invalid,
-                                   float VXL_1=0.0f, float VXL_2=0.0f, float VXL_3=0.0f) throw (iim::IOException, iom::exception);
+                                   float VXL_1=0.0f, float VXL_2=0.0f, float VXL_3=0.0f) ;
 
     // 2015-04-14. Alessandro. @ADDED 'instance_format' method with inputs = {path, format}.
-    static VirtualVolume* instance_format(const char* path, std::string format) throw (iim::IOException, iom::exception);
+    static VirtualVolume* instance_format(const char* path, std::string format) ;
     
     // checks whether the volume stored in "path" can be imported directly (i.e., w/o additional metadata provided by the user)
     static bool isDirectlyImportable(const char* path)
@@ -394,7 +394,7 @@ public:
     }
 
     // returns true if the given format is hierarchical, i.e. if it consists of nested folders (1 level at least)
-    static bool isHierarchical(std::string format) throw (iim::IOException);
+    static bool isHierarchical(std::string format) ;
 };
 
 #endif

@@ -82,12 +82,12 @@ class volumemanager::VirtualVolume
 		CacheBuffer *cb;
 
 		//initialization methods
-		virtual void init() throw (iom::exception);
-		virtual void applyReferenceSystem(vm::ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3) throw (iom::exception)=0;
+		virtual void init() ;
+		virtual void applyReferenceSystem(vm::ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3) =0;
 
 		//binary metadata load/save methods
-		virtual void saveBinaryMetadata(char *metadata_filepath) throw (iom::exception)=0;
-		virtual void loadBinaryMetadata(char *metadata_filepath) throw (iom::exception)=0;
+		virtual void saveBinaryMetadata(char *metadata_filepath) =0;
+		virtual void loadBinaryMetadata(char *metadata_filepath) =0;
 
 		//rotates stacks matrix around D vm::axis (accepted values are theta=0,90,180,270)
 		virtual void rotate(int theta)=0;
@@ -110,7 +110,7 @@ class volumemanager::VirtualVolume
 			cb = (CacheBuffer *) 0;
 		}
 
-		VirtualVolume(const char* _stacks_dir, vm::ref_sys _reference_system, float VXL_1=0, float VXL_2=0, float VXL_3=0) throw (iom::exception)
+		VirtualVolume(const char* _stacks_dir, vm::ref_sys _reference_system, float VXL_1=0, float VXL_2=0, float VXL_3=0) 
 		{
 			init();
 
@@ -128,7 +128,7 @@ class volumemanager::VirtualVolume
 			cb = (CacheBuffer *) 0;
 		}
 
-		VirtualVolume(const char* xml_path) throw (iom::exception){
+		VirtualVolume(const char* xml_path) {
 			stacks_dir = (char *) 0;     // added to prevent destructor from releasing a non-null pointer
 			mdata_filepath = (char *) 0; // added to prevent destructor from releasing a non-null pointer
 			init();
@@ -174,28 +174,28 @@ class volumemanager::VirtualVolume
 		//loads/saves metadata from/in the given xml filename
 		virtual void loadXML(const char *xml_filename) = 0;
 		virtual void initFromXML(const char *xml_filename) = 0;
-        virtual void saveXML(const char *xml_filename=0, const char *xml_filepath=0) throw (iom::exception) = 0;
+        virtual void saveXML(const char *xml_filename=0, const char *xml_filepath=0)  = 0;
 
 		virtual void releaseBuffers() = 0;
 
 		// 2014-09-10. Alessandro. @ADDED 'getVolumeFormat' method to be applied on xml file.
 		// return 'volume_format' attribute of <TeraStitcher> node from the given xml. 
-        static std::string getVolumeFormat(const std::string& xml_path) throw (iom::exception);
+        static std::string getVolumeFormat(const std::string& xml_path) ;
 
 		// 2017-04-27. Giulio. @ADDED 'getInputPlugin' method to be applied on xml file.
 		// return 'input_plugin' attribute of <TeraStitcher> node from the given xml if present
 		// return an empty string if the attribute is not present (for compatibility reasons).
-        static std::string getInputPlugin(const std::string& xml_path) throw (iom::exception);
+        static std::string getInputPlugin(const std::string& xml_path) ;
 
 		//inserts the given displacement in the given stacks
-		void insertDisplacement(VirtualStack *stk_A, VirtualStack *stk_B, Displacement *displacement) throw (iom::exception);
+		void insertDisplacement(VirtualStack *stk_A, VirtualStack *stk_B, Displacement *displacement) ;
 
         /**********************************************************************************
         * UTILITY methods
         ***********************************************************************************/
         //check if volume is complete and coherent; return true if the volume is ok, false otherwise
 		//if a file name is passed and thevolume is not ok an error log file is generated
-		virtual bool check(const char *errlogFileName = 0) throw (iom::exception)=0;
+		virtual bool check(const char *errlogFileName = 0) =0;
 
 		//counts the total number of displacements and the number of displacements per pair of adjacent stacks
         virtual void countDisplacements(int& total, float& per_stack_pair) = 0;
@@ -207,12 +207,12 @@ class volumemanager::VirtualVolume
         virtual int countStitchableStacks(float threshold) = 0;
 
 		//returns true if file exists at the given filepath
-		static bool fileExists(const char *filepath)  throw (iom::exception);
+		static bool fileExists(const char *filepath)  ;
 
 		// returns the Z-coordinate string extracted from the given filename. Supported filenames formats are
 		// [0-9]+_[0-9]+_[0-9]+.*   and
 		// [0-9]+.*
-		static std::string name2coordZ(const std::string & filename) throw (iom::exception);
+		static std::string name2coordZ(const std::string & filename) ;
 };
 
 
@@ -251,21 +251,21 @@ class volumemanager::VirtualVolumeFactory
 		}	
 
 		// plugin instantiation
-        static VirtualVolume* createFromXML(const char* xml_path, bool ow_mdata) throw (iom::exception)
+        static VirtualVolume* createFromXML(const char* xml_path, bool ow_mdata) 
 		{ 
 			std::string id = VirtualVolume::getVolumeFormat(xml_path);
 			if(instance()->creators_xml.find(id) == instance()->creators_xml.end())
 				throw iom::exception(iom::strprintf("Cannot find VirtualVolume(xml) plugin \"%s\": no such plugin", id.c_str()).c_str());
             return (instance()->creators_xml[id])(xml_path, ow_mdata);
 		}
-        static VirtualVolume* createFromXML(std::string id, const char* xml_path, bool ow_mdata) throw (iom::exception)
+        static VirtualVolume* createFromXML(std::string id, const char* xml_path, bool ow_mdata) 
         {
             if(instance()->creators_xml.find(id) == instance()->creators_xml.end())
                 throw iom::exception(iom::strprintf("Cannot find VirtualVolume(xml) plugin \"%s\": no such plugin", id.c_str()).c_str());
             return (instance()->creators_xml[id])(xml_path, ow_mdata);
         }
 
-		static VirtualVolume* createFromData(std::string id, const char* data_path, vm::ref_sys ref, float vxl1, float vxl2, float vxl3, bool ow_mdata, std::string mdata_fname="") throw (iom::exception)
+		static VirtualVolume* createFromData(std::string id, const char* data_path, vm::ref_sys ref, float vxl1, float vxl2, float vxl3, bool ow_mdata, std::string mdata_fname="") 
 		{ 
 			if(instance()->creators_data.find(id) == instance()->creators_data.end())
 				throw iom::exception(iom::strprintf("Cannot find VirtualVolume(data) plugin \"%s\": no such plugin", id.c_str()).c_str());

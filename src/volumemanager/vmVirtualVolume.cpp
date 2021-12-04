@@ -82,7 +82,7 @@ VirtualVolume::~VirtualVolume() {
 		delete cb;
 }
 
-void VirtualVolume::init() throw (iom::exception)
+void VirtualVolume::init() 
 {
 	stacks_dir = 0;
 	mdata_filepath = (char *) 0; // 2021-02-12. Giulio. @FIXED initialization was missing
@@ -120,7 +120,7 @@ void VirtualVolume::init() throw (iom::exception)
 }
 
 //returns true if file exists at the given filepath
-bool VirtualVolume::fileExists(const char *filepath)  throw (iom::exception)
+bool VirtualVolume::fileExists(const char *filepath)  
 {
 	//LOCAL VARIABLES
 	string file_path_string =filepath;
@@ -164,7 +164,7 @@ bool VirtualVolume::fileExists(const char *filepath)  throw (iom::exception)
 // returns the Z-coordinate string extracted from the given filename. Supported filenames formats are
 // [0-9]+_[0-9]+_[0-9]+.*   and
 // [0-9]+.*
-std::string VirtualVolume::name2coordZ(const std::string & filename) throw (iom::exception)
+std::string VirtualVolume::name2coordZ(const std::string & filename) 
 {
 	// split string using "_" token (also works if "_" is not present)
 	std::vector<std::string> tokens;
@@ -247,7 +247,7 @@ void VirtualVolume::extractCoordinates(VirtualStack* stk, int z, int* crd_1, int
 }
 
 //inserts the given displacements in the given stacks
-void VirtualVolume::insertDisplacement(VirtualStack *stk_A, VirtualStack *stk_B, Displacement *displacement)  throw (iom::exception)
+void VirtualVolume::insertDisplacement(VirtualStack *stk_A, VirtualStack *stk_B, Displacement *displacement)  
 {
 	int stk_A_row = stk_A->getROW_INDEX();
 	int stk_A_col = stk_A->getCOL_INDEX();
@@ -312,7 +312,7 @@ void VirtualVolume::adjustDisplacements ( ) {
 
 
 // return 'volume_format' attribute of <TeraStitcher> node from the given xml. 
-std::string VirtualVolume::getVolumeFormat(const std::string& xml_path) throw (iom::exception)
+std::string VirtualVolume::getVolumeFormat(const std::string& xml_path) 
 {
 	// open xml
 	TiXmlDocument xml;
@@ -332,7 +332,7 @@ std::string VirtualVolume::getVolumeFormat(const std::string& xml_path) throw (i
 
 
 // return 'input_plugin' attribute of <TeraStitcher> node from the given xml or a null string. 
-std::string VirtualVolume::getInputPlugin(const std::string& xml_path) throw (iom::exception)
+std::string VirtualVolume::getInputPlugin(const std::string& xml_path) 
 {
 	// open xml
 	TiXmlDocument xml;

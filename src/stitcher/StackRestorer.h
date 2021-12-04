@@ -49,8 +49,8 @@ class StackRestorer
 			~vol_descr_t();
 
 			void init(vm::VirtualStack *new_stk_p, bool is_subvol_desc, int new_V_dim, int new_H_dim, int new_D_dim);
-			void computeSubvolDescriptors(iom::real_t *subvol)  throw (iom::exception);
-			void computeStackDescriptors(vol_descr_t *subvol_desc, int D_subvols)  throw (iom::exception);
+			void computeSubvolDescriptors(iom::real_t *subvol)  ;
+			void computeStackDescriptors(vol_descr_t *subvol_desc, int D_subvols)  ;
 			bool isFinalized() {return is_finalized;}
 			bool isSubvolDescriptor() {return is_subvol_descriptor;}
 			void print();
@@ -73,17 +73,17 @@ class StackRestorer
 		StackRestorer(vm::VirtualVolume* stk_org, char* file_path);
 		~StackRestorer(void);
 
-		void computeSubvolDescriptors(iom::real_t* data, vm::VirtualStack* stk_p, int subvol_idx, int subvol_D_dim)  throw (iom::exception);
-		void computeStackDescriptors(vm::VirtualStack* stk_p)  throw (iom::exception);
+		void computeSubvolDescriptors(iom::real_t* data, vm::VirtualStack* stk_p, int subvol_idx, int subvol_D_dim)  ;
+		void computeStackDescriptors(vm::VirtualStack* stk_p)  ;
 		void finalizeAllDescriptors();
 
-		void repairSlice(iom::real_t* data, int slice_idx, vm::VirtualStack* stk_p, int direction)  throw (iom::exception);
-		void repairStack(iom::real_t* data, vm::VirtualStack* stk_p, int direction)  throw (iom::exception);
+		void repairSlice(iom::real_t* data, int slice_idx, vm::VirtualStack* stk_p, int direction)  ;
+		void repairStack(iom::real_t* data, vm::VirtualStack* stk_p, int direction)  ;
 
 		void printSubvolDescriptors(vm::VirtualStack* stk_p, int subvol_idx);
 		void printVolDescriptors(vm::VirtualStack* stk_p);
-		void save(char* file_path) throw (iom::exception);
-		void load(char* file_path)  throw (iom::exception);
+		void save(char* file_path) ;
+		void load(char* file_path)  ;
 };
 
 #endif

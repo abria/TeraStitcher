@@ -77,7 +77,7 @@ StackedVolume::StackedVolume(void) : VirtualVolume()
     STACKS = 0;
 }
 
-StackedVolume::StackedVolume(const char* _root_dir)  throw (IOException)
+StackedVolume::StackedVolume(const char* _root_dir)  
 : VirtualVolume(_root_dir) // iannello ADDED
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir = \"%s\"", _root_dir).c_str(), __iim__current__function__);
@@ -112,7 +112,7 @@ StackedVolume::StackedVolume(const char* _root_dir)  throw (IOException)
 	}
 }
 
-StackedVolume::StackedVolume(const char* _root_dir, ref_sys _reference_system, float _VXL_1, float _VXL_2, float _VXL_3, bool overwrite_mdata, bool save_mdata)  throw (IOException)
+StackedVolume::StackedVolume(const char* _root_dir, ref_sys _reference_system, float _VXL_1, float _VXL_2, float _VXL_3, bool overwrite_mdata, bool save_mdata)  
 : VirtualVolume(_root_dir) // iannello ADDED
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir=%s, ref_sys reference_system={%d,%d,%d}, VXL_1=%.4f, VXL_2=%.4f, VXL_3=%.4f",
@@ -156,7 +156,7 @@ StackedVolume::StackedVolume(const char* _root_dir, ref_sys _reference_system, f
 	initChannels();
 }
 
-StackedVolume::~StackedVolume(void) throw (iim::IOException)
+StackedVolume::~StackedVolume(void) 
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
@@ -176,7 +176,7 @@ StackedVolume::~StackedVolume(void) throw (iim::IOException)
 int StackedVolume::getStacksHeight(){return STACKS[0][0]->getHEIGHT();}
 int StackedVolume::getStacksWidth(){return STACKS[0][0]->getWIDTH();}
 
-void StackedVolume::save(char* metadata_filepath) throw (IOException)
+void StackedVolume::save(char* metadata_filepath) 
 {
     /**/iim::debug(iim::LEV3, strprintf("metadata_filepath = \"%s\"", metadata_filepath).c_str(), __iim__current__function__);
 
@@ -220,7 +220,7 @@ void StackedVolume::save(char* metadata_filepath) throw (IOException)
 	fclose(file);
 }
 
-void StackedVolume::load(char* metadata_filepath) throw (IOException)
+void StackedVolume::load(char* metadata_filepath) 
 {
     /**/iim::debug(iim::LEV3, strprintf("metadata_filepath = \"%s\"", metadata_filepath).c_str(), __iim__current__function__);
 
@@ -424,7 +424,7 @@ void StackedVolume::load(char* metadata_filepath) throw (IOException)
 	fclose(file);
 }
 
-void StackedVolume::init() throw (IOException)
+void StackedVolume::init() 
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
@@ -617,7 +617,7 @@ void StackedVolume::init() throw (IOException)
             }
 }
 
-void StackedVolume::initChannels ( ) throw (IOException)
+void StackedVolume::initChannels ( ) 
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
@@ -924,7 +924,7 @@ void StackedVolume::extractCoordinates(Stack* stk, int z, int* crd_1, int* crd_2
 }
 
 //loads given subvolume in a 1-D array of float
-real32* StackedVolume::loadSubvolume(int V0,int V1, int H0, int H1, int D0, int D1, list<Stack*> *involved_stacks, bool release_stacks) throw (IOException)
+real32* StackedVolume::loadSubvolume(int V0,int V1, int H0, int H1, int D0, int D1, list<Stack*> *involved_stacks, bool release_stacks) 
 {
     /**/iim::debug(iim::LEV3, strprintf("V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d%s", V0, V1, H0, H1, D0, D1, (involved_stacks? ", involved_stacks" : "")).c_str(), __iim__current__function__);
 
@@ -997,7 +997,7 @@ real32* StackedVolume::loadSubvolume(int V0,int V1, int H0, int H1, int D0, int 
 
 //loads given subvolume in a 1-D array of uint8 while releasing stacks slices memory when they are no longer needed
 //---03 nov 2011: added color support
-uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, int D1, int *channels, int ret_type) throw (IOException, iom::exception)
+uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, int D1, int *channels, int ret_type) 
 {
     /**/iim::debug(iim::LEV3, strprintf("V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d, *channels=%d, ret_type=%d", V0, V1, H0, H1, D0, D1, channels ? *channels : -1, ret_type).c_str(), __iim__current__function__);
 

@@ -90,7 +90,7 @@ void
 	int & img_bytes_x_chan,	// (OUTPUT) number of bytes per channel
 	int & img_chans,			// (OUTPUT) number of channels
 	const std::string & params)	// (INPUT)	additional parameters <param1=val, param2=val, ...> 
-throw (iom::exception)
+
 {
 	/**/iom::debug(iom::LEV3, iom::strprintf("img_path = %s, img_width = %d, img_height = %d, img_depth = %d, img_bytes_x_chan = %d, img_chans = %d, params = \"%s\"",
 		img_path.c_str(), img_width, img_height, img_depth,	img_bytes_x_chan, img_chans, params.c_str()).c_str(), __iom__current__function__);
@@ -148,7 +148,7 @@ unsigned char *						// (OUTPUT) buffer containing the read image data
 	int z0,							// (INPUT)	region of interest [x0,x1)[y0,y1)[z0,z1) to be set on the image
 	int z1,							// (INPUT)	region of interest [x0,x1)[y0,y1)[z0,z1) to be set on the image
 	const std::string & params)		// (INPUT) additional parameters <param1=val, param2=val, ...> 
-throw (iom::exception) 
+ 
 {
 	//throw iom::exception(iom::strprintf("not implemented yet"), __iom__current__function__);
 
@@ -216,7 +216,7 @@ void
 	int x0,							// (INPUT)	region of interest [x0,x1)[y0,y1)[z0,z1) to be set on the image
 	int x1,							// (INPUT)	region of interest [x0,x1)[y0,y1)[z0,z1) to be set on the image
 	const std::string & params)		// (INPUT) additional parameters <param1=val, param2=val, ...> 
-throw (iom::exception) 
+ 
 {
 	//throw iom::exception(iom::strprintf("not implemented yet"), __iom__current__function__);
 
@@ -287,7 +287,7 @@ void
 	int img_bytes_x_chan,			// (INPUT)  number of bytes per channel
 	int img_chans,					// (INPUT)	number of channels
 	const std::string & params)	// (INPUT) additional parameters <param1=val, param2=val, ...> 
-throw (iom::exception) 
+ 
 {
 	//throw iom::exception(iom::strprintf("not implemented yet"), __iom__current__function__);
 
@@ -321,7 +321,7 @@ void
 	int x1,							// (INPUT)	region of interest [x0,x1)[y0,y1) to be set on the image
 	int slice,						// (INPUT)  slice index 
 	const std::string & params)		// (INPUT) additional parameters <param1=val, param2=val, ...> 
-throw (iom::exception)
+
 {
 	//throw iom::exception(iom::strprintf("not implemented yet"), __iom__current__function__);
 
@@ -379,7 +379,7 @@ void
 	int first,						// selects a range [first, last] of files to be loaded 
 	int last,						// selects a range [first, last] of files to be loaded 
 	const std::string & params)		// (INPUT)	additional parameters <param1=val, param2=val, ...> 
-throw (iom::exception)
+
 {
 	throw iom::exception(iom::strprintf("no more available"), __iom__current__function__);
 

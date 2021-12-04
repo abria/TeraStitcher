@@ -89,7 +89,7 @@ TPAlgoLQP::TPAlgoLQP(VirtualVolume * _volume) : TPAlgo(S_FATPM_LQP_HE, _volume)
 * PROs: 
 * CONs: 
 **************************************************************************************************************/
-void TPAlgoLQP::execute() throw (iom::exception)
+void TPAlgoLQP::execute() 
 {
 	#if S_VERBOSE > 2
 	printf("....in TPAlgoLQP::execute()");

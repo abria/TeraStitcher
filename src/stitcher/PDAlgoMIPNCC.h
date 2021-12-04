@@ -46,7 +46,7 @@ class PDAlgoMIPNCC : PDAlgo
 		Displacement* execute(iom::real_t *stk_A, iom::uint32 A_dim_V, iom::uint32 A_dim_H, iom::uint32 A_dim_D,
 			iom::real_t *stk_B, iom::uint32 B_dim_V, iom::uint32 B_dim_H, iom::uint32 B_dim_D,
 			iom::uint32 displ_max_V, iom::uint32 displ_max_H, iom::uint32 displ_max_D,
-			direction overlap_direction, iom::uint32 overlap) throw (iom::exception);
+			direction overlap_direction, iom::uint32 overlap) ;
 };
 
 #endif /* PD_ALGO_MIPNCC_H */

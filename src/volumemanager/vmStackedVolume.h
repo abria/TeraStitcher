@@ -70,22 +70,22 @@ class vm::StackedVolume : public vm::VirtualVolume
 		vm::Stack ***STACKS;					//2-D array of <Stack*>	
 
 		//initialization methods
-		void init() throw (iom::exception);
-        void initChannels() throw (iom::exception);
-		void applyReferenceSystem(vm::ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3) throw (iom::exception);
+		void init() ;
+        void initChannels() ;
+		void applyReferenceSystem(vm::ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3) ;
 
 		//binary metadata load/save methods
-		void saveBinaryMetadata(char *metadata_filepath) throw (iom::exception);
-		void loadBinaryMetadata(char *metadata_filepath) throw (iom::exception);
+		void saveBinaryMetadata(char *metadata_filepath) ;
+		void loadBinaryMetadata(char *metadata_filepath) ;
 
 		//rotates stacks matrix around D vm::axis (accepted values are theta=0,90,180,270)
 		void rotate(int theta);
 
 		//mirrors stacks matrix along mrr_axis (accepted values are mrr_axis=1,2,3)
-		void mirror(vm::axis mrr_axis) throw (iom::exception);
+		void mirror(vm::axis mrr_axis) ;
 
 		// 2014-09-05. Alessandro. @ADDED 'normalize_stacks_attributes()' method to normalize stacks attributes (width, height, etc.)
-		void normalize_stacks_attributes() throw (iom::exception);
+		void normalize_stacks_attributes() ;
 
 	public:
 
@@ -94,8 +94,8 @@ class vm::StackedVolume : public vm::VirtualVolume
 
 		//CONSTRUCTORS-DECONSTRUCTOR
 		StackedVolume() : vm::VirtualVolume(){ STACKS = (vm::Stack ***) 0; }
-        StackedVolume(const char* _stacks_dir, vm::ref_sys reference_system, float VXL_1=0, float VXL_2=0, float VXL_3=0, bool overwrite_mdata=false, std::string mdata_fname="") throw (iom::exception);
-        StackedVolume(const char *xml_filepath, bool overwrite_mdata=false, std::string mdata_fname="") throw (iom::exception);
+        StackedVolume(const char* _stacks_dir, vm::ref_sys reference_system, float VXL_1=0, float VXL_2=0, float VXL_3=0, bool overwrite_mdata=false, std::string mdata_fname="") ;
+        StackedVolume(const char *xml_filepath, bool overwrite_mdata=false, std::string mdata_fname="") ;
 		~StackedVolume();
 
 		// ******GET METHODS******
@@ -104,11 +104,11 @@ class vm::StackedVolume : public vm::VirtualVolume
 		vm::VirtualStack*** getSTACKS();
 
 		//loads/saves metadata from/in the given xml filename
-		void loadXML(const char *xml_filename) throw (iom::exception);
-		void initFromXML(const char *xml_filename) throw (iom::exception);
-        void saveXML(const char *xml_filename=0, const char *xml_filepath=0) throw (iom::exception);
+		void loadXML(const char *xml_filename) ;
+		void initFromXML(const char *xml_filename) ;
+        void saveXML(const char *xml_filename=0, const char *xml_filepath=0) ;
 
-		void releaseBuffers() throw (iom::exception);
+		void releaseBuffers() ;
 
         /**********************************************************************************
         * UTILITY methods
@@ -116,7 +116,7 @@ class vm::StackedVolume : public vm::VirtualVolume
 
         //check if volume is complete and coherent; return true if the volume is ok, false otherwise
 		//if a file name is passed and thevolume is not ok an error log file is generated
-		bool check(const char *errlogFileName = 0) throw (iom::exception);
+		bool check(const char *errlogFileName = 0) ;
 
         //counts the total number of displacements and the number of displacements per pair of adjacent stacks
         void countDisplacements(int& total, float& per_stack_pair);
@@ -128,7 +128,7 @@ class vm::StackedVolume : public vm::VirtualVolume
         int countStitchableStacks(float threshold);
 
 		// print mdata.bin content to stdout
-		static void dumpMData(const char* volumePath) throw (iom::exception);
+		static void dumpMData(const char* volumePath) ;
 };
 
 namespace{																

@@ -69,7 +69,7 @@
 using namespace std;
 using namespace iim;
 
-Stack::Stack(VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, char* _DIR_NAME) throw (IOException)
+Stack::Stack(VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, char* _DIR_NAME) 
 {
     /**/iim::debug(iim::LEV3, strprintf("_ROW_INDEX=%d, _COL_INDEX=%d, _DIR_NAME=%s", _ROW_INDEX, _COL_INDEX, _DIR_NAME).c_str(), __iim__current__function__);
 
@@ -91,7 +91,7 @@ Stack::Stack(VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, char* _D
 	init();
 }
 
-Stack::Stack(VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) throw (IOException)
+Stack::Stack(VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) 
 {
     /**/iim::debug(iim::LEV3, strprintf("_ROW_INDEX=%d, _COL_INDEX=%d", _ROW_INDEX, _COL_INDEX).c_str(), __iim__current__function__);
 
@@ -160,7 +160,7 @@ void Stack::binarizeInto(FILE* file)
 	}
 }
 
-void Stack::unBinarizeFrom(FILE* file) throw (IOException)
+void Stack::unBinarizeFrom(FILE* file) 
 {
     /**/iim::debug(iim::LEV3, strprintf("_ROW_INDEX=%d, _COL_INDEX=%d", ROW_INDEX, COL_INDEX).c_str(), __iim__current__function__);
 
@@ -235,7 +235,7 @@ void Stack::unBinarizeFrom(FILE* file) throw (IOException)
 }
 
 //Initializes all object's members given DIR_NAME
-void Stack::init() throw (IOException)
+void Stack::init() 
 {
     /**/iim::debug(iim::LEV3, strprintf("_ROW_INDEX=%d, _COL_INDEX=%d", ROW_INDEX, COL_INDEX).c_str(), __iim__current__function__);
 

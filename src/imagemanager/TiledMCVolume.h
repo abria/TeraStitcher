@@ -55,7 +55,7 @@ class iim::TiledMCVolume : public iim::VirtualVolume
 		TiledMCVolume(void);
 
 		//Given the reference system, initializes all object's members using stack's directories hierarchy
-        void init() throw (iim::IOException);
+        void init() ;
 
 		//rotate stacks matrix around D axis (accepted values are theta=0,90,180,270)
 		void rotate(int theta);
@@ -64,16 +64,16 @@ class iim::TiledMCVolume : public iim::VirtualVolume
         void mirror(iim::axis mrr_axis);
 
 		// iannello returns the number of channels of images composing the volume
-        void initChannels ( ) throw (iim::IOException);
+        void initChannels ( ) ;
 
 	public:
 		//CONSTRUCTORS-DECONSTRUCTOR
-        TiledMCVolume(const char* _root_dir)  throw (iim::IOException);
+        TiledMCVolume(const char* _root_dir)  ;
         TiledMCVolume(const char* _root_dir, iim::ref_sys _reference_system,
 					float _VXL_1, float _VXL_2, float _VXL_3, 
-                    bool overwrite_mdata = false, bool save_mdata=true)  throw (iim::IOException);
+                    bool overwrite_mdata = false, bool save_mdata=true)  ;
 
-		virtual ~TiledMCVolume(void) throw (iim::IOException);
+		virtual ~TiledMCVolume(void) ;
 
 		//GET methods
         iim::uint16 getN_ROWS(){return N_ROWS;}
@@ -100,21 +100,21 @@ class iim::TiledMCVolume : public iim::VirtualVolume
 		void print(  bool print_stacks = false );
 
 		//saving-loading methods to/from metadata binary file
-        void save(char* metadata_filepath) throw (iim::IOException);
-        void load(char* metadata_filepath) throw (iim::IOException);
+        void save(char* metadata_filepath) ;
+        void load(char* metadata_filepath) ;
 
         //loads given subvolume in a 1-D array of iim::real32 while releasing stacks slices memory when they are no longer needed
-        inline iim::real32 *loadSubvolume_to_real32(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1)  throw (iim::IOException) {
+        inline iim::real32 *loadSubvolume_to_real32(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1)   {
 			return loadSubvolume(V0,V1,H0,H1,D0,D1,0,true);
 		}
 
         //loads given subvolume in a 1-D array and puts used Stacks into 'involved_stacks' iff not null
         iim::real32 *loadSubvolume(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1,
-                                                                  std::list<iim::Block*> *involved_blocks = 0, bool release_blocks = false)  throw (iim::IOException);
+                                                                  std::list<iim::Block*> *involved_blocks = 0, bool release_blocks = false)  ;
 
         //loads given subvolume in a 1-D array of iim::uint8 while releasing stacks slices memory when they are no longer needed
         iim::uint8 *loadSubvolume_to_UINT8(int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1,
-                                                   int *channels=0, int ret_type=iim::DEF_IMG_DEPTH) throw (iim::IOException, iom::exception);
+                                                   int *channels=0, int ret_type=iim::DEF_IMG_DEPTH) ;
 
         // moved to VirtualVolume.h by Alessandro on 2014-02-20
 		//sets active channels

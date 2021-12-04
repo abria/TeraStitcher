@@ -55,7 +55,7 @@ using namespace iim;
 
 bool initResumer ( const char *out_fmt, const char *output_path, int resolutions_size, bool* resolutions, 
 				   int block_height, int block_width, int block_depth, int method, 
-                   const char* saved_img_format, int saved_img_depth, FILE *&fhandle ) throw (IOException)
+                   const char* saved_img_format, int saved_img_depth, FILE *&fhandle ) 
 {
 	size_t  str_len;
 	char resumer_filepath[STATIC_STRINGS_SIZE];
@@ -163,7 +163,7 @@ bool initResumer ( const char *out_fmt, const char *output_path, int resolutions
 }
 
 void readResumerState ( FILE *&fhandle, const char *output_path, int &resolutions_size, int *stack_block, int *slice_start, int *slice_end, 
-                 sint64 &z, sint64 &z_parts ) throw (IOException)
+                 sint64 &z, sint64 &z_parts ) 
 {
 	int dummy = fread(&resolutions_size,sizeof(int),1,fhandle);
 	dummy = fread(stack_block,sizeof(int),resolutions_size,fhandle);
@@ -184,7 +184,7 @@ void readResumerState ( FILE *&fhandle, const char *output_path, int &resolution
 }
 
 void saveResumerState ( FILE *fhandle, int resolutions_size, int *stack_block, int *slice_start, int *slice_end, 
-                 sint64 z, sint64 z_parts ) throw (IOException)
+                 sint64 z, sint64 z_parts ) 
 {
 	fwrite(&resolutions_size,sizeof(int),1,fhandle);
 	fwrite(stack_block,sizeof(int),resolutions_size,fhandle);
@@ -195,7 +195,7 @@ void saveResumerState ( FILE *fhandle, int resolutions_size, int *stack_block, i
 	fflush(fhandle);
 }
 
-void closeResumer ( FILE *fhandle, const char *output_path ) throw (IOException)
+void closeResumer ( FILE *fhandle, const char *output_path ) 
 {
 	//char err_msg[STATIC_STRINGS_SIZE];
 

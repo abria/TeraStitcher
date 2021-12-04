@@ -92,7 +92,7 @@ void StackStitcher::mergeTilesVaa3DRaw(std::string output_path, int block_height
 							   bool exclude_nonstitchable_stacks, int _ROW_START, int _ROW_END, int _COL_START,
 							   int _COL_END, int _D0, int _D1, bool restoreSPIM, int restore_direction,
 							   int blending_algo, int method, bool isotropic, bool test_mode, bool show_progress_bar, 
-                               const char* saved_img_format, int saved_img_depth, bool par_mode)			throw (iom::exception)
+                               const char* saved_img_format, int saved_img_depth, bool par_mode)			
 {
 #if S_VERBOSE > 2
 	printf("......in StackStitcher::mergeTilesVaa3DRaw(output_path=\"%s\", block_height=%d, block_width=%d, block_depth=%d, exclude_nonstitchable_stacks = %s, "
@@ -925,7 +925,7 @@ void StackStitcher::createDirectoryHierarchy(std::string output_path, int block_
 							   bool exclude_nonstitchable_stacks, int _ROW_START, int _ROW_END, int _COL_START,
 							   int _COL_END, int _D0, int _D1, bool restoreSPIM, int restore_direction,
 							   int blending_algo, int method, bool isotropic, bool test_mode, bool show_progress_bar, 
-                               const char* saved_img_format, int saved_img_depth, bool par_mode)			throw (iom::exception)
+                               const char* saved_img_format, int saved_img_depth, bool par_mode)			
 {
 #if S_VERBOSE > 2
 	printf("......in StackStitcher::createDirectoryHierarchy(output_path=\"%s\", block_height=%d, block_width=%d, block_depth=%d, exclude_nonstitchable_stacks = %s, "
@@ -1133,7 +1133,7 @@ void StackStitcher::mdataGenerator (std::string output_path, int block_height, i
 							   bool exclude_nonstitchable_stacks, int _ROW_START, int _ROW_END, int _COL_START,
 							   int _COL_END, int _D0, int _D1, bool restoreSPIM, int restore_direction,
 							   int blending_algo, int method, bool isotropic, bool test_mode, bool show_progress_bar, 
-                               const char* saved_img_format, int saved_img_depth, bool par_mode)			throw (iom::exception) 
+                               const char* saved_img_format, int saved_img_depth, bool par_mode)			 
 {
 #if S_VERBOSE > 2
 	printf("......in StackStitcher::mdataGenerator(output_path=\"%s\", block_height=%d, block_width=%d, block_depth=%d, exclude_nonstitchable_stacks = %s, "

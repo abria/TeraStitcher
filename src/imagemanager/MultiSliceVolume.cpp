@@ -140,7 +140,7 @@ MultiSliceVolume::MultiSliceVolume ( const char *xml_filepath ) : ComposedVolume
 	layers_new_xml_fnames = (std::string *) 0;
 }
 
-MultiSliceVolume::~MultiSliceVolume ( ) throw (iim::IOException) {
+MultiSliceVolume::~MultiSliceVolume ( )  {
 	if ( LAYERS ) {
 		for ( int i=0; i<N_LAYERS; i++ ) 
 			if ( LAYERS[i] )
@@ -264,7 +264,7 @@ void MultiSliceVolume::init ( ) {
 }
 
 
-void MultiSliceVolume::initChannels ( ) throw (IOException)
+void MultiSliceVolume::initChannels ( ) 
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
@@ -310,7 +310,7 @@ int	MultiSliceVolume::getLAYER_DIM(int i, int j) {
 }
 
 
-void MultiSliceVolume::initFromXML(const char *xml_filename) throw (IOException) {
+void MultiSliceVolume::initFromXML(const char *xml_filename)  {
 	#if VM_VERBOSE > 3
     printf("\t\t\t\tin MultiSliceVolume::initFromXML(char *xml_filename = %s)\n", xml_filepath);
 	#endif
@@ -429,7 +429,7 @@ void MultiSliceVolume::initFromXML(const char *xml_filename) throw (IOException)
 }
 
 
-void MultiSliceVolume::saveXML(const char *xml_filename, const char *xml_filepath) throw (IOException) {
+void MultiSliceVolume::saveXML(const char *xml_filename, const char *xml_filepath)  {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin MultiSliceVolume::saveXML(char *xml_filename = %s)\n", xml_filename);
 	#endif
@@ -558,7 +558,7 @@ void MultiSliceVolume::saveXML(const char *xml_filename, const char *xml_filepat
 }
 
 
-//void MultiSliceVolume::saveLayersXML(const char *xml_filename, const char *xml_filepath) throw (IOException) {
+//void MultiSliceVolume::saveLayersXML(const char *xml_filename, const char *xml_filepath)  {
 //	#if VM_VERBOSE > 3
 //	printf("\t\t\t\tin MultiSliceVolume::saveLayersXML(char *xml_filename = %s)\n", xml_filename);
 //	#endif
@@ -610,7 +610,7 @@ void MultiSliceVolume::initDISPS(int i, int _DIM_V, int _DIM_H) {
 }
 
 
-void MultiSliceVolume::insertDisplacement(int i, int j, int k, Displacement *displacement) throw (IOException) {
+void MultiSliceVolume::insertDisplacement(int i, int j, int k, Displacement *displacement)  {
 
 	displacement->evalReliability(dir_vertical);
 	displacement->evalReliability(dir_horizontal);
@@ -632,7 +632,7 @@ iim::uint8 *MultiSliceVolume::loadSubvolume(
 		int V0,int V1, int H0, int H1, int D0, int D1, int *n_chans, int ret_type,
 		iim::uint8 *buffer, int bufSize_V, int bufSize_H, int bufSize_D, int bufSize_C,
 		int bufOffs_V, int bufOffs_H, int bufOffs_D, int bufOffs_C 
-) throw (iim::IOException, iom::exception) {
+)  {
 
 	//throw IOException("in MultiSliceVolume::loadSubvolume(...): not implemented yet");
 	

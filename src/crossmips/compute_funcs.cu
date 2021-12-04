@@ -1322,7 +1322,7 @@ int compute_MAX_ind ( iom::real_t *vect, int len ) {
  *   failed         : INPUT/OUTPUT : initialized to false, it is changed to true if the maximum is not centered in NCCnew
  */
 void compute_Neighborhood ( NCC_parms_t *NCC_params, iom::real_t *NCC, int delayu, int delayv, int newu, int newv, int ind_max,
-                                                   iom::real_t *MIP_1, iom::real_t *MIP_2, int dimu, int dimv, iom::real_t *NCCnew, int &du, int &dv, bool &failed) throw (iom::exception){
+                                                   iom::real_t *MIP_1, iom::real_t *MIP_2, int dimu, int dimv, iom::real_t *NCCnew, int &du, int &dv, bool &failed) {
 
 	// --- CRISTIAN MOD START --- (to optimize NCC computation)
 	int ph = dimu / TILE_SIDE;

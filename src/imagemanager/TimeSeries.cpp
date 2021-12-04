@@ -9,7 +9,7 @@
 #include "TimeSeries.h"
 #include "ProgressBar.h"
 
-TimeSeries::TimeSeries(const char *rootDir, std::string frames_format /* = "" */) throw (iim::IOException) : iim::VirtualVolume(rootDir)
+TimeSeries::TimeSeries(const char *rootDir, std::string frames_format /* = "" */)  : iim::VirtualVolume(rootDir)
 {
     /**/iim::debug(iim::LEV2, iim::strprintf("rootDir = %s, frames_format = \"%s\"", root_dir, frames_format.c_str()).c_str(), __iim__current__function__);
 
@@ -132,13 +132,13 @@ TimeSeries::TimeSeries(const char *rootDir, std::string frames_format /* = "" */
     DIM_T = (int)(frames.size());
 }
 
-TimeSeries::~TimeSeries(void) throw (iim::IOException)
+TimeSeries::~TimeSeries(void) 
 {
     /**/iim::debug(iim::LEV2, 0, __iim__current__function__);
 }
 
 // pure virtual method inherithed from abstract class <VirtualVolume>
-void TimeSeries::initChannels ( ) throw (iim::IOException)
+void TimeSeries::initChannels ( ) 
 {
     /**/iim::debug(iim::LEV2, 0, __iim__current__function__);
 
@@ -179,7 +179,7 @@ void TimeSeries::setActiveChannels ( iim::uint32 *_active, int _n_active )
 }
 
 // returns only the active frames, i.e. those in the range [t0, t1]
-std::vector<iim::VirtualVolume*> TimeSeries::getActiveFrames() throw (iim::IOException)
+std::vector<iim::VirtualVolume*> TimeSeries::getActiveFrames() 
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
@@ -194,7 +194,7 @@ std::vector<iim::VirtualVolume*> TimeSeries::getActiveFrames() throw (iim::IOExc
     return activeFrames;
 }
 
-iim::VirtualVolume* TimeSeries::getFrameAt(int t) throw (iim::IOException)
+iim::VirtualVolume* TimeSeries::getFrameAt(int t) 
 {
     /**/iim::debug(iim::LEV3, iim::strprintf("t = %d", t).c_str(), __iim__current__function__);
 
@@ -210,7 +210,7 @@ iim::VirtualVolume* TimeSeries::getFrameAt(int t) throw (iim::IOException)
 }
 
 // pure virtual methods inherithed from abstract class <VirtualVolume>
-iim::real32 * TimeSeries::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, int D0, int D1)  throw (iim::IOException)
+iim::real32 * TimeSeries::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, int D0, int D1)  
 {
     /**/iim::debug(iim::LEV3, iim::strprintf("V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d", V0, V1, H0, H1, D0, D1).c_str(), __iim__current__function__);
 
@@ -218,7 +218,7 @@ iim::real32 * TimeSeries::loadSubvolume_to_real32(int V0,int V1, int H0, int H1,
     throw iim::IOException("Not yet implemented");
 }
 
-iim::uint8 * TimeSeries::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, int D1, int *channels /*=0*/, int ret_type /*=iim::DEF_IMG_DEPTH*/) throw (iim::IOException)
+iim::uint8 * TimeSeries::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, int D1, int *channels /*=0*/, int ret_type /*=iim::DEF_IMG_DEPTH*/) 
 {
     /**/iim::debug(iim::LEV3, iim::strprintf("V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d, *channels=%d, ret_type=%d, t0 = %d, t1 = %d", V0, V1, H0, H1, D0, D1, channels ? *channels : -1, ret_type, t0, t1).c_str(), __iim__current__function__);
 

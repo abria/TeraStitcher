@@ -84,7 +84,7 @@ private:
 
 	void init ( );
 
-    void initChannels ( ) throw (iim::IOException);
+    void initChannels ( ) ;
 
 	iim::VirtualVolume *getLAYER ( int i ) { return LAYERS[i]; }
 
@@ -93,7 +93,7 @@ public:
 
 	MultiSliceVolume ( const char *_layers_dir );
 
-	~MultiSliceVolume ( ) throw (iim::IOException); 
+    ~MultiSliceVolume ( ) ;
 
 	int			getN_LAYERS() {return N_LAYERS;}
 	int			getOVERLAP_D(int i) {return nominal_D_overlap[i];}
@@ -164,18 +164,18 @@ public:
 	vm::VirtualStack*** getSTACKS() {return 0;}
 
 	//XML methods
-	void			initFromXML(const char *xml_filename) throw (iim::IOException);
-	void			saveXML(const char *xml_filename=0, const char *xml_filepath=0) throw (iim::IOException);
-	//void            saveLayersXML(const char *xml_filename=0, const char *xml_filepath=0) throw (iim::IOException);
+    void			initFromXML(const char *xml_filename) ;
+    void			saveXML(const char *xml_filename=0, const char *xml_filepath=0) ;
+    //void            saveLayersXML(const char *xml_filename=0, const char *xml_filepath=0) ;
 
-	void insertDisplacement(int i, int j, int k, Displacement *displacement) throw (iim::IOException);
+    void insertDisplacement(int i, int j, int k, Displacement *displacement) ;
 
 	//loads given subvolume in a 1-D array of iim::uint8 and copy it into 'buffer' starting from  offsets 
 	virtual iim::uint8 *loadSubvolume(
 			int V0=-1,int V1=-1, int H0=-1, int H1=-1, int D0=-1, int D1=-1, int *n_chans=0, int ret_type=iim::DEF_IMG_DEPTH,
 			iim::uint8 *buffer=0, int bufSize_V=0, int bufSize_H=0, int bufSize_D=0, int bufSize_C=0,
 			int bufOffs_V=0, int bufOffs_H=0, int bufOffs_D=0, int bufOffs_C=0
-	) throw (iim::IOException, iom::exception);
+    ) ;
 
 	// needed to extract layer volumes
 	friend class TPAlgo2MST; 

@@ -95,7 +95,7 @@ const std::string BlockVolume::creator_id1 = volumemanager::VirtualVolumeFactory
 const std::string BlockVolume::creator_id2 = volumemanager::VirtualVolumeFactory::registerPluginCreatorData(&createFromData, BlockVolume::id);
 
 
-BlockVolume::BlockVolume(const char* _stacks_dir, vm::ref_sys _reference_system, float VXL_1, float VXL_2, float VXL_3, bool overwrite_mdata, std::string mdata_fname) throw (iom::exception)
+BlockVolume::BlockVolume(const char* _stacks_dir, vm::ref_sys _reference_system, float VXL_1, float VXL_2, float VXL_3, bool overwrite_mdata, std::string mdata_fname) 
 	: VirtualVolume(_stacks_dir, _reference_system, VXL_1, VXL_2, VXL_3)
 {
 	#if VM_VERBOSE > 3
@@ -149,7 +149,7 @@ BlockVolume::BlockVolume(const char* _stacks_dir, vm::ref_sys _reference_system,
 	cb = new CacheBuffer(this);
 }
 
-BlockVolume::BlockVolume(const char *xml_filepath, bool overwrite_mdata, std::string mdata_fname) throw (iom::exception)
+BlockVolume::BlockVolume(const char *xml_filepath, bool overwrite_mdata, std::string mdata_fname) 
 	: VirtualVolume(xml_filepath)
 {
 	#if VM_VERBOSE > 3
@@ -255,7 +255,7 @@ BlockVolume::~BlockVolume()
 
 
 
-void BlockVolume::init() throw (iom::exception)
+void BlockVolume::init() 
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin BlockVolume::init()\n");
@@ -393,13 +393,13 @@ void BlockVolume::init() throw (iom::exception)
 	normalize_stacks_attributes();
 }
 
-void BlockVolume::initChannels()  throw (iom::exception) 
+void BlockVolume::initChannels()   
 {
 	DIM_C = BLOCKS[0][0]->getN_CHANS();
 	BYTESxCHAN = BLOCKS[0][0]->getN_BYTESxCHAN();
 }
 
-void BlockVolume::applyReferenceSystem(vm::ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3) throw (iom::exception)
+void BlockVolume::applyReferenceSystem(vm::ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3) 
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin BlockVolume::applyReferenceSystem(reference_system = {%d,%d,%d}, VXL_1 = %.2f, VXL_2 = %.2f, VXL_3 = %.2f)\n", 
@@ -547,7 +547,7 @@ void BlockVolume::applyReferenceSystem(vm::ref_sys reference_system, float VXL_1
 		}
 }
 
-void BlockVolume::saveBinaryMetadata(char *metadata_filepath) throw (iom::exception)
+void BlockVolume::saveBinaryMetadata(char *metadata_filepath) 
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin BlockVolume::saveBinaryMetadata(char *metadata_filepath = %s)\n", metadata_filepath);
@@ -587,7 +587,7 @@ void BlockVolume::saveBinaryMetadata(char *metadata_filepath) throw (iom::except
 	fclose(file);
 }
 
-void BlockVolume::loadBinaryMetadata(char *metadata_filepath) throw (iom::exception)
+void BlockVolume::loadBinaryMetadata(char *metadata_filepath) 
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin BlockVolume::loadBinaryMetadata(char *metadata_filepath = %s)\n", metadata_filepath);
@@ -870,7 +870,7 @@ void BlockVolume::mirror(vm::axis mrr_axis)
 
 
 //check if volume is complete and coherent
-bool BlockVolume::check(const char *errlogFileName) throw (iom::exception)
+bool BlockVolume::check(const char *errlogFileName) 
 {
 	bool ok = true;
 	FILE *errlogf;
@@ -922,7 +922,7 @@ bool BlockVolume::check(const char *errlogFileName) throw (iom::exception)
 }
 
 
-void BlockVolume::loadXML(const char *xml_filepath) throw (iom::exception)
+void BlockVolume::loadXML(const char *xml_filepath) 
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin BlockVolume::loadXML(char *xml_filepath = %s)\n", xml_filepath);
@@ -1065,7 +1065,7 @@ void BlockVolume::loadXML(const char *xml_filepath) throw (iom::exception)
 	adjustDisplacements();  // 2018-02-03. Giulio. @ADDED correction of displacements to force them to be symmetric
 }
 
-void BlockVolume::initFromXML(const char *xml_filepath) throw (iom::exception)
+void BlockVolume::initFromXML(const char *xml_filepath) 
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin BlockVolume::initFromXML(char *xml_filename = %s)\n", xml_filename);
@@ -1180,7 +1180,7 @@ void BlockVolume::initFromXML(const char *xml_filepath) throw (iom::exception)
 	adjustDisplacements();  // 2018-02-03. Giulio. @ADDED correction of displacements to force them to be symmetric
 }
 
-void BlockVolume::saveXML(const char *xml_filename, const char *xml_filepath) throw (iom::exception)
+void BlockVolume::saveXML(const char *xml_filename, const char *xml_filepath) 
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin BlockVolume::saveXML(char *xml_filename = %s)\n", xml_filename);
@@ -1278,7 +1278,7 @@ void BlockVolume::saveXML(const char *xml_filename, const char *xml_filepath) th
 	xml.SaveFile();
 }
 
-void BlockVolume::releaseBuffers() throw (iom::exception) {
+void BlockVolume::releaseBuffers()  {
 	for ( int r=0; r<N_ROWS; r++ )
 		for ( int c=0; c<N_COLS; c++ )
 			BLOCKS[r][c]->releaseImageStack();
@@ -1360,7 +1360,7 @@ int BlockVolume::countStitchableStacks(float threshold)
 }
 
 // 2014-09-05. Alessandro. @ADDED 'normalize_stacks_attributes()' method to normalize stacks attributes (width, height, etc.)
-void BlockVolume::normalize_stacks_attributes() throw (iom::exception)
+void BlockVolume::normalize_stacks_attributes() 
 {
 	std::set<int> heights, widths, nbytes, nchans;
 	for(int i=0; i<N_ROWS; i++)

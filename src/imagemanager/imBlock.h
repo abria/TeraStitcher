@@ -62,7 +62,7 @@ class iim::Block
 
 	public:
 
-        Block(iim::VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) throw (iim::IOException);
+        Block(iim::VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) ;
 		Block(iim::VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, char* _DIR_NAME);
 		~Block(void);
 
@@ -94,7 +94,7 @@ class iim::Block
 
 		//binarizing-unbinarizing methods
 		void binarizeInto(FILE* file);
-        void unBinarizeFrom(FILE* file) throw (iim::IOException);
+        void unBinarizeFrom(FILE* file) ;
 
 		//returns a pointer to the intersection rectangle if the given area intersects current stack, otherwise returns NULL
 		Rect_t* Intersects(const Rect_t& area);

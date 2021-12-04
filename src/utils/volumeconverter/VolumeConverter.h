@@ -130,7 +130,7 @@ void vcDriver (
     bool        fixed_tiling = false,               //use a fixed tiling with a (possible) small remainder
 	std::string outFmt = "RGB",                     //additional information about the output format (default: "")
 	int         nbits  = 0
-) throw (iim::IOException, iom::exception);
+) ;
 
 class VolumeConverter
 {
@@ -184,12 +184,12 @@ class VolumeConverter
 		*************************************************************************************************************/
         void setSrcVolume(const char* _root_dir, const char* _fmt = iim::STACKED_FORMAT.c_str(),
                           const char* _out_fmt = REAL_REPRESENTATION, bool time_series = false, 
-						  int downsamplingFactor = 1, std::string chanlist = "", int _res = 0, int _timepoint = 0) throw (iim::IOException, iom::exception);
+						  int downsamplingFactor = 1, std::string chanlist = "", int _res = 0, int _timepoint = 0) ;
 
 		// additional setSrcVolume @ADDED by Alessandro on 2014-04-18: takes an external vm::VirtualVolume in input
 		void setSrcVolume(iim::VirtualVolume * _imported_volume,
 			const char* _out_fmt = REAL_REPRESENTATION, bool time_series = false, 
-			int downsamplingFactor = 1, std::string chanlist = "", int _res = 0, int _timepoint = 0) throw (iim::IOException, iom::exception);
+			int downsamplingFactor = 1, std::string chanlist = "", int _res = 0, int _timepoint = 0) ;
 
 
 		/*************************************************************************************************************
@@ -198,7 +198,7 @@ class VolumeConverter
 		*
 		* default values correspond to the whole volume
 		*************************************************************************************************************/
-        void setSubVolume(int _V0 = -1, int _V1 = -1, int _H0 = -1, int _H1 = -1, int _D0 = -1, int _D1 = -1 ) throw (iim::IOException);
+        void setSubVolume(int _V0 = -1, int _V1 = -1, int _H0 = -1, int _H1 = -1, int _D0 = -1, int _D1 = -1 ) ;
 
         // unified access point for volume conversion (@ADDED by Alessandro on 2014-02-24)
 		// currently it does not support the possibility to provide a name for the subdirectory to store the converted image when output format is tiled 4D and the source has only one channel
@@ -215,7 +215,7 @@ class VolumeConverter
 			bool isotropic = false,                     // perform an isotropic conversion 
 			std::string metadata_file = "null",         // last parameter, used only by Imaris file format
  			std::string compression_info = ""           // last parameter, used only by Imaris file format
-       ) throw (iim::IOException, iom::exception);
+       ) ;
 
 		/*************************************************************************************************************
 		* Method to set a lossy compression algorithm
@@ -224,7 +224,7 @@ class VolumeConverter
 		*        1: scaling, additional parameters: 
 		*           nbits: number of least significant bits to be set to 0
 		*************************************************************************************************************/
-		void setCompressionAlgorithm(int _nbits ) throw (iim::IOException, iom::exception);
+		void setCompressionAlgorithm(int _nbits ) ;
 
 		/*************************************************************************************************************
 		* Method to be called for tile generation. <> parameters are mandatory, while [] are optional.
@@ -245,7 +245,7 @@ class VolumeConverter
 		void generateTiles(std::string output_path, bool* resolutions = NULL, 
 			int slice_height = -1, int slice_width = -1, int method = HALVE_BY_MEAN, bool isotropic = false, 
             bool show_progress_bar = true, const char* saved_img_format = iim::DEF_IMG_FORMAT.c_str(), 
-            int saved_img_depth = iim::NUL_IMG_DEPTH, std::string frame_dir = "", bool par_mode = false, bool fixed_tiling = false )	throw (iim::IOException, iom::exception);
+            int saved_img_depth = iim::NUL_IMG_DEPTH, std::string frame_dir = "", bool par_mode = false, bool fixed_tiling = false )	;
 		
 
 		/*************************************************************************************************************
@@ -267,7 +267,7 @@ class VolumeConverter
 		void generateTilesSimple(std::string output_path, bool* resolutions = NULL, 
 			int slice_height = -1, int slice_width = -1, int method = HALVE_BY_MEAN, bool isotropic = false, 
             bool show_progress_bar = true, const char* saved_img_format = iim::DEF_IMG_FORMAT.c_str(), 
-            int saved_img_depth = iim::NUL_IMG_DEPTH, std::string frame_dir = "", bool par_mode = false)	throw (iim::IOException, iom::exception);
+            int saved_img_depth = iim::NUL_IMG_DEPTH, std::string frame_dir = "", bool par_mode = false)	;
 		
 
 		/*************************************************************************************************************
@@ -291,7 +291,7 @@ class VolumeConverter
 		void generateTilesVaa3DRaw(std::string output_path, bool* resolutions = NULL, 
 			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool isotropic=false, 
             bool show_progress_bar = true, const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,
-            std::string frame_dir = "", bool par_mode=false, bool fixed_tiling = false) throw (iim::IOException, iom::exception);
+            std::string frame_dir = "", bool par_mode=false, bool fixed_tiling = false) ;
 		
 
         /*************************************************************************************************************
@@ -345,7 +345,7 @@ class VolumeConverter
 		void generateTilesVaa3DRawMC ( std::string output_path, std::string ch_dir = "", bool* resolutions = NULL, 
 			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool isotropic=false, 
 			bool show_progress_bar = true, const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,
- 			std::string frame_dir = "", bool par_mode=false, bool fixed_tiling = false)	throw (iim::IOException, iom::exception);
+ 			std::string frame_dir = "", bool par_mode=false, bool fixed_tiling = false)	;
 
       /*************************************************************************************************************
         * NEW FORMAT SUPPORTING BDV HDF5 custom format
@@ -370,31 +370,31 @@ class VolumeConverter
 		void generateTilesBDV_HDF5 ( std::string output_path, bool* resolutions = NULL, 
 			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool isotropic=false, 
 			bool show_progress_bar = true, const char* saved_img_format = "h5", int saved_img_depth = iim::NUL_IMG_DEPTH,
-            std::string frame_dir = "")	throw (iim::IOException, iom::exception);
+            std::string frame_dir = "")	;
 
 
 		void generateTilesIMS_HDF5 ( std::string output_path, std::string metadata_file, bool* resolutions = NULL, 
 			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool isotropic=false, 
 			bool show_progress_bar = true, const char* saved_img_format = "ims", int saved_img_depth = iim::NUL_IMG_DEPTH,
-            std::string frame_dir = "")	throw (iim::IOException, iom::exception);
+            std::string frame_dir = "")	;
 
 
 		void createDirectoryHierarchy(std::string output_path, std::string ch_dir = "", bool* resolutions = NULL, 
 			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool isotropic=false, 
             bool show_progress_bar = true, const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,
-            std::string frame_dir = "", bool par_mode=false) throw (iim::IOException, iom::exception);
+            std::string frame_dir = "", bool par_mode=false) ;
 		
 
 		void createDirectoryHierarchySimple(std::string output_path, bool* resolutions = NULL, 
 			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool isotropic=false, 
             bool show_progress_bar = true, const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,
-            std::string frame_dir = "", bool par_mode=false) throw (iim::IOException, iom::exception);
+            std::string frame_dir = "", bool par_mode=false) ;
 
 
 		void mdataGenerator(std::string output_path, std::string ch_dir = "", bool* resolutions = NULL, 
 			int block_height = -1, int block_width = -1, int block_depth = -1, int method = HALVE_BY_MEAN, bool isotropic=false, 
             bool show_progress_bar = true, const char* saved_img_format = "Vaa3DRaw", int saved_img_depth = iim::NUL_IMG_DEPTH,
-            std::string frame_dir = "", bool par_mode=false) throw (iim::IOException, iom::exception);	
+            std::string frame_dir = "", bool par_mode=false) ;	
 };
 
 #endif

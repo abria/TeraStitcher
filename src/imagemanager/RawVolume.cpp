@@ -42,9 +42,9 @@
 
 using namespace iim;
 
-static char *get_path ( const char *_file_name ) throw (IOException);
+static char *get_path ( const char *_file_name ) ;
 
-RawVolume::RawVolume(const char* _file_name)  throw (IOException)
+RawVolume::RawVolume(const char* _file_name)  
 : VirtualVolume(get_path(_file_name), 1.0f, 1.0f, 1.0f)
 {
     /**/iim::debug(iim::LEV3, strprintf("_file_name = \"%s\"", _file_name).c_str(), __iim__current__function__);
@@ -60,7 +60,7 @@ RawVolume::RawVolume(const char* _file_name)  throw (IOException)
 }
 
 
-RawVolume::~RawVolume(void) throw (iim::IOException)
+RawVolume::~RawVolume(void) 
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
@@ -78,7 +78,7 @@ RawVolume::~RawVolume(void) throw (iim::IOException)
 }
 
 
-void RawVolume::init ( ) throw (IOException)
+void RawVolume::init ( ) 
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
@@ -131,7 +131,7 @@ void RawVolume::init ( ) throw (IOException)
 	// sz shold not be deallocated
 }
 
-void RawVolume::initChannels ( ) throw (IOException)
+void RawVolume::initChannels ( ) 
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
@@ -145,7 +145,7 @@ void RawVolume::initChannels ( ) throw (IOException)
 }
 
 
-real32 *RawVolume::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, int D0, int D1)  throw (IOException)
+real32 *RawVolume::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, int D0, int D1)  
 {
     /**/iim::debug(iim::LEV3, strprintf("V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d", V0, V1, H0, H1, D0, D1).c_str(), __iim__current__function__);
 
@@ -171,7 +171,7 @@ real32 *RawVolume::loadSubvolume_to_real32(int V0,int V1, int H0, int H1, int D0
 }
 
 
-uint8 *RawVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, int D1, int *channels, int ret_type) throw (IOException, iom::exception)
+uint8 *RawVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, int D1, int *channels, int ret_type)
 {
     /**/iim::debug(iim::LEV3, strprintf("V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d, *channels=%d, ret_type=%d", V0, V1, H0, H1, D0, D1, channels ? *channels : -1, ret_type).c_str(), __iim__current__function__);
 
@@ -285,7 +285,7 @@ static char path_buffer[PATH_BUF_LEN];
 static const char *suffixes[] = { ".raw", ".RAW", ".v3draw", ".V3DRAW", ".tif", "" };
 static int  suf_lens[] = {         3,      3,      6,         6,         3     };
 
-char *get_path ( const char *_file_name ) throw (IOException) {
+char *get_path ( const char *_file_name )  {
 	strcpy(path_buffer,_file_name);
 	char *tPtr = 0;
 	for ( int i=0; !tPtr && *suffixes[i] != '\0'; i++ )

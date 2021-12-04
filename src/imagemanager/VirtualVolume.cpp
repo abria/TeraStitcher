@@ -112,7 +112,7 @@ void VirtualVolume::setDEPTH_CONV_ALGO(int algoID) {
 **************************************************************************************************************/
 void VirtualVolume::saveImage(std::string img_path, real32* raw_img, int raw_img_height, int  raw_img_width,
 							 int start_height, int end_height, int start_width, int end_width, 
-                             const char* img_format, int img_depth) throw (IOException, iom::exception)
+                             const char* img_format, int img_depth) 
 {
     /**/iim::debug(iim::LEV3, strprintf("img_path=%s, raw_img_height=%d, raw_img_width=%d, start_height=%d, end_height=%d, start_width=%d, end_width=%d",
                                         img_path.c_str(), raw_img_height, raw_img_width, start_height, end_height, start_width, end_width).c_str(), __iim__current__function__);
@@ -214,7 +214,7 @@ void VirtualVolume::saveImage(std::string img_path, real32* raw_img, int raw_img
 **************************************************************************************************************/
 void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, uint8* raw_ch2, uint8* raw_ch3, 
                            int raw_img_height, int raw_img_width, int start_height, int end_height, int start_width,
-                           int end_width, const char* img_format, int img_depth ) throw (IOException, iom::exception)
+                           int end_width, const char* img_format, int img_depth ) 
 {
     /**/iim::debug(iim::LEV3, strprintf("img_path=%s, raw_img_height=%d, raw_img_width=%d, start_height=%d, end_height=%d, start_width=%d, end_width=%d, img_format=%s, img_depth=%d",
                                         img_path.c_str(), raw_img_height, raw_img_width, start_height, end_height, start_width, end_width, img_format, img_depth).c_str(), __iim__current__function__);
@@ -457,7 +457,7 @@ void VirtualVolume::saveImage_from_UINT8 (std::string img_path, uint8* raw_ch1, 
 void VirtualVolume::saveImage_to_Vaa3DRaw(int slice, std::string img_path, real32* raw_img, int raw_img_height, int  raw_img_width,
 						 int start_height, int end_height, int start_width, int end_width, 
 						 const char* img_format, int img_depth
-                         ) throw (IOException, iom::exception)
+                         ) 
 {
     /**/iim::debug(iim::LEV3, strprintf("img_path=%s, raw_img_height=%d, raw_img_width=%d, start_height=%d, end_height=%d, start_width=%d, end_width=%d", img_path.c_str(), raw_img_height, raw_img_width, start_height, end_height, start_width, end_width).c_str(), __iim__current__function__);
 
@@ -561,7 +561,7 @@ void VirtualVolume::saveImage_to_Vaa3DRaw(int slice, std::string img_path, real3
 **************************************************************************************************************/
 void VirtualVolume::saveImage_from_UINT8_to_Vaa3DRaw (int slice, std::string img_path, uint8** raw_ch, int n_chans, sint64 offset, 
                        int raw_img_height, int raw_img_width, int start_height, int end_height, int start_width,
-                       int end_width, const char* img_format, int img_depth ) throw (IOException, iom::exception)
+                       int end_width, const char* img_format, int img_depth ) 
 {
     /**/iim::debug(iim::LEV3, strprintf("img_path=%s, raw_img_height=%d, raw_img_width=%d, start_height=%d, end_height=%d, start_width=%d, end_width=%d", img_path.c_str(), raw_img_height, raw_img_width, start_height, end_height, start_width, end_width).c_str(), __iim__current__function__);
 
@@ -653,7 +653,7 @@ void VirtualVolume::saveImage_from_UINT8_to_Vaa3DRaw (int slice, std::string img
 **************************************************************************************************************/
 void VirtualVolume::saveImage_from_UINT8_to_Tiff3D (int slice, std::string img_path, uint8** raw_ch, int n_chans, sint64 offset, 
                        int raw_img_height, int raw_img_width, int start_height, int end_height, int start_width,
-                       int end_width, const char* img_format, int img_depth, void *fhandle, int n_pages, bool do_open ) throw (IOException, iom::exception)
+                       int end_width, const char* img_format, int img_depth, void *fhandle, int n_pages, bool do_open ) 
 {
     /**/iim::debug(iim::LEV3, strprintf("img_path=%s, raw_img_height=%d, raw_img_width=%d, start_height=%d, end_height=%d, start_width=%d, end_width=%d", img_path.c_str(), raw_img_height, raw_img_width, start_height, end_height, start_width, end_width).c_str(), __iim__current__function__);
 
@@ -1180,7 +1180,7 @@ void VirtualVolume::halveSample2D_UINT8 ( uint8** img, int height, int width, in
 }
 
 // 2014-04-14. Alessandro. @ADDED 'instance_format' method with inputs = {path, format}.
-VirtualVolume* VirtualVolume::instance_format(const char* path, std::string format) throw (iim::IOException, iom::exception)
+VirtualVolume* VirtualVolume::instance_format(const char* path, std::string format) 
 {
     /**/iim::debug(iim::LEV3, strprintf("path = \"%s\", format = \"%s\"", path, format.c_str()).c_str(), __iim__current__function__);
     
@@ -1228,7 +1228,7 @@ VirtualVolume* VirtualVolume::instance_format(const char* path, std::string form
 
 // tries to automatically detect the volume format and returns the imported volume if succeeds (otherwise returns 0)
 // WARNING: all metadata files (if needed by that format) are assumed to be present. Otherwise, that format will be skipped.
-VirtualVolume* VirtualVolume::instance(const char* path) throw (IOException, iom::exception)
+VirtualVolume* VirtualVolume::instance(const char* path) 
 {
     /**/iim::debug(iim::LEV3, strprintf("path = \"%s\"", path).c_str(), __iim__current__function__);
 
@@ -1365,7 +1365,7 @@ VirtualVolume* VirtualVolume::instance(const char* path) throw (IOException, iom
 
 
 // this version if "instance" methods should be used to create a BDVVolume since at least the 'res' parameter is needed
-VirtualVolume* VirtualVolume::instance(const char* fname, int res, void *descr, int timepoint) throw (iim::IOException) {
+VirtualVolume* VirtualVolume::instance(const char* fname, int res, void *descr, int timepoint)  {
     /**/iim::debug(iim::LEV3, strprintf("fname = \"%s\", res = %d, descr = %p", fname, res, descr).c_str(), __iim__current__function__);
 
 	return new BDVVolume(fname,res,timepoint,descr); 
@@ -1376,7 +1376,7 @@ VirtualVolume* VirtualVolume::instance(const char* fname, int res, void *descr, 
 // WARNING: no assumption is made on metadata files, which are possibly (re-)generated using the additional informations provided.
 VirtualVolume* VirtualVolume::instance(const char* path, std::string format,
                                        iim::axis AXS_1, iim::axis AXS_2, iim::axis AXS_3, /* = iim::axis_invalid */
-                                       float VXL_1 /* = 0 */, float VXL_2 /* = 0 */, float VXL_3 /* = 0 */) throw (iim::IOException, iom::exception)
+                                       float VXL_1 /* = 0 */, float VXL_2 /* = 0 */, float VXL_3 /* = 0 */) 
 {
     /**/iim::debug(iim::LEV3, strprintf("path = \"%s\", format = %s, AXS_1 = %s, AXS_2 = %s, AXS_3 = %s, VXL_1 = %.2f, VXL_2 = %.2f, VXL_3 = %.2f",
                                         path, format.c_str(), axis_to_str(AXS_1), axis_to_str(AXS_2), axis_to_str(AXS_3),
@@ -1452,7 +1452,7 @@ void VirtualVolume::setActiveChannels ( uint32 *_active, int _n_active )
 }
 
 // returns true if the given format is hierarchical, i.e. if it consists of nested folders (1 level at least)
-bool VirtualVolume::isHierarchical(std::string format) throw (iim::IOException)
+bool VirtualVolume::isHierarchical(std::string format) 
 {
     /**/iim::debug(iim::LEV3, strprintf("format = %s", format.c_str()).c_str(), __iim__current__function__);
 

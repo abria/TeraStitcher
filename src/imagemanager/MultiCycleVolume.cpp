@@ -56,7 +56,7 @@
 using namespace std;
 using namespace iim;
 
-MultiCycleVolume::MultiCycleVolume ( string _cycles_dir, float _norm_factor_D ) throw (iim::IOException, iom::exception) : 
+MultiCycleVolume::MultiCycleVolume ( string _cycles_dir, float _norm_factor_D )  : 
 ComposedVolume() {
 
 	root_dir = new char[_cycles_dir.size() + 1];
@@ -119,7 +119,7 @@ ComposedVolume() {
 	initChannels();
 }
 
-MultiCycleVolume::MultiCycleVolume ( const char *xml_filepath ) throw (iim::IOException, iom::exception)
+MultiCycleVolume::MultiCycleVolume ( const char *xml_filepath ) 
 : ComposedVolume() {
     //extracting <stacks_dir> field from XML
     TiXmlDocument xml;
@@ -143,7 +143,7 @@ MultiCycleVolume::MultiCycleVolume ( const char *xml_filepath ) throw (iim::IOEx
 	initChannels();
 }
 
-MultiCycleVolume::~MultiCycleVolume ( ) throw (iim::IOException) {
+MultiCycleVolume::~MultiCycleVolume ( )  {
 	if ( CYCLES ) {
 		for ( int i=0; i<N_CYCLES; i++ ) 
 			if ( CYCLES[i] )
@@ -284,7 +284,7 @@ void MultiCycleVolume::init ( ) {
 }
 
 
-void MultiCycleVolume::initChannels ( ) throw (IOException)
+void MultiCycleVolume::initChannels ( ) 
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
@@ -330,7 +330,7 @@ int	MultiCycleVolume::getCYCLE_DIM(int i, int j) {
 }
 
 
-void MultiCycleVolume::initFromXML(const char *xml_filename) throw (IOException) {
+void MultiCycleVolume::initFromXML(const char *xml_filename)  {
 	#if VM_VERBOSE > 3
     printf("\t\t\t\tin MultiCycleVolume::initFromXML(char *xml_filename = %s)\n", xml_filepath);
 	#endif
@@ -448,7 +448,7 @@ void MultiCycleVolume::initFromXML(const char *xml_filename) throw (IOException)
 }
 
 
-void MultiCycleVolume::saveXML(const char *xml_filename, const char *xml_filepath) throw (IOException) {
+void MultiCycleVolume::saveXML(const char *xml_filename, const char *xml_filepath)  {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin MultiCycleVolume::saveXML(char *xml_filename = %s)\n", xml_filename);
 	#endif
@@ -570,7 +570,7 @@ void MultiCycleVolume::saveXML(const char *xml_filename, const char *xml_filepat
 }
 
 
-//void MultiCycleVolume::saveCyclesXML(const char *xml_filename, const char *xml_filepath) throw (IOException) {
+//void MultiCycleVolume::saveCyclesXML(const char *xml_filename, const char *xml_filepath)  {
 //	#if VM_VERBOSE > 3
 //	printf("\t\t\t\tin MultiCycleVolume::saveLayersXML(char *xml_filename = %s)\n", xml_filename);
 //	#endif
@@ -622,7 +622,7 @@ void MultiCycleVolume::initDISPS(int i, int _DIM_V, int _DIM_H) {
 }
 
 
-void MultiCycleVolume::insertDisplacement(int i, int k, Displacement *displacement) throw (IOException) {
+void MultiCycleVolume::insertDisplacement(int i, int k, Displacement *displacement)  {
 
 	displacement->evalReliability(dir_vertical);
 	displacement->evalReliability(dir_horizontal);
@@ -644,7 +644,7 @@ iim::uint8 *MultiCycleVolume::loadSubvolume(
 		int V0,int V1, int H0, int H1, int D0, int D1, int *n_chans, int ret_type,
 		iim::uint8 *buffer, int bufSize_V, int bufSize_H, int bufSize_D, int bufSize_C,
 		int bufOffs_V, int bufOffs_H, int bufOffs_D, int bufOffs_C 
-) throw (iim::IOException, iom::exception) {
+)  {
 
 	//throw IOException("in MultiCycleVolume::loadSubvolume(...): not implemented yet");
 	

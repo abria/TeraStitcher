@@ -52,7 +52,7 @@
  */
 
 
-void BDV_HDF5init ( std::string fname, void *&descr, int vxl_nbytes = 1 ) throw (iim::IOException);
+void BDV_HDF5init ( std::string fname, void *&descr, int vxl_nbytes = 1 ) ;
 /* opens or creates an HDF5 file fname according to the BigDataViewer format and returns an opaque descriptor
  *
  * fname:      HDF5 filename

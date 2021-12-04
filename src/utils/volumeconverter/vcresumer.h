@@ -38,25 +38,25 @@
 #include <stdio.h>
 
 bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutions_size, bool* resolutions, 
-				   int slice_height, int slice_width, int method, const char* saved_img_format, int saved_img_depth, FILE *&fhandle ) throw (iim::IOException);
+				   int slice_height, int slice_width, int method, const char* saved_img_format, int saved_img_depth, FILE *&fhandle ) ;
 
-void readVCResumerState ( FILE *&fhandle, const char *output_path, iim::sint64 &z, iim::sint64 &z_parts ) throw (iim::IOException);
+void readVCResumerState ( FILE *&fhandle, const char *output_path, iim::sint64 &z, iim::sint64 &z_parts ) ;
 
-void saveVCResumerState ( FILE *fhandle, iim::sint64 z, iim::sint64 z_parts ) throw (iim::IOException);
+void saveVCResumerState ( FILE *fhandle, iim::sint64 z, iim::sint64 z_parts ) ;
 
 
 
 bool initVCResumer ( const char *out_fmt, const char *output_path, int resolutions_size,bool* resolutions, 
 				   int block_height, int block_width, int block_depth, int method, 
-                   const char* saved_img_format, int saved_img_depth, FILE *&fhandle ) throw (iim::IOException);
+                   const char* saved_img_format, int saved_img_depth, FILE *&fhandle ) ;
 
 void readVCResumerState ( FILE *&fhandle, const char *output_path, int &resolutions_size, int *stack_block, int *slice_start, int *slice_end, 
-                 iim::sint64 &z, iim::sint64 &z_parts ) throw (iim::IOException);
+                 iim::sint64 &z, iim::sint64 &z_parts ) ;
 
 void saveVCResumerState ( FILE *fhandle, int resolutions_size, int *stack_block, int *slice_start, int *slice_end, 
-                 iim::sint64 z, iim::sint64 z_parts ) throw (iim::IOException);
+                 iim::sint64 z, iim::sint64 z_parts ) ;
 
-void closeVCResumer ( FILE *fhandle, const char *output_path = 0 ) throw (iim::IOException);
+void closeVCResumer ( FILE *fhandle, const char *output_path = 0 ) ;
 
 #endif
 

@@ -57,17 +57,17 @@ class vm::Stack : public vm::VirtualStack
 		Stack(void){}
 
 		//Initializes all object's members
-        void init() throw (iom::exception);
+        void init() ;
 				
 		//binarizing-unbinarizing methods
-		void binarizeInto(FILE* file) throw (iom::exception);
-		void unBinarizeFrom(FILE* file) throw (iom::exception);
+		void binarizeInto(FILE* file) ;
+		void unBinarizeFrom(FILE* file) ;
 
 		// compute 'z_ranges'
 		void 
 			compute_z_ranges(
 			std::set<std::string> const * z_coords = 0)		// set of z-coordinates where at least one slice (of a certain stack) is available
-		throw (iom::exception);								// if null, 'z_ranges' will be compute based on 'FILENAMES' vector
+		;								// if null, 'z_ranges' will be compute based on 'FILENAMES' vector
 
 		//******** FRIEND CLASS DECLARATION *********
 		//StackedVolume can access Stack private members and methods
@@ -76,9 +76,9 @@ class vm::Stack : public vm::VirtualStack
 	public:
 
 		//CONSTRUCTORS
-		Stack(vm::StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char* _DIR_NAME) throw (iom::exception);					// build from scratch
-        Stack(vm::StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) throw (iom::exception);						// build from mdata.bin
-		Stack(vm::StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlElement* stack_node, int &z_end) throw (iom::exception);	// build from XML
+		Stack(vm::StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, const char* _DIR_NAME) ;					// build from scratch
+        Stack(vm::StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) ;						// build from mdata.bin
+		Stack(vm::StackedVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, TiXmlElement* stack_node, int &z_end) ;	// build from XML
 		/* parameter z_end is passed by reference because it can contain an invalid value (when the xml import file is externally generated)
 		 * in this case the constructor must initialize the parameter
 		 */
@@ -91,8 +91,8 @@ class vm::Stack : public vm::VirtualStack
 		int  getN_BYTESxCHAN()	{return N_BYTESxCHAN;}
 
 		//LOAD and RELEASE methods
-		iom::real_t* loadImageStack(int first_file=-1, int last_file=-1) throw (iom::exception);
-		iom::real_t* loadImageStack2(int first_file=-1, int last_file=-1, int V0=-1, int V1=-1, int H0=-1, int H1=-1) throw (iom::exception);
+		iom::real_t* loadImageStack(int first_file=-1, int last_file=-1) ;
+		iom::real_t* loadImageStack2(int first_file=-1, int last_file=-1, int V0=-1, int V1=-1, int H0=-1, int H1=-1) ;
 		void releaseImageStack();
 
 		//XML methods
@@ -101,7 +101,7 @@ class vm::Stack : public vm::VirtualStack
 			TiXmlElement *stack_node, 
 			int z_end)					// 2014-09-05. Alessandro. @ADDED 'z_end' parameter to support sparse data feature
 										//						   Here 'z_end' identifies the range [0, z_end) that slices can span
-		throw (iom::exception);
+		;
 };
 
 #endif /* STACK_H_ */

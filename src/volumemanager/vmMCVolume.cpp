@@ -70,7 +70,7 @@ const std::string MCVolume::creator_id1 = volumemanager::VirtualVolumeFactory::r
 const std::string MCVolume::creator_id2 = volumemanager::VirtualVolumeFactory::registerPluginCreatorData(&createFromData, MCVolume::id);
 
 
-MCVolume::MCVolume(const char* _stacks_dir, vm::ref_sys _reference_system, float VXL_1, float VXL_2, float VXL_3, bool overwrite_mdata) throw (iom::exception)
+MCVolume::MCVolume(const char* _stacks_dir, vm::ref_sys _reference_system, float VXL_1, float VXL_2, float VXL_3, bool overwrite_mdata) 
 	: VirtualVolume(_stacks_dir, _reference_system, VXL_1, VXL_2, VXL_3)
 {
 	#if VM_VERBOSE > 3
@@ -116,7 +116,7 @@ MCVolume::MCVolume(const char* _stacks_dir, vm::ref_sys _reference_system, float
 	active_channel = 0;
 }
 
-MCVolume::MCVolume(const char *xml_filepath, bool overwrite_mdata) throw (iom::exception)
+MCVolume::MCVolume(const char *xml_filepath, bool overwrite_mdata) 
 	: VirtualVolume(xml_filepath)
 {
 	#if VM_VERBOSE > 3
@@ -185,7 +185,7 @@ MCVolume::~MCVolume()
 
 
 
-void MCVolume::init() throw (iom::exception)
+void MCVolume::init() 
 {
 	/**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
@@ -239,7 +239,7 @@ void MCVolume::init() throw (iom::exception)
 	entries_lev1.clear();
 }
 
-void MCVolume::initChannels()  throw (iom::exception) 
+void MCVolume::initChannels()   
 {
 	DIM_C = N_SUBVOLS;
 	BYTESxCHAN = subvolumes[enabledSV]->getSTACKS()[0][0]->getN_BYTESxCHAN();
@@ -272,17 +272,17 @@ void MCVolume::resetTilePositions ( ) {
 }
 
 
-void MCVolume::applyReferenceSystem(vm::ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3) throw (iom::exception)
+void MCVolume::applyReferenceSystem(vm::ref_sys reference_system, float VXL_1, float VXL_2, float VXL_3) 
 {
 	/**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 }
 
-void MCVolume::saveBinaryMetadata(char *metadata_filepath) throw (iom::exception)
+void MCVolume::saveBinaryMetadata(char *metadata_filepath) 
 {
 	/**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 }
 
-void MCVolume::loadBinaryMetadata(char *metadata_filepath) throw (iom::exception)
+void MCVolume::loadBinaryMetadata(char *metadata_filepath) 
 {
 	/**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 }
@@ -301,7 +301,7 @@ void MCVolume::mirror(vm::axis mrr_axis)
 
 
 //check if volume is complete and coherent
-bool MCVolume::check(const char *errlogFileName) throw (iom::exception)
+bool MCVolume::check(const char *errlogFileName) 
 {
 	/**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
@@ -338,7 +338,7 @@ bool MCVolume::check(const char *errlogFileName) throw (iom::exception)
 }
 
 
-void MCVolume::loadXML(const char *xml_filepath) throw (iom::exception)
+void MCVolume::loadXML(const char *xml_filepath) 
 {
 //	#if VM_VERBOSE > 3
 //	printf("\t\t\t\tin MCVolume::loadXML(char *xml_filepath = %s)\n", xml_filepath);
@@ -479,7 +479,7 @@ void MCVolume::loadXML(const char *xml_filepath) throw (iom::exception)
 //	//}
 }
 
-void MCVolume::initFromXML(const char *xml_filepath) throw (iom::exception)
+void MCVolume::initFromXML(const char *xml_filepath) 
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin MCVolume::initFromXML(char *xml_filename = %s)\n", xml_filename);
@@ -591,7 +591,7 @@ void MCVolume::initFromXML(const char *xml_filepath) throw (iom::exception)
 	}
 }
 
-void MCVolume::saveXML(const char *xml_filename, const char *xml_filepath) throw (iom::exception)
+void MCVolume::saveXML(const char *xml_filename, const char *xml_filepath) 
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin MCVolume::saveXML(char *xml_filename = %s)\n", xml_filename);

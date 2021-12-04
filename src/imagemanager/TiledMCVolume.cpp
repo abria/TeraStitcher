@@ -63,7 +63,7 @@ TiledMCVolume::TiledMCVolume(void) : VirtualVolume()
     vol_ch = 0;
 }
 
-TiledMCVolume::TiledMCVolume(const char* _root_dir)  throw (IOException)
+TiledMCVolume::TiledMCVolume(const char* _root_dir)  
 : VirtualVolume(_root_dir) // iannello ADDED
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir=%s", _root_dir).c_str(), __iim__current__function__);
@@ -93,7 +93,7 @@ TiledMCVolume::TiledMCVolume(const char* _root_dir)  throw (IOException)
 	}
 }
 
-TiledMCVolume::TiledMCVolume(const char* _root_dir, ref_sys _reference_system, float _VXL_1, float _VXL_2, float _VXL_3, bool overwrite_mdata, bool save_mdata)  throw (IOException)
+TiledMCVolume::TiledMCVolume(const char* _root_dir, ref_sys _reference_system, float _VXL_1, float _VXL_2, float _VXL_3, bool overwrite_mdata, bool save_mdata)  
 : VirtualVolume(_root_dir) // iannello ADDED
 {
     /**/iim::debug(iim::LEV3, strprintf("_root_dir=%s, ref_sys reference_system={%d,%d,%d}, VXL_1=%.4f, VXL_2=%.4f, VXL_3=%.4f",
@@ -133,7 +133,7 @@ TiledMCVolume::TiledMCVolume(const char* _root_dir, ref_sys _reference_system, f
 	initChannels();
 }
 
-TiledMCVolume::~TiledMCVolume(void) throw (iim::IOException)
+TiledMCVolume::~TiledMCVolume(void) 
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
@@ -147,7 +147,7 @@ TiledMCVolume::~TiledMCVolume(void) throw (iim::IOException)
 }
 
 
-void TiledMCVolume::save(char* metadata_filepath) throw (IOException)
+void TiledMCVolume::save(char* metadata_filepath) 
 {
     /**/iim::debug(iim::LEV3, strprintf("metadata_filepath=%s", metadata_filepath).c_str(), __iim__current__function__);
 
@@ -207,7 +207,7 @@ void TiledMCVolume::save(char* metadata_filepath) throw (IOException)
 	fclose(file);
 }
 
-void TiledMCVolume::load(char* metadata_filepath) throw (IOException)
+void TiledMCVolume::load(char* metadata_filepath) 
 {
     /**/iim::debug(iim::LEV3, strprintf("metadata_filepath=%s", metadata_filepath).c_str(), __iim__current__function__);
 
@@ -422,7 +422,7 @@ void TiledMCVolume::load(char* metadata_filepath) throw (IOException)
 	fclose(file);
 }
 
-void TiledMCVolume::init() throw (IOException)
+void TiledMCVolume::init() 
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
@@ -605,7 +605,7 @@ void TiledMCVolume::init() throw (IOException)
 	//}
 }
 
-void TiledMCVolume::initChannels ( ) throw (IOException)
+void TiledMCVolume::initChannels ( ) 
 {
     /**/iim::debug(iim::LEV3, 0, __iim__current__function__);
 
@@ -791,7 +791,7 @@ void TiledMCVolume::mirror(axis mrr_axis)
 }
 
 //loads given subvolume in a 1-D array of float
-real32* TiledMCVolume::loadSubvolume(int V0,int V1, int H0, int H1, int D0, int D1, list<Block*> *involved_blocks, bool release_blocks) throw (IOException)
+real32* TiledMCVolume::loadSubvolume(int V0,int V1, int H0, int H1, int D0, int D1, list<Block*> *involved_blocks, bool release_blocks) 
 {
     /**/iim::debug(iim::LEV3, strprintf("V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d, %s", V0, V1, H0, H1, D0, D1, (involved_blocks? ", involved_stacks" : "")).c_str(), __iim__current__function__);
 
@@ -825,7 +825,7 @@ real32* TiledMCVolume::loadSubvolume(int V0,int V1, int H0, int H1, int D0, int 
 
 //loads given subvolume in a 1-D array of uint8 while releasing stacks slices memory when they are no longer needed
 //---03 nov 2011: added color support
-uint8* TiledMCVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, int D1, int *channels, int ret_type) throw (IOException, iom::exception)
+uint8* TiledMCVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D0, int D1, int *channels, int ret_type) 
 {
     /**/iim::debug(iim::LEV3, strprintf("V0=%d, V1=%d, H0=%d, H1=%d, D0=%d, D1=%d, *channels=%d, ret_type=%d", V0, V1, H0, H1, D0, D1, channels ? *channels : -1, ret_type).c_str(), __iim__current__function__);
 

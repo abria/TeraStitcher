@@ -65,12 +65,12 @@ class iim::Stack
 		Stack(void);
 
 		//Initializes all object's members given DIR_NAME
-        void init() throw (iim::IOException);
+        void init() ;
 
 	public:
 
-        Stack(iim::VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) throw (iim::IOException);
-        Stack(iim::VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, char* _DIR_NAME) throw (iim::IOException);
+        Stack(iim::VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) ;
+        Stack(iim::VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, char* _DIR_NAME) ;
 		~Stack(void);
 
 		//GET methods
@@ -96,7 +96,7 @@ class iim::Stack
 
 		//binarizing-unbinarizing methods
 		void binarizeInto(FILE* file);
-        void unBinarizeFrom(FILE* file) throw (iim::IOException);
+        void unBinarizeFrom(FILE* file) ;
 
 		//loads/releases images of current stack (from 'first_file' to 'last_file' extremes included, if not specified loads entire stack)
 		void loadStack   (int first_file=-1, int last_file=-1);

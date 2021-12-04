@@ -127,7 +127,7 @@ DisplacementMIPNCC::DisplacementMIPNCC(TiXmlElement *displ_node) : Displacement(
 
 //evaluates displacement reliability possibly along the given direction. The result(s) should be stored
 //in one or more object members, so that they have to be computed once and then accessed by GET methods
-float DisplacementMIPNCC::evalReliability(direction _direction) throw (iom::exception)
+float DisplacementMIPNCC::evalReliability(direction _direction) 
 {
 	#if S_VERBOSE>4
 	printf("........in DisplacementMIPNCC::evalReliability(direction _direction = %d)\n", _direction);
@@ -148,7 +148,7 @@ float DisplacementMIPNCC::evalReliability(direction _direction) throw (iom::exce
 
 //returns the reliability possibly along the given direction. An exception is thrown if the reliability
 //index(es) are not computed yet.
-float DisplacementMIPNCC::getReliability(direction _direction)  throw (iom::exception)
+float DisplacementMIPNCC::getReliability(direction _direction)  
 {
 	#if S_VERBOSE>4
 	printf("........in DisplacementMIPNCC::getReliability(direction _direction = %d)\n", _direction);
@@ -169,7 +169,7 @@ float DisplacementMIPNCC::getReliability(direction _direction)  throw (iom::exce
 }
 
 //returns the displacement along the given direction
-int	DisplacementMIPNCC::getDisplacement(direction _direction) throw (iom::exception)
+int	DisplacementMIPNCC::getDisplacement(direction _direction) 
 {
 	#if S_VERBOSE>4
 	printf("\t\t\t\t\tin DisplacementMIPNCC::getDisplacement(direction _direction = %d)\n", _direction);
@@ -184,7 +184,7 @@ int	DisplacementMIPNCC::getDisplacement(direction _direction) throw (iom::except
 }
 
 //returns the default displacement along the given direction
-int	DisplacementMIPNCC::getDefaultDisplacement(direction _direction) throw (iom::exception)
+int	DisplacementMIPNCC::getDefaultDisplacement(direction _direction) 
 {
 	#if S_VERBOSE>4
 	printf("\t\t\t\t\tin DisplacementMIPNCC::getDefaultDisplacement(direction _direction = %d)\n", _direction);
@@ -199,7 +199,7 @@ int	DisplacementMIPNCC::getDefaultDisplacement(direction _direction) throw (iom:
 }
 
 //returns the half range of NCC search around initial offset along the given direction
-int	DisplacementMIPNCC::getDelays(direction _direction) throw (iom::exception)
+int	DisplacementMIPNCC::getDelays(direction _direction) 
 {
 	#if S_VERBOSE>4
 	printf("\t\t\t\t\tin DisplacementMIPNCC::getDelays(direction _direction = %d)\n", _direction);
@@ -214,7 +214,7 @@ int	DisplacementMIPNCC::getDelays(direction _direction) throw (iom::exception)
 }
 
 //sets to default values the displacements with a reliability factor above the given threshold
-void DisplacementMIPNCC::threshold(float rel_threshold) throw (iom::exception)
+void DisplacementMIPNCC::threshold(float rel_threshold) 
 {
 	#if S_VERBOSE>4
 	printf("........in DisplacementMIPNCC::threshold(rel_threshold = %.4f)\n", rel_threshold);
@@ -235,7 +235,7 @@ void DisplacementMIPNCC::threshold(float rel_threshold) throw (iom::exception)
 }
 
 //returns the displacement mirrored along the given direction.
-Displacement* DisplacementMIPNCC::getMirrored(direction _direction) throw (iom::exception)
+Displacement* DisplacementMIPNCC::getMirrored(direction _direction) 
 {
 	#if S_VERBOSE>4
 	printf("........in DisplacementMIPNCC::getMirrored(direction _direction = %d)\n", _direction);
@@ -307,7 +307,7 @@ Displacement* DisplacementMIPNCC::getMirrored(direction _direction) throw (iom::
 
 //combines the parameters of the current and the given displacement so that after this operation
 //the two displacements are more reliable (and are EQUAL).
-void DisplacementMIPNCC::combine(Displacement& displ) throw (iom::exception)
+void DisplacementMIPNCC::combine(Displacement& displ) 
 {
 	#if S_VERBOSE>3
 	printf("......in DisplacementMIPNCC::combine(Displacement& displ)\n");
@@ -345,7 +345,7 @@ void DisplacementMIPNCC::combine(Displacement& displ) throw (iom::exception)
 }
 
 
-bool DisplacementMIPNCC::isBetter(Displacement *displ) throw (iom::exception)
+bool DisplacementMIPNCC::isBetter(Displacement *displ) 
 {
 	DisplacementMIPNCC *displ_MIPNCC = (DisplacementMIPNCC*) displ;
 	
@@ -364,7 +364,7 @@ bool DisplacementMIPNCC::isBetter(Displacement *displ) throw (iom::exception)
 
 
 //XML methods: convert/load displacement object into/from XML schema
-TiXmlElement* DisplacementMIPNCC::getXML() throw (iom::exception)
+TiXmlElement* DisplacementMIPNCC::getXML() 
 {
 	#if S_VERBOSE>5
 	printf("\t\t\t\t\tin DisplacementMIPNCC::getXML()\n");
@@ -398,7 +398,7 @@ TiXmlElement* DisplacementMIPNCC::getXML() throw (iom::exception)
 
 	return xml_representation;
 }
-void DisplacementMIPNCC::loadXML(TiXmlElement *displ_node) throw (iom::exception)
+void DisplacementMIPNCC::loadXML(TiXmlElement *displ_node) 
 {
 	#if S_VERBOSE>5
 	printf("\t\t\t\t\tin DisplacementMIPNCC::loadXML(displ_node)\n");

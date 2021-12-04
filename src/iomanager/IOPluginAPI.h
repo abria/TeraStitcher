@@ -94,7 +94,7 @@ class iomanager::IOPlugin2D : public iomanager::IOPlugin
 			int & img_bytes_x_chan,			// (OUTPUT) number of bytes per channel
 			int & img_chans,				// (OUTPUT) number of channels
 			const std::string & params = iom::IMIN_PLUGIN_PARAMS)	// (INPUT) additional parameters <param1=val, param2=val, ...> 
-		throw (iom::exception) = 0;
+		 = 0;
 
 		/************************************************************************************************
 		* Read 2D image data
@@ -116,7 +116,7 @@ class iomanager::IOPlugin2D : public iomanager::IOPlugin
 			int & img_chans,				// (INPUT/OUTPUT) number of channels to be read
 			unsigned char *data = 0,		// (INPUT) image data
 			const std::string & params = iom::IMIN_PLUGIN_PARAMS)	// (INPUT) additional parameters <param1=val, param2=val, ...> 
-		throw (iom::exception) = 0;
+		 = 0;
 		
 		/************************************************************************************************
 		* Write 2D image data into a single (2D) image file
@@ -138,7 +138,7 @@ class iomanager::IOPlugin2D : public iomanager::IOPlugin
 			int x0 = -1,					// (INPUT)	region of interest [x0,x1][y0,y1] to be set on the image
 			int x1 = -1,					// (INPUT)	region of interest [x0,x1][y0,y1] to be set on the image
 			const std::string & params = iom::IMOUT_PLUGIN_PARAMS)	// (INPUT) additional parameters <param1=val, param2=val, ...> 
-		throw (iom::exception) = 0;
+		 = 0;
 
 		/************************************************************************************************
 		* Return plugin description
@@ -172,7 +172,7 @@ class iomanager::IOPlugin2D : public iomanager::IOPlugin
 			bool is_sparse = false,			// (INPUT)	if true, 'files' is a sparse array and null entries should be treated as empty (black) images
 			iom::channel chan = CHANS,		// (INPUT)	channel selection { ALL, R, G, B }. 
 			const std::string & params = iom::IMIN_PLUGIN_PARAMS)	// (INPUT) additional parameters <param1=val, param2=val, ...> 
-		throw (iom::exception) = 0;
+		 = 0;
 
 		
 		// write 2D image data into a single (2D) image file
@@ -189,7 +189,7 @@ class iomanager::IOPlugin2D : public iomanager::IOPlugin
 			int x1 = -1,						// (INPUT)	region of interest [x0,x1][y0,y1] to be set on the image
 			int bpp = iom::DEF_BPP,			// (INPUT)	color depth (bits per pixel)
 			const std::string & params = iom::IMOUT_PLUGIN_PARAMS)	// (INPUT) additional parameters <param1=val, param2=val, ...> 
-		throw (iom::exception) = 0;
+		 = 0;
 };
 
 
@@ -211,7 +211,7 @@ class iomanager::IOPlugin3D : public iomanager::IOPlugin
 			int & img_bytes_x_chan,			// (OUTPUT) number of bytes per channel
 			int & img_chans,				// (OUTPUT) number of channels
 			const std::string & params = iom::IMIN_PLUGIN_PARAMS)	// additional parameters <param1=val, param2=val, ...> 
-		throw (iom::exception) = 0;
+		 = 0;
 
 		/************************************************************************************************
 		* Read 3D image data
@@ -237,7 +237,7 @@ class iomanager::IOPlugin3D : public iomanager::IOPlugin
 			int z0 = -1,					// (INPUT)	region of interest [x0,x1)[y0,y1)[z0,z1) to be set on the image
 			int z1 = -1,					// (INPUT)	region of interest [x0,x1)[y0,y1)[z0,z1) to be set on the image
 			const std::string & params = iom::IMIN_PLUGIN_PARAMS)	// (INPUT) additional parameters <param1=val, param2=val, ...> 
-		throw (iom::exception) = 0;
+		 = 0;
 
 		/************************************************************************************************
 		* Write 3D image data into a single (3D) image file
@@ -264,7 +264,7 @@ class iomanager::IOPlugin3D : public iomanager::IOPlugin
 			int x0 = -1,					// (INPUT)	region of interest [x0,x1)[y0,y1)[z0,z1) to be set on the image
 			int x1 = -1,					// (INPUT)	region of interest [x0,x1)[y0,y1)[z0,z1) to be set on the image
 			const std::string & params = iom::IMOUT_PLUGIN_PARAMS)	// (INPUT) additional parameters <param1=val, param2=val, ...> 
-		throw (iom::exception) = 0;
+		 = 0;
 
 		/************************************************************************************************
 		* Create an empty 3D image 
@@ -281,7 +281,7 @@ class iomanager::IOPlugin3D : public iomanager::IOPlugin
 			int img_bytes_x_chan,			// (INPUT)  number of bytes per channel
 			int img_chans,					// (INPUT)	number of channels
 			const std::string & params = iom::IMOUT_PLUGIN_PARAMS)	// (INPUT) additional parameters <param1=val, param2=val, ...> 
-		throw (iom::exception) = 0;
+		 = 0;
 
 		/************************************************************************************************
 		* Append a single slice at the bottom of a 3D image file
@@ -308,7 +308,7 @@ class iomanager::IOPlugin3D : public iomanager::IOPlugin
 			int x1 = -1,					// (INPUT)	region of interest [x0,x1)[y0,y1) to be set on the image
 			int slice = -1,					// (INPUT)  slice index 
 			const std::string & params = iom::IMOUT_PLUGIN_PARAMS)	// (INPUT) additional parameters <param1=val, param2=val, ...> 
-		throw (iom::exception) = 0;
+		 = 0;
 
 		/************************************************************************************************
 		* Return plugin description
@@ -341,7 +341,7 @@ class iomanager::IOPlugin3D : public iomanager::IOPlugin
 			int first,						// (INPUT)	selects a range [first, last] of files to be loaded 
 			int last,						// (INPUT)	selects a range [first, last] of files to be loaded 
 			const std::string & params = iom::IMIN_PLUGIN_PARAMS)	// (INPUT) additional parameters <param1=val, param2=val, ...> 
-		throw (iom::exception) = 0;
+		 = 0;
 };
 
 
@@ -382,13 +382,13 @@ class iomanager::IOPluginFactory
 		}
 
 		// plugin instantiation
-		static IOPlugin2D* getPlugin2D(std::string id) throw (iom::exception)
+		static IOPlugin2D* getPlugin2D(std::string id) 
 		{ 
 			if(instance()->registry2D.find(id) == instance()->registry2D.end())
 				throw iom::exception(iom::strprintf("Cannot find 2D I/O plugin \"%s\" or it is not a 2D I/O plugin", id.c_str()).c_str());
 			return (instance()->registry2D[id])(); 
 		}
-		static IOPlugin3D* getPlugin3D(std::string id) throw (iom::exception)
+		static IOPlugin3D* getPlugin3D(std::string id) 
 		{ 
 			if(instance()->registry3D.find(id) == instance()->registry3D.end())
 				throw iom::exception(iom::strprintf("Cannot find 3D I/O plugin \"%s\" or it is not a 3D I/O plugin", id.c_str()).c_str());
@@ -494,7 +494,7 @@ namespace iomanager														\
 				int & img_bytes_x_chan,									\
 				int & img_chans,										\
 				const std::string & params = iom::IMIN_PLUGIN_PARAMS)	\
-			throw (iom::exception);										\
+			;										\
 																		\
 			virtual unsigned char *                                     \
 				readData(                                               \
@@ -505,7 +505,7 @@ namespace iomanager														\
 				int & img_chans,                                        \
 				unsigned char *data = 0,                                \
 				const std::string & params = iom::IMIN_PLUGIN_PARAMS)   \
-			throw (iom::exception);                                     \
+			;                                     \
 			                                                            \
 	        virtual void                                                \
 				writeData(                                              \
@@ -520,7 +520,7 @@ namespace iomanager														\
 				int x0 = -1,											\
 				int x1 = -1,                                            \
 				const std::string & params = iom::IMOUT_PLUGIN_PARAMS)  \
-			throw (iom::exception);                                     \
+			;                                     \
                                                                         \
 			virtual std::string desc();									\
 																		\
@@ -538,7 +538,7 @@ namespace iomanager														\
 				bool is_sparse = false,									\
 				iom::channel chan = CHANS,								\
 				const std::string & params = iom::IMIN_PLUGIN_PARAMS)	\
-			throw (iom::exception);										\
+			;										\
 																		\
 			virtual void												\
 				writeData(												\
@@ -553,7 +553,7 @@ namespace iomanager														\
 				int x1 = -1,											\
 				int bpp = iom::DEF_BPP,									\
 				const std::string & params = iom::IMOUT_PLUGIN_PARAMS)	\
-			throw (iom::exception);										\
+			;										\
 	};																	\
 }																		\
 																		\
@@ -588,7 +588,7 @@ namespace iomanager														\
 				int & img_bytes_x_chan,									\
 				int & img_chans,										\
 				const std::string & params = IMIN_PLUGIN_PARAMS)		\
-			throw (iom::exception);										\
+			;										\
 																		\
 			virtual unsigned char *	                                    \
 				readData(                                               \
@@ -602,7 +602,7 @@ namespace iomanager														\
 				int z0 = -1,                                            \
 				int z1 = -1,                                            \
 				const std::string & params = iom::IMIN_PLUGIN_PARAMS)   \
-			throw (iom::exception);                                     \
+			;                                     \
 																		\
 	        virtual void												\
 				writeData(												\
@@ -620,7 +620,7 @@ namespace iomanager														\
 				int x0 = -1,											\
 				int x1 = -1,											\
 				const std::string & params = iom::IMOUT_PLUGIN_PARAMS)	\
-			throw (iom::exception);										\
+			;										\
 																		\
 	        virtual void												\
 				create3Dimage(											\
@@ -631,7 +631,7 @@ namespace iomanager														\
 				int img_bytes_x_chan,									\
 				int img_chans,											\
 				const std::string & params = iom::IMOUT_PLUGIN_PARAMS)  \
-			throw (iom::exception);                                     \
+			;                                     \
 																		\
 	        virtual void 												\
 				appendSlice(											\
@@ -647,7 +647,7 @@ namespace iomanager														\
 				int x1 = -1,											\
 				int slice = -1,											\
 				const std::string & params = iom::IMOUT_PLUGIN_PARAMS)	\
-			throw (iom::exception);										\
+			;										\
 																		\
 			virtual std::string desc();									\
 																		\
@@ -664,7 +664,7 @@ namespace iomanager														\
 				int first,												\
 				int last,												\
 				const std::string & params = IMIN_PLUGIN_PARAMS)		\
-			throw (iom::exception);										\
+			;										\
 	};																	\
 }																		\
 																		\

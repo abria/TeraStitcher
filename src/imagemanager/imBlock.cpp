@@ -89,7 +89,7 @@ Block::Block(VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, char* _D
 	init();
 }
 
-Block::Block(VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) throw (IOException)
+Block::Block(VirtualVolume* _CONTAINER, int _ROW_INDEX, int _COL_INDEX, FILE* bin_file) 
 {
     /**/iim::debug(iim::LEV3, strprintf("_ROW_INDEX=%d, _COL_INDEX=%d", _ROW_INDEX, _COL_INDEX).c_str(), __iim__current__function__);
 
@@ -170,7 +170,7 @@ void Block::binarizeInto(FILE* file)
 	fwrite(&N_BYTESxCHAN, sizeof(uint32), 1, file);
 }
 
-void Block::unBinarizeFrom(FILE* file) throw (IOException)
+void Block::unBinarizeFrom(FILE* file) 
 {
     /**/iim::debug(iim::LEV3, strprintf("ROW_INDEX=%d, COL_INDEX=%d", ROW_INDEX, COL_INDEX).c_str(), __iim__current__function__);
 

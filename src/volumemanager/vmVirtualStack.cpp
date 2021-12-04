@@ -95,7 +95,7 @@ bool VirtualStack::isEmpty(int z0, int z1)
 }
 
 // read img_regex from xml stack node
-std::string VirtualStack::readImgRegex(TiXmlElement *stack_node) throw (iom::exception)
+std::string VirtualStack::readImgRegex(TiXmlElement *stack_node) 
 {
 	// check for valid stack node
 	if(!stack_node)
@@ -113,7 +113,7 @@ std::string VirtualStack::readImgRegex(TiXmlElement *stack_node) throw (iom::exc
 }
 
 // write img_regex to the xml stack node
-void VirtualStack::writeImgRegex(TiXmlElement *stack_node) throw (iom::exception)
+void VirtualStack::writeImgRegex(TiXmlElement *stack_node) 
 {
 	stack_node->SetAttribute("IMG_REGEX",img_regex.c_str());
 }
