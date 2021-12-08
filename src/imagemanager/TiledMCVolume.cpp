@@ -44,8 +44,10 @@
 //#include <cxcore.h>
 //#include <cv.h>
 //#include <highgui.h>
-#include <list>
-#include <fstream>
+#include<list>
+#include<fstream>
+#include<thread>
+#include<chrono>
 #include "ProgressBar.h"
 
 using namespace std;
@@ -440,7 +442,36 @@ void TiledMCVolume::init() throw (IOException)
 	//char channel_c_path[STATIC_STRINGS_SIZE];
 
 	//obtaining DIR pointer to root_dir (=NULL if directory doesn't exist)
-	if (!(cur_dir_lev1=opendir(root_dir)))
+	const unsigned int num_retries = 40;
+	bool error_open_dir = false;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			cur_dir_lev1 = opendir(root_dir);
+			if (!cur_dir_lev1) throw std::exception();
+			error_open_dir = false;
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			error_open_dir = true;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+			continue;
+		}
+		break;
+	}
+	if (error_open_dir)
 	{
         char msg[STATIC_STRINGS_SIZE];
         sprintf(msg,"in TiledMCVolume::init(...): Unable to open directory \"%s\"", root_dir);

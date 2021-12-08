@@ -39,6 +39,8 @@
 #include "tiff3D.h"
 #include "Tiff3DMngr.h"
 #include "VirtualFmtMngr.h"
+#include <thread>
+#include <chrono>
 
 // just call this macro to register your plugin
 TERASTITCHER_REGISTER_IO_PLUGIN_3D(tiff3D)
@@ -191,8 +193,37 @@ throw (iom::exception)
 		throw iom::exception(iom::strprintf("wrong slice indices (z0 = %d, z1 = %d)",z0, z1), __iom__current__function__);
 
 	// get the image
-	if ( (err_Tiff3Dfmt = readTiff3DFile2Buffer((char *)img_path.c_str(),data,img_width,img_height,z0,z1-1)) != 0 ) {
-		throw iom::exception(iom::strprintf("(%s) unable to read tiff file %s in page range [%d,%d]",err_Tiff3Dfmt,img_path.c_str(),z0,z1-1), __iom__current__function__);
+	const unsigned int num_retries = 40;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			err_Tiff3Dfmt = readTiff3DFile2Buffer((char*)img_path.c_str(), data, img_width, img_height, z0, z1 - 1);
+			if (err_Tiff3Dfmt != 0) throw std::exception();
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+			continue;
+		}
+		break;
+	}
+	if (err_Tiff3Dfmt != 0) {
+		throw iom::exception(
+			iom::strprintf(
+				"exception: %s\nunable to read tif file to buffer\n%s\nin page range [%d,%d]", err_Tiff3Dfmt, img_path.c_str(), z0, z1-1), 
+			__iom__current__function__);
 	}
 
 	return data;
@@ -390,7 +421,35 @@ throw (iom::exception)
 	TIFFSetWarningHandler(0);
 
 	char *err_Tiff3Dfmt;
-	if ( (err_Tiff3Dfmt = readTiff3DFile2Buffer(finName,data,XSIZE,YSIZE,first,last)) != 0 ) {
-		throw iom::exception(iom::strprintf("(%s) unable to read tiff file %s in page range [%d,%d]",err_Tiff3Dfmt,finName,first,last), __iom__current__function__);
+	const unsigned int num_retries = 40;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			err_Tiff3Dfmt = readTiff3DFile2Buffer(finName, data, XSIZE, YSIZE, first, last);
+			if (err_Tiff3Dfmt != 0) throw std::exception();
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+			continue;
+		}
+		break;
+	}
+	if (err_Tiff3Dfmt != 0) {
+		throw iom::exception(
+			iom::strprintf("exception: %s\nunable to read tif file to buffer\n%s\nin page range [%d, %d]", err_Tiff3Dfmt, finName, first, last),
+			__iom__current__function__);
 	}
 }

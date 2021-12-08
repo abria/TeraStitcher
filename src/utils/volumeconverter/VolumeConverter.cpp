@@ -1107,8 +1107,11 @@ void VolumeConverter::generateTiles(std::string output_path, bool* resolutions,
 				//is to check whether <volume> is a pointer to a <StackedVolume> object, then specialize it to <StackedVolume*> and get its reference
 				//system.
 				//---- Giulio 2013-08-23 fixed
-				StackedVolume temp_vol(file_path[res_i].str().c_str(),reference,
-								volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,halve_pow2[res_i]));
+				StackedVolume temp_vol(
+					file_path[res_i].str().c_str(), reference,
+					volume->getVXL_V()* (float)pow(2.0f, res_i),
+					volume->getVXL_H()* (float)pow(2.0f, res_i),
+					volume->getVXL_D()* (float)pow(2.0f, halve_pow2[res_i]));
 
 	//			StackedVolume temp_vol(file_path[res_i].str().c_str(),ref_sys(axis(1),axis(2),axis(3)), volume->getVXL_V()*(res_i+1),
 	//							volume->getVXL_H()*(res_i+1),volume->getVXL_D()*(res_i+1));
@@ -2491,8 +2494,12 @@ void VolumeConverter::generateTilesVaa3DRaw(std::string output_path, bool* resol
 				//is to check whether <volume> is a pointer to a <StackedVolume> object, then specialize it to <StackedVolume*> and get its reference
 				//system.
 				try {
-					TiledVolume temp_vol(file_path[res_i].str().c_str(),reference,
-							volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,halve_pow2[res_i]));
+					TiledVolume temp_vol(
+						file_path[res_i].str().c_str(),
+						reference,
+						volume->getVXL_V()* (float)pow(2.0f, res_i),
+						volume->getVXL_H()* (float)pow(2.0f, res_i),
+						volume->getVXL_D()* (float)pow(2.0f, halve_pow2[res_i]));
 							//volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,res_i));
 				}
 				catch (IOException & ex)
@@ -4030,8 +4037,12 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 					//is to check whether <volume> is a pointer to a <StackedVolume> object, then specialize it to <StackedVolume*> and get its reference
 					//system.
 					try {
-						TiledVolume temp_vol(resolution_dir.c_str(),reference,
-								volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,halve_pow2[res_i]));
+						TiledVolume temp_vol(
+							resolution_dir.c_str(),
+							reference,
+							volume->getVXL_V()* (float)pow(2.0f, res_i),
+							volume->getVXL_H()* (float)pow(2.0f, res_i),
+							volume->getVXL_D()* (float)pow(2.0f, halve_pow2[res_i]));
 					}
 					catch (IOException & ex)
 					{
@@ -4048,8 +4059,12 @@ void VolumeConverter::generateTilesVaa3DRawMC ( std::string output_path, std::st
 	//                      volume->getVXL_H()*(res_i+1),volume->getVXL_D()*(res_i+1));
 				}
 
-				TiledMCVolume temp_mc_vol(file_path[res_i].str().c_str(),reference,
-						volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,halve_pow2[res_i]));
+				TiledMCVolume temp_mc_vol(
+					file_path[res_i].str().c_str(),
+					reference,
+					volume->getVXL_V()* (float)pow(2.0f,res_i),
+					volume->getVXL_H()* (float)pow(2.0f,res_i),
+					volume->getVXL_D()* (float)pow(2.0f,halve_pow2[res_i]));
 
 			}
 		}
@@ -5531,23 +5546,39 @@ void VolumeConverter::mdataGenerator(std::string output_path, std::string ch_dir
 			//system.
 			try {
 				if ( strcmp(saved_img_format,"tif") == 0 ) {
-					StackedVolume temp_vol(file_path[res_i].str().c_str(),reference,
-							volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,res_i));
+					StackedVolume temp_vol(
+						file_path[res_i].str().c_str(),
+						reference,
+						volume->getVXL_V()* (float)pow(2.0f,res_i),
+						volume->getVXL_H()* (float)pow(2.0f,res_i),
+						volume->getVXL_D()* (float)pow(2.0f,res_i));
 				}
 				else if ( strcmp(saved_img_format,"Vaa3DRaw") == 0 || strcmp(saved_img_format,"Tiff3D") == 0 ) {
-					TiledVolume temp_vol(file_path[res_i].str().c_str(),reference,
-							volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,res_i));
+					TiledVolume temp_vol(
+						file_path[res_i].str().c_str(),
+						reference,
+						volume->getVXL_V()* (float)pow(2.0f,res_i),
+						volume->getVXL_H()* (float)pow(2.0f,res_i),
+						volume->getVXL_D()* (float)pow(2.0f,res_i));
 				}
 				else if ( strcmp(saved_img_format,"Vaa3DRawMC") == 0 || strcmp(saved_img_format,"Tiff3DMC") == 0 ) {
 					for ( int c=0; c<channels; c++ ) {
 						resolution_dir = file_path[res_i].str() + chans_dir[c];
 
-						TiledVolume temp_vol(resolution_dir.c_str(),reference,
-								volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,res_i));
+						TiledVolume temp_vol(
+							resolution_dir.c_str(),
+							reference,
+							volume->getVXL_V()* (float)pow(2.0f,res_i),
+							volume->getVXL_H()* (float)pow(2.0f,res_i),
+							volume->getVXL_D()* (float)pow(2.0f,res_i));
 					}
 
-					TiledMCVolume temp_mc_vol(file_path[res_i].str().c_str(),reference,
-							volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,res_i));
+					TiledMCVolume temp_mc_vol(
+						file_path[res_i].str().c_str(),
+						reference,
+						volume->getVXL_V()* (float)pow(2.0f,res_i),
+						volume->getVXL_H()* (float)pow(2.0f,res_i),
+						volume->getVXL_D()* (float)pow(2.0f,res_i));
 				}
 			}
 			catch (IOException & ex)

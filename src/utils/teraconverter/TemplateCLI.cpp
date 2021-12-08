@@ -144,7 +144,7 @@ void TemplateCLI::readParams(int argc, char** argv) throw (iom::exception)
 
 	//TCLAP::ValueArg<int> p_n_resolutions("","res","Number of resolutions.",true,2,"unsigned");
 	TCLAP::ValueArg<std::string> p_resolutions("","resolutions","Resolutions to be produced. Possible values are [[i]...] where i = 0,..,5 and 2^i is the subsampling factor.",false,"0","string");
-	TCLAP::ValueArg<std::string> p_chanlist("","clist","Subset of channel to be converted (default: all).",false,"","string");
+	TCLAP::ValueArg<std::string> p_chanlist("","clist","Subset of channel to be converted (default: all else channel numbers like 012).",false,"","string");
 	TCLAP::ValueArg<string> p_halving_method("","halve","Halving method (mean/max, default: mean).",false,"mean","unsigned");
 
 	TCLAP::ValueArg<string> p_outFmt("f","outFmt","Voxel format (graylevel or RGB (default)/intensity.",false,"RGB","string");

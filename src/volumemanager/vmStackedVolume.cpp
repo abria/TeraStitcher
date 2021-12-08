@@ -76,8 +76,9 @@
 #include "tinyxml.h"
 #include "vmStack.h"
 #include "Displacement.h"
-
 #include "vmCacheManager.h"
+#include <thread>
+#include <chrono>
 
 #ifdef min
 #undef min
@@ -295,7 +296,36 @@ void StackedVolume::init() throw (iom::exception)
 	char stack_i_j_path[S_STATIC_STRINGS_SIZE];
 
 	//obtaining DIR pointer to stacks_dir (=NULL if directory doesn't exist)
-	if (!(cur_dir_lev1=opendir(stacks_dir)))
+	const unsigned int num_retries = 40;
+	bool error_open_dir = false;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			cur_dir_lev1 = opendir(stacks_dir);
+			if (!cur_dir_lev1) throw std::exception();
+			error_open_dir = false;
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			error_open_dir = true;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+			continue;
+		}
+		break;
+	}
+	if (error_open_dir)
 	{
 		char msg[S_STATIC_STRINGS_SIZE];
 		sprintf(msg,"in StackedVolume::init(...): Unable to open directory \"%s\"", stacks_dir);
@@ -722,10 +752,10 @@ void StackedVolume::saveXML(const char *xml_filename, const char *xml_filepath) 
 	#endif
 
 	//LOCAL VARIABLES
-        char xml_abs_path[S_STATIC_STRINGS_SIZE];
+    char xml_abs_path[S_STATIC_STRINGS_SIZE];
 	TiXmlDocument xml;
-	TiXmlElement * root;
-	TiXmlElement * pelem;
+	TiXmlElement* root;
+	TiXmlElement* pelem;
 	int i,j;
 
     //obtaining XML absolute path
@@ -736,17 +766,48 @@ void StackedVolume::saveXML(const char *xml_filename, const char *xml_filepath) 
     else
         throw iom::exception("in StackedVolume::saveXML(...): no xml path provided");
 
-	//initializing XML file with DTD declaration
-    fstream XML_FILE(xml_abs_path, ios::out);
-	XML_FILE<<"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"<<endl;
-	XML_FILE<<"<!DOCTYPE TeraStitcher SYSTEM \"TeraStitcher.DTD\">"<<endl;
-	XML_FILE.close();
+	const unsigned int num_retries = 40;
+	bool error_loading_xml = false;
+	int final_attempt = 0;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			//initializing XML file with DTD declaration
+			fstream XML_FILE(xml_abs_path, ios::out);
+			XML_FILE << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << endl;
+			XML_FILE << "<!DOCTYPE TeraStitcher SYSTEM \"TeraStitcher.DTD\">" << endl;
+			XML_FILE.close();
 
-	//loading previously initialized XML file 
-        if(!xml.LoadFile(xml_abs_path))
+			//loading previously initialized XML file
+			if (!xml.LoadFile(xml_abs_path)) throw std::exception();
+			error_loading_xml = false;
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			error_loading_xml = true;
+			final_attempt = attempt;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			continue;
+		}
+		// printf("succeeded in attempt %i", attempt);
+		break;
+	}
+    if(error_loading_xml)
 	{
 		char errMsg[5000];
-        sprintf(errMsg, "in StackedVolume::saveToXML(...) : unable to load xml file at \"%s\"", xml_abs_path);
+		sprintf(errMsg, "in StackedVolume::saveToXML(...) : unable to load xml file at \"%s\" after %i attempts.", xml_abs_path, final_attempt);
 		throw iom::exception(errMsg);
 	}
 
@@ -795,17 +856,53 @@ void StackedVolume::saveXML(const char *xml_filename, const char *xml_filepath) 
 
 	//inserting stack nodes
 	pelem = new TiXmlElement("STACKS");
-	for(i=0; i<N_ROWS; i++)
-		for(j=0; j<N_COLS; j++)
+	for (i = 0; i < N_ROWS; i++)
+		for (j = 0; j < N_COLS; j++)
 			pelem->LinkEndChild(STACKS[i][j]->getXML());
 	root->LinkEndChild(pelem);
+	
 	//saving the file
-	xml.SaveFile();
+	bool error_saving_xml = false;
+	final_attempt = 0;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			if (!xml.SaveFile()) throw std::exception();
+			error_saving_xml = false;
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			error_saving_xml = true;
+			final_attempt = attempt;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			continue;
+		}
+		// printf("succeeded in attempt %i", attempt);
+		break;
+	}
+	if (error_saving_xml)
+	{
+		char errMsg[5000];
+		sprintf(errMsg, "in StackedVolume::saveToXML(...) : unable to save xml file at \"%s\" after %i attempts.", xml_abs_path, final_attempt);
+		throw iom::exception(errMsg);
+	}
 }
 
 void StackedVolume::releaseBuffers() throw (iom::exception) {
-	for ( int r=0; r<N_ROWS; r++ )
-		for ( int c=0; c<N_COLS; c++ )
+	for (int r = 0; r < N_ROWS; r++)
+		for (int c = 0; c < N_COLS; c++)
 			STACKS[r][c]->releaseImageStack();
 }
 
@@ -882,7 +979,33 @@ void StackedVolume::loadBinaryMetadata(char *metadata_filepath) throw (iom::exce
 	float tmp=0;
 
 	// open file
-	if(!(file = fopen(metadata_filepath, "rb")))
+	const unsigned int num_retries = 40;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			file = fopen(metadata_filepath, "rb");
+			if (!file) throw std::exception();
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+			continue;
+		}
+		break;
+	}
+	if (!file)
 		throw iom::exception("in StackedVolume::loadBinaryMetadata(...): unable to load binary metadata file");
 
 

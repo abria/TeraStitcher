@@ -39,9 +39,18 @@
 #include "tiff2D.h"
 #include "Tiff3DMngr.h"
 #include "VirtualFmtMngr.h"
+#include <iostream>
+#include <thread>
+#include <chrono>
 
 #ifndef min
 #define min(a,b) ((a)<(b) ? (a) : (b))
+#endif
+
+#ifndef _DEBUG // works in VS
+#define DEBUG(x, y, z) 
+#else
+#define DEBUG(x, y, z) do { if (0 < y && y < z) std::cerr << x << y << std::endl; } while (0)
 #endif
 
 // just call this macro to register your plugin
@@ -103,10 +112,42 @@ throw (iom::exception)
 	//disable warning and error handlers to avoid messages on unrecognized tags
 	TIFFSetWarningHandler(0);
 	TIFFSetErrorHandler(0);
-
-	TIFF* input=TIFFOpen(img_path.c_str(),"r");
-	if (!input)
-		throw iom::exception(iom::strprintf("unable to open image \"%s\". Possible unsupported format or it isn't an image.\nSupported format is 2DTIFF", img_path.c_str()), __iom__current__function__);
+	const unsigned int num_retries = 40;
+	TIFF* input = TIFFOpen(img_path.c_str(), "r");
+	if (!input) {
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+		for (int attempt = 0; attempt < num_retries; attempt++) {
+			try {
+				input = TIFFOpen(img_path.c_str(), "r");
+				if (!input) throw std::exception();
+			}
+			catch (const std::exception& exc) {
+				(void)exc;
+				std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+				continue;
+			}
+			//if (0 < attempt && attempt < num_retries) std::cout << "TIFFOpen succeeded in attempt " << attempt << std::endl;
+			DEBUG("TIFFOpen succeeded in attempt ", attempt, num_retries);
+			break;
+		}
+		if (!input) 
+			throw iom::exception(
+				iom::strprintf("unable to open image \"%s\". Possible unsupported format or it isn't an image.\nSupported format is 2DTIFF", img_path.c_str()),
+				__iom__current__function__);
+	}
+		
 
 	if (!TIFFGetField(input, TIFFTAG_IMAGEWIDTH, &img_width))
 		throw iom::exception(iom::strprintf("unable to determine 'TIFFTAG_IMAGEWIDTH' from image \"%s\". ", img_path.c_str()), __iom__current__function__);
@@ -149,13 +190,13 @@ throw (iom::exception)
 // Read 2D image data
 unsigned char *						// (OUTPUT) a buffer storing the 2D image
 	iomanager::tiff2D::readData(
-	std::string img_path,			// (INPUT)	image filepath
-	int & img_width,				// (INPUT/OUTPUT) image width  (in pixels)
-	int & img_height,				// (INPUT/OUTPUT) image height (in pixels)
-	int & img_bytes_x_chan,			// (INPUT/OUTPUT) number of bytes per channel
-	int & img_chans,				// (INPUT/OUTPUT) number of channels to be read
-	unsigned char *data,			// (INPUT) image data
-	const std::string & params)		// (INPUT) additional parameters <param1=val, param2=val, ...> 
+		std::string img_path,			// (INPUT)	image filepath
+		int & img_width,				// (INPUT/OUTPUT) image width  (in pixels)
+		int & img_height,				// (INPUT/OUTPUT) image height (in pixels)
+		int & img_bytes_x_chan,			// (INPUT/OUTPUT) number of bytes per channel
+		int & img_chans,				// (INPUT/OUTPUT) number of channels to be read
+		unsigned char *data,			// (INPUT) image data
+		const std::string & params)		// (INPUT) additional parameters <param1=val, param2=val, ...> 
 throw (iom::exception) 
 {
 	//throw iom::exception(iom::strprintf("not implemented yet"), __iom__current__function__);
@@ -168,32 +209,101 @@ throw (iom::exception)
 	//disable warning handler to avoid messages on unrecognized tags
 	TIFFSetWarningHandler(0);
 
+	// number of retries before giving up
+	const unsigned int num_retries = 40;
+
 	if ( !data ) { // recover the metadata, allocate the buffer and set parameters
-		unsigned int _width;
-		unsigned int _height;
-		unsigned int _depth;
-		int _bytes_x_chan;
-		unsigned int _chans;
-		int b_swap;
-		void *fhandle;
-		int header_len;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+		for (int attempt = 0; attempt < num_retries; attempt++) { // NAS storage needs several retires to get the files
+			try {
+				unsigned int _width;
+				unsigned int _height;
+				unsigned int _depth;
+				int _bytes_x_chan;
+				unsigned int _chans;
+				int b_swap;
+				void* fhandle;
+				int header_len;
 
-		if ( (err_Tiff3Dfmt = loadTiff3D2Metadata((char *)img_path.c_str(),_width,_height,_depth,_chans,_bytes_x_chan,b_swap,fhandle,header_len)) != 0 ) {
-			throw iom::exception(iom::strprintf("(%s) unable to read meta data of tiff file %s",err_Tiff3Dfmt,img_path.c_str()), __iom__current__function__);
+				err_Tiff3Dfmt = loadTiff3D2Metadata((char*)img_path.c_str(), _width, _height, _depth, _chans, _bytes_x_chan, b_swap, fhandle, header_len);
+				if (err_Tiff3Dfmt != 0) throw std::exception();
+				
+				closeTiff3DFile(fhandle);
+
+				data = new unsigned char[      _chans * ((sint64)_width) * ((sint64)_height) * _bytes_x_chan];
+				memset(data, 0, sizeof(unsigned char) * ((sint64)_width) * ((sint64)_height) * _bytes_x_chan);
+				img_width        = _width;
+				img_height       = _height;
+				img_bytes_x_chan = _bytes_x_chan;
+				img_chans        = _chans;
+				
+			}
+			catch (const std::exception& exc) {
+				(void)exc;
+				std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+				continue;
+			}
+			//if (0 < attempt && attempt < num_retries) std::cout << "loadTiff3D2Metadata succeeded in attempt " << attempt << std::endl;
+			DEBUG("loadTiff3D2Metadata succeeded in attempt ", attempt, num_retries);
+			break;
 		}
-		closeTiff3DFile(fhandle);
 
-		data = new unsigned char[((sint64)_width) * ((sint64)_height) * _chans * _bytes_x_chan];
-		memset(data,0,sizeof(unsigned char) * ((sint64)_width) * ((sint64)_height) * _bytes_x_chan);
-		img_width        = _width;
-		img_height       = _height;
-		img_bytes_x_chan = _bytes_x_chan;
-		img_chans        = _chans;
+		if (err_Tiff3Dfmt != 0) {
+			throw iom::exception(
+				iom::strprintf("unable to read metadata of tif file:\n%s\nException: %s", img_path.c_str(), err_Tiff3Dfmt),
+				__iom__current__function__);
+		}
 	}
 
-	// load 2D image 
-	if ( (err_Tiff3Dfmt = readTiff3DFile2Buffer((char *)img_path.c_str(),data,img_width,img_height,0,0)) != 0 ) {
-		throw iom::exception(iom::strprintf("(%s) unable to read tiff file %s",err_Tiff3Dfmt,img_path.c_str()), __iom__current__function__);
+	// load 2D image
+	int final_attempt;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++){
+	    try {
+	        err_Tiff3Dfmt = readTiff3DFile2Buffer((char *)img_path.c_str(), data, img_width, img_height, 0, 0);
+			if (err_Tiff3Dfmt != 0) throw std::exception();
+	    }
+	    catch (const std::exception& exc) {
+			(void)exc;
+			final_attempt = attempt;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+	        continue;
+	    }
+		//if (0 < attempt && attempt < num_retries) std::cout << "readTiff3DFile2Buffer succeeded in attempt " << attempt << std::endl;
+		DEBUG("readTiff3DFile2Buffer succeeded in attempt ", attempt, num_retries);
+	    break;
+	}
+
+	if (err_Tiff3Dfmt != 0){
+		std::cout << err_Tiff3Dfmt << " after " << final_attempt << " attempts: img_width=" << img_width << " img_height=" << img_height << \
+			" img_bytes_x_chan=" << img_bytes_x_chan << " img_chans=" << img_chans << std::endl;
+		throw iom::exception(
+			iom::strprintf("\nUnable to read tif file:\n%s\nException: %s\n", img_path.c_str(), err_Tiff3Dfmt),
+			__iom__current__function__);
 	}
 
 	return data;
@@ -323,7 +433,7 @@ throw (iom::exception)
  	iom::real_t *raw_data;
  
 	iom::real_t *image_stack = 0;
-	uint64 image_stack_width=0, image_stack_height=0, z=0;
+	uint64 image_stack_width = 0, image_stack_height = 0, z = 0;
 	
 	// check for valid file list
 	if(!files || files_size <= 0)
@@ -347,9 +457,35 @@ throw (iom::exception)
 	std::string image_path = path ? std::string(path) + "/" + files[i] : files[i];
 	
 	// load metadata
-	//iomanager::tiff2D::readMetadata(image_path,cols,rows,depth,channels,params);
-	if ( (err_Tiff3Dfmt = loadTiff3D2Metadata((char *)image_path.c_str(),cols,rows,n_slices,channels,depth,swap,dummy,dummy_len)) != 0 ) {
-		throw iom::exception(iom::strprintf("unable to read tiff file (%s)",err_Tiff3Dfmt), __iom__current__function__);
+	const unsigned int num_retries = 40;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			err_Tiff3Dfmt = loadTiff3D2Metadata((char*)image_path.c_str(), cols, rows, n_slices, channels, depth, swap, dummy, dummy_len);
+			if (err_Tiff3Dfmt != 0) throw std::exception();
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+			continue;
+		}
+		DEBUG("loadTiff3D2Metadata succeeded in attempt ", attempt, num_retries);
+		break;
+	}
+	if (err_Tiff3Dfmt != 0) {
+		throw iom::exception(iom::strprintf("unable to read tif file metadata.\nexception: %s\n", err_Tiff3Dfmt), __iom__current__function__);
 	}
 	closeTiff3DFile(dummy);
 	
@@ -370,9 +506,35 @@ throw (iom::exception)
 		// build absolute image path
 		std::string image_path = path ? std::string(path) + "/" + files[file_i] : files[file_i];
 
-		// load 2D image 
-		if ( (err_Tiff3Dfmt = readTiff3DFile2Buffer((char *)image_path.c_str(),data,cols,rows,0,0)) != 0 ) {
-			throw iom::exception(iom::strprintf("unable to read tiff file (%s)",err_Tiff3Dfmt), __iom__current__function__);
+		// load 2D image
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+		for (int attempt = 0; attempt < num_retries; attempt++) {
+			try {
+				err_Tiff3Dfmt = readTiff3DFile2Buffer((char*)image_path.c_str(), data, cols, rows, 0, 0);
+				if (err_Tiff3Dfmt != 0) throw std::exception();
+			}
+			catch (const std::exception& exc) {
+				(void)exc;
+				std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+				continue;
+			}
+			DEBUG("readTiff3DFile2Buffer succeeded in attempt ", attempt, num_retries);
+			break;
+		}
+		if (err_Tiff3Dfmt != 0) {
+			throw iom::exception(iom::strprintf("unable to read tif 3D file\nexception: %s\n", err_Tiff3Dfmt), __iom__current__function__);
 		}
 
 		double proctime = -TIME(0);

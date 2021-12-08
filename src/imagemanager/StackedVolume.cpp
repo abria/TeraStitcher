@@ -48,6 +48,8 @@
 #include "Stack.h"
 #include "RawFmtMngr.h"
 #include "Tiff3DMngr.h"
+#include <thread>
+#include <chrono>
 
 #ifdef _WIN32
 #include "dirent_win.h"
@@ -453,7 +455,36 @@ void StackedVolume::init() throw (IOException)
     char stack_i_j_path[STATIC_STRINGS_SIZE];
 
 	//obtaining DIR pointer to root_dir (=NULL if directory doesn't exist)
-	if (!(cur_dir_lev1=opendir(root_dir)))
+	const unsigned int num_retries = 40;
+	bool error_open_dir = false;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			cur_dir_lev1 = opendir(root_dir);
+			if (!cur_dir_lev1) throw std::exception();
+			error_open_dir = false;
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			error_open_dir = true;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+			continue;
+		}
+		break;
+	}
+	if (error_open_dir)
 	{
         char msg[STATIC_STRINGS_SIZE];
         sprintf(msg,"in StackedVolume::init(...): Unable to open directory \"%s\"", root_dir);
@@ -1078,14 +1109,67 @@ uint8* StackedVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int 
 					int swap;
 					void *dummy;
 					int dummy_len;
+					const unsigned int num_retries = 40;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+					for (int attempt = 0; attempt < num_retries; attempt++) {
+						try {
+							err_Tiff3Dfmt = loadTiff3D2Metadata((char*)slice_fullpath, cols, rows, n_slices, chans, bytes_x_chan, swap, dummy, dummy_len);
+							if (err_Tiff3Dfmt != 0) throw std::exception();
+						}
+						catch (const std::exception& exc) {
+							(void)exc;
+							std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+							continue;
+						}
+						break;
+					}
 
-					if ( (err_Tiff3Dfmt = loadTiff3D2Metadata((char *)slice_fullpath,cols,rows,n_slices,chans,bytes_x_chan,swap,dummy,dummy_len)) != 0 ) {
-						throw iom::exception(iom::strprintf("unable to read tiff file (%s)",err_Tiff3Dfmt), __iom__current__function__);
+					if (err_Tiff3Dfmt != 0) {
+						throw iom::exception(
+							iom::strprintf("unable to read metadata of tif file.\nexception%s\n", err_Tiff3Dfmt), __iom__current__function__);
 					}
 					closeTiff3DFile(dummy);
 					uint8 *slice = new uint8[rows * cols * chans * bytes_x_chan];
-					if ( (err_Tiff3Dfmt = readTiff3DFile2Buffer((char *)slice_fullpath,slice,cols,rows,0,0)) != 0 ) {
-						throw iom::exception(iom::strprintf("unable to read tiff file (%s)",err_Tiff3Dfmt), __iom__current__function__);
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+					for (int attempt = 0; attempt < num_retries; attempt++) {
+						try {
+							err_Tiff3Dfmt = readTiff3DFile2Buffer((char*)slice_fullpath, slice, cols, rows, 0, 0);
+							if (err_Tiff3Dfmt != 0) throw std::exception();
+						}
+						catch (const std::exception& exc) {
+							(void)exc;
+							std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+							continue;
+						}
+						break;
+					}
+					if (err_Tiff3Dfmt != 0) {
+						throw iom::exception(
+							iom::strprintf("unable to read tif file.\nexception%s\n", err_Tiff3Dfmt), __iom__current__function__);
 					}
 
 					//if(!slice)

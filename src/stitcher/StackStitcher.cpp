@@ -150,7 +150,7 @@ throw (iom::exception)
 	int subvol_DIM_D_k;
 	bool row_wise;								//used to decide if processing stacks row-wise or column-wise
 	int displ_computations;						//stores the number of displacement computations (used for progress bar)
-	int displ_computations_idx;					//counter for displacements computations
+	int displ_computations_idx=0;				//counter for displacements computations
 	int i,j,k;									//loop variables
 	PDAlgo *algorithm;							//stores the reference to the algorithm to be used for pairwise displacement computation
 	VirtualStack *stk_A, *stk_B;						//store references of each pair of adjacent stacks where <stk_B> follows <stk_A> along V or H
@@ -1357,8 +1357,12 @@ void StackStitcher::mergeTiles(std::string output_path, int slice_height, int sl
 				try
 				{
 					iim::DEBUG = iim::NO_DEBUG;
-					iim::StackedVolume temp_vol(file_path[res_i].str().c_str(),reference,
-						volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,res_i));
+					iim::StackedVolume temp_vol(
+						file_path[res_i].str().c_str(),
+						reference,
+						volume->getVXL_V()* (float)pow(2.0f, res_i),
+						volume->getVXL_H()* (float)pow(2.0f, res_i),
+						volume->getVXL_D()* (float)pow(2.0f, res_i));
 				}
 				catch(iim::IOException & ioex)
 				{
