@@ -1,5 +1,5 @@
 TeraStitcher
-===========================================================
+
 
 A tool for fast automatic 3D-stitching of teravoxel-sized 
 microscopy images (BMC Bioinformatics 2012, 13:316)
@@ -7,14 +7,14 @@ microscopy images (BMC Bioinformatics 2012, 13:316)
 Exploiting multi-level parallelism for stitching very large 
 microscopy images (Frontiers in Neuroinformatics, 13, 2019)
 
-===========================================================
+
 
 Before using this software, you MUST accept the LICENSE.txt
 
 Documentation,  help and  other info  are available on  our 
 Github wiki at http://abria.github.io/TeraStitcher/.
 
-===========================================================
+
 Contributors
 
 - Alessandro Bria (email: a.bria@unicas.it).
@@ -25,7 +25,7 @@ Contributors
   Full Professor at University Campus Bio-Medico of Rome (italy).
   Supervisor and co-developer.
   
-===========================================================
+
 Main features
 
 - designed for images exceeding the TeraByte size
@@ -42,4 +42,4 @@ Main features
 - parallelization on multi-core platform
 - fast alignment computation on NVIDIA GPUs
 
-===========================================================
+
