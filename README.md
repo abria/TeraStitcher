@@ -17,6 +17,10 @@ Documentation,  help and  other info  are available on  our Github wiki at http:
 - Giulio Iannello (email: g.iannello@unicampus.it).
   Full Professor at University Campus Bio-Medico of Rome (italy).
   Supervisor and co-developer.
+
+- Roberto Valenti (email: r.valenti@unicampus.it).
+  Software Developer at University Campus Bio-Medico of Rome (Italy).
+  Co-developer.
   
 
 ### Main features
