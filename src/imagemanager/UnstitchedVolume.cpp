@@ -208,9 +208,9 @@ UnstitchedVolume::UnstitchedVolume(const char* _root_dir, bool cacheEnabled, int
 	D0_offs = stitcher->D0; // may be positive and must be subtracted to map indices of unstitched volume (that may start from a positive value) to indices of stitched volume (starting from 0)
 
 	// correct origin coordinates of the stitched volume (WARNING: ORG is in millimeters and VXL is in micrometers)
-	ORG_V += V0_offs * VXL_V/1000.0;
-	ORG_H += H0_offs * VXL_H/1000.0;
-	ORG_D += D0_offs * VXL_D/1000.0;
+	ORG_V += V0_offs * VXL_V / 1000.0f;
+	ORG_H += H0_offs * VXL_H / 1000.0f;
+	ORG_D += D0_offs * VXL_D / 1000.0f;
 
 	blending_algo = _blending_algo;
 
@@ -315,9 +315,9 @@ UnstitchedVolume::UnstitchedVolume(vm::VirtualVolume * _imported_volume, bool ca
 	D0_offs = stitcher->D0; // may be positive and must be subtracted to map indices of unstitched volume (that may start from a positive value) to indices of stitched volume (starting from 0)
 
 	// correct origin coordinates of the stitched volume (WARNING: ORG is in millimeters and VXL is in micrometers)
-	ORG_V += V0_offs * VXL_V/1000.0;
-	ORG_H += H0_offs * VXL_H/1000.0;
-	ORG_D += D0_offs * VXL_D/1000.0;
+	ORG_V += V0_offs * VXL_V / 1000.0f;
+	ORG_H += H0_offs * VXL_H / 1000.0f;
+	ORG_D += D0_offs * VXL_D / 1000.0f;
 
 	blending_algo = _blending_algo;
 
@@ -544,7 +544,7 @@ real32* UnstitchedVolume::internal_loadSubvolume_to_real32(int &VV0,int &VV1, in
 	D0 = stitcher->D0;
 	D1 = stitcher->D1;
 
-	iom::real_t* buffer = NULL;								//buffer temporary image data are stored
+	iom::real_t* buffer;								//buffer temporary image data are stored
 
 	if ( !cb->getSubvolume(current_channel,V0,V1,H0,H1,D0,D1,buffer) ) {
 

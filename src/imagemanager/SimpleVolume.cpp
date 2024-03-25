@@ -52,6 +52,8 @@
 #include "RawFmtMngr.h"
 
 #include "IOPluginAPI.h" // 2014-11-26. Giulio.
+#include <thread>
+#include <chrono>
 
 using namespace std;
 using namespace iim;
@@ -120,7 +122,36 @@ void SimpleVolume::init() throw (iim::IOException)
 	char stack_i_j_path[STATIC_STRINGS_SIZE];
 
 	//obtaining DIR pointer to root_dir (=NULL if directory doesn't exist)
-	if (!(cur_dir_lev1=opendir(root_dir)))
+	const unsigned int num_retries = 40;
+	bool error_open_dir = false;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			cur_dir_lev1 = opendir(root_dir);
+			if (!cur_dir_lev1) throw std::exception();
+			error_open_dir = false;
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			error_open_dir = true;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+			continue;
+		}
+		break;
+	}
+	if (error_open_dir)
 	{
 		char msg[STATIC_STRINGS_SIZE];
 		sprintf(msg,"in SimpleVolume::init(...): Unable to open directory \"%s\"", root_dir);
@@ -401,9 +432,35 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
 					int swap;
 					void *dummy;
 					int dummy_len;
-
-					if ( (err_Tiff3Dfmt = loadTiff3D2Metadata((char *)slice_fullpath,cols,rows,n_slices,native_channels,bytes_x_chan,swap,dummy,dummy_len)) != 0 ) {
-						throw iom::exception(iom::strprintf("unable to read tiff file (%s)",err_Tiff3Dfmt), __iom__current__function__);
+					const unsigned int num_retries = 40;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+					for (int attempt = 0; attempt < num_retries; attempt++) {
+						try {
+							err_Tiff3Dfmt = loadTiff3D2Metadata((char*)slice_fullpath, cols, rows, n_slices, native_channels, bytes_x_chan, swap, dummy, dummy_len);
+							if (err_Tiff3Dfmt != 0) throw std::exception();
+						}
+						catch (const std::exception& exc) {
+							(void)exc;
+							std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+							continue;
+						}
+						break;
+					}
+					if (err_Tiff3Dfmt != 0) {
+						throw iom::exception(
+							iom::strprintf("unable to read the metadata of tif file.\nexception%s\n", err_Tiff3Dfmt), __iom__current__function__);
 					}
 					closeTiff3DFile(dummy);
 
@@ -412,15 +469,43 @@ uint8 *SimpleVolume::loadSubvolume_to_UINT8(int V0,int V1, int H0, int H1, int D
 					rows = (int)ceil((double)rows/downsamplingFactor);
 
 					if ( whole_slices && (rows != sbv_height || cols != sbv_width) ) {
-						throw iom::exception(iom::strprintf("whole slices to be read: mismatch in slice dimensions ([rows,cols]=%dx%d, [sbv_height,sbv_width]=%dx%d, downsampling factor=%d)",
-																												rows, cols, sbv_height, sbv_width, downsamplingFactor), __iom__current__function__);
+						throw iom::exception(
+							iom::strprintf("whole slices to be read: mismatch in slice dimensions ([rows,cols]=%dx%d, [sbv_height,sbv_width]=%dx%d, downsampling factor=%d)", 
+								rows, cols, sbv_height, sbv_width, downsamplingFactor), 
+							__iom__current__function__);
 					}
 
 					uint8 *slice = ( DIM_C == 1 ) ? subvol + (k*sbv_height*sbv_width*bytes_x_chan) : new uint8[sbv_height * sbv_width * native_channels * bytes_x_chan]; // sbv variable should be used here
 
 					// cols and rows should be passed here because sbv variables have a different value when a subregion is to be loaded
-					if ( (err_Tiff3Dfmt = readTiff3DFile2Buffer((char *)slice_fullpath,slice,cols,rows,0,0,downsamplingFactor,V0,V1-1,H0,H1-1)) != 0 ) {
-						throw iom::exception(iom::strprintf("unable to read tiff file (%s)",err_Tiff3Dfmt), __iom__current__function__);
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+					for (int attempt = 0; attempt < num_retries; attempt++) {
+						try {
+							err_Tiff3Dfmt = readTiff3DFile2Buffer((char*)slice_fullpath, slice, cols, rows, 0, 0, downsamplingFactor, V0, V1 - 1, H0, H1 - 1);
+							if (err_Tiff3Dfmt != 0) throw std::exception();
+						}
+						catch (const std::exception& exc) {
+							(void)exc;
+							std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+							continue;
+						}
+						break;
+					}
+					if (err_Tiff3Dfmt != 0) {
+						throw iom::exception(
+							iom::strprintf("unable to read tif file.\nexception: %s\n", err_Tiff3Dfmt), __iom__current__function__);
 					}
 
 					/* Giulio_CV 

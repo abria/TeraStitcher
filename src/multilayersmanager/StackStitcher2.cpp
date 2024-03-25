@@ -994,8 +994,12 @@ void StackStitcher2::mergeTiles(std::string output_path, int slice_height, int s
             	//is to check whether <volume> is a pointer to a <StackedVolume> object, then specialize it to <StackedVolume*> and get its reference
             	//system.
 				//---- Giulio 2013-08-23 fixed
-				iim::StackedVolume temp_vol(file_path[res_i].str().c_str(),volume->getREF_SYS(), //reference,
-							volume->getVXL_V()*pow(2.0f,res_i), volume->getVXL_H()*pow(2.0f,res_i),volume->getVXL_D()*pow(2.0f,res_i));
+				iim::StackedVolume temp_vol(
+					file_path[res_i].str().c_str(),
+					volume->getREF_SYS(), //reference,
+					volume->getVXL_V()* (float)pow(2.0f,res_i), 
+					volume->getVXL_H()* (float)pow(2.0f,res_i),
+					volume->getVXL_D()* (float)pow(2.0f,res_i));
         	}
         }
 	}

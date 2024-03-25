@@ -48,8 +48,9 @@
 #include <dirent.h>
 #endif
 #include <math.h> //fabs
-
 #include "vmCacheManager.h"
+#include <thread>
+#include <chrono>
 
 using namespace std;
 using namespace vm;
@@ -142,7 +143,36 @@ bool VirtualVolume::fileExists(const char *filepath)  throw (iom::exception)
 	dir_path=file_path_string.substr(0,file_path_string.find(file_name));
 
 	//obtaining DIR pointer to directory (=NULL if directory doesn't exist)
-	if (!(directory=opendir(&(dir_path[0]))))
+	const unsigned int num_retries = 40;
+	bool error_open_dir = false;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			directory = opendir(&(dir_path[0]));
+			if (!directory) throw std::exception();
+			error_open_dir = false;
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			error_open_dir = true;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+			continue;
+		}
+		break;
+	}
+	if (error_open_dir)
 	{
 		char msg[1000];
 		sprintf(msg,"in fileExists(filepath=%s): Unable to open directory \"%s\"", filepath, &dir_path[0]);
@@ -312,11 +342,42 @@ void VirtualVolume::adjustDisplacements ( ) {
 
 
 // return 'volume_format' attribute of <TeraStitcher> node from the given xml. 
-std::string VirtualVolume::getVolumeFormat(const std::string& xml_path) throw (iom::exception)
+std::string VirtualVolume::getVolumeFormat(
+	const std::string& xml_path
+) 
+throw (iom::exception)
 {
 	// open xml
 	TiXmlDocument xml;
-	if(!xml.LoadFile(xml_path.c_str()))
+	const unsigned int num_retries = 40;
+	bool error_loading_xml = false;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			if (!xml.LoadFile(xml_path.c_str())) throw std::exception();
+			error_loading_xml = false;
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			error_loading_xml = true;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+			continue;
+		}
+		break;
+	}
+	if (error_loading_xml)
 		throw iom::exception(vm::strprintf("in VirtualVolume::getVolumeFormat(): cannot open xml file at \"%s\"", xml_path.c_str()));
 
 	// get root node
@@ -325,7 +386,10 @@ std::string VirtualVolume::getVolumeFormat(const std::string& xml_path) throw (i
 	// get 'volume_format' attribute
 	const char *volformat = hRoot.ToElement()->Attribute("volume_format");
 	if(!volformat)
-		throw iom::exception(vm::strprintf("in VirtualVolume::getVolumeFormat(): cannot find 'volume_format' <TeraStitcher> attribute in xml file at \"%s\". Too old xml, please regenerate it.", xml_path.c_str()).c_str());
+		throw iom::exception(
+			vm::strprintf(
+				"in VirtualVolume::getVolumeFormat(): cannot find 'volume_format' <TeraStitcher> attribute in xml file at \"%s\". Too old xml, please regenerate it.", 
+				xml_path.c_str()).c_str());
 
 	return volformat;
 }

@@ -55,6 +55,8 @@
 #include "vmMCVolume.h"
 #include "S_config.h"
 //#include <string>
+#include <thread>
+#include <chrono>
 #include "../imagemanager/IM_config.h"
 #include "vmStackedVolume.h"
 #include "vmBlockVolume.h"
@@ -202,7 +204,36 @@ void MCVolume::init() throw (iom::exception)
     list<string>::iterator entry_j;                 //iterator for list 'entries_lev2'
 
 	//obtaining DIR pointer to root_dir (=NULL if directory doesn't exist)
-	if (!(cur_dir_lev1=opendir(stacks_dir)))
+	const unsigned int num_retries = 40;
+	bool error_open_dir = false;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			cur_dir_lev1 = opendir(stacks_dir);
+			if (!cur_dir_lev1) throw std::exception();
+			error_open_dir = false;
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			error_open_dir = true;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+			continue;
+		}
+		break;
+	}
+	if (error_open_dir)
 	{
         char msg[iim::STATIC_STRINGS_SIZE];
         sprintf(msg,"in MCVolume::init(...): Unable to open directory \"%s\"", stacks_dir);
@@ -611,17 +642,47 @@ void MCVolume::saveXML(const char *xml_filename, const char *xml_filepath) throw
     else
         throw iom::exception("in MCVolume::saveXML(...): no xml path provided");
 
-	//initializing XML file with DTD declaration
-	fstream XML_FILE(xml_abs_path, ios::out);
-	XML_FILE<<"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"<<endl;
-	XML_FILE<<"<!DOCTYPE TeraStitcher SYSTEM \"TeraStitcher.DTD\">"<<endl;
-	XML_FILE.close();
+	const unsigned int num_retries = 40;
+	bool error_loading_xml = false;
+	int final_attempt = 0;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			//initializing XML file with DTD declaration
+			fstream XML_FILE(xml_abs_path, ios::out);
+			XML_FILE << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << endl;
+			XML_FILE << "<!DOCTYPE TeraStitcher SYSTEM \"TeraStitcher.DTD\">" << endl;
+			XML_FILE.close();
 
-	//loading previously initialized XML file 
-    if(!xml.LoadFile(xml_abs_path))
+			//loading previously initialized XML file
+			if (!xml.LoadFile(xml_abs_path)) throw std::exception();
+			error_loading_xml = false;
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			error_loading_xml = true;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+			final_attempt = attempt;
+			continue;
+		}
+		break;
+	}
+	if (error_loading_xml)
 	{
 		char errMsg[5000];
-                sprintf(errMsg, "in MCVolume::saveToXML(...) : unable to load xml file at \"%s\"", xml_abs_path);
+		sprintf(errMsg, "in MCVolume::saveToXML(...) : unable to load xml file at \"%s\" after %i attempts.", xml_abs_path, final_attempt);
 		throw iom::exception(errMsg);
 	}
 
@@ -687,7 +748,42 @@ void MCVolume::saveXML(const char *xml_filename, const char *xml_filepath) throw
 	root->LinkEndChild(pelem);
 	
 	//saving the file
-	xml.SaveFile();
+	bool error_saving_xml = false;
+	final_attempt = 0;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			if (!xml.SaveFile()) throw std::exception();
+			error_saving_xml = false;
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			error_saving_xml = true;
+			final_attempt = attempt;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			continue;
+		}
+		// printf("succeeded in attempt %i", attempt);
+		break;
+	}
+	if (error_saving_xml)
+	{
+		char errMsg[5000];
+		sprintf(errMsg, "in StackedVolume::saveToXML(...) : unable to save xml file at \"%s\" after %i attempts.", xml_abs_path, final_attempt);
+		throw iom::exception(errMsg);
+	}
 }
 
 //counts the total number of displacements and the number of displacements per stack

@@ -82,7 +82,8 @@
 #include "vmBlockVolume.h"
 #include "S_config.h"
 //#include <string>
-
+#include <thread>
+#include <chrono>
 #include "vmCacheManager.h"
 
 using namespace std;
@@ -278,7 +279,36 @@ void BlockVolume::init() throw (iom::exception)
 	char stack_i_j_path[S_STATIC_STRINGS_SIZE];
 
 	//obtaining DIR pointer to stacks_dir (=NULL if directory doesn't exist)
-	if (!(cur_dir_lev1=opendir(stacks_dir)))
+	const unsigned int num_retries = 40;
+	bool error_open_dir = false;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			cur_dir_lev1 = opendir(stacks_dir);
+			if (!cur_dir_lev1) throw std::exception();
+			error_open_dir = false;
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			error_open_dir = true;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+			continue;
+		}
+		break;
+	}
+	if (error_open_dir)
 	{
 		char msg[S_STATIC_STRINGS_SIZE];
 		sprintf(msg,"in BlockVolume::init(...): Unable to open directory \"%s\"", stacks_dir);
@@ -547,7 +577,9 @@ void BlockVolume::applyReferenceSystem(vm::ref_sys reference_system, float VXL_1
 		}
 }
 
-void BlockVolume::saveBinaryMetadata(char *metadata_filepath) throw (iom::exception)
+void BlockVolume::saveBinaryMetadata(
+	char *metadata_filepath) 
+throw (iom::exception)
 {
 	#if VM_VERBOSE > 3
 	printf("\t\t\t\tin BlockVolume::saveBinaryMetadata(char *metadata_filepath = %s)\n", metadata_filepath);
@@ -558,7 +590,33 @@ void BlockVolume::saveBinaryMetadata(char *metadata_filepath) throw (iom::except
 	FILE *file;
 	int i,j;
 
-	if(!(file = fopen(metadata_filepath, "wb")))
+	const unsigned int num_retries = 40;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			file = fopen(metadata_filepath, "wb");
+			if (!file) throw std::exception();
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+			continue;
+		}
+		break;
+	}
+	if (!file)
 		throw iom::exception("in BlockVolume::saveBinaryMetadata(...): unable to save binary metadata file");
 	str_size = (uint16) strlen(stacks_dir) + 1;
 	fwrite(&str_size, sizeof(uint16), 1, file);
@@ -601,7 +659,34 @@ void BlockVolume::loadBinaryMetadata(char *metadata_filepath) throw (iom::except
 	int i,j;
 	size_t fread_return_val;
 
-	if(!(file = fopen(metadata_filepath, "rb")))
+	// open file
+	const unsigned int num_retries = 40;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			file = fopen(metadata_filepath, "rb");
+			if (!file) throw std::exception();
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+			continue;
+		}
+		break;
+	}
+	if (!file)
 		throw iom::exception("in BlockVolume::loadBinaryMetadata(...): unable to load binary metadata file");
 	// str_size = (uint16) strlen(stacks_dir) + 1;  // GI_140425 remodev because has with no effect 
 	fread_return_val = fread(&str_size, sizeof(uint16), 1, file);
@@ -616,7 +701,7 @@ void BlockVolume::loadBinaryMetadata(char *metadata_filepath) throw (iom::except
 		fclose(file);
 		throw iom::exception("in BlockVolume::loadBinaryMetadata(...) error while reading binary metadata file");
 	}
-	if ( !strcmp(temp,stacks_dir) ) // the two strings are equal
+	if ( !strcmp(temp, stacks_dir) ) // the two strings are equal
 		delete []temp;
 	else { // GI_140626: allow moving mdata.bin to other machine
 		delete []temp;
@@ -1201,17 +1286,46 @@ void BlockVolume::saveXML(const char *xml_filename, const char *xml_filepath) th
     else
         throw iom::exception("in BlockVolume::saveXML(...): no xml path provided");
 
-	//initializing XML file with DTD declaration
-	fstream XML_FILE(xml_abs_path, ios::out);
-	XML_FILE<<"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"<<endl;
-	XML_FILE<<"<!DOCTYPE TeraStitcher SYSTEM \"TeraStitcher.DTD\">"<<endl;
-	XML_FILE.close();
+	const unsigned int num_retries = 40;
+	bool error_loading_xml = false;
+	int final_attempt = 0;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			//initializing XML file with DTD declaration
+			fstream XML_FILE(xml_abs_path, ios::out);
+			XML_FILE << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << endl;
+			XML_FILE << "<!DOCTYPE TeraStitcher SYSTEM \"TeraStitcher.DTD\">" << endl;
+			XML_FILE.close();
 
-	//loading previously initialized XML file 
-    if(!xml.LoadFile(xml_abs_path))
+			//loading previously initialized XML file 
+			if (!xml.LoadFile(xml_abs_path)) throw std::exception();
+			error_loading_xml = false;
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			error_loading_xml = true;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			continue;
+		}
+		break;
+	}
+	if (error_loading_xml)
 	{
 		char errMsg[5000];
-                sprintf(errMsg, "in BlockVolume::saveToXML(...) : unable to load xml file at \"%s\"", xml_abs_path);
+		sprintf(errMsg, "in BlockVolume::saveToXML(...) : unable to load xml file at \"%s\" after %i attempts.", xml_abs_path, final_attempt);
 		throw iom::exception(errMsg);
 	}
 
@@ -1275,7 +1389,42 @@ void BlockVolume::saveXML(const char *xml_filename, const char *xml_filepath) th
 			pelem->LinkEndChild(BLOCKS[i][j]->getXML());
 	root->LinkEndChild(pelem);
 	//saving the file
-	xml.SaveFile();
+	bool error_saving_xml = false;
+	final_attempt = 0;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			if (!xml.SaveFile()) throw std::exception();
+			error_saving_xml = false;
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			error_saving_xml = true;
+			final_attempt = attempt;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			continue;
+		}
+		// printf("succeeded in attempt %i", attempt);
+		break;
+	}
+	if (error_saving_xml)
+	{
+		char errMsg[5000];
+		sprintf(errMsg, "in StackedVolume::saveToXML(...) : unable to save xml file at \"%s\" after %i attempts.", xml_abs_path, final_attempt);
+		throw iom::exception(errMsg);
+	}
 }
 
 void BlockVolume::releaseBuffers() throw (iom::exception) {

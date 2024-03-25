@@ -40,6 +40,8 @@
 #include <list>
 #include <fstream>
 #include <string>
+#include <thread>
+#include <chrono>
 
 #ifdef _WIN32
 #include "dirent_win.h"
@@ -78,8 +80,36 @@ void XMLDisplacementBag::init ( ) {
 	string file;
 
 	//building filenames_list
-	cur_dir = opendir(main_dir);
-	if (!cur_dir)
+	const unsigned int num_retries = 40;
+	bool error_open_dir = false;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			cur_dir = opendir(main_dir);
+			if (!cur_dir) throw std::exception();
+			error_open_dir = false;
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			error_open_dir = true;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+			continue;
+		}
+		break;
+	}
+	if (error_open_dir)
 		throw iom::exception(iom::strprintf("unable to open directory %s", main_dir), __iom__current__function__);
 
 	//scanning third level of hierarchy which entries need to be ordered alphabetically. This is done using STL.
@@ -146,17 +176,47 @@ void XMLDisplacementBag::merge ( const char *xml_out_file ) {
 		}
 	}
 
-	// initializing output XML file with DTD declaration
-	fstream XML_FILE(xml_out_file, ios::out);
-	XML_FILE<<"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"<<endl;
-	XML_FILE<<"<!DOCTYPE TeraStitcher SYSTEM \"TeraStitcher.DTD\">"<<endl;
-	XML_FILE.close();
+	const unsigned int num_retries = 40;
+	bool error_loading_xml = false;
+	int final_attempt = 0;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			// initializing output XML file with DTD declaration
+			fstream XML_FILE(xml_out_file, ios::out);
+			XML_FILE << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << endl;
+			XML_FILE << "<!DOCTYPE TeraStitcher SYSTEM \"TeraStitcher.DTD\">" << endl;
+			XML_FILE.close();
 
-	//loading previously initialized output XML file 
-    if(!out_xml.LoadFile(xml_out_file))
+			//loading previously initialized output XML file 
+			if (!out_xml.LoadFile(xml_out_file)) throw std::exception();
+			error_loading_xml = false;
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			error_loading_xml = true;
+			final_attempt = attempt;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+			continue;
+		}
+		break;
+	}
+	if (error_loading_xml)
 	{
 		char errMsg[5000];
-		sprintf(errMsg, "in XMLDisplacementBag::merge(...) : unable to load xml file at \"%s\"", xml_out_file);
+		sprintf(errMsg, "in XMLDisplacementBag::merge(...): unable to load xml file at \"%s\" after %i attempts.", xml_out_file, final_attempt);
 		throw iom::exception(errMsg);
 	}
 
@@ -306,7 +366,42 @@ void XMLDisplacementBag::merge ( const char *xml_out_file ) {
 	out_root->LinkEndChild(out_pelem);
 
 	//saving the file
-	out_xml.SaveFile();
+	bool error_saving_xml = false;
+	final_attempt = 0;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			if (!out_xml.SaveFile()) throw std::exception();
+			error_saving_xml = false;
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			error_saving_xml = true;
+			final_attempt = attempt;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			continue;
+		}
+		// printf("succeeded in attempt %i", attempt);
+		break;
+	}
+	if (error_saving_xml)
+	{
+		char errMsg[5000];
+		sprintf(errMsg, "in StackedVolume::saveToXML(...) : unable to save xml file at \"%s\" after %i attempts.", xml_out_file, final_attempt);
+		throw iom::exception(errMsg);
+	}
 }
 
 
@@ -447,17 +542,47 @@ void XMLDisplacementBag::mergeTileGroups ( const char *xml_out_file ) {
 		}
 	}
 
-	// initializing output XML file with DTD declaration
-	fstream XML_FILE(xml_out_file, ios::out);
-	XML_FILE<<"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"<<endl;
-	XML_FILE<<"<!DOCTYPE TeraStitcher SYSTEM \"TeraStitcher.DTD\">"<<endl;
-	XML_FILE.close();
+	const unsigned int num_retries = 40;
+	bool error_loading_xml = false;
+	int final_attempt = 0;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			// initializing output XML file with DTD declaration
+			fstream XML_FILE(xml_out_file, ios::out);
+			XML_FILE << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << endl;
+			XML_FILE << "<!DOCTYPE TeraStitcher SYSTEM \"TeraStitcher.DTD\">" << endl;
+			XML_FILE.close();
 
-	//loading previously initialized output XML file 
-    if(!out_xml.LoadFile(xml_out_file))
+			//loading previously initialized output XML file 
+			if (!out_xml.LoadFile(xml_out_file)) throw std::exception();
+			error_loading_xml = false;
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			error_loading_xml = true;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); //ms
+			final_attempt = attempt;
+			continue;
+		}
+		break;
+	}
+	if (error_loading_xml)
 	{
 		char errMsg[5000];
-		sprintf(errMsg, "in XMLDisplacementBag::mergeTileGroups(...) : unable to load xml file at \"%s\"", xml_out_file);
+		sprintf(errMsg, "in XMLDisplacementBag::mergeTileGroups(...) : unable to load xml file at \"%s\" after %i attempts.", xml_out_file, final_attempt);
 		throw iom::exception(errMsg);
 	}
 
@@ -607,7 +732,42 @@ void XMLDisplacementBag::mergeTileGroups ( const char *xml_out_file ) {
 	out_root->LinkEndChild(out_pelem);
 
 	//saving the file
-	out_xml.SaveFile();
+	bool error_saving_xml = false;
+	final_attempt = 0;
+#ifdef _MSC_VER
+#pragma loop( no_vector )
+#elif __GNUC__
+#pragma GCC unroll 1
+#elif __MINGW32__
+#pragma GCC unroll 1
+#elif __clang__
+#pragma clang loop unroll(disable)
+#elif __BORLANDC__
+#pragma nounroll
+#elif __INTEL_COMPILER
+#pragma nounroll
+#endif
+	for (int attempt = 0; attempt < num_retries; attempt++) {
+		try {
+			if (!out_xml.SaveFile()) throw std::exception();
+			error_saving_xml = false;
+		}
+		catch (const std::exception& exc) {
+			(void)exc;
+			error_saving_xml = true;
+			final_attempt = attempt;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			continue;
+		}
+		// // printf("succeeded in attempt %i", attempt);
+		break;
+	}
+	if (error_saving_xml)
+	{
+		char errMsg[5000];
+		sprintf(errMsg, "in StackedVolume::saveToXML(...) : unable to save xml file at \"%s\" after %i attempts.", xml_out_file, final_attempt);
+		throw iom::exception(errMsg);
+	}
 }
 
 
